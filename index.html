@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EverQuest Legends - AA Calculator</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <h1>EQL AA Calculator</h1>
+
+  <div class="control">
+    <label for="classSelect0">Class 1</label>
+    <select id="classSelect0"></select>
+  </div>
+
+  <div class="control">
+    <label for="classSelect1">Class 2</label>
+    <select id="classSelect1"></select>
+  </div>
+
+  <div class="control">
+    <label for="classSelect2">Class 3</label>
+    <select id="classSelect2"></select>
+  </div>
+
+  <div class="control">
+    <label for="levelInput">Char Level</label>
+    <input type="number" id="levelInput" min="1" max="50" value="50" style="width:60px;" />
+  </div>
+
+  <div class="control">
+    <label for="totalPointsInput">Total AA Points</label>
+    <input type="number" id="totalPointsInput" min="0" value="1000" style="width:90px;" />
+  </div>
+
+  <div class="points-display">
+    <span class="label">Spent / Remaining</span>
+    <span class="value"><span id="spentValue">0</span> / <span id="remainingValue" class="value">0</span></span>
+  </div>
+
+  <div class="topbar-actions">
+    <button class="btn toggle" id="summaryToggle">Build Summary</button>
+    <button class="btn toggle" id="browseToggle">Browse All AAs</button>
+    <button class="btn primary" id="exportBtn">Export</button>
+    <button class="btn" id="importBtn">Import</button>
+    <input type="file" id="importFile" accept=".txt" class="hidden" />
+    <button class="btn danger" id="resetBtn">Reset Build</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+
+<main>
+  <div id="calculatorView" style="display:flex; flex:1; min-height:0;">
+    <div id="treeWrap"></div>
+    <aside id="sidePanel"></aside>
+  </div>
+
+  <div id="browseView" class="hidden" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+    <div id="browseWrap">
+      <div class="browse-controls">
+        <input type="text" id="browseSearch" placeholder="Search AA name or description..." />
+        <select id="browseFilter"></select>
+      </div>
+      <div class="browse-grid" id="browseGrid"></div>
+    </div>
+  </div>
+
+  <div id="summaryView" class="hidden" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+    <div id="summaryWrap">
+      <div id="summaryHeader"></div>
+      <div id="summaryContent"></div>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<div id="exportModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h2>Export Build</h2>
+    <p class="modal-hint">Copy this text to share your build, or save it as a .txt file. Pasting it back in via Import restores everything.</p>
+    <textarea id="exportText" readonly spellcheck="false"></textarea>
+    <div class="modal-actions">
+      <button class="btn primary" id="copyExportBtn">Copy to Clipboard</button>
+      <button class="btn" id="saveExportBtn">Save as .txt</button>
+      <button class="btn" id="closeExportBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
