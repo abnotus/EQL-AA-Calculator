@@ -247,6 +247,11 @@
     el.exportBtn = document.getElementById("exportBtn");
     el.importBtn = document.getElementById("importBtn");
     el.importFile = document.getElementById("importFile");
+    el.importModal = document.getElementById("importModal");
+    el.importText = document.getElementById("importText");
+    el.loadImportFileBtn = document.getElementById("loadImportFileBtn");
+    el.doImportBtn = document.getElementById("doImportBtn");
+    el.closeImportBtn = document.getElementById("closeImportBtn");
     el.resetBtn = document.getElementById("resetBtn");
     el.exportModal = document.getElementById("exportModal");
     el.exportText = document.getElementById("exportText");
@@ -610,7 +615,7 @@
 
   function importBuildFromText(text) {
     const m = text.match(/BUILD_CODE:(\S+)/);
-    if (!m) { showToast("No build code found in that file"); return; }
+    if (!m) { showToast("No build code found in that text"); return false; }
     try {
       const json = JSON.parse(decodeURIComponent(escape(atob(m[1]))));
       applyLoaded(json);
@@ -618,9 +623,27 @@
       saveLocal();
       renderAll();
       showToast("Build imported");
+      return true;
     } catch (e) {
-      showToast("Failed to read build file");
+      showToast("Failed to read build text");
+      return false;
     }
+  }
+
+  function openImportModal() {
+    el.importText.value = "";
+    el.importModal.classList.remove("hidden");
+    el.importText.focus();
+  }
+
+  function closeImportModal() {
+    el.importModal.classList.add("hidden");
+  }
+
+  function doImport() {
+    const text = el.importText.value.trim();
+    if (!text) { showToast("Paste build text first"); return; }
+    if (importBuildFromText(text)) closeImportModal();
   }
 
   function showToast(msg) {
@@ -674,18 +697,27 @@
     el.closeExportBtn.addEventListener("click", closeExportModal);
     el.exportModal.addEventListener("click", (e) => { if (e.target === el.exportModal) closeExportModal(); });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !el.exportModal.classList.contains("hidden")) closeExportModal();
+      if (e.key !== "Escape") return;
+      if (!el.exportModal.classList.contains("hidden")) closeExportModal();
+      if (!el.importModal.classList.contains("hidden")) closeImportModal();
     });
 
-    el.importBtn.addEventListener("click", () => el.importFile.click());
+    el.importBtn.addEventListener("click", openImportModal);
+    el.loadImportFileBtn.addEventListener("click", () => el.importFile.click());
     el.importFile.addEventListener("change", () => {
       const file = el.importFile.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => importBuildFromText(String(reader.result));
+      reader.onload = () => {
+        el.importText.value = String(reader.result);
+        doImport();
+      };
       reader.readAsText(file);
       el.importFile.value = "";
     });
+    el.doImportBtn.addEventListener("click", doImport);
+    el.closeImportBtn.addEventListener("click", closeImportModal);
+    el.importModal.addEventListener("click", (e) => { if (e.target === el.importModal) closeImportModal(); });
 
     el.resetBtn.addEventListener("click", () => {
       if (!confirm("Reset all spent AA points across every category and class? This cannot be undone.")) return;

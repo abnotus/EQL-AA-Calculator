@@ -91,6 +91,19 @@
   </div>
 </div>
 
+<div id="importModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h2>Import Build</h2>
+    <p class="modal-hint">Paste build text (containing a BUILD_CODE line) below, or load a .txt file exported earlier.</p>
+    <textarea id="importText" spellcheck="false" placeholder="Paste build text here..."></textarea>
+    <div class="modal-actions">
+      <button class="btn" id="loadImportFileBtn">Load .txt File</button>
+      <button class="btn primary" id="doImportBtn">Import</button>
+      <button class="btn" id="closeImportBtn">Close</button>
+    </div>
+  </div>
+</div>
+
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>
