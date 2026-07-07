@@ -212,7 +212,6 @@ el.totalPointsInput = document.getElementById("totalPointsInput");
 el.spentValue = document.getElementById("spentValue");
 el.remainingValue = document.getElementById("remainingValue");
 el.browseToggle = document.getElementById("browseToggle");
-el.summaryToggle = document.getElementById("summaryToggle");
 el.exportBtn = document.getElementById("exportBtn");
 el.importBtn = document.getElementById("importBtn");
 el.importFile = document.getElementById("importFile");
@@ -263,7 +262,6 @@ el.spentValue.textContent = spent;
 el.remainingValue.textContent = remaining;
 el.remainingValue.classList.toggle("over", remaining < 0);
 el.browseToggle.classList.toggle("active", state.activeView === "browse");
-el.summaryToggle.classList.toggle("active", state.activeView === "summary");
 }
 function populateClassSelects() {
 const html = CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
@@ -272,6 +270,13 @@ if (sel.innerHTML !== html) sel.innerHTML = html;
 sel.value = state.selectedClasses[i];
 });
 }
+function countPicked() {
+let n = 0;
+["general", "archetype", ...CLASS_SLOT_KEYS, "special"].forEach((catKey) => {
+getList(catKey).forEach((aa, idx) => { if (effectiveRank(catKey, idx) > 0) n++; });
+});
+return n;
+}
 function renderTabs() {
 const tabDefs = [
 { key: "general", label: "General" },
@@ -279,16 +284,25 @@ const tabDefs = [
 { key: "classSlot0", label: state.selectedClasses[0] },
 { key: "classSlot1", label: state.selectedClasses[1] },
 { key: "classSlot2", label: state.selectedClasses[2] },
-{ key: "special", label: "Special" }
+{ key: "special", label: "Special" },
+{ key: "summary", label: "Summary" }
 ];
 el.tabs.innerHTML = tabDefs.map((t) => {
-const list = getList(t.key);
-return `<button data-tab="${t.key}" class="${state.activeTab === t.key ? "active" : ""}">${escapeHtml(t.label)}<span class="count">(${list.length})</span></button>`;
+const isSummary = t.key === "summary";
+const count = isSummary ? countPicked() : getList(t.key).length;
+const isActive = isSummary ? state.activeView === "summary" : (state.activeView === "calculator" && state.activeTab === t.key);
+return `<button data-tab="${t.key}" class="${isActive ? "active" : ""}${isSummary ? " summary-tab" : ""}">${escapeHtml(t.label)}<span class="count">(${count})</span></button>`;
 }).join("");
 Array.from(el.tabs.querySelectorAll("button")).forEach((btn) => {
 btn.addEventListener("click", () => {
-state.activeTab = btn.getAttribute("data-tab");
+const key = btn.getAttribute("data-tab");
+if (key === "summary") {
+state.activeView = "summary";
+} else {
+state.activeView = "calculator";
+state.activeTab = key;
 state.selectedNode = null;
+}
 renderAll();
 });
 });
@@ -578,10 +592,6 @@ renderAll();
 });
 el.browseToggle.addEventListener("click", () => {
 state.activeView = state.activeView === "browse" ? "calculator" : "browse";
-renderAll();
-});
-el.summaryToggle.addEventListener("click", () => {
-state.activeView = state.activeView === "summary" ? "calculator" : "summary";
 renderAll();
 });
 el.exportBtn.addEventListener("click", openExportModal);
