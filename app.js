@@ -550,6 +550,7 @@ el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; 
 return;
 }
 const counts = {};
+let cumulativeSpent = 0;
 const rows = state.purchaseOrder.map((entry, i) => {
 const key = entryKey(entry.scope, entry.className, entry.idx);
 const category = resolveEntryCategory(entry);
@@ -566,6 +567,8 @@ if ((counts[targetKey] || 0) < resolved.requiredRank) prereqWarn = true;
 }
 }
 counts[key] = stepRank;
+const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
+cumulativeSpent += stepCost;
 const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
 const name = aa ? aa.name : "(unknown AA)";
 return `<div class="progression-row${active ? "" : " inactive"}">
@@ -575,6 +578,10 @@ return `<div class="progression-row${active ? "" : " inactive"}">
           <span class="step-cat">${escapeHtml(label)}${active ? "" : " &middot; class not currently selected"}</span>
         </span>
         ${prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
+        <span class="step-cost">
+          <span class="cost-this">+${stepCost} pt${stepCost === 1 ? "" : "s"}</span>
+          <span class="cost-total">${cumulativeSpent} total</span>
+        </span>
         <span class="step-controls">
           <button class="step-btn" data-move="up" data-index="${i}" ${i === 0 ? "disabled" : ""}>&uarr;</button>
           <button class="step-btn" data-move="down" data-index="${i}" ${i === state.purchaseOrder.length - 1 ? "disabled" : ""}>&darr;</button>

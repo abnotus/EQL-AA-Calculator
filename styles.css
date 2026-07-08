@@ -625,6 +625,27 @@ main {
   flex-shrink: 0;
 }
 
+.step-cost {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 64px;
+}
+
+.step-cost .cost-this {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-bright);
+}
+
+.step-cost .cost-total {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
 .step-controls {
   display: flex;
   gap: 4px;
