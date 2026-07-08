@@ -11,6 +11,7 @@ export function cacheDom() {
   el.levelInput = document.getElementById("levelInput");
   el.totalPointsInput = document.getElementById("totalPointsInput");
   el.spentValue = document.getElementById("spentValue");
+  el.totalDisplayValue = document.getElementById("totalDisplayValue");
   el.remainingValue = document.getElementById("remainingValue");
   el.browseToggle = document.getElementById("browseToggle");
   el.exportBtn = document.getElementById("exportBtn");

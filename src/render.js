@@ -39,7 +39,8 @@ export function renderTopbar() {
   const spent = spentPoints();
   const remaining = state.totalPoints - spent;
   el.spentValue.textContent = spent;
-  el.remainingValue.textContent = remaining;
+  el.totalDisplayValue.textContent = state.totalPoints;
+  el.remainingValue.textContent = `(${remaining} remaining)`;
   el.remainingValue.classList.toggle("over", remaining < 0);
   el.browseToggle.classList.toggle("active", state.activeView === "browse");
 }

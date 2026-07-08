@@ -106,8 +106,15 @@ select:focus, input:focus {
   color: var(--accent-bright);
 }
 
-.points-display .value.over {
+.points-display .remaining-note {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.points-display .remaining-note.over {
   color: #e6503f;
+  font-weight: 600;
 }
 
 .topbar-actions {
