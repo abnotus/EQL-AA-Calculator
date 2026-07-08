@@ -24,6 +24,8 @@ export function cacheDom() {
   el.resetBtn = document.getElementById("resetBtn");
   el.exportModal = document.getElementById("exportModal");
   el.exportText = document.getElementById("exportText");
+  el.shareLinkInput = document.getElementById("shareLinkInput");
+  el.copyShareLinkBtn = document.getElementById("copyShareLinkBtn");
   el.copyExportBtn = document.getElementById("copyExportBtn");
   el.saveExportBtn = document.getElementById("saveExportBtn");
   el.closeExportBtn = document.getElementById("closeExportBtn");

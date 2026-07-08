@@ -5,7 +5,7 @@ import { el } from "./dom.js";
 import { costNum, clearClassData, clearLastMutation } from "./logic.js";
 import { renderAll, showToast, populateClassSelects, renderTree, renderBrowse, undoLast } from "./render.js";
 import {
-  openExportModal, copyExportText, saveExportAsTxt, closeExportModal,
+  openExportModal, copyExportText, copyShareLink, saveExportAsTxt, closeExportModal,
   openImportModal, closeImportModal, doImport
 } from "./exportImport.js";
 
@@ -71,6 +71,7 @@ export function wireEvents() {
 
   el.exportBtn.addEventListener("click", openExportModal);
   el.copyExportBtn.addEventListener("click", copyExportText);
+  el.copyShareLinkBtn.addEventListener("click", copyShareLink);
   el.saveExportBtn.addEventListener("click", saveExportAsTxt);
   el.closeExportBtn.addEventListener("click", closeExportModal);
   el.exportModal.addEventListener("click", (e) => { if (e.target === el.exportModal) closeExportModal(); });

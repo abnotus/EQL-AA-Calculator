@@ -368,6 +368,8 @@ el.closeImportBtn = document.getElementById("closeImportBtn");
 el.resetBtn = document.getElementById("resetBtn");
 el.exportModal = document.getElementById("exportModal");
 el.exportText = document.getElementById("exportText");
+el.shareLinkInput = document.getElementById("shareLinkInput");
+el.copyShareLinkBtn = document.getElementById("copyShareLinkBtn");
 el.copyExportBtn = document.getElementById("copyExportBtn");
 el.saveExportBtn = document.getElementById("saveExportBtn");
 el.closeExportBtn = document.getElementById("closeExportBtn");
@@ -717,6 +719,63 @@ el.toast.classList.add("show");
 clearTimeout(showToast._t);
 showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
 }
+function buildCodeObject() {
+return {
+v: 3,
+selectedClasses: state.selectedClasses,
+totalPoints: state.totalPoints,
+ranks: state.ranks,
+purchaseOrder: state.purchaseOrder
+};
+}
+function encodeBuildCode() {
+return btoa(unescape(encodeURIComponent(JSON.stringify(buildCodeObject()))));
+}
+function decodeBuildCode(code) {
+return JSON.parse(decodeURIComponent(escape(atob(code))));
+}
+function toBase64Url(b64) {
+return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function fromBase64Url(b64url) {
+let b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
+while (b64.length % 4) b64 += "=";
+return b64;
+}
+function buildShareUrl() {
+const url = new URL(window.location.href);
+url.search = "";
+url.hash = "";
+url.searchParams.set("build", toBase64Url(encodeBuildCode()));
+return url.toString();
+}
+function applySharedBuildFromUrl() {
+const params = new URLSearchParams(window.location.search);
+const raw = params.get("build");
+if (!raw) return;
+let json = null;
+try {
+json = decodeBuildCode(fromBase64Url(raw));
+} catch (e) {
+json = null;
+}
+if (json) {
+const hasExisting = spentPoints() > 0;
+const proceed = !hasExisting || confirm("Load the shared build from this link? This will replace your current build. Export your current build first if you want to keep it.");
+if (proceed) {
+applyLoaded(json);
+state.selectedNode = null;
+clearLastMutation();
+saveLocal();
+showToast("Loaded shared build from link");
+}
+} else {
+showToast("That share link's build data looks invalid");
+}
+const cleanUrl = new URL(window.location.href);
+cleanUrl.searchParams.delete("build");
+window.history.replaceState({}, "", cleanUrl.toString());
+}
 function buildExportText() {
 const spent = spentPoints();
 const lines = [];
@@ -742,19 +801,12 @@ lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.ste
 });
 lines.push("");
 }
-const codeObj = {
-v: 3,
-selectedClasses: state.selectedClasses,
-totalPoints: state.totalPoints,
-ranks: state.ranks,
-purchaseOrder: state.purchaseOrder
-};
-const code = btoa(unescape(encodeURIComponent(JSON.stringify(codeObj))));
-lines.push(`BUILD_CODE:${code}`);
+lines.push(`BUILD_CODE:${encodeBuildCode()}`);
 return lines.join("\n");
 }
 function openExportModal() {
 el.exportText.value = buildExportText();
+el.shareLinkInput.value = buildShareUrl();
 el.exportModal.classList.remove("hidden");
 el.exportText.focus();
 el.exportText.select();
@@ -762,26 +814,31 @@ el.exportText.select();
 function closeExportModal() {
 el.exportModal.classList.add("hidden");
 }
-function copyExportText() {
-const text = el.exportText.value;
+function copyFrom(inputEl, text) {
 if (navigator.clipboard && navigator.clipboard.writeText) {
 navigator.clipboard.writeText(text).then(
 () => showToast("Copied to clipboard"),
-() => fallbackCopy(text)
+() => fallbackCopyFrom(inputEl, text)
 );
 } else {
-fallbackCopy(text);
+fallbackCopyFrom(inputEl, text);
 }
 }
-function fallbackCopy(text) {
-el.exportText.value = text;
-el.exportText.select();
+function fallbackCopyFrom(inputEl, text) {
+inputEl.value = text;
+inputEl.select();
 try {
 document.execCommand("copy");
 showToast("Copied to clipboard");
 } catch (e) {
 showToast("Couldn't copy automatically — select and copy manually.");
 }
+}
+function copyExportText() {
+copyFrom(el.exportText, el.exportText.value);
+}
+function copyShareLink() {
+copyFrom(el.shareLinkInput, el.shareLinkInput.value);
 }
 function saveExportAsTxt() {
 const blob = new Blob([el.exportText.value], { type: "text/plain" });
@@ -806,7 +863,7 @@ function importBuildFromText(text) {
 const code = extractBuildCode(text);
 if (!code) { showToast("No build code found in that text"); return false; }
 try {
-const json = JSON.parse(decodeURIComponent(escape(atob(code))));
+const json = decodeBuildCode(code);
 applyLoaded(json);
 state.selectedNode = null;
 clearLastMutation();
@@ -885,6 +942,7 @@ renderAll();
 });
 el.exportBtn.addEventListener("click", openExportModal);
 el.copyExportBtn.addEventListener("click", copyExportText);
+el.copyShareLinkBtn.addEventListener("click", copyShareLink);
 el.saveExportBtn.addEventListener("click", saveExportAsTxt);
 el.closeExportBtn.addEventListener("click", closeExportModal);
 el.exportModal.addEventListener("click", (e) => { if (e.target === el.exportModal) closeExportModal(); });
@@ -940,6 +998,7 @@ function init() {
 cacheDom();
 populateStaticControls();
 applyLoaded(loadLocal());
+applySharedBuildFromUrl();
 wireEvents();
 try {
 if (!localStorage.getItem(DISCLAIMER_DISMISSED_KEY)) el.disclaimerBanner.classList.remove("hidden");

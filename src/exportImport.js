@@ -1,9 +1,83 @@
-// Build export/import: the text format, the share-code encoding, and the modal wiring.
+// Build export/import: the text format, the share-code encoding, share links, and modal wiring.
 
 import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal } from "./state.js";
 import { el } from "./dom.js";
 import { getList, effectiveRank, labelFor, spentPoints, computeProgressionSteps, clearLastMutation } from "./logic.js";
 import { renderAll, showToast } from "./render.js";
+
+function buildCodeObject() {
+  return {
+    v: 3,
+    selectedClasses: state.selectedClasses,
+    totalPoints: state.totalPoints,
+    ranks: state.ranks,
+    purchaseOrder: state.purchaseOrder
+  };
+}
+
+function encodeBuildCode() {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(buildCodeObject()))));
+}
+
+function decodeBuildCode(code) {
+  return JSON.parse(decodeURIComponent(escape(atob(code))));
+}
+
+// Standard base64 (as used in BUILD_CODE) uses +, /, and = padding, which are legal
+// in a URL query value but get percent-encoded and look ugly, and occasionally get
+// mangled by chat apps that "helpfully" reformat long links. Base64url (RFC 4648 §5)
+// swaps those for -, _ and drops padding, so the shared link stays plain alphanumeric.
+function toBase64Url(b64) {
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function fromBase64Url(b64url) {
+  let b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
+  while (b64.length % 4) b64 += "=";
+  return b64;
+}
+
+export function buildShareUrl() {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("build", toBase64Url(encodeBuildCode()));
+  return url.toString();
+}
+
+// Called once on startup. If the URL has a ?build= param, offers to load it — with
+// a confirmation if it would clobber an existing non-empty build — then strips the
+// param from the address bar either way so a refresh doesn't re-prompt.
+export function applySharedBuildFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get("build");
+  if (!raw) return;
+
+  let json = null;
+  try {
+    json = decodeBuildCode(fromBase64Url(raw));
+  } catch (e) {
+    json = null;
+  }
+
+  if (json) {
+    const hasExisting = spentPoints() > 0;
+    const proceed = !hasExisting || confirm("Load the shared build from this link? This will replace your current build. Export your current build first if you want to keep it.");
+    if (proceed) {
+      applyLoaded(json);
+      state.selectedNode = null;
+      clearLastMutation();
+      saveLocal();
+      showToast("Loaded shared build from link");
+    }
+  } else {
+    showToast("That share link's build data looks invalid");
+  }
+
+  const cleanUrl = new URL(window.location.href);
+  cleanUrl.searchParams.delete("build");
+  window.history.replaceState({}, "", cleanUrl.toString());
+}
 
 export function buildExportText() {
   const spent = spentPoints();
@@ -33,20 +107,13 @@ export function buildExportText() {
     lines.push("");
   }
 
-  const codeObj = {
-    v: 3,
-    selectedClasses: state.selectedClasses,
-    totalPoints: state.totalPoints,
-    ranks: state.ranks,
-    purchaseOrder: state.purchaseOrder
-  };
-  const code = btoa(unescape(encodeURIComponent(JSON.stringify(codeObj))));
-  lines.push(`BUILD_CODE:${code}`);
+  lines.push(`BUILD_CODE:${encodeBuildCode()}`);
   return lines.join("\n");
 }
 
 export function openExportModal() {
   el.exportText.value = buildExportText();
+  el.shareLinkInput.value = buildShareUrl();
   el.exportModal.classList.remove("hidden");
   el.exportText.focus();
   el.exportText.select();
@@ -56,27 +123,34 @@ export function closeExportModal() {
   el.exportModal.classList.add("hidden");
 }
 
-export function copyExportText() {
-  const text = el.exportText.value;
+function copyFrom(inputEl, text) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(
       () => showToast("Copied to clipboard"),
-      () => fallbackCopy(text)
+      () => fallbackCopyFrom(inputEl, text)
     );
   } else {
-    fallbackCopy(text);
+    fallbackCopyFrom(inputEl, text);
   }
 }
 
-export function fallbackCopy(text) {
-  el.exportText.value = text;
-  el.exportText.select();
+function fallbackCopyFrom(inputEl, text) {
+  inputEl.value = text;
+  inputEl.select();
   try {
     document.execCommand("copy");
     showToast("Copied to clipboard");
   } catch (e) {
     showToast("Couldn't copy automatically — select and copy manually.");
   }
+}
+
+export function copyExportText() {
+  copyFrom(el.exportText, el.exportText.value);
+}
+
+export function copyShareLink() {
+  copyFrom(el.shareLinkInput, el.shareLinkInput.value);
 }
 
 export function saveExportAsTxt() {
@@ -108,7 +182,7 @@ export function importBuildFromText(text) {
   const code = extractBuildCode(text);
   if (!code) { showToast("No build code found in that text"); return false; }
   try {
-    const json = JSON.parse(decodeURIComponent(escape(atob(code))));
+    const json = decodeBuildCode(code);
     applyLoaded(json);
     state.selectedNode = null;
     clearLastMutation();

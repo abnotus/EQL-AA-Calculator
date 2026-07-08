@@ -769,6 +769,31 @@ main {
   justify-content: flex-end;
 }
 
+.share-link-row {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.share-link-row label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+
+.share-link-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.share-link-controls input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 11px;
+}
+
 /* ---------- misc ---------- */
 .hidden { display: none !important; }
 
@@ -870,5 +895,9 @@ main {
 
   .modal-actions {
     flex-wrap: wrap;
+  }
+
+  .share-link-controls {
+    flex-direction: column;
   }
 }
