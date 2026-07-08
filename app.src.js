@@ -128,6 +128,21 @@ function applyPerRankTotal(text, rank) {
     });
 }
 
+// Shared by the tree view, tab match badges, and Browse All — one search box,
+// same matching rule everywhere it's used.
+function aaMatchesQuery(aa, query) {
+  if (!query) return false;
+  const q = query.trim().toLowerCase();
+  if (!q) return false;
+  return aa.name.toLowerCase().includes(q) || aa.description.toLowerCase().includes(q);
+}
+
+// Count of AAs in a category matching the current search, for tab badges.
+function countMatches(catKey, query) {
+  if (!query || !query.trim()) return 0;
+  return getList(catKey).filter((aa) => aaMatchesQuery(aa, query)).length;
+}
+
 function classSlotIndex(catKey) {
   const i = CLASS_SLOT_KEYS.indexOf(catKey);
   return i;
@@ -527,7 +542,8 @@ function cacheDom() {
   el.undoLastBtn = document.getElementById("undoLastBtn");
   el.treeWrap = document.getElementById("treeWrap");
   el.sidePanel = document.getElementById("sidePanel");
-  el.browseSearch = document.getElementById("browseSearch");
+  el.globalSearch = document.getElementById("globalSearch");
+  el.clearSearchBtn = document.getElementById("clearSearchBtn");
   el.browseFilter = document.getElementById("browseFilter");
   el.browseGrid = document.getElementById("browseGrid");
   el.toast = document.getElementById("toast");
@@ -587,11 +603,14 @@ function renderTabs() {
     { key: "summary", label: "Summary" },
     { key: "progression", label: "Progression" }
   ];
+  const query = state.browseSearch;
   el.tabs.innerHTML = tabDefs.map((t) => {
     const isView = t.key === "summary" || t.key === "progression";
     const count = t.key === "summary" ? countPicked() : t.key === "progression" ? state.purchaseOrder.length : getList(t.key).length;
     const isActive = isView ? state.activeView === t.key : (state.activeView === "calculator" && state.activeTab === t.key);
-    return `<button data-tab="${t.key}" class="${isActive ? "active" : ""}${isView ? " summary-tab" : ""}">${escapeHtml(t.label)}<span class="count">(${count})</span></button>`;
+    const matchCount = isView ? 0 : countMatches(t.key, query);
+    const badge = matchCount > 0 ? `<span class="search-badge" title="${matchCount} match${matchCount === 1 ? "" : "es"} for &quot;${escapeHtml(query.trim())}&quot;">${matchCount}</span>` : "";
+    return `<button data-tab="${t.key}" class="${isActive ? "active" : ""}${isView ? " summary-tab" : ""}">${escapeHtml(t.label)}<span class="count">(${count})</span>${badge}</button>`;
   }).join("");
   Array.from(el.tabs.querySelectorAll("button")).forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -629,6 +648,9 @@ function renderTree(catKey) {
     renderAll();
   }
 
+  const query = state.browseSearch;
+  const searching = !!query.trim();
+
   list.forEach((aa, idx) => {
     const rank = effectiveRank(catKey, idx);
     const autoBelowLevel = aa.auto && rank < aa.ranks;
@@ -644,6 +666,7 @@ function renderTree(catKey) {
     if (aa.auto && !autoBelowLevel) node.classList.add("auto");
     else if (!aa.auto && rank >= aa.ranks) node.classList.add("maxed");
     if (locked) node.classList.add("locked");
+    if (searching) node.classList.add(aaMatchesQuery(aa, query) ? "search-match" : "search-dim");
     if (autoBelowLevel) node.title = `Automatically granted at level ${aa.levelReq} — no points needed.`;
     else if (lockReason) node.title = lockReason;
     else if (aa.auto) node.title = "Automatically granted — no AA points needed.";
@@ -776,9 +799,7 @@ function renderBrowse() {
     pushList(filter, AA_DATA.classes[filter] || []);
   }
 
-  const filtered = q
-    ? items.filter(({ aa }) => aa.name.toLowerCase().includes(q) || aa.description.toLowerCase().includes(q))
-    : items;
+  const filtered = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
 
   el.browseGrid.innerHTML = filtered.length
     ? filtered.map(({ cat, aa }) => `
@@ -1226,9 +1247,16 @@ function wireEvents() {
 
   el.undoLastBtn.addEventListener("click", undoLast);
 
-  el.browseSearch.addEventListener("input", () => {
-    state.browseSearch = el.browseSearch.value;
-    renderBrowse();
+  el.globalSearch.addEventListener("input", () => {
+    state.browseSearch = el.globalSearch.value;
+    renderAll();
+  });
+
+  el.clearSearchBtn.addEventListener("click", () => {
+    state.browseSearch = "";
+    el.globalSearch.value = "";
+    el.globalSearch.focus();
+    renderAll();
   });
 
   el.browseFilter.addEventListener("change", () => {

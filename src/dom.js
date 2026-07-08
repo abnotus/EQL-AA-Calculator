@@ -41,7 +41,8 @@ export function cacheDom() {
   el.undoLastBtn = document.getElementById("undoLastBtn");
   el.treeWrap = document.getElementById("treeWrap");
   el.sidePanel = document.getElementById("sidePanel");
-  el.browseSearch = document.getElementById("browseSearch");
+  el.globalSearch = document.getElementById("globalSearch");
+  el.clearSearchBtn = document.getElementById("clearSearchBtn");
   el.browseFilter = document.getElementById("browseFilter");
   el.browseGrid = document.getElementById("browseGrid");
   el.toast = document.getElementById("toast");

@@ -116,9 +116,16 @@ export function wireEvents() {
 
   el.undoLastBtn.addEventListener("click", undoLast);
 
-  el.browseSearch.addEventListener("input", () => {
-    state.browseSearch = el.browseSearch.value;
-    renderBrowse();
+  el.globalSearch.addEventListener("input", () => {
+    state.browseSearch = el.globalSearch.value;
+    renderAll();
+  });
+
+  el.clearSearchBtn.addEventListener("click", () => {
+    state.browseSearch = "";
+    el.globalSearch.value = "";
+    el.globalSearch.focus();
+    renderAll();
   });
 
   el.browseFilter.addEventListener("change", () => {

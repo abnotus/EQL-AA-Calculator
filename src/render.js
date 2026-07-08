@@ -6,7 +6,7 @@ import {
   escapeHtml, iconLetter, highlightRankValue, applyPerRankTotal, labelFor, shortCategoryLabel,
   getList, effectiveRank, structuralLockReason, resolvePrereqTarget, getBlockReason,
   isDependedOn, attemptIncrement, attemptDecrement, countPicked, computeProgressionSteps,
-  costNum, spentPoints, undoLastMutation, canUndo, clearLastMutation
+  costNum, spentPoints, undoLastMutation, canUndo, clearLastMutation, aaMatchesQuery, countMatches
 } from "./logic.js";
 
 export function renderAll() {
@@ -59,11 +59,14 @@ export function renderTabs() {
     { key: "summary", label: "Summary" },
     { key: "progression", label: "Progression" }
   ];
+  const query = state.browseSearch;
   el.tabs.innerHTML = tabDefs.map((t) => {
     const isView = t.key === "summary" || t.key === "progression";
     const count = t.key === "summary" ? countPicked() : t.key === "progression" ? state.purchaseOrder.length : getList(t.key).length;
     const isActive = isView ? state.activeView === t.key : (state.activeView === "calculator" && state.activeTab === t.key);
-    return `<button data-tab="${t.key}" class="${isActive ? "active" : ""}${isView ? " summary-tab" : ""}">${escapeHtml(t.label)}<span class="count">(${count})</span></button>`;
+    const matchCount = isView ? 0 : countMatches(t.key, query);
+    const badge = matchCount > 0 ? `<span class="search-badge" title="${matchCount} match${matchCount === 1 ? "" : "es"} for &quot;${escapeHtml(query.trim())}&quot;">${matchCount}</span>` : "";
+    return `<button data-tab="${t.key}" class="${isActive ? "active" : ""}${isView ? " summary-tab" : ""}">${escapeHtml(t.label)}<span class="count">(${count})</span>${badge}</button>`;
   }).join("");
   Array.from(el.tabs.querySelectorAll("button")).forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -101,6 +104,9 @@ export function renderTree(catKey) {
     renderAll();
   }
 
+  const query = state.browseSearch;
+  const searching = !!query.trim();
+
   list.forEach((aa, idx) => {
     const rank = effectiveRank(catKey, idx);
     const autoBelowLevel = aa.auto && rank < aa.ranks;
@@ -116,6 +122,7 @@ export function renderTree(catKey) {
     if (aa.auto && !autoBelowLevel) node.classList.add("auto");
     else if (!aa.auto && rank >= aa.ranks) node.classList.add("maxed");
     if (locked) node.classList.add("locked");
+    if (searching) node.classList.add(aaMatchesQuery(aa, query) ? "search-match" : "search-dim");
     if (autoBelowLevel) node.title = `Automatically granted at level ${aa.levelReq} — no points needed.`;
     else if (lockReason) node.title = lockReason;
     else if (aa.auto) node.title = "Automatically granted — no AA points needed.";
@@ -248,9 +255,7 @@ export function renderBrowse() {
     pushList(filter, AA_DATA.classes[filter] || []);
   }
 
-  const filtered = q
-    ? items.filter(({ aa }) => aa.name.toLowerCase().includes(q) || aa.description.toLowerCase().includes(q))
-    : items;
+  const filtered = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
 
   el.browseGrid.innerHTML = filtered.length
     ? filtered.map(({ cat, aa }) => `

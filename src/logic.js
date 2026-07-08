@@ -56,6 +56,21 @@ export function applyPerRankTotal(text, rank) {
     });
 }
 
+// Shared by the tree view, tab match badges, and Browse All — one search box,
+// same matching rule everywhere it's used.
+export function aaMatchesQuery(aa, query) {
+  if (!query) return false;
+  const q = query.trim().toLowerCase();
+  if (!q) return false;
+  return aa.name.toLowerCase().includes(q) || aa.description.toLowerCase().includes(q);
+}
+
+// Count of AAs in a category matching the current search, for tab badges.
+export function countMatches(catKey, query) {
+  if (!query || !query.trim()) return 0;
+  return getList(catKey).filter((aa) => aaMatchesQuery(aa, query)).length;
+}
+
 export function classSlotIndex(catKey) {
   const i = CLASS_SLOT_KEYS.indexOf(catKey);
   return i;
