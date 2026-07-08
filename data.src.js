@@ -88,7 +88,7 @@ const AA_DATA = {
       { name: "Reaching Notes", ranks: 6, costs: ["2","4","6","?","?","?"], levelReq: "1", description: "Extends the radius of your beneficial area songs by 10% per rank. Enabled/expendable ability." },
       { name: "Scribble Notes", ranks: 1, costs: ["3"], levelReq: "1", description: "Reduces the amount of time it takes you to memorize a song by 50%." },
       { name: "Singing Mastery", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Further improves the singing bonus of your songs by 20/40/60%. Impacts songs that use the Singing skill." },
-      { name: "Symphonic Aura", ranks: 10, costs: ["1","?","?","?","?","?","?","?","?","?"], levelReq: "1", description: "Allows one eligible Bard song (no mana cost, no cooldown, non-targeted AoE) to auto-pulse. Chooses the first eligible song starting from your final spell gem, working backwards." }
+      { name: "Symphonic Aura", ranks: 10, costs: ["0","3","?","?","?","?","?","?","?","?"], levelReq: "1", autoRanks: 1, description: "Allows one eligible Bard song (no mana cost, no cooldown, non-targeted AoE) to auto-pulse. Chooses the first eligible song starting from your final spell gem, working backwards." }
     ],
     "Beastlord": [
       { name: "Frenzy of Spirit", ranks: 1, costs: ["4"], levelReq: "45", description: "Activated: increases your melee speed by 99% and attack power by 250 points for 0:00:48. (Refresh 0:12:00)" },

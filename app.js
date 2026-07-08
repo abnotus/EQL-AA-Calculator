@@ -112,7 +112,13 @@ const levelReq = parseInt(aa.levelReq, 10) || 1;
 return state.charLevel >= levelReq ? aa.ranks : 0;
 }
 const store = getRanksStore(catKey);
-return store[idx] || 0;
+const purchased = store[idx] || 0;
+if (aa && aa.autoRanks) {
+const levelReq = parseInt(aa.levelReq, 10) || 1;
+const freeRanks = state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+return Math.max(freeRanks, purchased);
+}
+return purchased;
 }
 function getRanksStore(catKey) {
 const slot = classSlotIndex(catKey);
@@ -248,9 +254,10 @@ return !!lastMutation;
 function changeRank(category, idx, delta) {
 const store = getRanksStore(category);
 const aa = getList(category)[idx];
-const cur = store[idx] || 0;
+const floor = aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[idx] || 0);
 const next = cur + delta;
-if (next < 0 || next > aa.ranks) return false;
+if (next < floor || next > aa.ranks) return false;
 if (next === 0) delete store[idx]; else store[idx] = next;
 if (delta > 0) {
 pushPurchase(category, idx);
@@ -301,6 +308,10 @@ const aa = getList(category)[idx];
 if (aa.auto) return { changed: false, message: `${aa.name} is automatically granted and can't be removed.` };
 const rank = effectiveRank(category, idx);
 if (rank <= 0) return { changed: false, message: null };
+if (aa.autoRanks && rank <= Math.min(aa.autoRanks, aa.ranks)) {
+const plural = aa.autoRanks === 1 ? "rank is" : "ranks are";
+return { changed: false, message: `${aa.name}'s first ${aa.autoRanks} ${plural} automatically granted and can't be removed.` };
+}
 if (isDependedOn(category, idx, rank)) {
 return { changed: false, message: "Can't lower this — another AA depends on the current rank." };
 }
@@ -326,7 +337,9 @@ const key = entryKey(entry.scope, entry.className, entry.idx);
 const category = resolveEntryCategory(entry);
 const active = category !== null;
 const aa = entry.scope === "class" ? (AA_DATA.classes[entry.className] || [])[entry.idx] : (AA_DATA[entry.scope] || [])[entry.idx];
-const stepRank = (counts[key] || 0) + 1;
+const purchaseCount = (counts[key] || 0) + 1;
+const autoOffset = aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+const stepRank = purchaseCount + autoOffset;
 let prereqWarn = false;
 if (active && aa && aa.prereq) {
 const resolved = resolvePrereqTarget(aa.prereq, category);
@@ -336,8 +349,8 @@ const targetKey = entryKey(t.scope, t.className, resolved.idx);
 if ((counts[targetKey] || 0) < resolved.requiredRank) prereqWarn = true;
 }
 }
-counts[key] = stepRank;
-const isLast = stepRank === totalCounts[key];
+counts[key] = purchaseCount;
+const isLast = purchaseCount === totalCounts[key];
 const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
 cumulative += stepCost;
 const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);

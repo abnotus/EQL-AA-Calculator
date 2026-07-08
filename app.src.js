@@ -139,6 +139,11 @@ function getList(catKey) {
 // Auto-granted AAs (0-cost on the wiki) are trained automatically as the character levels, no points spent.
 // The wiki documents a single unlock level per ability, not per-rank breakpoints, so once unlocked these
 // sit at max rank rather than trickling in one rank at a time.
+//
+// A separate, rarer pattern is `autoRanks: N` — only the first N ranks are free
+// (e.g. Symphonic Aura: rank 1 is granted for free, rank 2+ cost real points).
+// effectiveRank is the greater of the free baseline and whatever's been manually
+// purchased, so the free rank(s) never need a purchaseOrder entry of their own.
 function effectiveRank(catKey, idx) {
   const aa = getList(catKey)[idx];
   if (aa && aa.auto) {
@@ -146,7 +151,13 @@ function effectiveRank(catKey, idx) {
     return state.charLevel >= levelReq ? aa.ranks : 0;
   }
   const store = getRanksStore(catKey);
-  return store[idx] || 0;
+  const purchased = store[idx] || 0;
+  if (aa && aa.autoRanks) {
+    const levelReq = parseInt(aa.levelReq, 10) || 1;
+    const freeRanks = state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+    return Math.max(freeRanks, purchased);
+  }
+  return purchased;
 }
 
 function getRanksStore(catKey) {
@@ -317,9 +328,12 @@ function canUndo() {
 function changeRank(category, idx, delta) {
   const store = getRanksStore(category);
   const aa = getList(category)[idx];
-  const cur = store[idx] || 0;
+  // For an autoRanks AA, the free ranks are a floor you can never buy below (they're
+  // not "purchased" at all) — step from the current effective rank, not the raw stored one.
+  const floor = aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+  const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[idx] || 0);
   const next = cur + delta;
-  if (next < 0 || next > aa.ranks) return false;
+  if (next < floor || next > aa.ranks) return false;
   if (next === 0) delete store[idx]; else store[idx] = next;
   if (delta > 0) {
     pushPurchase(category, idx);
@@ -382,6 +396,10 @@ function attemptDecrement(category, idx) {
   if (aa.auto) return { changed: false, message: `${aa.name} is automatically granted and can't be removed.` };
   const rank = effectiveRank(category, idx);
   if (rank <= 0) return { changed: false, message: null };
+  if (aa.autoRanks && rank <= Math.min(aa.autoRanks, aa.ranks)) {
+    const plural = aa.autoRanks === 1 ? "rank is" : "ranks are";
+    return { changed: false, message: `${aa.name}'s first ${aa.autoRanks} ${plural} automatically granted and can't be removed.` };
+  }
   if (isDependedOn(category, idx, rank)) {
     return { changed: false, message: "Can't lower this — another AA depends on the current rank." };
   }
@@ -414,7 +432,12 @@ function computeProgressionSteps() {
     const category = resolveEntryCategory(entry);
     const active = category !== null;
     const aa = entry.scope === "class" ? (AA_DATA.classes[entry.className] || [])[entry.idx] : (AA_DATA[entry.scope] || [])[entry.idx];
-    const stepRank = (counts[key] || 0) + 1;
+    // purchaseCount tracks how many times THIS purchase has been made (for isLast/
+    // reordering bookkeeping); stepRank is the true effective rank it represents,
+    // offset by any free autoRanks that never went through purchaseOrder at all.
+    const purchaseCount = (counts[key] || 0) + 1;
+    const autoOffset = aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+    const stepRank = purchaseCount + autoOffset;
 
     let prereqWarn = false;
     if (active && aa && aa.prereq) {
@@ -426,8 +449,8 @@ function computeProgressionSteps() {
       }
     }
 
-    counts[key] = stepRank;
-    const isLast = stepRank === totalCounts[key];
+    counts[key] = purchaseCount;
+    const isLast = purchaseCount === totalCounts[key];
 
     const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
     cumulative += stepCost;
