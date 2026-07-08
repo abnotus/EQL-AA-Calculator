@@ -39,8 +39,12 @@ new Set(loaded.selectedClasses).size === 3
 ) {
 state.selectedClasses = loaded.selectedClasses.slice();
 }
-if (loaded.charLevel) state.charLevel = Math.max(1, Math.min(50, Number(loaded.charLevel) || state.charLevel));
-state.totalPoints = Number(loaded.totalPoints) || state.totalPoints;
+if (typeof loaded.charLevel === "number" && !isNaN(loaded.charLevel)) {
+state.charLevel = Math.max(1, Math.min(50, loaded.charLevel));
+}
+if (typeof loaded.totalPoints === "number" && !isNaN(loaded.totalPoints)) {
+state.totalPoints = Math.max(0, loaded.totalPoints);
+}
 if (loaded.ranks && typeof loaded.ranks === "object") {
 state.ranks = {
 general: loaded.ranks.general || {},
@@ -691,7 +695,8 @@ function extractBuildCode(text) {
 const trimmed = text.trim();
 const m = trimmed.match(/BUILD_CODE:(\S+)/);
 if (m) return m[1];
-if (trimmed.length > 20 && /^[A-Za-z0-9+/]+={0,2}$/.test(trimmed)) return trimmed;
+const compact = trimmed.replace(/\s+/g, "");
+if (compact.length > 20 && /^[A-Za-z0-9+/]+={0,2}$/.test(compact)) return compact;
 return null;
 }
 function importBuildFromText(text) {

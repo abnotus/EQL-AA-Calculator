@@ -243,7 +243,6 @@ main {
 }
 
 .tree-grid {
-  position: relative;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: var(--node-gap) 22px;
