@@ -8,7 +8,7 @@ const CLASS_LIST = [
 
 const AA_DATA = {
   general: [
-    { name: "Adamant Will", ranks: 4, costs: ["2","4","?","?"], levelReq: "1", description: "Grants you an additional 20/40/?/?% chance to resist charm, and 15/30/?/?% chance to resist mesmerization spells." },
+    { name: "Adamant Will", ranks: 4, costs: ["2","4","6","?"], levelReq: "1", description: "Grants you an additional 20/40/?/?% chance to resist charm, and 15/30/?/?% chance to resist mesmerization spells." },
     { name: "Alchemy Mastery", ranks: 3, costs: ["3","?","?"], levelReq: "1", description: "Reduces the chance of failing Alchemy recipes by 10/?/?%." },
     { name: "Baking Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Baking recipes by 10/?/?%." },
     { name: "Blacksmithing Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Blacksmithing recipes by 10/?/?%." },
@@ -19,7 +19,7 @@ const AA_DATA = {
     { name: "Combat Stability", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Increases the armor class soft cap of your class by 2/5/?%." },
     { name: "Crafting Mastery", ranks: 6, costs: ["3","?","?","?","?","?"], levelReq: "1", description: "Allows raising 1-6 additional tradeskills from a 200 to 300 cap." },
     { name: "Fear Resistance", ranks: 4, costs: ["2","4","6","?"], levelReq: "1", description: "Grants you an additional 25/50/75/100% chance to resist most fear spells." },
-    { name: "First Aid", ranks: 6, costs: ["1","?","?","?","?","?"], levelReq: "1", description: "Increases the maximum health you can bind wound to 80/90/100/100/100/100%." },
+    { name: "First Aid", ranks: 6, costs: ["1","?","?","?","?","?"], levelReq: "1", description: "Increases the maximum health you can bind wound to 80/90/100/100/100/100%, and increases bandage healing by 0/0/0/10/25/50%." },
     { name: "Fletching Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Fletching recipes by 10/?/?%." },
     { name: "Foraging", ranks: 1, costs: ["3"], levelReq: "1", description: "Increases your Forage skill cap by 50 points." },
     { name: "Gather Party", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Gives everyone in your party the option of teleporting directly to your location. Automatically granted to every character — per the wiki's own General AA intro text." },
@@ -78,13 +78,13 @@ const AA_DATA = {
   ],
 
   special: [
-    { name: "Banestrike", ranks: 4, costs: ["0","0","?","?"], levelReq: "1", description: "Improves the base damage of your melee attacks and the power of your damaging and healing abilities by 2/4/?/?%. Complete Slayer achievements to progress this ability." }
+    { name: "Banestrike", ranks: 4, costs: ["0","0","0","0"], levelReq: "1", description: "Improves the base damage of your melee attacks and the power of your damaging and healing abilities by 2/4/?/?%. Complete Slayer achievements to progress this ability." }
   ],
 
   classes: {
     "Bard": [
       { name: "Instrument Mastery", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Further improves the instrument bonus of your songs by 20/40/60%. Impacts Brass, Percussion, String and Woodwind songs." },
-      { name: "Jam Fest", ranks: 3, costs: ["3","?","?"], levelReq: "1", description: "Increases the effective casting level of your songs by 1/?/? level. Improves songs that scale with level, song stacking priority, and the likelihood that dispel/cure blindness/sense-disarm-pick-trap songs succeed." },
+      { name: "Jam Fest", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases the effective casting level of your songs by 1/?/? level. Improves songs that scale with level, song stacking priority, and the likelihood that dispel/cure blindness/sense-disarm-pick-trap songs succeed." },
       { name: "Reaching Notes", ranks: 6, costs: ["2","4","6","?","?","?"], levelReq: "1", description: "Extends the radius of your beneficial area songs by 10% per rank. Enabled/expendable ability." },
       { name: "Scribble Notes", ranks: 1, costs: ["3"], levelReq: "1", description: "Reduces the amount of time it takes you to memorize a song by 50%." },
       { name: "Singing Mastery", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Further improves the singing bonus of your songs by 20/40/60%. Impacts songs that use the Singing skill." },
@@ -173,13 +173,13 @@ const AA_DATA = {
     "Warrior": [
       { name: "Area Taunt", ranks: 1, costs: ["5"], levelReq: "25", description: "Activated: taunts all creatures within a 40 foot radius, placing you 100 points of hate higher than their previously most hated target. (Refresh 0:05:00)" },
       { name: "Heroic Leap", ranks: 1, costs: ["0"], levelReq: "12", auto: true, description: "Activated: leap approximately 10 feet in front of your target, attracting the attention of up to 8 opponents within 40 feet, increasing their hatred for you by 1250 points. (Refresh 0:00:30)" },
-      { name: "Innate Fighters Tenacity", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Warrior the ability to go into a frenzy at low health, increasing critical strike chance, and permanently mitigate 5% of all incoming melee damage. Below 35% health, the warrior goes into a berserker frenzy." },
+      { name: "Innate Fighters Tenacity", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Warrior the ability to go into a frenzy at low health, increasing critical strike chance, and permanently mitigate 5% of all incoming melee damage. Below 35% health, the warrior goes into a berserker frenzy, gaining increased chance to hit and turning critical attacks into crippling blows that deal increased damage and can stun the target. The warrior remains in this state until their health reaches 45%." },
       { name: "Unbound Wrath", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your melee critical hit damage by 10/20/30%." },
       { name: "War Cry", ranks: 1, costs: ["3"], levelReq: "25", prereq: "Requires Fear Resistance at level 3", description: "Activated: grants all group members within 100 feet immunity to fear spells for 10 seconds. (Refresh 0:36:00)" },
       { name: "Warrior's Endurance", ranks: 1, costs: ["6"], levelReq: "30", description: "Increases your hit point regeneration by 1% per 6 seconds." }
     ],
     "Wizard": [
-      { name: "Improved Familiar", ranks: 1, costs: ["6"], levelReq: "45", description: "Activated: summons your familiar, increasing critical direct damage spell damage by 3%, spell casting level by 9, all resistances by 25 points, mana regeneration by 6 points, max mana by 200 points, and grants see invisible." },
+      { name: "Improved Familiar", ranks: 1, costs: ["6"], levelReq: "45", description: "Activated: summons your familiar, increasing critical direct damage spell damage by 3%, spell casting level by 9, your cold, disease, fire, magic, and poison resistances by 25 points each, mana regeneration by 6 points, max mana by 200 points, and grants see invisible." },
       { name: "Mana Burn", ranks: 1, costs: ["5"], levelReq: "45", prereq: "Requires Mental Clarity at level 3", description: "Activated: consumes up to 3000 mana to deal 4x the consumed mana as direct damage; prevents additional Mana Burn spells from landing on that target for 0:01:00." },
       { name: "Quick Evacuation", ranks: 3, costs: ["3","?","?"], levelReq: "1", description: "Reduces the cast time of your evacuation and succor spells and abilities by 10/?/?%." },
       { name: "Strong Root", ranks: 1, costs: ["5"], levelReq: "35", description: "Activated: roots your target in place for up to 48 seconds with a 300 point resist modifier and a 2 second cast time." },
