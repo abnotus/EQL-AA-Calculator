@@ -3,7 +3,7 @@
 import { state, AA_CATEGORY_KEYS, saveLocal } from "./state.js";
 import { el } from "./dom.js";
 import {
-  escapeHtml, iconLetter, highlightRankValue, labelFor, shortCategoryLabel,
+  escapeHtml, iconLetter, highlightRankValue, applyPerRankTotal, labelFor, shortCategoryLabel,
   getList, effectiveRank, structuralLockReason, resolvePrereqTarget, getBlockReason,
   isDependedOn, attemptIncrement, attemptDecrement, countPicked, computeProgressionSteps,
   costNum, spentPoints, undoLastMutation, canUndo, clearLastMutation
@@ -280,7 +280,7 @@ export function renderSummary() {
     html += `<div class="browse-grid">` + picked.map(({ aa, rank }) => `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
-        <div class="desc">${highlightRankValue(aa.description, rank)}</div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, rank), rank)}</div>
       </div>`).join("") + `</div>`;
   });
 

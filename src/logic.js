@@ -34,6 +34,28 @@ export function highlightRankValue(text, rank) {
   });
 }
 
+// For descriptions phrased as a flat "N per rank" (e.g. "4 points per rank"),
+// shows the total at the current rank with the per-rank amount noted alongside,
+// e.g. "24 points (4 per rank)" at rank 6. Left untouched at rank <= 1, where
+// total and per-rank are the same number.
+export function applyPerRankTotal(text, rank) {
+  if (!rank || rank < 2) return text;
+  return text.replace(/(\d+(?:\.\d+)?)(%)?\s*(points?|seconds?)?\s*(chance)?\s*\(?per rank\)?/gi,
+    (match, numStr, pct, unit, chanceWord) => {
+      const num = parseFloat(numStr);
+      const total = num * rank;
+      const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""));
+      let unitLabel = "";
+      if (pct) unitLabel = "%";
+      else if (unit) {
+        const singular = unit.replace(/s$/i, "");
+        unitLabel = " " + (total === 1 ? singular : singular + "s");
+      }
+      const chancePart = chanceWord ? " chance" : "";
+      return `${fmt(total)}${unitLabel}${chancePart} (${fmt(num)}${pct ? "%" : ""} per rank)`;
+    });
+}
+
 export function classSlotIndex(catKey) {
   const i = CLASS_SLOT_KEYS.indexOf(catKey);
   return i;
