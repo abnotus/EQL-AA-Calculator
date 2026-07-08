@@ -268,6 +268,39 @@ return;
 }
 changeRank(category, idx, -1);
 }
+function countPicked() {
+let n = 0;
+AA_CATEGORY_KEYS.forEach((catKey) => {
+getList(catKey).forEach((aa, idx) => { if (effectiveRank(catKey, idx) > 0) n++; });
+});
+return n;
+}
+function computeProgressionSteps() {
+const counts = {};
+let cumulative = 0;
+return state.purchaseOrder.map((entry, i) => {
+const key = entryKey(entry.scope, entry.className, entry.idx);
+const category = resolveEntryCategory(entry);
+const active = category !== null;
+const aa = entry.scope === "class" ? (AA_DATA.classes[entry.className] || [])[entry.idx] : (AA_DATA[entry.scope] || [])[entry.idx];
+const stepRank = (counts[key] || 0) + 1;
+let prereqWarn = false;
+if (active && aa && aa.prereq) {
+const resolved = resolvePrereqTarget(aa.prereq, category);
+if (resolved) {
+const t = categoryToScopeClassName(resolved.category);
+const targetKey = entryKey(t.scope, t.className, resolved.idx);
+if ((counts[targetKey] || 0) < resolved.requiredRank) prereqWarn = true;
+}
+}
+counts[key] = stepRank;
+const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
+cumulative += stepCost;
+const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
+const name = aa ? aa.name : "(unknown AA)";
+return { index: i, aa, active, stepRank, stepCost, cumulative, prereqWarn, label, name };
+});
+}
 const el = {};
 function cacheDom() {
 el.classSelects = [
@@ -351,13 +384,6 @@ if (sel.innerHTML !== html) sel.innerHTML = html;
 sel.value = state.selectedClasses[i];
 });
 }
-function countPicked() {
-let n = 0;
-AA_CATEGORY_KEYS.forEach((catKey) => {
-getList(catKey).forEach((aa, idx) => { if (effectiveRank(catKey, idx) > 0) n++; });
-});
-return n;
-}
 function renderTabs() {
 const tabDefs = [
 ...AA_CATEGORY_KEYS.map((key) => ({ key, label: shortCategoryLabel(key) })),
@@ -409,11 +435,11 @@ if (state.selectedNode && state.selectedNode.category === catKey && state.select
 node.classList.add("selected");
 }
 node.innerHTML = `
-        <div class="icon">${escapeHtml(iconLetter(aa.name))}</div>
-        <div class="name">${escapeHtml(aa.name)}</div>
-        <div class="rankbar"><div class="fill" style="width:${(rank / aa.ranks) * 100}%"></div></div>
-        <div class="ranktext">${rank} / ${aa.ranks}</div>
-      `;
+      <div class="icon">${escapeHtml(iconLetter(aa.name))}</div>
+      <div class="name">${escapeHtml(aa.name)}</div>
+      <div class="rankbar"><div class="fill" style="width:${(rank / aa.ranks) * 100}%"></div></div>
+      <div class="ranktext">${rank} / ${aa.ranks}</div>
+    `;
 if (aa.auto && !autoBelowLevel) {
 const tag = document.createElement("div");
 tag.className = "costtag auto-tag";
@@ -461,10 +487,10 @@ if (aa.prereq) {
 html += `<div class="req-line ${resolved ? "" : "warn"}"><b>Requires:</b> ${escapeHtml(aa.prereq)}</div>`;
 }
 html += `<div class="rank-controls">
-      <button id="decBtn" ${rank <= 0 || aa.auto ? "disabled" : ""} class="${dependedOn ? "blocked" : ""}">&minus;</button>
-      <span class="current">${rank} / ${aa.ranks}</span>
-      <button id="incBtn" ${atMax || aa.auto ? "disabled" : ""} class="${blockReason ? "blocked" : ""}">+</button>
-    </div>`;
+    <button id="decBtn" ${rank <= 0 || aa.auto ? "disabled" : ""} class="${dependedOn ? "blocked" : ""}">&minus;</button>
+    <span class="current">${rank} / ${aa.ranks}</span>
+    <button id="incBtn" ${atMax || aa.auto ? "disabled" : ""} class="${blockReason ? "blocked" : ""}">+</button>
+  </div>`;
 if (aa.auto) {
 const levelReq = parseInt(aa.levelReq, 10) || 1;
 if (state.charLevel < levelReq) {
@@ -516,11 +542,11 @@ const filtered = q
 : items;
 el.browseGrid.innerHTML = filtered.length
 ? filtered.map(({ cat, aa }) => `
-        <div class="browse-card">
-          <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">${escapeHtml(cat)}</span></div>
-          <div class="desc">${escapeHtml(aa.description)}</div>
-          <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${aa.costs.map(escapeHtml).join(" / ")} &middot; Level ${escapeHtml(aa.levelReq)}+${aa.prereq ? " &middot; Requires: " + escapeHtml(aa.prereq) : ""}</div>
-        </div>`).join("")
+      <div class="browse-card">
+        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">${escapeHtml(cat)}</span></div>
+        <div class="desc">${escapeHtml(aa.description)}</div>
+        <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${aa.costs.map(escapeHtml).join(" / ")} &middot; Level ${escapeHtml(aa.levelReq)}+${aa.prereq ? " &middot; Requires: " + escapeHtml(aa.prereq) : ""}</div>
+      </div>`).join("")
 : '<div class="empty">No AAs match your search.</div>';
 }
 function renderSummary() {
@@ -537,38 +563,12 @@ if (!picked.length) return;
 anyPicked = true;
 html += `<h3 class="summary-section-title">${escapeHtml(label)}</h3>`;
 html += `<div class="browse-grid">` + picked.map(({ aa, rank }) => `
-        <div class="browse-card">
-          <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
-          <div class="desc">${highlightRankValue(aa.description, rank)}</div>
-        </div>`).join("") + `</div>`;
+      <div class="browse-card">
+        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
+        <div class="desc">${highlightRankValue(aa.description, rank)}</div>
+      </div>`).join("") + `</div>`;
 });
 el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
-}
-function computeProgressionSteps() {
-const counts = {};
-let cumulative = 0;
-return state.purchaseOrder.map((entry, i) => {
-const key = entryKey(entry.scope, entry.className, entry.idx);
-const category = resolveEntryCategory(entry);
-const active = category !== null;
-const aa = entry.scope === "class" ? (AA_DATA.classes[entry.className] || [])[entry.idx] : (AA_DATA[entry.scope] || [])[entry.idx];
-const stepRank = (counts[key] || 0) + 1;
-let prereqWarn = false;
-if (active && aa && aa.prereq) {
-const resolved = resolvePrereqTarget(aa.prereq, category);
-if (resolved) {
-const t = categoryToScopeClassName(resolved.category);
-const targetKey = entryKey(t.scope, t.className, resolved.idx);
-if ((counts[targetKey] || 0) < resolved.requiredRank) prereqWarn = true;
-}
-}
-counts[key] = stepRank;
-const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
-cumulative += stepCost;
-const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
-const name = aa ? aa.name : "(unknown AA)";
-return { index: i, aa, active, stepRank, stepCost, cumulative, prereqWarn, label, name };
-});
 }
 function renderProgression() {
 if (!state.purchaseOrder.length) {
@@ -577,21 +577,21 @@ return;
 }
 const steps = computeProgressionSteps();
 const rows = steps.map((s) => `<div class="progression-row${s.active ? "" : " inactive"}">
-        <span class="step-num">${s.index + 1}</span>
-        <span class="step-info">
-          <span class="step-name">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
-          <span class="step-cat">${escapeHtml(s.label)}${s.active ? "" : " &middot; class not currently selected"}</span>
-        </span>
-        ${s.prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
-        <span class="step-cost">
-          <span class="cost-this">+${s.stepCost} pt${s.stepCost === 1 ? "" : "s"}</span>
-          <span class="cost-total">${s.cumulative} total</span>
-        </span>
-        <span class="step-controls">
-          <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
-          <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
-        </span>
-      </div>`);
+      <span class="step-num">${s.index + 1}</span>
+      <span class="step-info">
+        <span class="step-name">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
+        <span class="step-cat">${escapeHtml(s.label)}${s.active ? "" : " &middot; class not currently selected"}</span>
+      </span>
+      ${s.prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
+      <span class="step-cost">
+        <span class="cost-this">+${s.stepCost} pt${s.stepCost === 1 ? "" : "s"}</span>
+        <span class="cost-total">${s.cumulative} total</span>
+      </span>
+      <span class="step-controls">
+        <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
+        <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
+      </span>
+    </div>`);
 el.progressionContent.innerHTML = rows.join("");
 Array.from(el.progressionContent.querySelectorAll(".step-btn")).forEach((btn) => {
 if (btn.disabled) return;
@@ -613,6 +613,22 @@ state.purchaseOrder[index] = b;
 state.purchaseOrder[target] = a;
 saveLocal();
 renderProgression();
+}
+function populateStaticControls() {
+el.browseFilter.innerHTML =
+`<option value="all">All Categories</option>` +
+`<option value="general">General</option>` +
+`<option value="archetype">Archetype</option>` +
+`<option value="special">Special</option>` +
+`<optgroup label="Class">` +
+CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("") +
+`</optgroup>`;
+}
+function showToast(msg) {
+el.toast.textContent = msg;
+el.toast.classList.add("show");
+clearTimeout(showToast._t);
+showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
 }
 function buildExportText() {
 const spent = spentPoints();
@@ -728,12 +744,6 @@ const text = el.importText.value.trim();
 if (!text) { showToast("Paste build text first"); return; }
 if (importBuildFromText(text)) closeImportModal();
 }
-function showToast(msg) {
-el.toast.textContent = msg;
-el.toast.classList.add("show");
-clearTimeout(showToast._t);
-showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
-}
 function wireEvents() {
 el.classSelects.forEach((sel, i) => {
 sel.addEventListener("change", () => {
@@ -835,16 +845,6 @@ renderBrowse();
 window.addEventListener("resize", () => {
 if (state.activeView === "calculator") renderTree(state.activeTab);
 });
-}
-function populateStaticControls() {
-el.browseFilter.innerHTML =
-`<option value="all">All Categories</option>` +
-`<option value="general">General</option>` +
-`<option value="archetype">Archetype</option>` +
-`<option value="special">Special</option>` +
-`<optgroup label="Class">` +
-CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("") +
-`</optgroup>`;
 }
 function init() {
 cacheDom();
