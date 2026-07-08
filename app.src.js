@@ -618,15 +618,12 @@
     el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
   }
 
-  function renderProgression() {
-    if (!state.purchaseOrder.length) {
-      el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
-      return;
-    }
-
+  // Shared by the Progression tab and the export text, so both always agree on
+  // step ranks, per-step cost, and the running cumulative total.
+  function computeProgressionSteps() {
     const counts = {};
-    let cumulativeSpent = 0;
-    const rows = state.purchaseOrder.map((entry, i) => {
+    let cumulative = 0;
+    return state.purchaseOrder.map((entry, i) => {
       const key = entryKey(entry.scope, entry.className, entry.idx);
       const category = resolveEntryCategory(entry);
       const active = category !== null;
@@ -646,28 +643,38 @@
       counts[key] = stepRank;
 
       const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
-      cumulativeSpent += stepCost;
+      cumulative += stepCost;
 
       const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
       const name = aa ? aa.name : "(unknown AA)";
 
-      return `<div class="progression-row${active ? "" : " inactive"}">
-        <span class="step-num">${i + 1}</span>
+      return { index: i, aa, active, stepRank, stepCost, cumulative, prereqWarn, label, name };
+    });
+  }
+
+  function renderProgression() {
+    if (!state.purchaseOrder.length) {
+      el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
+      return;
+    }
+
+    const steps = computeProgressionSteps();
+    const rows = steps.map((s) => `<div class="progression-row${s.active ? "" : " inactive"}">
+        <span class="step-num">${s.index + 1}</span>
         <span class="step-info">
-          <span class="step-name">${escapeHtml(name)} <span class="step-rank">rank ${stepRank}</span></span>
-          <span class="step-cat">${escapeHtml(label)}${active ? "" : " &middot; class not currently selected"}</span>
+          <span class="step-name">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
+          <span class="step-cat">${escapeHtml(s.label)}${s.active ? "" : " &middot; class not currently selected"}</span>
         </span>
-        ${prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
+        ${s.prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
         <span class="step-cost">
-          <span class="cost-this">+${stepCost} pt${stepCost === 1 ? "" : "s"}</span>
-          <span class="cost-total">${cumulativeSpent} total</span>
+          <span class="cost-this">+${s.stepCost} pt${s.stepCost === 1 ? "" : "s"}</span>
+          <span class="cost-total">${s.cumulative} total</span>
         </span>
         <span class="step-controls">
-          <button class="step-btn" data-move="up" data-index="${i}" ${i === 0 ? "disabled" : ""}>&uarr;</button>
-          <button class="step-btn" data-move="down" data-index="${i}" ${i === state.purchaseOrder.length - 1 ? "disabled" : ""}>&darr;</button>
+          <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
+          <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
         </span>
-      </div>`;
-    });
+      </div>`);
 
     el.progressionContent.innerHTML = rows.join("");
     Array.from(el.progressionContent.querySelectorAll(".step-btn")).forEach((btn) => {
@@ -711,6 +718,16 @@
       spentAAs.forEach(({ aa, rank }) => lines.push(`  ${aa.name}: rank ${rank}/${aa.ranks}${aa.auto ? " (auto-granted)" : ""}`));
       lines.push("");
     });
+
+    if (state.purchaseOrder.length) {
+      lines.push("== Progression (click order) ==");
+      computeProgressionSteps().forEach((s) => {
+        const maxRank = s.aa ? `/${s.aa.ranks}` : "";
+        const suffix = s.active ? "" : " (class not currently selected)";
+        lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}`);
+      });
+      lines.push("");
+    }
 
     const codeObj = {
       v: 3,
@@ -770,11 +787,21 @@
     showToast("Saved as .txt");
   }
 
+  // Accepts either the full exported text (with a "BUILD_CODE:" line buried in it)
+  // or just the bare base64 code on its own, so pasting either works.
+  function extractBuildCode(text) {
+    const trimmed = text.trim();
+    const m = trimmed.match(/BUILD_CODE:(\S+)/);
+    if (m) return m[1];
+    if (trimmed.length > 20 && /^[A-Za-z0-9+/]+={0,2}$/.test(trimmed)) return trimmed;
+    return null;
+  }
+
   function importBuildFromText(text) {
-    const m = text.match(/BUILD_CODE:(\S+)/);
-    if (!m) { showToast("No build code found in that text"); return false; }
+    const code = extractBuildCode(text);
+    if (!code) { showToast("No build code found in that text"); return false; }
     try {
-      const json = JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+      const json = JSON.parse(decodeURIComponent(escape(atob(code))));
       applyLoaded(json);
       state.selectedNode = null;
       saveLocal();
