@@ -768,3 +768,79 @@ main {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+  header.topbar {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  header.topbar h1 {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .points-display {
+    border-left: none;
+  }
+
+  .topbar-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Tree + side panel stack instead of sitting side by side once there's no
+     room for a fixed 320px panel next to the AA grid. */
+  #calculatorView {
+    flex-direction: column;
+  }
+
+  #treeWrap {
+    padding: 20px 16px;
+  }
+
+  #sidePanel {
+    width: 100%;
+    max-height: 50vh;
+    border-left: none;
+    border-top: 2px solid var(--border-light);
+  }
+
+  nav.tabs button {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .browse-controls input[type="text"] {
+    width: 100%;
+  }
+
+  /* Bigger touch targets than mouse-precision clicking needs. */
+  .rank-controls button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .step-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .progression-row {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .step-info {
+    min-width: 140px;
+  }
+
+  .step-controls {
+    margin-left: auto;
+  }
+
+  .modal-actions {
+    flex-wrap: wrap;
+  }
+}
