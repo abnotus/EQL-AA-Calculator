@@ -121,21 +121,25 @@ export function pushPurchase(category, idx) {
   state.purchaseOrder.push({ scope: scopeForCategory(category), className: classNameForCategory(category), idx });
 }
 
+// Returns the removed entry and the array position it was removed from (needed to
+// restore it to the same spot later), or null if no matching entry was found.
 export function popLastPurchase(category, idx) {
   const scope = scopeForCategory(category);
   const className = classNameForCategory(category);
   for (let i = state.purchaseOrder.length - 1; i >= 0; i--) {
     const e = state.purchaseOrder[i];
     if (e.scope === scope && e.idx === idx && (e.className || null) === (className || null)) {
-      state.purchaseOrder.splice(i, 1);
-      return;
+      const [entry] = state.purchaseOrder.splice(i, 1);
+      return { entry, position: i };
     }
   }
+  return null;
 }
 
 export function clearClassData(className) {
   delete state.ranks.classes[className];
   state.purchaseOrder = state.purchaseOrder.filter((e) => !(e.scope === "class" && e.className === className));
+  lastMutation = null;
 }
 
 export function spentPoints() {
@@ -221,6 +225,21 @@ export function isDependedOn(category, idx, currentRank) {
   return false;
 }
 
+// Single-level undo: remembers only the most recent changeRank call, in enough
+// detail to reverse it exactly (including restoring a removed entry to its
+// original position). Overwritten by every subsequent changeRank call, and
+// explicitly cleared by anything that mutates ranks/purchaseOrder without going
+// through changeRank (reordering, class swap wipe, Reset Build, Import).
+let lastMutation = null;
+
+export function clearLastMutation() {
+  lastMutation = null;
+}
+
+export function canUndo() {
+  return !!lastMutation;
+}
+
 // Pure state mutation — no rendering, no user feedback. Returns whether a change
 // actually happened, so callers (the UI layer) decide what to do about it.
 export function changeRank(category, idx, delta) {
@@ -230,10 +249,47 @@ export function changeRank(category, idx, delta) {
   const next = cur + delta;
   if (next < 0 || next > aa.ranks) return false;
   if (next === 0) delete store[idx]; else store[idx] = next;
-  if (delta > 0) pushPurchase(category, idx);
-  else popLastPurchase(category, idx);
+  if (delta > 0) {
+    pushPurchase(category, idx);
+    lastMutation = { type: "add", category, idx };
+  } else {
+    const popped = popLastPurchase(category, idx);
+    lastMutation = popped ? { type: "remove", entry: popped.entry, position: popped.position } : null;
+  }
   saveLocal();
   return true;
+}
+
+// Reverses whatever changeRank last did. Consumes the record either way, so this
+// is genuinely single-level — there's no undo-of-undo chain.
+export function undoLastMutation() {
+  const m = lastMutation;
+  if (!m) return { changed: false, message: "Nothing to undo." };
+  lastMutation = null;
+
+  if (m.type === "add") {
+    const rank = effectiveRank(m.category, m.idx);
+    if (rank <= 0) return { changed: false, message: "Nothing to undo." };
+    if (isDependedOn(m.category, m.idx, rank)) {
+      return { changed: false, message: "Can't undo — another AA now depends on this rank." };
+    }
+    return { changed: changeRank(m.category, m.idx, -1), message: null };
+  }
+
+  // m.type === "remove": restore the entry to its original array position and
+  // bump that AA's rank back up by one.
+  const category = resolveEntryCategory(m.entry);
+  if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
+  const aa = getList(category)[m.entry.idx];
+  if (!aa) return { changed: false, message: "Can't undo — that AA is no longer available." };
+  const store = getRanksStore(category);
+  const cur = store[m.entry.idx] || 0;
+  if (cur >= aa.ranks) return { changed: false, message: "Can't undo — already at max rank." };
+  store[m.entry.idx] = cur + 1;
+  const pos = Math.min(m.position, state.purchaseOrder.length);
+  state.purchaseOrder.splice(pos, 0, m.entry);
+  saveLocal();
+  return { changed: true, message: null };
 }
 
 // attemptIncrement/attemptDecrement report the outcome instead of triggering a
@@ -271,6 +327,14 @@ export function countPicked() {
 // Shared by the Progression tab and the export text, so both always agree on
 // step ranks, per-step cost, and the running cumulative total.
 export function computeProgressionSteps() {
+  // Total occurrences of each AA, so a step can tell whether it's the topmost
+  // (and therefore the only one that can be removed without leaving a rank gap).
+  const totalCounts = {};
+  state.purchaseOrder.forEach((entry) => {
+    const key = entryKey(entry.scope, entry.className, entry.idx);
+    totalCounts[key] = (totalCounts[key] || 0) + 1;
+  });
+
   const counts = {};
   let cumulative = 0;
   return state.purchaseOrder.map((entry, i) => {
@@ -291,6 +355,7 @@ export function computeProgressionSteps() {
     }
 
     counts[key] = stepRank;
+    const isLast = stepRank === totalCounts[key];
 
     const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
     cumulative += stepCost;
@@ -298,6 +363,6 @@ export function computeProgressionSteps() {
     const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
     const name = aa ? aa.name : "(unknown AA)";
 
-    return { index: i, aa, active, stepRank, stepCost, cumulative, prereqWarn, label, name };
+    return { index: i, aa, idx: entry.idx, category, active, stepRank, stepCost, cumulative, prereqWarn, label, name, isLast };
   });
 }

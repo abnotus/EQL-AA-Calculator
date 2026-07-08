@@ -2,7 +2,7 @@
 
 import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal } from "./state.js";
 import { el } from "./dom.js";
-import { getList, effectiveRank, labelFor, spentPoints, computeProgressionSteps } from "./logic.js";
+import { getList, effectiveRank, labelFor, spentPoints, computeProgressionSteps, clearLastMutation } from "./logic.js";
 import { renderAll, showToast } from "./render.js";
 
 export function buildExportText() {
@@ -111,6 +111,7 @@ export function importBuildFromText(text) {
     const json = JSON.parse(decodeURIComponent(escape(atob(code))));
     applyLoaded(json);
     state.selectedNode = null;
+    clearLastMutation();
     saveLocal();
     renderAll();
     showToast("Build imported");

@@ -193,21 +193,25 @@ function pushPurchase(category, idx) {
   state.purchaseOrder.push({ scope: scopeForCategory(category), className: classNameForCategory(category), idx });
 }
 
+// Returns the removed entry and the array position it was removed from (needed to
+// restore it to the same spot later), or null if no matching entry was found.
 function popLastPurchase(category, idx) {
   const scope = scopeForCategory(category);
   const className = classNameForCategory(category);
   for (let i = state.purchaseOrder.length - 1; i >= 0; i--) {
     const e = state.purchaseOrder[i];
     if (e.scope === scope && e.idx === idx && (e.className || null) === (className || null)) {
-      state.purchaseOrder.splice(i, 1);
-      return;
+      const [entry] = state.purchaseOrder.splice(i, 1);
+      return { entry, position: i };
     }
   }
+  return null;
 }
 
 function clearClassData(className) {
   delete state.ranks.classes[className];
   state.purchaseOrder = state.purchaseOrder.filter((e) => !(e.scope === "class" && e.className === className));
+  lastMutation = null;
 }
 
 function spentPoints() {
@@ -293,6 +297,21 @@ function isDependedOn(category, idx, currentRank) {
   return false;
 }
 
+// Single-level undo: remembers only the most recent changeRank call, in enough
+// detail to reverse it exactly (including restoring a removed entry to its
+// original position). Overwritten by every subsequent changeRank call, and
+// explicitly cleared by anything that mutates ranks/purchaseOrder without going
+// through changeRank (reordering, class swap wipe, Reset Build, Import).
+let lastMutation = null;
+
+function clearLastMutation() {
+  lastMutation = null;
+}
+
+function canUndo() {
+  return !!lastMutation;
+}
+
 // Pure state mutation — no rendering, no user feedback. Returns whether a change
 // actually happened, so callers (the UI layer) decide what to do about it.
 function changeRank(category, idx, delta) {
@@ -302,10 +321,47 @@ function changeRank(category, idx, delta) {
   const next = cur + delta;
   if (next < 0 || next > aa.ranks) return false;
   if (next === 0) delete store[idx]; else store[idx] = next;
-  if (delta > 0) pushPurchase(category, idx);
-  else popLastPurchase(category, idx);
+  if (delta > 0) {
+    pushPurchase(category, idx);
+    lastMutation = { type: "add", category, idx };
+  } else {
+    const popped = popLastPurchase(category, idx);
+    lastMutation = popped ? { type: "remove", entry: popped.entry, position: popped.position } : null;
+  }
   saveLocal();
   return true;
+}
+
+// Reverses whatever changeRank last did. Consumes the record either way, so this
+// is genuinely single-level — there's no undo-of-undo chain.
+function undoLastMutation() {
+  const m = lastMutation;
+  if (!m) return { changed: false, message: "Nothing to undo." };
+  lastMutation = null;
+
+  if (m.type === "add") {
+    const rank = effectiveRank(m.category, m.idx);
+    if (rank <= 0) return { changed: false, message: "Nothing to undo." };
+    if (isDependedOn(m.category, m.idx, rank)) {
+      return { changed: false, message: "Can't undo — another AA now depends on this rank." };
+    }
+    return { changed: changeRank(m.category, m.idx, -1), message: null };
+  }
+
+  // m.type === "remove": restore the entry to its original array position and
+  // bump that AA's rank back up by one.
+  const category = resolveEntryCategory(m.entry);
+  if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
+  const aa = getList(category)[m.entry.idx];
+  if (!aa) return { changed: false, message: "Can't undo — that AA is no longer available." };
+  const store = getRanksStore(category);
+  const cur = store[m.entry.idx] || 0;
+  if (cur >= aa.ranks) return { changed: false, message: "Can't undo — already at max rank." };
+  store[m.entry.idx] = cur + 1;
+  const pos = Math.min(m.position, state.purchaseOrder.length);
+  state.purchaseOrder.splice(pos, 0, m.entry);
+  saveLocal();
+  return { changed: true, message: null };
 }
 
 // attemptIncrement/attemptDecrement report the outcome instead of triggering a
@@ -343,6 +399,14 @@ function countPicked() {
 // Shared by the Progression tab and the export text, so both always agree on
 // step ranks, per-step cost, and the running cumulative total.
 function computeProgressionSteps() {
+  // Total occurrences of each AA, so a step can tell whether it's the topmost
+  // (and therefore the only one that can be removed without leaving a rank gap).
+  const totalCounts = {};
+  state.purchaseOrder.forEach((entry) => {
+    const key = entryKey(entry.scope, entry.className, entry.idx);
+    totalCounts[key] = (totalCounts[key] || 0) + 1;
+  });
+
   const counts = {};
   let cumulative = 0;
   return state.purchaseOrder.map((entry, i) => {
@@ -363,6 +427,7 @@ function computeProgressionSteps() {
     }
 
     counts[key] = stepRank;
+    const isLast = stepRank === totalCounts[key];
 
     const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
     cumulative += stepCost;
@@ -370,7 +435,7 @@ function computeProgressionSteps() {
     const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
     const name = aa ? aa.name : "(unknown AA)";
 
-    return { index: i, aa, active, stepRank, stepCost, cumulative, prereqWarn, label, name };
+    return { index: i, aa, idx: entry.idx, category, active, stepRank, stepCost, cumulative, prereqWarn, label, name, isLast };
   });
 }
 
@@ -411,6 +476,7 @@ function cacheDom() {
   el.summaryContent = document.getElementById("summaryContent");
   el.progressionView = document.getElementById("progressionView");
   el.progressionContent = document.getElementById("progressionContent");
+  el.undoLastBtn = document.getElementById("undoLastBtn");
   el.treeWrap = document.getElementById("treeWrap");
   el.sidePanel = document.getElementById("sidePanel");
   el.browseSearch = document.getElementById("browseSearch");
@@ -701,6 +767,8 @@ function renderSummary() {
 }
 
 function renderProgression() {
+  el.undoLastBtn.disabled = !canUndo();
+
   if (!state.purchaseOrder.length) {
     el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
     return;
@@ -721,11 +789,13 @@ function renderProgression() {
       <span class="step-controls">
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
+        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.active && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
+        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.active ? "" : "disabled"} title="${!s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
       </span>
     </div>`);
 
   el.progressionContent.innerHTML = rows.join("");
-  Array.from(el.progressionContent.querySelectorAll(".step-btn")).forEach((btn) => {
+  Array.from(el.progressionContent.querySelectorAll(".step-btn[data-move]")).forEach((btn) => {
     if (btn.disabled) return;
     btn.addEventListener("click", () => {
       const idx = parseInt(btn.getAttribute("data-index"), 10);
@@ -733,6 +803,28 @@ function renderProgression() {
       moveProgressionEntry(idx, dir);
     });
   });
+  Array.from(el.progressionContent.querySelectorAll(".step-add")).forEach((btn) => {
+    if (btn.disabled) return;
+    btn.addEventListener("click", () => {
+      const category = btn.getAttribute("data-category");
+      const idx = parseInt(btn.getAttribute("data-idx"), 10);
+      applyAttempt(attemptIncrement(category, idx));
+    });
+  });
+  Array.from(el.progressionContent.querySelectorAll(".step-remove")).forEach((btn) => {
+    if (btn.disabled) return;
+    btn.addEventListener("click", () => {
+      const category = btn.getAttribute("data-category");
+      const idx = parseInt(btn.getAttribute("data-idx"), 10);
+      applyAttempt(attemptDecrement(category, idx));
+    });
+  });
+}
+
+// Reverses whatever the single most recent rank change was — an add gets removed,
+// a remove gets restored to its exact original position in the list.
+function undoLast() {
+  applyAttempt(undoLastMutation());
 }
 
 function moveProgressionEntry(index, dir) {
@@ -744,6 +836,7 @@ function moveProgressionEntry(index, dir) {
   if (sameAA) { showToast("Can't reorder different ranks of the same AA."); return; }
   state.purchaseOrder[index] = b;
   state.purchaseOrder[target] = a;
+  clearLastMutation(); // a pending undo's recorded position would now point at the wrong spot
   saveLocal();
   renderProgression();
 }
@@ -874,6 +967,7 @@ function importBuildFromText(text) {
     const json = JSON.parse(decodeURIComponent(escape(atob(code))));
     applyLoaded(json);
     state.selectedNode = null;
+    clearLastMutation();
     saveLocal();
     renderAll();
     showToast("Build imported");
@@ -995,6 +1089,7 @@ function wireEvents() {
     state.ranks = { general: {}, archetype: {}, special: {}, classes: {} };
     state.purchaseOrder = [];
     state.selectedNode = null;
+    clearLastMutation();
     saveLocal();
     renderAll();
     showToast("Build reset");
@@ -1004,6 +1099,8 @@ function wireEvents() {
     el.disclaimerBanner.classList.add("hidden");
     try { localStorage.setItem(DISCLAIMER_DISMISSED_KEY, "1"); } catch (e) { /* storage unavailable, ignore */ }
   });
+
+  el.undoLastBtn.addEventListener("click", undoLast);
 
   el.browseSearch.addEventListener("input", () => {
     state.browseSearch = el.browseSearch.value;

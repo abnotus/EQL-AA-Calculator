@@ -2,8 +2,8 @@
 
 import { state, CLASS_SLOT_KEYS, DISCLAIMER_DISMISSED_KEY, saveLocal } from "./state.js";
 import { el } from "./dom.js";
-import { costNum, clearClassData } from "./logic.js";
-import { renderAll, showToast, populateClassSelects, renderTree, renderBrowse } from "./render.js";
+import { costNum, clearClassData, clearLastMutation } from "./logic.js";
+import { renderAll, showToast, populateClassSelects, renderTree, renderBrowse, undoLast } from "./render.js";
 import {
   openExportModal, copyExportText, saveExportAsTxt, closeExportModal,
   openImportModal, closeImportModal, doImport
@@ -102,6 +102,7 @@ export function wireEvents() {
     state.ranks = { general: {}, archetype: {}, special: {}, classes: {} };
     state.purchaseOrder = [];
     state.selectedNode = null;
+    clearLastMutation();
     saveLocal();
     renderAll();
     showToast("Build reset");
@@ -111,6 +112,8 @@ export function wireEvents() {
     el.disclaimerBanner.classList.add("hidden");
     try { localStorage.setItem(DISCLAIMER_DISMISSED_KEY, "1"); } catch (e) { /* storage unavailable, ignore */ }
   });
+
+  el.undoLastBtn.addEventListener("click", undoLast);
 
   el.browseSearch.addEventListener("input", () => {
     state.browseSearch = el.browseSearch.value;

@@ -35,6 +35,7 @@ export function cacheDom() {
   el.summaryContent = document.getElementById("summaryContent");
   el.progressionView = document.getElementById("progressionView");
   el.progressionContent = document.getElementById("progressionContent");
+  el.undoLastBtn = document.getElementById("undoLastBtn");
   el.treeWrap = document.getElementById("treeWrap");
   el.sidePanel = document.getElementById("sidePanel");
   el.browseSearch = document.getElementById("browseSearch");

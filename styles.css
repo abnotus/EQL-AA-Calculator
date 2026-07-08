@@ -129,6 +129,9 @@ select:focus, input:focus {
 
 .btn:hover { background: #222225; border-color: var(--accent-bright); }
 
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn:disabled:hover { background: var(--bg-panel-2); border-color: var(--border-light); }
+
 a.btn {
   text-decoration: none;
   display: inline-flex;
@@ -579,10 +582,22 @@ main {
   padding: 20px 24px;
 }
 
+.progression-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.progression-toolbar #undoLastBtn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .progression-hint {
   font-size: 12px;
   color: var(--text-faint);
-  margin-bottom: 16px;
   line-height: 1.5;
 }
 
@@ -686,6 +701,14 @@ main {
 .step-btn:hover:not(:disabled) { border-color: var(--accent-bright); color: var(--accent-bright); }
 
 .step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.step-add:not(:disabled) { color: var(--green); }
+
+.step-add:hover:not(:disabled) { border-color: var(--green); color: var(--green); background: rgba(76,140,82,0.1); }
+
+.step-remove:not(:disabled) { color: #e08b78; }
+
+.step-remove:hover:not(:disabled) { border-color: #e08b78; color: #e08b78; background: rgba(224,139,120,0.1); }
 
 /* ---------- Export modal ---------- */
 .modal-overlay {

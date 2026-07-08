@@ -152,14 +152,16 @@ const className = classNameForCategory(category);
 for (let i = state.purchaseOrder.length - 1; i >= 0; i--) {
 const e = state.purchaseOrder[i];
 if (e.scope === scope && e.idx === idx && (e.className || null) === (className || null)) {
-state.purchaseOrder.splice(i, 1);
-return;
+const [entry] = state.purchaseOrder.splice(i, 1);
+return { entry, position: i };
 }
 }
+return null;
 }
 function clearClassData(className) {
 delete state.ranks.classes[className];
 state.purchaseOrder = state.purchaseOrder.filter((e) => !(e.scope === "class" && e.className === className));
+lastMutation = null;
 }
 function spentPoints() {
 let total = 0;
@@ -236,6 +238,13 @@ if (r && r.category === category && r.idx === idx && newRank < r.requiredRank) r
 }
 return false;
 }
+let lastMutation = null;
+function clearLastMutation() {
+lastMutation = null;
+}
+function canUndo() {
+return !!lastMutation;
+}
 function changeRank(category, idx, delta) {
 const store = getRanksStore(category);
 const aa = getList(category)[idx];
@@ -243,10 +252,40 @@ const cur = store[idx] || 0;
 const next = cur + delta;
 if (next < 0 || next > aa.ranks) return false;
 if (next === 0) delete store[idx]; else store[idx] = next;
-if (delta > 0) pushPurchase(category, idx);
-else popLastPurchase(category, idx);
+if (delta > 0) {
+pushPurchase(category, idx);
+lastMutation = { type: "add", category, idx };
+} else {
+const popped = popLastPurchase(category, idx);
+lastMutation = popped ? { type: "remove", entry: popped.entry, position: popped.position } : null;
+}
 saveLocal();
 return true;
+}
+function undoLastMutation() {
+const m = lastMutation;
+if (!m) return { changed: false, message: "Nothing to undo." };
+lastMutation = null;
+if (m.type === "add") {
+const rank = effectiveRank(m.category, m.idx);
+if (rank <= 0) return { changed: false, message: "Nothing to undo." };
+if (isDependedOn(m.category, m.idx, rank)) {
+return { changed: false, message: "Can't undo — another AA now depends on this rank." };
+}
+return { changed: changeRank(m.category, m.idx, -1), message: null };
+}
+const category = resolveEntryCategory(m.entry);
+if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
+const aa = getList(category)[m.entry.idx];
+if (!aa) return { changed: false, message: "Can't undo — that AA is no longer available." };
+const store = getRanksStore(category);
+const cur = store[m.entry.idx] || 0;
+if (cur >= aa.ranks) return { changed: false, message: "Can't undo — already at max rank." };
+store[m.entry.idx] = cur + 1;
+const pos = Math.min(m.position, state.purchaseOrder.length);
+state.purchaseOrder.splice(pos, 0, m.entry);
+saveLocal();
+return { changed: true, message: null };
 }
 function attemptIncrement(category, idx) {
 const aa = getList(category)[idx];
@@ -275,6 +314,11 @@ getList(catKey).forEach((aa, idx) => { if (effectiveRank(catKey, idx) > 0) n++; 
 return n;
 }
 function computeProgressionSteps() {
+const totalCounts = {};
+state.purchaseOrder.forEach((entry) => {
+const key = entryKey(entry.scope, entry.className, entry.idx);
+totalCounts[key] = (totalCounts[key] || 0) + 1;
+});
 const counts = {};
 let cumulative = 0;
 return state.purchaseOrder.map((entry, i) => {
@@ -293,11 +337,12 @@ if ((counts[targetKey] || 0) < resolved.requiredRank) prereqWarn = true;
 }
 }
 counts[key] = stepRank;
+const isLast = stepRank === totalCounts[key];
 const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
 cumulative += stepCost;
 const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
 const name = aa ? aa.name : "(unknown AA)";
-return { index: i, aa, active, stepRank, stepCost, cumulative, prereqWarn, label, name };
+return { index: i, aa, idx: entry.idx, category, active, stepRank, stepCost, cumulative, prereqWarn, label, name, isLast };
 });
 }
 const el = {};
@@ -334,6 +379,7 @@ el.summaryHeader = document.getElementById("summaryHeader");
 el.summaryContent = document.getElementById("summaryContent");
 el.progressionView = document.getElementById("progressionView");
 el.progressionContent = document.getElementById("progressionContent");
+el.undoLastBtn = document.getElementById("undoLastBtn");
 el.treeWrap = document.getElementById("treeWrap");
 el.sidePanel = document.getElementById("sidePanel");
 el.browseSearch = document.getElementById("browseSearch");
@@ -589,6 +635,7 @@ html += `<div class="browse-grid">` + picked.map(({ aa, rank }) => `
 el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
 }
 function renderProgression() {
+el.undoLastBtn.disabled = !canUndo();
 if (!state.purchaseOrder.length) {
 el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
 return;
@@ -608,10 +655,12 @@ const rows = steps.map((s) => `<div class="progression-row${s.active ? "" : " in
       <span class="step-controls">
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
+        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.active && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
+        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.active ? "" : "disabled"} title="${!s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
       </span>
     </div>`);
 el.progressionContent.innerHTML = rows.join("");
-Array.from(el.progressionContent.querySelectorAll(".step-btn")).forEach((btn) => {
+Array.from(el.progressionContent.querySelectorAll(".step-btn[data-move]")).forEach((btn) => {
 if (btn.disabled) return;
 btn.addEventListener("click", () => {
 const idx = parseInt(btn.getAttribute("data-index"), 10);
@@ -619,6 +668,25 @@ const dir = btn.getAttribute("data-move") === "up" ? -1 : 1;
 moveProgressionEntry(idx, dir);
 });
 });
+Array.from(el.progressionContent.querySelectorAll(".step-add")).forEach((btn) => {
+if (btn.disabled) return;
+btn.addEventListener("click", () => {
+const category = btn.getAttribute("data-category");
+const idx = parseInt(btn.getAttribute("data-idx"), 10);
+applyAttempt(attemptIncrement(category, idx));
+});
+});
+Array.from(el.progressionContent.querySelectorAll(".step-remove")).forEach((btn) => {
+if (btn.disabled) return;
+btn.addEventListener("click", () => {
+const category = btn.getAttribute("data-category");
+const idx = parseInt(btn.getAttribute("data-idx"), 10);
+applyAttempt(attemptDecrement(category, idx));
+});
+});
+}
+function undoLast() {
+applyAttempt(undoLastMutation());
 }
 function moveProgressionEntry(index, dir) {
 const target = index + dir;
@@ -629,6 +697,7 @@ const sameAA = a.scope === b.scope && a.idx === b.idx && (a.className || null) =
 if (sameAA) { showToast("Can't reorder different ranks of the same AA."); return; }
 state.purchaseOrder[index] = b;
 state.purchaseOrder[target] = a;
+clearLastMutation();
 saveLocal();
 renderProgression();
 }
@@ -740,6 +809,7 @@ try {
 const json = JSON.parse(decodeURIComponent(escape(atob(code))));
 applyLoaded(json);
 state.selectedNode = null;
+clearLastMutation();
 saveLocal();
 renderAll();
 showToast("Build imported");
@@ -844,6 +914,7 @@ if (!confirm("Reset all spent AA points across every category and class? This ca
 state.ranks = { general: {}, archetype: {}, special: {}, classes: {} };
 state.purchaseOrder = [];
 state.selectedNode = null;
+clearLastMutation();
 saveLocal();
 renderAll();
 showToast("Build reset");
@@ -852,6 +923,7 @@ el.dismissBannerBtn.addEventListener("click", () => {
 el.disclaimerBanner.classList.add("hidden");
 try { localStorage.setItem(DISCLAIMER_DISMISSED_KEY, "1"); } catch (e) { /* storage unavailable, ignore */ }
 });
+el.undoLastBtn.addEventListener("click", undoLast);
 el.browseSearch.addEventListener("input", () => {
 state.browseSearch = el.browseSearch.value;
 renderBrowse();
