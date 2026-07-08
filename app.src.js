@@ -11,7 +11,8 @@
     charLevel: 50,
     totalPoints: 1000,
     ranks: { general: {}, archetype: {}, special: {}, classes: {} },
-    activeView: "calculator", // 'calculator' | 'browse' | 'summary'
+    purchaseOrder: [], // [{ scope: 'general'|'archetype'|'special'|'class', className?: string, idx: number }, ...] in click order
+    activeView: "calculator", // 'calculator' | 'browse' | 'summary' | 'progression'
     activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
     selectedNode: null, // { category, idx }
     browseSearch: "",
@@ -53,6 +54,9 @@
         special: loaded.ranks.special || {},
         classes: loaded.ranks.classes || {}
       };
+    }
+    if (Array.isArray(loaded.purchaseOrder)) {
+      state.purchaseOrder = loaded.purchaseOrder.filter((e) => e && typeof e === "object" && typeof e.scope === "string" && typeof e.idx === "number");
     }
   }
 
@@ -127,6 +131,57 @@
       return state.ranks.classes[className];
     }
     return state.ranks[catKey];
+  }
+
+  // Purchase-order entries key AA picks by class NAME (not slot position), since class
+  // names are already unique and stable — swapping which slot a class occupies shouldn't
+  // orphan its place in the progression list.
+  function scopeForCategory(category) {
+    const slot = classSlotIndex(category);
+    return slot >= 0 ? "class" : category;
+  }
+
+  function classNameForCategory(category) {
+    const slot = classSlotIndex(category);
+    return slot >= 0 ? state.selectedClasses[slot] : null;
+  }
+
+  function categoryToScopeClassName(category) {
+    const slot = classSlotIndex(category);
+    return slot >= 0 ? { scope: "class", className: state.selectedClasses[slot] } : { scope: category, className: null };
+  }
+
+  function entryKey(scope, className, idx) {
+    return `${scope}|${className || ""}|${idx}`;
+  }
+
+  // Which category key currently displays this entry's class, or null if that class
+  // isn't in any of the 3 active slots right now.
+  function resolveEntryCategory(entry) {
+    if (entry.scope !== "class") return entry.scope;
+    const slot = state.selectedClasses.indexOf(entry.className);
+    return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
+  }
+
+  function pushPurchase(category, idx) {
+    state.purchaseOrder.push({ scope: scopeForCategory(category), className: classNameForCategory(category), idx });
+  }
+
+  function popLastPurchase(category, idx) {
+    const scope = scopeForCategory(category);
+    const className = classNameForCategory(category);
+    for (let i = state.purchaseOrder.length - 1; i >= 0; i--) {
+      const e = state.purchaseOrder[i];
+      if (e.scope === scope && e.idx === idx && (e.className || null) === (className || null)) {
+        state.purchaseOrder.splice(i, 1);
+        return;
+      }
+    }
+  }
+
+  function clearClassData(className) {
+    delete state.ranks.classes[className];
+    state.purchaseOrder = state.purchaseOrder.filter((e) => !(e.scope === "class" && e.className === className));
   }
 
   function spentPoints() {
@@ -219,6 +274,8 @@
     const next = cur + delta;
     if (next < 0 || next > aa.ranks) return;
     if (next === 0) delete store[idx]; else store[idx] = next;
+    if (delta > 0) pushPurchase(category, idx);
+    else popLastPurchase(category, idx);
     saveLocal();
     renderAll();
   }
@@ -279,6 +336,8 @@
     el.summaryView = document.getElementById("summaryView");
     el.summaryHeader = document.getElementById("summaryHeader");
     el.summaryContent = document.getElementById("summaryContent");
+    el.progressionView = document.getElementById("progressionView");
+    el.progressionContent = document.getElementById("progressionContent");
     el.treeWrap = document.getElementById("treeWrap");
     el.sidePanel = document.getElementById("sidePanel");
     el.browseSearch = document.getElementById("browseSearch");
@@ -296,12 +355,16 @@
     el.calculatorView.classList.add("hidden");
     el.browseView.classList.add("hidden");
     el.summaryView.classList.add("hidden");
+    el.progressionView.classList.add("hidden");
     if (state.activeView === "browse") {
       el.browseView.classList.remove("hidden");
       renderBrowse();
     } else if (state.activeView === "summary") {
       el.summaryView.classList.remove("hidden");
       renderSummary();
+    } else if (state.activeView === "progression") {
+      el.progressionView.classList.remove("hidden");
+      renderProgression();
     } else {
       el.calculatorView.classList.remove("hidden");
       renderTree(state.activeTab);
@@ -345,19 +408,20 @@
       { key: "classSlot1", label: state.selectedClasses[1] },
       { key: "classSlot2", label: state.selectedClasses[2] },
       { key: "special", label: "Special" },
-      { key: "summary", label: "Summary" }
+      { key: "summary", label: "Summary" },
+      { key: "progression", label: "Progression" }
     ];
     el.tabs.innerHTML = tabDefs.map((t) => {
-      const isSummary = t.key === "summary";
-      const count = isSummary ? countPicked() : getList(t.key).length;
-      const isActive = isSummary ? state.activeView === "summary" : (state.activeView === "calculator" && state.activeTab === t.key);
-      return `<button data-tab="${t.key}" class="${isActive ? "active" : ""}${isSummary ? " summary-tab" : ""}">${escapeHtml(t.label)}<span class="count">(${count})</span></button>`;
+      const isView = t.key === "summary" || t.key === "progression";
+      const count = t.key === "summary" ? countPicked() : t.key === "progression" ? state.purchaseOrder.length : getList(t.key).length;
+      const isActive = isView ? state.activeView === t.key : (state.activeView === "calculator" && state.activeTab === t.key);
+      return `<button data-tab="${t.key}" class="${isActive ? "active" : ""}${isView ? " summary-tab" : ""}">${escapeHtml(t.label)}<span class="count">(${count})</span></button>`;
     }).join("");
     Array.from(el.tabs.querySelectorAll("button")).forEach((btn) => {
       btn.addEventListener("click", () => {
         const key = btn.getAttribute("data-tab");
-        if (key === "summary") {
-          state.activeView = "summary";
+        if (key === "summary" || key === "progression") {
+          state.activeView = key;
         } else {
           state.activeView = "calculator";
           state.activeTab = key;
@@ -554,6 +618,73 @@
     el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
   }
 
+  function renderProgression() {
+    if (!state.purchaseOrder.length) {
+      el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
+      return;
+    }
+
+    const counts = {};
+    const rows = state.purchaseOrder.map((entry, i) => {
+      const key = entryKey(entry.scope, entry.className, entry.idx);
+      const category = resolveEntryCategory(entry);
+      const active = category !== null;
+      const aa = entry.scope === "class" ? (AA_DATA.classes[entry.className] || [])[entry.idx] : (AA_DATA[entry.scope] || [])[entry.idx];
+      const stepRank = (counts[key] || 0) + 1;
+
+      let prereqWarn = false;
+      if (active && aa && aa.prereq) {
+        const resolved = resolvePrereqTarget(aa.prereq, category);
+        if (resolved) {
+          const t = categoryToScopeClassName(resolved.category);
+          const targetKey = entryKey(t.scope, t.className, resolved.idx);
+          if ((counts[targetKey] || 0) < resolved.requiredRank) prereqWarn = true;
+        }
+      }
+
+      counts[key] = stepRank;
+
+      const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
+      const name = aa ? aa.name : "(unknown AA)";
+
+      return `<div class="progression-row${active ? "" : " inactive"}">
+        <span class="step-num">${i + 1}</span>
+        <span class="step-info">
+          <span class="step-name">${escapeHtml(name)} <span class="step-rank">rank ${stepRank}</span></span>
+          <span class="step-cat">${escapeHtml(label)}${active ? "" : " &middot; class not currently selected"}</span>
+        </span>
+        ${prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
+        <span class="step-controls">
+          <button class="step-btn" data-move="up" data-index="${i}" ${i === 0 ? "disabled" : ""}>&uarr;</button>
+          <button class="step-btn" data-move="down" data-index="${i}" ${i === state.purchaseOrder.length - 1 ? "disabled" : ""}>&darr;</button>
+        </span>
+      </div>`;
+    });
+
+    el.progressionContent.innerHTML = rows.join("");
+    Array.from(el.progressionContent.querySelectorAll(".step-btn")).forEach((btn) => {
+      if (btn.disabled) return;
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.getAttribute("data-index"), 10);
+        const dir = btn.getAttribute("data-move") === "up" ? -1 : 1;
+        moveProgressionEntry(idx, dir);
+      });
+    });
+  }
+
+  function moveProgressionEntry(index, dir) {
+    const target = index + dir;
+    if (target < 0 || target >= state.purchaseOrder.length) return;
+    const a = state.purchaseOrder[index];
+    const b = state.purchaseOrder[target];
+    const sameAA = a.scope === b.scope && a.idx === b.idx && (a.className || null) === (b.className || null);
+    if (sameAA) { showToast("Can't reorder different ranks of the same AA."); return; }
+    state.purchaseOrder[index] = b;
+    state.purchaseOrder[target] = a;
+    saveLocal();
+    renderProgression();
+  }
+
   // ---------- export / import ----------
   function buildExportText() {
     const spent = spentPoints();
@@ -574,10 +705,11 @@
     });
 
     const codeObj = {
-      v: 2,
+      v: 3,
       selectedClasses: state.selectedClasses,
       totalPoints: state.totalPoints,
-      ranks: state.ranks
+      ranks: state.ranks,
+      purchaseOrder: state.purchaseOrder
     };
     const code = btoa(unescape(encodeURIComponent(JSON.stringify(codeObj))));
     lines.push(`BUILD_CODE:${code}`);
@@ -678,6 +810,29 @@
         const oldValue = state.selectedClasses[i];
         if (newValue === oldValue) return;
         const dupSlot = state.selectedClasses.findIndex((c, j) => j !== i && c === newValue);
+
+        if (dupSlot < 0) {
+          // Genuine replacement (not a swap) — oldValue is leaving the 3-class combo, so its
+          // picks become invisible. Warn if it actually has anything spent, then wipe it clean
+          // rather than leaving orphaned data sitting around indefinitely.
+          const oldStore = state.ranks.classes[oldValue];
+          const oldList = AA_DATA.classes[oldValue] || [];
+          let oldSpent = 0;
+          if (oldStore) {
+            Object.keys(oldStore).forEach((key) => {
+              const aa = oldList[key];
+              if (!aa) return;
+              const r = oldStore[key] || 0;
+              for (let k = 0; k < r; k++) oldSpent += costNum(aa.costs[k]);
+            });
+          }
+          if (oldSpent > 0) {
+            const ok = confirm(`Switching Class ${i + 1} from ${oldValue} to ${newValue} will remove ${oldValue}'s AA picks (${oldSpent} point${oldSpent === 1 ? "" : "s"} spent) from this build. Continue?`);
+            if (!ok) { populateClassSelects(); return; }
+          }
+          clearClassData(oldValue);
+        }
+
         state.selectedClasses[i] = newValue;
         if (dupSlot >= 0) {
           state.selectedClasses[dupSlot] = oldValue;
@@ -739,6 +894,7 @@
     el.resetBtn.addEventListener("click", () => {
       if (!confirm("Reset all spent AA points across every category and class? This cannot be undone.")) return;
       state.ranks = { general: {}, archetype: {}, special: {}, classes: {} };
+      state.purchaseOrder = [];
       state.selectedNode = null;
       saveLocal();
       renderAll();

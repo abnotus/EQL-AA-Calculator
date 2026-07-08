@@ -552,6 +552,100 @@ main {
 
 .summary-section-title:first-child { margin-top: 0; }
 
+/* ---------- Progression ---------- */
+#progressionWrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.progression-hint {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.progression-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.progression-row.inactive { opacity: 0.45; }
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-bright);
+  flex-shrink: 0;
+}
+
+.step-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.step-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.step-rank {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+.step-cat {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.step-warn {
+  color: #e0a83a;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.step-controls {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.step-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-panel-2);
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.step-btn:hover:not(:disabled) { border-color: var(--accent-bright); color: var(--accent-bright); }
+
+.step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
 /* ---------- Export modal ---------- */
 .modal-overlay {
   position: fixed;
