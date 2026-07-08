@@ -218,8 +218,15 @@ export function renderSidePanel() {
   el.sidePanel.innerHTML = html;
   const incBtn = document.getElementById("incBtn");
   const decBtn = document.getElementById("decBtn");
-  if (incBtn) incBtn.addEventListener("click", () => attemptIncrement(sel.category, sel.idx));
-  if (decBtn) decBtn.addEventListener("click", () => attemptDecrement(sel.category, sel.idx));
+  if (incBtn) incBtn.addEventListener("click", () => applyAttempt(attemptIncrement(sel.category, sel.idx)));
+  if (decBtn) decBtn.addEventListener("click", () => applyAttempt(attemptDecrement(sel.category, sel.idx)));
+}
+
+// attemptIncrement/attemptDecrement just report what happened; this decides what
+// the UI does about it (toast + re-render), keeping that decision out of logic.js.
+function applyAttempt(result) {
+  if (result.message) showToast(result.message);
+  if (result.changed) renderAll();
 }
 
 export function renderBrowse() {

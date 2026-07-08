@@ -74,6 +74,8 @@ function applyLoaded(loaded) {
 
 // Business logic: everything that reads or derives from `state` and AA_DATA,
 // plus the mutation functions for spending/refunding points. No HTML/DOM here.
+// Depends only on state.js — never on render.js — so the dependency graph stays
+// one-directional (render depends on logic, not the other way around).
 
 function costNum(c) {
   const n = parseInt(c, 10);
@@ -291,39 +293,43 @@ function isDependedOn(category, idx, currentRank) {
   return false;
 }
 
+// Pure state mutation — no rendering, no user feedback. Returns whether a change
+// actually happened, so callers (the UI layer) decide what to do about it.
 function changeRank(category, idx, delta) {
   const store = getRanksStore(category);
   const aa = getList(category)[idx];
   const cur = store[idx] || 0;
   const next = cur + delta;
-  if (next < 0 || next > aa.ranks) return;
+  if (next < 0 || next > aa.ranks) return false;
   if (next === 0) delete store[idx]; else store[idx] = next;
   if (delta > 0) pushPurchase(category, idx);
   else popLastPurchase(category, idx);
   saveLocal();
-  renderAll();
+  return true;
 }
 
+// attemptIncrement/attemptDecrement report the outcome instead of triggering a
+// render or toast themselves, so this module has no dependency on the render layer —
+// dependencies only flow one way: render.js depends on logic.js, never the reverse.
 function attemptIncrement(category, idx) {
   const aa = getList(category)[idx];
-  if (aa.auto) { showToast(`${aa.name} is automatically granted — no points needed.`); return; }
+  if (aa.auto) return { changed: false, message: `${aa.name} is automatically granted — no points needed.` };
   const rank = effectiveRank(category, idx);
-  if (rank >= aa.ranks) return;
+  if (rank >= aa.ranks) return { changed: false, message: null };
   const reason = getBlockReason(category, idx);
-  if (reason) { showToast(reason); return; }
-  changeRank(category, idx, 1);
+  if (reason) return { changed: false, message: reason };
+  return { changed: changeRank(category, idx, 1), message: null };
 }
 
 function attemptDecrement(category, idx) {
   const aa = getList(category)[idx];
-  if (aa.auto) { showToast(`${aa.name} is automatically granted and can't be removed.`); return; }
+  if (aa.auto) return { changed: false, message: `${aa.name} is automatically granted and can't be removed.` };
   const rank = effectiveRank(category, idx);
-  if (rank <= 0) return;
+  if (rank <= 0) return { changed: false, message: null };
   if (isDependedOn(category, idx, rank)) {
-    showToast("Can't lower this — another AA depends on the current rank.");
-    return;
+    return { changed: false, message: "Can't lower this — another AA depends on the current rank." };
   }
-  changeRank(category, idx, -1);
+  return { changed: changeRank(category, idx, -1), message: null };
 }
 
 function countPicked() {
@@ -626,8 +632,15 @@ function renderSidePanel() {
   el.sidePanel.innerHTML = html;
   const incBtn = document.getElementById("incBtn");
   const decBtn = document.getElementById("decBtn");
-  if (incBtn) incBtn.addEventListener("click", () => attemptIncrement(sel.category, sel.idx));
-  if (decBtn) decBtn.addEventListener("click", () => attemptDecrement(sel.category, sel.idx));
+  if (incBtn) incBtn.addEventListener("click", () => applyAttempt(attemptIncrement(sel.category, sel.idx)));
+  if (decBtn) decBtn.addEventListener("click", () => applyAttempt(attemptDecrement(sel.category, sel.idx)));
+}
+
+// attemptIncrement/attemptDecrement just report what happened; this decides what
+// the UI does about it (toast + re-render), keeping that decision out of logic.js.
+function applyAttempt(result) {
+  if (result.message) showToast(result.message);
+  if (result.changed) renderAll();
 }
 
 function renderBrowse() {
