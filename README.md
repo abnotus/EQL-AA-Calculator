@@ -21,9 +21,17 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## Data source
 
-All AA data (costs, effects, ranks, prerequisites) is scraped from [eqlwiki.com/Alternate_Advancement](https://eqlwiki.com/Alternate_Advancement), cross-checked against in-game logs/screenshots where the wiki is silent or wrong. Values marked `?` are undocumented anywhere and treated as 0 until confirmed.
+All AA data (costs, effects, ranks, prerequisites) lives in `data.src.js`, sourced from [eqlwiki.com/Alternate_Advancement](https://eqlwiki.com/Alternate_Advancement) and cross-checked against in-game logs/screenshots where the wiki is silent or wrong. Values marked `?` are undocumented anywhere and treated as 0 until confirmed.
 
-`wiki-sync/scrape_wiki.py` fetches the current AA page via the MediaWiki API and diffs it against a saved snapshot (`wiki-sync/snapshot.json`) to flag what changed on the wiki since the last check. It's run by hand, never on a schedule — see the script's docstring for usage.
+### Checking for wiki changes
+
+```
+python wiki-sync/scrape_wiki.py
+```
+
+This fetches the AA page's current wikitext straight from eqlwiki's MediaWiki API (one request, no page rendering, no scraping of HTML) and compares it against `wiki-sync/snapshot.json`, the state saved the last time the script ran. It prints any rows that are new, gone, or changed since then, then overwrites the snapshot with the current state.
+
+It's a diagnostic, not an auto-updater — it never touches `data.src.js`. The workflow is: run it, review what it reports changed, cross-check those specific entries against `data.src.js` by hand, apply any confirmed fixes, then rebuild (see below). It's run manually whenever we want to check in on the wiki, never on a schedule.
 
 ## Running locally
 
