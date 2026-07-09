@@ -221,15 +221,31 @@ export function parsePrereqText(text) {
 export function resolvePrereqTarget(text, sourceCategory) {
   const parsed = parsePrereqText(text);
   if (!parsed) return null;
+  // Only the source's own category plus the shared trees — a class AA's
+  // prereq should never resolve against whichever *other* class happens to
+  // be sitting in another slot right now. Every prereq in the data today
+  // already points within its own class or at general/archetype/special;
+  // widening this to the other class slots would make resolution depend on
+  // which classes are currently selected, not just on the AA itself.
   const order = [];
   const seen = new Set();
-  [sourceCategory, "general", "archetype", "special", ...CLASS_SLOT_KEYS].forEach((k) => {
+  [sourceCategory, "general", "archetype", "special"].forEach((k) => {
     if (!seen.has(k)) { seen.add(k); order.push(k); }
   });
   for (const key of order) {
     const list = getList(key);
     let foundIdx = -1;
-    list.forEach((aa, i) => { if (aa.name.toLowerCase() === parsed.name.toLowerCase()) foundIdx = i; });
+    list.forEach((aa, i) => {
+      if (aa.name.toLowerCase() !== parsed.name.toLowerCase()) return;
+      if (foundIdx < 0) { foundIdx = i; return; }
+      // Duplicate name in this category (e.g. Cleric's two "Divine Aura"
+      // rows) — prefer whichever one actually costs points over an
+      // auto-granted one, since gating something behind an ability you get
+      // for free regardless isn't a meaningful prerequisite. Otherwise keep
+      // the first match, so resolution doesn't quietly flip if the data gets
+      // reordered by a resync.
+      if (list[foundIdx].auto && !aa.auto) foundIdx = i;
+    });
     if (foundIdx >= 0) {
       return {
         category: key,
@@ -255,14 +271,18 @@ export function structuralLockReason(catKey, idx) {
   if (state.charLevel < levelReq) return `Requires character level ${levelReq}.`;
   if (aa.prereq) {
     const resolved = resolvePrereqTarget(aa.prereq, catKey);
-    if (resolved) {
-      const sourceRank = effectiveRank(catKey, idx) + 1; // the rank about to be purchased
-      const requiredRank = resolved.forRank(sourceRank);
-      const targetRank = effectiveRank(resolved.category, resolved.idx);
-      if (targetRank < requiredRank) {
-        const targetAA = getList(resolved.category)[resolved.idx];
-        return `Requires ${targetAA ? targetAA.name : "prerequisite"} rank ${requiredRank}.`;
-      }
+    if (!resolved) {
+      // An unresolvable prereq (renamed/removed target, or text that no
+      // longer parses) must block, not fall through as "no constraint" — a
+      // prereq we can't verify is satisfied is not the same as no prereq.
+      return `Requires "${aa.prereq}", which no longer resolves to an existing ability.`;
+    }
+    const sourceRank = effectiveRank(catKey, idx) + 1; // the rank about to be purchased
+    const requiredRank = resolved.forRank(sourceRank);
+    const targetRank = effectiveRank(resolved.category, resolved.idx);
+    if (targetRank < requiredRank) {
+      const targetAA = getList(resolved.category)[resolved.idx];
+      return `Requires ${targetAA ? targetAA.name : "prerequisite"} rank ${requiredRank}.`;
     }
   }
   return null;
@@ -278,13 +298,21 @@ export function structuralLockReason(catKey, idx) {
 // data, so it naturally clears itself once the gap is closed.
 export function heldRankInvalidReason(catKey, idx) {
   const aa = getList(catKey)[idx];
-  if (!aa || !aa.prereq) return null;
-  const rank = effectiveRank(catKey, idx);
-  if (rank <= 0) return null;
+  // Only ranks the user actually chose to buy are worth flagging. A fully
+  // auto-granted AA has no purchased ranks at all; an autoRanks AA's raw
+  // store value excludes its free floor (changeRank stores the blended
+  // effective rank only once the user buys beyond that floor — see
+  // changeRank), so an untouched free rank reads as 0 here, not >0. Flagging
+  // something the user has no way to remove isn't actionable.
+  if (!aa || !aa.prereq || aa.auto) return null;
+  const purchased = getRanksStore(catKey)[idx] || 0;
+  if (purchased <= 0) return null;
   const resolved = resolvePrereqTarget(aa.prereq, catKey);
-  if (!resolved) return null;
+  if (!resolved) {
+    return `Requires "${aa.prereq}", which no longer resolves to an existing ability.`;
+  }
   const targetRank = effectiveRank(resolved.category, resolved.idx);
-  for (let r = 1; r <= rank; r++) {
+  for (let r = 1; r <= purchased; r++) {
     const required = resolved.forRank(r);
     if (targetRank < required) {
       const targetAA = getList(resolved.category)[resolved.idx];

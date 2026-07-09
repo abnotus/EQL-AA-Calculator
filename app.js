@@ -404,13 +404,17 @@ const parsed = parsePrereqText(text);
 if (!parsed) return null;
 const order = [];
 const seen = new Set();
-[sourceCategory, "general", "archetype", "special", ...CLASS_SLOT_KEYS].forEach((k) => {
+[sourceCategory, "general", "archetype", "special"].forEach((k) => {
 if (!seen.has(k)) { seen.add(k); order.push(k); }
 });
 for (const key of order) {
 const list = getList(key);
 let foundIdx = -1;
-list.forEach((aa, i) => { if (aa.name.toLowerCase() === parsed.name.toLowerCase()) foundIdx = i; });
+list.forEach((aa, i) => {
+if (aa.name.toLowerCase() !== parsed.name.toLowerCase()) return;
+if (foundIdx < 0) { foundIdx = i; return; }
+if (list[foundIdx].auto && !aa.auto) foundIdx = i;
+});
 if (foundIdx >= 0) {
 return {
 category: key,
@@ -431,7 +435,9 @@ const levelReq = parseInt(aa.levelReq, 10) || 1;
 if (state.charLevel < levelReq) return `Requires character level ${levelReq}.`;
 if (aa.prereq) {
 const resolved = resolvePrereqTarget(aa.prereq, catKey);
-if (resolved) {
+if (!resolved) {
+return `Requires "${aa.prereq}", which no longer resolves to an existing ability.`;
+}
 const sourceRank = effectiveRank(catKey, idx) + 1;
 const requiredRank = resolved.forRank(sourceRank);
 const targetRank = effectiveRank(resolved.category, resolved.idx);
@@ -440,18 +446,19 @@ const targetAA = getList(resolved.category)[resolved.idx];
 return `Requires ${targetAA ? targetAA.name : "prerequisite"} rank ${requiredRank}.`;
 }
 }
-}
 return null;
 }
 function heldRankInvalidReason(catKey, idx) {
 const aa = getList(catKey)[idx];
-if (!aa || !aa.prereq) return null;
-const rank = effectiveRank(catKey, idx);
-if (rank <= 0) return null;
+if (!aa || !aa.prereq || aa.auto) return null;
+const purchased = getRanksStore(catKey)[idx] || 0;
+if (purchased <= 0) return null;
 const resolved = resolvePrereqTarget(aa.prereq, catKey);
-if (!resolved) return null;
+if (!resolved) {
+return `Requires "${aa.prereq}", which no longer resolves to an existing ability.`;
+}
 const targetRank = effectiveRank(resolved.category, resolved.idx);
-for (let r = 1; r <= rank; r++) {
+for (let r = 1; r <= purchased; r++) {
 const required = resolved.forRank(r);
 if (targetRank < required) {
 const targetAA = getList(resolved.category)[resolved.idx];
