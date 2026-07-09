@@ -1941,18 +1941,24 @@ function init() {
   // actually held for an AA (see reconcilePurchaseOrderCounts) - repair it
   // before the first render, since computeProgressionSteps would otherwise
   // display a rank number that disagrees with the tree/side panel.
-  //
-  // If a share link applied, applySharedBuildFromUrl already ran this same
-  // reconcile + saveLocal internally before returning - this second call
-  // will just find nothing left to fix. Otherwise, this is the only place
-  // that persists whatever applyLoaded(loadLocal()) clamped/dropped and this
-  // repaired: without it, the fix exists only in memory for this session,
-  // and every future visit repeats the same repair and the same toast.
   const repaired = reconcilePurchaseOrderCounts();
   if (repaired) {
     notices.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was out of sync and ${repaired === 1 ? "was" : "were"} repaired`);
   }
-  if (!shared.applied) saveLocal();
+  // Persisting a repair is safe — it's a lossless normalization of state
+  // that's already in memory, and it's why the toast above stops recurring
+  // once it's saved. Persisting a drop is not: localStorage is this path's
+  // *only* copy of the build (unlike a share link or pasted import text,
+  // where the source survives on its own), so writing back a build with a
+  // dropped AA missing turns a recoverable loss into a permanent one the
+  // moment a bad data.src.js touches this page — even if it gets fixed an
+  // hour later, there's nothing left on disk to recover into. So: only
+  // persist when something was actually repaired, and never on the same
+  // load a drop happened — the drop notice recurs every visit until the
+  // data is fixed, which is the point. (Also incidentally means a
+  // brand-new visitor with nothing saved yet — repaired is always 0 for
+  // them — no longer writes a default payload to storage for no reason.)
+  if (!shared.applied && repaired > 0 && !localResult.droppedRanks) saveLocal();
   // Data can drift out from under a saved build (a resync renaming/reshaping a
   // prereq target, say) — catch it once on load rather than leaving the user
   // to discover a quietly-broken pick on their own.

@@ -1494,7 +1494,7 @@ const repaired = reconcilePurchaseOrderCounts();
 if (repaired) {
 notices.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was out of sync and ${repaired === 1 ? "was" : "were"} repaired`);
 }
-if (!shared.applied) saveLocal();
+if (!shared.applied && repaired > 0 && !localResult.droppedRanks) saveLocal();
 const invalidated = findInvalidatedPicks();
 if (invalidated.length) {
 const n = invalidated.length;
