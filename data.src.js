@@ -46,7 +46,7 @@ const AA_DATA = {
     { name: "Burst of Power", ranks: 3, costs: ["3","6","?"], levelReq: "46", description: "Increases flurry chance by 7/11/?%." },
     { name: "Companion's Discipline", ranks: 1, costs: ["2"], levelReq: "1", description: "Enables advanced pet commands (hold, greater hold, attack)." },
     { name: "Critical Affliction", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases DoT critical damage chance by 3/6/9%." },
-    { name: "Destructive Cascade", ranks: 3, costs: ["2","4","6"], levelReq: "1", prereq: "Requires Critical Affliction rank 3", description: "Increases critical DoT damage by 125/150/175%." },
+    { name: "Destructive Cascade", ranks: 3, costs: ["2","4","6"], levelReq: "1", prereq: "Requires Critical Affliction rank 1/2/3", description: "Increases critical DoT damage by 125/150/175%." },
     { name: "Destructive Fury", ranks: 3, costs: ["2","4","6"], levelReq: "1", prereq: "Requires Fury of Magic rank 1", description: "Increases critical direct damage spell damage by 30/60/100%." },
     { name: "Double Riposte", ranks: 3, costs: ["3","6","9"], levelReq: "15", description: "Grants 5%/10%/15% double riposte chance." },
     { name: "Exodus", ranks: 1, costs: ["6"], levelReq: "10", description: "Teleports group members within 100 feet to a safe zone location." },

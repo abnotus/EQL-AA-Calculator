@@ -204,11 +204,18 @@ export function spentPoints() {
   return total;
 }
 
+// Plain "Requires X rank N" gates the whole ability behind a fixed target rank.
+// "Requires X rank 1/2/3" (matching the wiki's own phrasing for rank-synced
+// prereqs, e.g. Destructive Cascade needing the matching Critical Affliction
+// rank) instead requires source rank K to be gated on target rank K.
 export function parsePrereqText(text) {
   if (!text) return null;
-  const m = text.match(/^Requires\s+(.+?)\s+(?:rank|(?:at\s+)?level)\s+(\d+)\s*$/i);
+  const m = text.match(/^Requires\s+(.+?)\s+(?:rank|(?:at\s+)?level)\s+(\d+(?:\/\d+)*)\s*$/i);
   if (!m) return null;
-  return { name: m[1].trim(), rank: parseInt(m[2], 10) };
+  const ranks = m[2].split("/").map((n) => parseInt(n, 10));
+  return ranks.length > 1
+    ? { name: m[1].trim(), synced: true, ranks }
+    : { name: m[1].trim(), synced: false, rank: ranks[0] };
 }
 
 export function resolvePrereqTarget(text, sourceCategory) {
@@ -223,7 +230,20 @@ export function resolvePrereqTarget(text, sourceCategory) {
     const list = getList(key);
     let foundIdx = -1;
     list.forEach((aa, i) => { if (aa.name.toLowerCase() === parsed.name.toLowerCase()) foundIdx = i; });
-    if (foundIdx >= 0) return { category: key, idx: foundIdx, requiredRank: parsed.rank };
+    if (foundIdx >= 0) {
+      return {
+        category: key,
+        idx: foundIdx,
+        // Required target rank for the source AA to hold `sourceRank`. Fixed
+        // prereqs ignore sourceRank; synced ones look up the matching entry
+        // (clamped to the list, so a too-high/low sourceRank still resolves).
+        forRank(sourceRank) {
+          if (!parsed.synced) return parsed.rank;
+          const i = Math.min(Math.max(sourceRank, 1), parsed.ranks.length) - 1;
+          return parsed.ranks[i];
+        }
+      };
+    }
   }
   return null;
 }
@@ -236,10 +256,12 @@ export function structuralLockReason(catKey, idx) {
   if (aa.prereq) {
     const resolved = resolvePrereqTarget(aa.prereq, catKey);
     if (resolved) {
+      const sourceRank = effectiveRank(catKey, idx) + 1; // the rank about to be purchased
+      const requiredRank = resolved.forRank(sourceRank);
       const targetRank = effectiveRank(resolved.category, resolved.idx);
-      if (targetRank < resolved.requiredRank) {
+      if (targetRank < requiredRank) {
         const targetAA = getList(resolved.category)[resolved.idx];
-        return `Requires ${targetAA ? targetAA.name : "prerequisite"} rank ${resolved.requiredRank}.`;
+        return `Requires ${targetAA ? targetAA.name : "prerequisite"} rank ${requiredRank}.`;
       }
     }
   }
@@ -265,9 +287,10 @@ export function isDependedOn(category, idx, currentRank) {
     for (let i = 0; i < list.length; i++) {
       const aa = list[i];
       if (!aa.prereq) continue;
-      if (effectiveRank(catKey, i) <= 0) continue;
+      const aaRank = effectiveRank(catKey, i);
+      if (aaRank <= 0) continue;
       const r = resolvePrereqTarget(aa.prereq, catKey);
-      if (r && r.category === category && r.idx === idx && newRank < r.requiredRank) return true;
+      if (r && r.category === category && r.idx === idx && newRank < r.forRank(aaRank)) return true;
     }
   }
   return false;
@@ -410,7 +433,7 @@ export function computeProgressionSteps() {
       if (resolved) {
         const t = categoryToScopeClassName(resolved.category);
         const targetKey = entryKey(t.scope, t.className, resolved.idx);
-        if ((counts[targetKey] || 0) < resolved.requiredRank) prereqWarn = true;
+        if ((counts[targetKey] || 0) < resolved.forRank(stepRank)) prereqWarn = true;
       }
     }
 
