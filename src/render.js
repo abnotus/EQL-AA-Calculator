@@ -423,6 +423,10 @@ export function populateStaticControls() {
     `<optgroup label="Class">` +
     CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("") +
     `</optgroup>`;
+  // USER_CHANGELOG[0] is the single source of truth for "current version" —
+  // the corner tag and the unread-dot comparison both read it from here, so
+  // they can't disagree about what the latest version is.
+  if (USER_CHANGELOG[0]) el.versionTag.textContent = `v${USER_CHANGELOG[0].version}`;
 }
 
 export function showToast(msg) {

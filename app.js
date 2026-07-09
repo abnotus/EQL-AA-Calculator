@@ -1066,6 +1066,7 @@ el.browseFilter.innerHTML =
 `<optgroup label="Class">` +
 CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("") +
 `</optgroup>`;
+if (USER_CHANGELOG[0]) el.versionTag.textContent = `v${USER_CHANGELOG[0].version}`;
 }
 function showToast(msg) {
 el.toast.textContent = msg;
