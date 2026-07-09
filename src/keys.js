@@ -13,7 +13,8 @@
 //
 // No internal deps: reads the global AA_DATA (from data.js, loaded before
 // this runs) plus the frozen LEGACY_AA_ORDER snapshot below, which captures
-// AA_DATA's exact ordering as of 2026-07-09 — the last point before any AA
+// AA_DATA's exact ordering (and, where needed to disambiguate a duplicate
+// name, its `auto` flag) as of 2026-07-09 — the last point before any AA
 // data was index-addressed. It exists only to translate old index-based
 // saves (from before this file existed) into name keys on load, and must
 // never be regenerated/updated after the fact, or it stops describing what
@@ -46,7 +47,10 @@ const LEGACY_AA_ORDER = {
     "Bard": ["Instrument Mastery", "Jam Fest", "Reaching Notes", "Scribble Notes", "Singing Mastery", "Symphonic Aura"],
     "Beastlord": ["Frenzy of Spirit", "Hobble of Spirits", "Paragon of Spirit", "Playing Possum"],
     "Berserker": ["Blood Rune", "Innate Power Strike", "Tireless Spirit", "Unbound Fury"],
-    "Cleric": ["Divine Aura", "Divine Aura", "Bestow Divine Aura", "Purify Soul", "Turn Undead", "Unbound Boon"],
+    // The only duplicate name in the whole snapshot — recorded with explicit
+    // auto flags (instead of plain strings) so the ordinal below can be
+    // derived from *that*, not from which one happened to be listed first.
+    "Cleric": [{ name: "Divine Aura", auto: true }, { name: "Divine Aura", auto: false }, "Bestow Divine Aura", "Purify Soul", "Turn Undead", "Unbound Boon"],
     "Druid": ["Enhanced Root", "Quick Evacuation", "Unbound Nature"],
     "Enchanter": ["Unbound Clarity"],
     "Magician": ["Companion's Fury", "Conjurer's Efficiency", "Elemental Form", "Turn Summoned", "Unbound Companion"],
@@ -70,24 +74,38 @@ function slugify(name) {
     .replace(/^-+|-+$/g, "");
 }
 
-// Stable key for position `idx` within `names` (a plain array of AA names in
-// list order). Duplicate names get -2, -3, ... suffixes based on how many
-// same-named entries precede them, so genuine same-name rows (e.g. Cleric's
-// two "Divine Aura" entries) still resolve deterministically either way.
-function keyForNameIdx(names, idx) {
-  const name = names[idx];
-  if (name == null) return null;
-  const base = slugify(name);
-  let dup = 0;
-  for (let i = 0; i < idx; i++) {
-    if (slugify(names[i]) === base) dup++;
-  }
-  return dup === 0 ? base : `${base}-${dup + 1}`;
+function normalizeEntry(e) {
+  return typeof e === "string" ? { name: e, auto: false } : e;
 }
 
-function idxForNameKey(names, key) {
-  for (let i = 0; i < names.length; i++) {
-    if (keyForNameIdx(names, i) === key) return i;
+// Stable key for position `idx` within `rawEntries` (name strings, or
+// {name, auto} objects where auto-ness needs to be explicit). A name that
+// doesn't repeat just gets its slug. A name that repeats is disambiguated by
+// auto-ness, not position: build_minify.py's invariant check guarantees
+// exactly one non-auto occurrence per repeated name within a category, so
+// that one gets the bare slug (nothing else can mean it), and any auto
+// occurrence(s) get -auto / -auto-2 / ... among themselves. This is the same
+// discriminator resolvePrereqTarget's duplicate-name tie-break uses (see
+// logic.js) — deriving from *content*, not array position, means reordering
+// the source data can't silently repoint an old save at the wrong AA.
+function keyForEntryIdx(rawEntries, idx) {
+  const entries = rawEntries.map(normalizeEntry);
+  const entry = entries[idx];
+  if (!entry) return null;
+  const base = slugify(entry.name);
+  const sameName = entries
+    .map((e, i) => ({ auto: e.auto, i }))
+    .filter((e) => slugify(entries[e.i].name) === base);
+  if (sameName.length <= 1) return base;
+  if (!entry.auto) return base;
+  const autoSiblings = sameName.filter((e) => e.auto);
+  const autoPos = autoSiblings.findIndex((e) => e.i === idx);
+  return autoPos === 0 ? `${base}-auto` : `${base}-auto-${autoPos + 1}`;
+}
+
+function idxForEntryKey(rawEntries, key) {
+  for (let i = 0; i < rawEntries.length; i++) {
+    if (keyForEntryIdx(rawEntries, i) === key) return i;
   }
   return -1;
 }
@@ -96,8 +114,8 @@ function currentList(scope, className) {
   return scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
 }
 
-function currentNames(scope, className) {
-  return currentList(scope, className).map((aa) => aa.name);
+function currentEntries(scope, className) {
+  return currentList(scope, className).map((aa) => ({ name: aa.name, auto: !!aa.auto }));
 }
 
 // The actual AA object at idx in today's AA_DATA, or null. Used to validate
@@ -107,31 +125,31 @@ export function aaAt(scope, className, idx) {
   return currentList(scope, className)[idx] || null;
 }
 
-function legacyNames(scope, className) {
+function legacyEntries(scope, className) {
   return scope === "class" ? (LEGACY_AA_ORDER.classes[className] || []) : (LEGACY_AA_ORDER[scope] || []);
 }
 
 // idx into today's AA_DATA -> stable name key, for writing new saves.
 export function keyForIdx(scope, className, idx) {
-  return keyForNameIdx(currentNames(scope, className), idx);
+  return keyForEntryIdx(currentEntries(scope, className), idx);
 }
 
 // Stable name key -> idx into today's AA_DATA, for reading saves already in
 // key form. -1 if that AA no longer exists under this scope/class.
 export function idxForKey(scope, className, key) {
-  return idxForNameKey(currentNames(scope, className), key);
+  return idxForEntryKey(currentEntries(scope, className), key);
 }
 
 // idx captured against the frozen pre-key ordering -> idx into today's
 // AA_DATA, for migrating old index-based saves. -1 if that AA was renamed
 // or removed since the snapshot was taken. Routed through the same
-// duplicate-aware key both directions use (not a plain name lookup), so
+// auto-aware key both directions use (not a plain name lookup), so
 // same-named rows (e.g. Cleric's two "Divine Aura" entries) map to their
 // matching occurrence instead of both collapsing onto the first one.
 export function currentIdxForLegacyIdx(scope, className, legacyIdx) {
-  const names = legacyNames(scope, className);
-  if (legacyIdx < 0 || legacyIdx >= names.length) return -1;
-  const key = keyForNameIdx(names, legacyIdx);
+  const entries = legacyEntries(scope, className);
+  if (legacyIdx < 0 || legacyIdx >= entries.length) return -1;
+  const key = keyForEntryIdx(entries, legacyIdx);
   if (!key) return -1;
-  return idxForNameKey(currentNames(scope, className), key);
+  return idxForEntryKey(currentEntries(scope, className), key);
 }

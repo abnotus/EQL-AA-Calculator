@@ -28,7 +28,7 @@ const LEGACY_AA_ORDER = {
 "Bard": ["Instrument Mastery", "Jam Fest", "Reaching Notes", "Scribble Notes", "Singing Mastery", "Symphonic Aura"],
 "Beastlord": ["Frenzy of Spirit", "Hobble of Spirits", "Paragon of Spirit", "Playing Possum"],
 "Berserker": ["Blood Rune", "Innate Power Strike", "Tireless Spirit", "Unbound Fury"],
-"Cleric": ["Divine Aura", "Divine Aura", "Bestow Divine Aura", "Purify Soul", "Turn Undead", "Unbound Boon"],
+"Cleric": [{ name: "Divine Aura", auto: true }, { name: "Divine Aura", auto: false }, "Bestow Divine Aura", "Purify Soul", "Turn Undead", "Unbound Boon"],
 "Druid": ["Enhanced Root", "Quick Evacuation", "Unbound Nature"],
 "Enchanter": ["Unbound Clarity"],
 "Magician": ["Companion's Fury", "Conjurer's Efficiency", "Elemental Form", "Turn Summoned", "Unbound Companion"],
@@ -50,46 +50,53 @@ return String(name || "")
 .replace(/[^a-z0-9]+/g, "-")
 .replace(/^-+|-+$/g, "");
 }
-function keyForNameIdx(names, idx) {
-const name = names[idx];
-if (name == null) return null;
-const base = slugify(name);
-let dup = 0;
-for (let i = 0; i < idx; i++) {
-if (slugify(names[i]) === base) dup++;
+function normalizeEntry(e) {
+return typeof e === "string" ? { name: e, auto: false } : e;
 }
-return dup === 0 ? base : `${base}-${dup + 1}`;
+function keyForEntryIdx(rawEntries, idx) {
+const entries = rawEntries.map(normalizeEntry);
+const entry = entries[idx];
+if (!entry) return null;
+const base = slugify(entry.name);
+const sameName = entries
+.map((e, i) => ({ auto: e.auto, i }))
+.filter((e) => slugify(entries[e.i].name) === base);
+if (sameName.length <= 1) return base;
+if (!entry.auto) return base;
+const autoSiblings = sameName.filter((e) => e.auto);
+const autoPos = autoSiblings.findIndex((e) => e.i === idx);
+return autoPos === 0 ? `${base}-auto` : `${base}-auto-${autoPos + 1}`;
 }
-function idxForNameKey(names, key) {
-for (let i = 0; i < names.length; i++) {
-if (keyForNameIdx(names, i) === key) return i;
+function idxForEntryKey(rawEntries, key) {
+for (let i = 0; i < rawEntries.length; i++) {
+if (keyForEntryIdx(rawEntries, i) === key) return i;
 }
 return -1;
 }
 function currentList(scope, className) {
 return scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
 }
-function currentNames(scope, className) {
-return currentList(scope, className).map((aa) => aa.name);
+function currentEntries(scope, className) {
+return currentList(scope, className).map((aa) => ({ name: aa.name, auto: !!aa.auto }));
 }
 function aaAt(scope, className, idx) {
 return currentList(scope, className)[idx] || null;
 }
-function legacyNames(scope, className) {
+function legacyEntries(scope, className) {
 return scope === "class" ? (LEGACY_AA_ORDER.classes[className] || []) : (LEGACY_AA_ORDER[scope] || []);
 }
 function keyForIdx(scope, className, idx) {
-return keyForNameIdx(currentNames(scope, className), idx);
+return keyForEntryIdx(currentEntries(scope, className), idx);
 }
 function idxForKey(scope, className, key) {
-return idxForNameKey(currentNames(scope, className), key);
+return idxForEntryKey(currentEntries(scope, className), key);
 }
 function currentIdxForLegacyIdx(scope, className, legacyIdx) {
-const names = legacyNames(scope, className);
-if (legacyIdx < 0 || legacyIdx >= names.length) return -1;
-const key = keyForNameIdx(names, legacyIdx);
+const entries = legacyEntries(scope, className);
+if (legacyIdx < 0 || legacyIdx >= entries.length) return -1;
+const key = keyForEntryIdx(entries, legacyIdx);
 if (!key) return -1;
-return idxForNameKey(currentNames(scope, className), key);
+return idxForEntryKey(currentEntries(scope, className), key);
 }
 const USER_CHANGELOG = [
 {
