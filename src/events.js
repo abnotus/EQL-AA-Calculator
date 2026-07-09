@@ -3,7 +3,10 @@
 import { state, CLASS_SLOT_KEYS, DISCLAIMER_DISMISSED_KEY, saveLocal } from "./state.js";
 import { el } from "./dom.js";
 import { costNum, clearClassData, clearLastMutation } from "./logic.js";
-import { renderAll, showToast, populateClassSelects, renderTree, renderBrowse, undoLast } from "./render.js";
+import {
+  renderAll, showToast, populateClassSelects, renderTree, renderBrowse, undoLast,
+  openChangelogModal, closeChangelogModal
+} from "./render.js";
 import {
   openExportModal, copyExportText, copyShareLink, saveExportAsTxt, closeExportModal,
   openImportModal, closeImportModal, doImport
@@ -79,7 +82,12 @@ export function wireEvents() {
     if (e.key !== "Escape") return;
     if (!el.exportModal.classList.contains("hidden")) closeExportModal();
     if (!el.importModal.classList.contains("hidden")) closeImportModal();
+    if (!el.changelogModal.classList.contains("hidden")) closeChangelogModal();
   });
+
+  el.versionTag.addEventListener("click", openChangelogModal);
+  el.closeChangelogBtn.addEventListener("click", closeChangelogModal);
+  el.changelogModal.addEventListener("click", (e) => { if (e.target === el.changelogModal) closeChangelogModal(); });
 
   el.importBtn.addEventListener("click", openImportModal);
   el.loadImportFileBtn.addEventListener("click", () => el.importFile.click());

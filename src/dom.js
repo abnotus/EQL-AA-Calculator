@@ -48,4 +48,8 @@ export function cacheDom() {
   el.toast = document.getElementById("toast");
   el.disclaimerBanner = document.getElementById("disclaimerBanner");
   el.dismissBannerBtn = document.getElementById("dismissBannerBtn");
+  el.versionTag = document.getElementById("versionTag");
+  el.changelogModal = document.getElementById("changelogModal");
+  el.changelogContent = document.getElementById("changelogContent");
+  el.closeChangelogBtn = document.getElementById("closeChangelogBtn");
 }

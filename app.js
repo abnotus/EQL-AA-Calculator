@@ -91,6 +91,20 @@ const key = keyForNameIdx(names, legacyIdx);
 if (!key) return -1;
 return idxForNameKey(currentNames(scope, className), key);
 }
+const USER_CHANGELOG = [
+{
+version: "1.0.0",
+date: "2026-07-09",
+items: [
+"Next-rank preview: see what the next rank upgrades to before you buy it, in the side panel and as an expandable row in the Progression tab.",
+"Global search: highlights matches in the tab you're on and shows match-count badges on other tabs that have matches too.",
+"Progression tab: reorderable purchase history with per-step and running-total cost, add/remove controls, and single-level undo.",
+"Shareable build links, plus text export/import (paste text, paste a share link, or load a saved .txt file).",
+"Fixed a prerequisite bug: some prereqs (like Destructive Cascade needing Critical Affliction) now unlock rank-by-rank instead of requiring the target's max rank just to buy rank 1.",
+"Data corrections from in-game confirmation and a fresh wiki scrape: Unbound Companion, Hunter's Attack Power, Fury of Magic, Soul Abrasion, and others."
+]
+}
+];
 const MAX_TOTAL_POINTS = 100000;
 const SAVE_FORMAT_VERSION = 4;
 const STORAGE_KEY = "eql_aa_builder_v1";
@@ -615,6 +629,10 @@ el.browseGrid = document.getElementById("browseGrid");
 el.toast = document.getElementById("toast");
 el.disclaimerBanner = document.getElementById("disclaimerBanner");
 el.dismissBannerBtn = document.getElementById("dismissBannerBtn");
+el.versionTag = document.getElementById("versionTag");
+el.changelogModal = document.getElementById("changelogModal");
+el.changelogContent = document.getElementById("changelogContent");
+el.closeChangelogBtn = document.getElementById("closeChangelogBtn");
 }
 function renderAll() {
 renderTopbar();
@@ -976,6 +994,17 @@ el.toast.classList.add("show");
 clearTimeout(showToast._t);
 showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
 }
+function openChangelogModal() {
+el.changelogContent.innerHTML = USER_CHANGELOG.map((entry) => `
+    <div class="changelog-entry">
+      <div class="changelog-version">v${escapeHtml(entry.version)} <span class="changelog-date">${escapeHtml(entry.date)}</span></div>
+      <ul>${entry.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+    </div>`).join("") || '<div class="empty">Nothing here yet.</div>';
+el.changelogModal.classList.remove("hidden");
+}
+function closeChangelogModal() {
+el.changelogModal.classList.add("hidden");
+}
 function buildCodeObject() {
 return {
 v: SAVE_FORMAT_VERSION,
@@ -1210,7 +1239,11 @@ document.addEventListener("keydown", (e) => {
 if (e.key !== "Escape") return;
 if (!el.exportModal.classList.contains("hidden")) closeExportModal();
 if (!el.importModal.classList.contains("hidden")) closeImportModal();
+if (!el.changelogModal.classList.contains("hidden")) closeChangelogModal();
 });
+el.versionTag.addEventListener("click", openChangelogModal);
+el.closeChangelogBtn.addEventListener("click", closeChangelogModal);
+el.changelogModal.addEventListener("click", (e) => { if (e.target === el.changelogModal) closeChangelogModal(); });
 el.importBtn.addEventListener("click", openImportModal);
 el.loadImportFileBtn.addEventListener("click", () => el.importFile.click());
 el.importFile.addEventListener("change", () => {

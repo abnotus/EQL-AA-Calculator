@@ -1,6 +1,7 @@
 // All DOM rendering. Reads from `state` and the logic layer, writes to `el.*`.
 
 import { state, AA_CATEGORY_KEYS, saveLocal } from "./state.js";
+import { USER_CHANGELOG } from "./changelogData.js";
 import { el } from "./dom.js";
 import {
   escapeHtml, iconLetter, highlightRankValue, applyPerRankTotal, labelFor, shortCategoryLabel,
@@ -415,4 +416,17 @@ export function showToast(msg) {
   el.toast.classList.add("show");
   clearTimeout(showToast._t);
   showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
+}
+
+export function openChangelogModal() {
+  el.changelogContent.innerHTML = USER_CHANGELOG.map((entry) => `
+    <div class="changelog-entry">
+      <div class="changelog-version">v${escapeHtml(entry.version)} <span class="changelog-date">${escapeHtml(entry.date)}</span></div>
+      <ul>${entry.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+    </div>`).join("") || '<div class="empty">Nothing here yet.</div>';
+  el.changelogModal.classList.remove("hidden");
+}
+
+export function closeChangelogModal() {
+  el.changelogModal.classList.add("hidden");
 }
