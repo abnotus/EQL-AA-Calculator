@@ -30,6 +30,7 @@ import re
 import sys
 
 SRC_MODULE_ORDER = [
+    "src/aaIds.js",
     "src/keys.js",
     "src/changelogData.js",
     "src/state.js",
@@ -206,6 +207,82 @@ def check_prereq_disambiguation_invariant(data_src: str):
     return problems
 
 
+AA_IDS_TABLE_RE = re.compile(r'AA_ID_TABLE\s*=\s*(\{.*?\n\});', re.DOTALL)
+
+
+def check_aa_ids_current(data_src: str):
+    """
+    Every AA in data.src.js must have an entry in src/aaIds.js's
+    AA_ID_TABLE. That table backs the compact share/export wire format
+    (keys.js's idForKey) - an AA missing from it doesn't error, it just
+    silently drops out of every share link/export text that includes it,
+    since idForKey returning null is treated the same as any other
+    unresolved key (degrade gracefully, don't guess). That's the wrong
+    failure mode for "someone edited data.src.js and forgot to run
+    wiki-sync/assign_aa_ids.py" - this catches it at build time instead.
+    """
+    import json as _json
+
+    current_cat = None
+    buckets = {}
+    for line in data_src.split("\n"):
+        s = line.strip()
+        m = DATA_CATEGORY_START.match(s)
+        if m:
+            current_cat = (m.group(1), None)
+            continue
+        m = DATA_CLASS_START.match(s)
+        if m:
+            current_cat = ("class", m.group(1))
+            continue
+        if s.startswith("classes:") or not s.startswith("{ name:"):
+            continue
+        nm = DATA_ENTRY_NAME.search(s)
+        if not nm or not current_cat:
+            continue
+        buckets.setdefault(current_cat, []).append((nm.group(1), bool(DATA_ENTRY_AUTO.search(s))))
+
+    # Same disambiguation as keys.js's keyForEntryIdx / assign_aa_ids.py.
+    def slugify(name):
+        s = name.lower().replace("'", "")
+        return re.sub(r"[^a-z0-9]+", "-", s).strip("-")
+
+    expected_id_keys = []
+    for (scope, class_name), entries in buckets.items():
+        slugs = [slugify(n) for n, _ in entries]
+        autos = [a for _, a in entries]
+        for pos in range(len(entries)):
+            base = slugs[pos]
+            same = [j for j in range(len(entries)) if slugs[j] == base]
+            if len(same) <= 1 or not autos[pos]:
+                key = base
+            else:
+                auto_siblings = [j for j in same if autos[j]]
+                auto_pos = auto_siblings.index(pos)
+                key = f"{base}-auto" if auto_pos == 0 else f"{base}-auto-{auto_pos + 1}"
+            expected_id_keys.append(f"{scope}:{class_name or ''}:{key}")
+
+    ids_path = "src/aaIds.js"
+    try:
+        with open(ids_path, "r", encoding="utf-8") as f:
+            ids_src = f.read()
+    except FileNotFoundError:
+        return [f'  {ids_path} does not exist. Run "python wiki-sync/assign_aa_ids.py" once to create it.']
+    m = AA_IDS_TABLE_RE.search(ids_src)
+    if not m:
+        return [f"  Could not find AA_ID_TABLE in {ids_path} - has its format changed?"]
+    table = _json.loads(m.group(1))
+
+    missing = [k for k in expected_id_keys if k not in table]
+    if not missing:
+        return []
+    return [
+        f'  {len(missing)} AA(s) in data.src.js have no entry in {ids_path}: {", ".join(missing[:10])}'
+        + (", ..." if len(missing) > 10 else ""),
+        '  Run "python wiki-sync/assign_aa_ids.py" to assign them ids, then rebuild.',
+    ]
+
+
 VERSIONED_ASSET = re.compile(r'(href|src)="(app\.js|data\.js|styles\.css)(?:\?v=[a-f0-9]+)?"')
 
 
@@ -233,6 +310,13 @@ def main():
         for p in problems:
             print(p)
         print("A prereq referencing one of these names would resolve unpredictably. Fix the data (add/remove an `auto` flag so exactly one occurrence is non-auto) before building.")
+        return 1
+
+    id_problems = check_aa_ids_current(data_src_check)
+    if id_problems:
+        print("ERROR: src/aaIds.js is out of date with data.src.js:")
+        for p in id_problems:
+            print(p)
         return 1
 
     assemble_app_src()

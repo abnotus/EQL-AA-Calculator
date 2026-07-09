@@ -11,8 +11,15 @@
 // keys survive reordering/insertion, and degrade gracefully (an unknown key
 // is just dropped) instead of resolving to the wrong AA.
 //
-// No internal deps: reads the global AA_DATA (from data.js, loaded before
-// this runs) plus the frozen LEGACY_AA_ORDER snapshot below, which captures
+// One dependency: aaIds.js, the append-only numeric id table used only by
+// the compact share/export format (idForKey/entryForId below) — a smaller
+// alternative to the name keys for that one serialization target, where
+// URL length actually matters. localStorage keeps using name keys directly;
+// they don't need the extra translation layer since size isn't a concern
+// there.
+//
+// Otherwise no internal deps: reads the global AA_DATA (from data.js, loaded
+// before this runs) plus the frozen LEGACY_AA_ORDER snapshot below, which captures
 // AA_DATA's exact ordering (and, where needed to disambiguate a duplicate
 // name, its `auto` flag) as of 2026-07-09 — the last point before any AA
 // data was index-addressed. It exists only to translate old index-based
@@ -29,6 +36,9 @@
 // doesn't decay away as users' saves age out; assume it's load-bearing for
 // as long as this app has users with old saves, not just for a transition
 // period.
+
+import { AA_ID_TABLE } from "./aaIds.js";
+
 const LEGACY_AA_ORDER = {
   "general": [
     "Adamant Will", "Alchemy Mastery", "Baking Mastery", "Blacksmithing Mastery",
@@ -162,4 +172,37 @@ export function currentIdxForLegacyIdx(scope, className, legacyIdx) {
   const key = keyForEntryIdx(entries, legacyIdx);
   if (!key) return -1;
   return idxForEntryKey(currentEntries(scope, className), key);
+}
+
+let idToEntryCache = null;
+function idToEntry() {
+  if (!idToEntryCache) {
+    idToEntryCache = {};
+    Object.keys(AA_ID_TABLE).forEach((idKey) => {
+      const id = AA_ID_TABLE[idKey];
+      const sep1 = idKey.indexOf(":");
+      const sep2 = idKey.indexOf(":", sep1 + 1);
+      const scope = idKey.slice(0, sep1);
+      const className = idKey.slice(sep1 + 1, sep2) || null;
+      const key = idKey.slice(sep2 + 1);
+      idToEntryCache[id] = { scope, className, key };
+    });
+  }
+  return idToEntryCache;
+}
+
+// (scope, className, name key) -> the stable small integer id for it, or
+// null if this AA isn't in AA_ID_TABLE (shouldn't happen for anything
+// currently in AA_DATA — see build_minify.py's check — but a defensively
+// missing id degrades to null the same way an unresolved name key does).
+export function idForKey(scope, className, key) {
+  const idKey = `${scope}:${className || ""}:${key}`;
+  return Object.prototype.hasOwnProperty.call(AA_ID_TABLE, idKey) ? AA_ID_TABLE[idKey] : null;
+}
+
+// Reverse of idForKey: a stable id -> { scope, className, key }, or null for
+// an id the table doesn't recognize (an AA removed since that id was
+// assigned — the id itself is never reused, so this is unambiguous).
+export function entryForId(id) {
+  return idToEntry()[id] || null;
 }

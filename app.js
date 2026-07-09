@@ -1,5 +1,143 @@
 (function () {
 "use strict";
+const AA_ID_TABLE = {
+"general::adamant-will": 0,
+"general::alchemy-mastery": 1,
+"general::baking-mastery": 2,
+"general::blacksmithing-mastery": 3,
+"general::brewing-mastery": 4,
+"general::circular-breathing": 5,
+"general::combat-agility": 6,
+"general::combat-fury": 7,
+"general::combat-stability": 8,
+"general::crafting-mastery": 9,
+"general::fear-resistance": 10,
+"general::first-aid": 11,
+"general::fletching-mastery": 12,
+"general::foraging": 13,
+"general::gather-party": 14,
+"general::innate-eminence": 15,
+"general::innate-lung-capacity": 16,
+"general::innate-metabolism": 17,
+"general::innate-regeneration": 18,
+"general::innate-spell-resistance": 19,
+"general::jewel-craft-mastery": 20,
+"general::natural-durability": 21,
+"general::origin": 22,
+"general::packrat": 23,
+"general::permanent-illusion": 24,
+"general::pottery-mastery": 25,
+"general::quick-buff": 26,
+"general::steadfast-will": 27,
+"general::stoicism": 28,
+"general::tailoring-mastery": 29,
+"archetype::acrobatics": 30,
+"archetype::ambidexterity": 31,
+"archetype::burst-of-power": 32,
+"archetype::companions-discipline": 33,
+"archetype::critical-affliction": 34,
+"archetype::destructive-cascade": 35,
+"archetype::destructive-fury": 36,
+"archetype::double-riposte": 37,
+"archetype::exodus": 38,
+"archetype::finishing-blow": 39,
+"archetype::fury-of-magic": 40,
+"archetype::healing-adept": 41,
+"archetype::healing-boon": 42,
+"archetype::healing-gift": 43,
+"archetype::improved-bash": 44,
+"archetype::innate-camouflage": 45,
+"archetype::innate-invis-to-undead": 46,
+"archetype::intimidation": 47,
+"archetype::mass-group-buff": 48,
+"archetype::master-of-all": 49,
+"archetype::mastery-of-the-past": 50,
+"archetype::mend-companion": 51,
+"archetype::mental-clarity": 52,
+"archetype::mnemonic-retention": 53,
+"archetype::persistent-casting": 54,
+"archetype::pet-affinity": 55,
+"archetype::physical-enhancement": 56,
+"archetype::quick-damage": 57,
+"archetype::rampage": 58,
+"archetype::spell-casting-deftness": 59,
+"archetype::spell-casting-mastery": 60,
+"archetype::spell-casting-reinforcement": 61,
+"archetype::spell-casting-subtlety": 62,
+"archetype::thiefs-intuition": 63,
+"special::banestrike": 64,
+"class:Bard:instrument-mastery": 65,
+"class:Bard:jam-fest": 66,
+"class:Bard:reaching-notes": 67,
+"class:Bard:scribble-notes": 68,
+"class:Bard:singing-mastery": 69,
+"class:Bard:symphonic-aura": 70,
+"class:Beastlord:frenzy-of-spirit": 71,
+"class:Beastlord:hobble-of-spirits": 72,
+"class:Beastlord:paragon-of-spirit": 73,
+"class:Beastlord:playing-possum": 74,
+"class:Berserker:blood-rune": 75,
+"class:Berserker:innate-power-strike": 76,
+"class:Berserker:tireless-spirit": 77,
+"class:Berserker:unbound-fury": 78,
+"class:Cleric:divine-aura-auto": 79,
+"class:Cleric:divine-aura": 80,
+"class:Cleric:bestow-divine-aura": 81,
+"class:Cleric:purify-soul": 82,
+"class:Cleric:turn-undead": 83,
+"class:Cleric:unbound-boon": 84,
+"class:Druid:enhanced-root": 85,
+"class:Druid:quick-evacuation": 86,
+"class:Druid:unbound-nature": 87,
+"class:Enchanter:unbound-clarity": 88,
+"class:Magician:companions-fury": 89,
+"class:Magician:conjurers-efficiency": 90,
+"class:Magician:elemental-form": 91,
+"class:Magician:turn-summoned": 92,
+"class:Magician:unbound-companion": 93,
+"class:Monk:dragon-force": 94,
+"class:Monk:improved-mend": 95,
+"class:Monk:purify-body": 96,
+"class:Monk:rapid-feign": 97,
+"class:Necromancer:dead-mesmerization": 98,
+"class:Necromancer:fear-storm": 99,
+"class:Necromancer:flesh-to-bone": 100,
+"class:Necromancer:life-burn": 101,
+"class:Necromancer:unbound-affliction": 102,
+"class:Paladin:act-of-valor": 103,
+"class:Paladin:divine-stun": 104,
+"class:Paladin:holy-steed": 105,
+"class:Paladin:lay-on-hands": 106,
+"class:Paladin:slay-undead": 107,
+"class:Paladin:valiant-steed": 108,
+"class:Ranger:hunters-attack-power": 109,
+"class:Ranger:innate-called-shot": 110,
+"class:Ranger:unbounded-strikethrough": 111,
+"class:Ranger:weapon-mastery-of-the-scout": 112,
+"class:Rogue:chaotic-stab": 113,
+"class:Rogue:escape": 114,
+"class:Rogue:innate-sneakiness": 115,
+"class:Rogue:purge-poison": 116,
+"class:Rogue:shroud-of-stealth": 117,
+"class:Shadow Knight:unholy-steed": 118,
+"class:Shadow Knight:abyssal-steed": 119,
+"class:Shadow Knight:harm-touch": 120,
+"class:Shadow Knight:leech-touch": 121,
+"class:Shadow Knight:soul-abrasion": 122,
+"class:Shaman:cannibalization": 123,
+"class:Shaman:unbound-cascade": 124,
+"class:Warrior:area-taunt": 125,
+"class:Warrior:heroic-leap": 126,
+"class:Warrior:innate-fighters-tenacity": 127,
+"class:Warrior:unbound-wrath": 128,
+"class:Warrior:war-cry": 129,
+"class:Warrior:warriors-endurance": 130,
+"class:Wizard:improved-familiar": 131,
+"class:Wizard:mana-burn": 132,
+"class:Wizard:quick-evacuation": 133,
+"class:Wizard:strong-root": 134,
+"class:Wizard:unbound-destruction": 135
+};
 const LEGACY_AA_ORDER = {
 "general": [
 "Adamant Will", "Alchemy Mastery", "Baking Mastery", "Blacksmithing Mastery",
@@ -97,6 +235,29 @@ if (legacyIdx < 0 || legacyIdx >= entries.length) return -1;
 const key = keyForEntryIdx(entries, legacyIdx);
 if (!key) return -1;
 return idxForEntryKey(currentEntries(scope, className), key);
+}
+let idToEntryCache = null;
+function idToEntry() {
+if (!idToEntryCache) {
+idToEntryCache = {};
+Object.keys(AA_ID_TABLE).forEach((idKey) => {
+const id = AA_ID_TABLE[idKey];
+const sep1 = idKey.indexOf(":");
+const sep2 = idKey.indexOf(":", sep1 + 1);
+const scope = idKey.slice(0, sep1);
+const className = idKey.slice(sep1 + 1, sep2) || null;
+const key = idKey.slice(sep2 + 1);
+idToEntryCache[id] = { scope, className, key };
+});
+}
+return idToEntryCache;
+}
+function idForKey(scope, className, key) {
+const idKey = `${scope}:${className || ""}:${key}`;
+return Object.prototype.hasOwnProperty.call(AA_ID_TABLE, idKey) ? AA_ID_TABLE[idKey] : null;
+}
+function entryForId(id) {
+return idToEntry()[id] || null;
 }
 const USER_CHANGELOG = [
 {
@@ -1168,14 +1329,57 @@ try { localStorage.setItem(LAST_SEEN_VERSION_KEY, USER_CHANGELOG[0].version); } 
 function closeChangelogModal() {
 el.changelogModal.classList.add("hidden");
 }
+const BUILD_CODE_VERSION = 2;
 function buildCodeObject() {
+const serializedRanks = serializeRanks(state.ranks);
+const compactRanks = [];
+const pushRank = (scope, className, key, rank) => {
+const id = idForKey(scope, className, key);
+if (id != null) compactRanks.push([id, rank]);
+};
+["general", "archetype", "special"].forEach((scope) => {
+const store = serializedRanks[scope] || {};
+Object.keys(store).forEach((key) => pushRank(scope, null, key, store[key]));
+});
+Object.keys(serializedRanks.classes || {}).forEach((className) => {
+const store = serializedRanks.classes[className] || {};
+Object.keys(store).forEach((key) => pushRank("class", className, key, store[key]));
+});
+const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
+.map((e) => idForKey(e.scope, e.className, e.key))
+.filter((id) => id != null);
+return {
+v: BUILD_CODE_VERSION,
+c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
+l: state.charLevel,
+t: state.totalPoints,
+r: compactRanks,
+p: compactPurchaseOrder
+};
+}
+function expandCompactPayload(compact) {
+const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
+(compact.r || []).forEach(([id, rank]) => {
+const entry = entryForId(id);
+if (!entry) return;
+if (entry.scope === "class") {
+ranks.classes[entry.className] = ranks.classes[entry.className] || {};
+ranks.classes[entry.className][entry.key] = rank;
+} else {
+ranks[entry.scope][entry.key] = rank;
+}
+});
+const purchaseOrder = (compact.p || []).map((id) => {
+const entry = entryForId(id);
+return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
+}).filter(Boolean);
 return {
 v: SAVE_FORMAT_VERSION,
-selectedClasses: state.selectedClasses,
-charLevel: state.charLevel,
-totalPoints: state.totalPoints,
-ranks: serializeRanks(state.ranks),
-purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
+selectedClasses: (compact.c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
+charLevel: compact.l,
+totalPoints: compact.t,
+ranks,
+purchaseOrder
 };
 }
 async function gzipCompress(bytes) {
@@ -1215,7 +1419,8 @@ jsonBytes = await gzipDecompress(bytes);
 } catch (e) {
 jsonBytes = bytes;
 }
-return JSON.parse(new TextDecoder().decode(jsonBytes));
+const parsed = JSON.parse(new TextDecoder().decode(jsonBytes));
+return parsed && parsed.v === BUILD_CODE_VERSION ? expandCompactPayload(parsed) : parsed;
 }
 function toBase64Url(b64) {
 return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

@@ -4,15 +4,82 @@ import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, s
 import { el } from "./dom.js";
 import { getList, effectiveRank, labelFor, spentPoints, computeProgressionSteps, clearLastMutation, reconcilePurchaseOrderCounts } from "./logic.js";
 import { renderAll, showToast } from "./render.js";
+import { idForKey, entryForId } from "./keys.js";
+
+// Wire-format version for BUILD_CODE specifically (share links, export
+// text) — independent of state.js's SAVE_FORMAT_VERSION, which governs
+// localStorage only and stays name-keyed on purpose (readable, no size
+// pressure there). BUILD_CODE trades that readability for size: numeric AA
+// ids from aaIds.js instead of name keys, abbreviated field names, and
+// ranks/purchaseOrder as flat arrays instead of nested objects/objects-with-
+// repeated-keys. Never used 2 before (history went 3 -> 4), so no collision
+// with an old share code's v.
+const BUILD_CODE_VERSION = 2;
 
 function buildCodeObject() {
+  const serializedRanks = serializeRanks(state.ranks);
+  const compactRanks = [];
+  const pushRank = (scope, className, key, rank) => {
+    const id = idForKey(scope, className, key);
+    // An AA missing from aaIds.js shouldn't happen for anything currently
+    // pickable (build_minify.py's invariant check + assign_aa_ids.py being
+    // run together keep them in sync) - degrades to "dropped" rather than
+    // guessed at, same as everywhere else this app handles an unresolved key.
+    if (id != null) compactRanks.push([id, rank]);
+  };
+  ["general", "archetype", "special"].forEach((scope) => {
+    const store = serializedRanks[scope] || {};
+    Object.keys(store).forEach((key) => pushRank(scope, null, key, store[key]));
+  });
+  Object.keys(serializedRanks.classes || {}).forEach((className) => {
+    const store = serializedRanks.classes[className] || {};
+    Object.keys(store).forEach((key) => pushRank("class", className, key, store[key]));
+  });
+
+  const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
+    .map((e) => idForKey(e.scope, e.className, e.key))
+    .filter((id) => id != null);
+
+  return {
+    v: BUILD_CODE_VERSION,
+    c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
+    l: state.charLevel,
+    t: state.totalPoints,
+    r: compactRanks,
+    p: compactPurchaseOrder
+  };
+}
+
+// Reconstructs the verbose, name-keyed shape applyLoaded already understands
+// (the same shape a v4 localStorage/legacy payload is in) from a decoded
+// BUILD_CODE_VERSION payload, so applyLoaded itself never needs to know the
+// compact format exists — only this file and keys.js do. An id that no
+// longer resolves (entryForId returns null - the AA was removed since this
+// link's ranks were assigned their ids) is dropped, same degrade-gracefully
+// philosophy as an unresolved name key elsewhere.
+function expandCompactPayload(compact) {
+  const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
+  (compact.r || []).forEach(([id, rank]) => {
+    const entry = entryForId(id);
+    if (!entry) return;
+    if (entry.scope === "class") {
+      ranks.classes[entry.className] = ranks.classes[entry.className] || {};
+      ranks.classes[entry.className][entry.key] = rank;
+    } else {
+      ranks[entry.scope][entry.key] = rank;
+    }
+  });
+  const purchaseOrder = (compact.p || []).map((id) => {
+    const entry = entryForId(id);
+    return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
+  }).filter(Boolean);
   return {
     v: SAVE_FORMAT_VERSION,
-    selectedClasses: state.selectedClasses,
-    charLevel: state.charLevel,
-    totalPoints: state.totalPoints,
-    ranks: serializeRanks(state.ranks),
-    purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
+    selectedClasses: (compact.c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
+    charLevel: compact.l,
+    totalPoints: compact.t,
+    ranks,
+    purchaseOrder
   };
 }
 
@@ -67,7 +134,12 @@ async function decodeBuildCode(code) {
     // exported text both keep working, rather than just failing.
     jsonBytes = bytes;
   }
-  return JSON.parse(new TextDecoder().decode(jsonBytes));
+  const parsed = JSON.parse(new TextDecoder().decode(jsonBytes));
+  // BUILD_CODE_VERSION (compact, id-keyed) needs expanding back to the
+  // name-keyed shape applyLoaded understands; anything else (v4 verbose, or
+  // an old legacy shape) is already in that shape and passes through as-is -
+  // applyLoaded's own v check handles v4-vs-legacy from here.
+  return parsed && parsed.v === BUILD_CODE_VERSION ? expandCompactPayload(parsed) : parsed;
 }
 
 // Standard base64 (as used in BUILD_CODE) uses +, /, and = padding, which are legal
