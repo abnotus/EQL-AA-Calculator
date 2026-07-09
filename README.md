@@ -17,7 +17,7 @@ A talent-calculator-style planner for [EverQuest Legends](https://eqlwiki.com/Al
 - Auto-granted AAs (free, level-gated abilities, including partially-free abilities) are applied automatically
 - Responsive layout, keyboard-accessible AA selection
 
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+Player-facing version history is in the app itself — click the version tag in the bottom-right corner. For everything else, `git log` is the changelog.
 
 ## Data source
 

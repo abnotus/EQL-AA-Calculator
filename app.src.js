@@ -162,8 +162,8 @@ function currentIdxForLegacyIdx(scope, className, legacyIdx) {
 }
 
 // Curated, user-facing changelog — features and dataset changes worth telling
-// players about. Deliberately separate from CHANGELOG.md, which also covers
-// internal refactors/architecture that aren't relevant here. Newest first;
+// players about. Internal refactors/architecture/bug-fixes-that-were-never-
+// visible don't belong here; git log is the record for those. Newest first;
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
