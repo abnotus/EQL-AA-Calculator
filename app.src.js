@@ -732,20 +732,24 @@ function findInvalidatedPicks() {
 
 // For every AA the user holds a rank in, purchaseOrder should contain exactly
 // (held rank - any free autoRanks floor, which never goes through
-// purchaseOrder) entries for it. computeProgressionSteps derives the rank
-// number it displays purely by counting purchaseOrder occurrences, so if that
-// count doesn't match the held rank, the Progression tab and export text show
-// a different rank than the tree/side panel do for the same AA — a real
-// desync, not just a stale entry. This can arise independently of ranks
-// deserialization dropping something (e.g. purchaseOrder resolving a key
-// ranks didn't, or any other path that touches one without the other), so
-// it's checked directly rather than inferred from a drop count.
+// purchaseOrder) entries for it, and *no* entries for an AA that isn't held
+// at all (rank 0, or auto-granted). computeProgressionSteps walks
+// state.purchaseOrder directly — resolving each entry's AA from AA_DATA and
+// costing it — without ever consulting effectiveRank or the rank store, so
+// either direction of mismatch renders wrong: a held AA with too few/many
+// entries shows the wrong rank number in the Progression tab and export
+// text; an orphan entry (no matching held rank at all) renders as a
+// completely fabricated step, with its cost added to the running total, even
+// though nothing was ever actually bought. Reachable from a crafted
+// ?build= link, same threat model clampRankValue exists for.
 //
-// Repairs by adding/removing purchaseOrder entries for the affected AA until
-// the count matches again (added at the end / removed from the end, so
-// earlier purchases keep their relative order). state.ranks — the actual
-// points spent — is never touched here; only which rank number a step
-// displays and its position in the sequence can change.
+// Checked directly rather than inferred from a drop count, since this can
+// arise from more than just deserialization dropping something. Repairs by
+// adding/removing entries for a held AA until its count matches (added at
+// the end / removed from the end, so earlier purchases keep their relative
+// order), and by dropping every entry for an AA that isn't held at all.
+// state.ranks — the actual points spent — is never touched here; only which
+// rank number a step displays and its position in the sequence can change.
 function reconcilePurchaseOrderCounts() {
   function countFor(scope, className, idx) {
     let n = 0;
@@ -754,23 +758,29 @@ function reconcilePurchaseOrderCounts() {
     }
     return n;
   }
-  function expectedFor(scope, className, idx, aa, held) {
+  function expectedFor(aa, held) {
     const autoOffset = aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
     return Math.max(0, held - autoOffset);
   }
+  function key(scope, className, idx) {
+    return `${scope}|${className || ""}|${idx}`;
+  }
 
-  // aa.auto entries are excluded: nothing ever legitimately writes a
-  // purchaseOrder entry for one (attemptIncrement refuses them before
-  // changeRank runs), so a stray ranks value for one — which effectiveRank
-  // already ignores entirely — should never cause fabricated purchase
-  // history rather than just staying inert.
+  // aa.auto entries are excluded from targets: nothing ever legitimately
+  // writes a purchaseOrder entry for one (attemptIncrement refuses them
+  // before changeRank runs), so they fall into the "not held" case below
+  // rather than getting a count to satisfy.
   const targets = [];
+  const targetKeys = new Set();
   ["general", "archetype", "special"].forEach((scope) => {
     const list = AA_DATA[scope] || [];
     Object.keys(state.ranks[scope] || {}).forEach((idxStr) => {
       const idx = parseInt(idxStr, 10);
       const aa = list[idx];
-      if (aa && !aa.auto) targets.push({ scope, className: null, idx, aa, held: state.ranks[scope][idxStr] });
+      if (aa && !aa.auto) {
+        targets.push({ scope, className: null, idx, aa, held: state.ranks[scope][idxStr] });
+        targetKeys.add(key(scope, null, idx));
+      }
     });
   });
   Object.keys(state.ranks.classes || {}).forEach((className) => {
@@ -778,13 +788,27 @@ function reconcilePurchaseOrderCounts() {
     Object.keys(state.ranks.classes[className] || {}).forEach((idxStr) => {
       const idx = parseInt(idxStr, 10);
       const aa = list[idx];
-      if (aa && !aa.auto) targets.push({ scope: "class", className, idx, aa, held: state.ranks.classes[className][idxStr] });
+      if (aa && !aa.auto) {
+        targets.push({ scope: "class", className, idx, aa, held: state.ranks.classes[className][idxStr] });
+        targetKeys.add(key("class", className, idx));
+      }
     });
   });
 
   let repaired = 0;
+
+  const orphanKeys = new Set();
+  state.purchaseOrder.forEach((e) => {
+    const k = key(e.scope, e.className || null, e.idx);
+    if (!targetKeys.has(k)) orphanKeys.add(k);
+  });
+  if (orphanKeys.size) {
+    state.purchaseOrder = state.purchaseOrder.filter((e) => targetKeys.has(key(e.scope, e.className || null, e.idx)));
+    repaired += orphanKeys.size;
+  }
+
   targets.forEach(({ scope, className, idx, aa, held }) => {
-    const expected = expectedFor(scope, className, idx, aa, held);
+    const expected = expectedFor(aa, held);
     const actual = countFor(scope, className, idx);
     if (expected === actual) return;
     repaired++;
@@ -1917,10 +1941,18 @@ function init() {
   // actually held for an AA (see reconcilePurchaseOrderCounts) - repair it
   // before the first render, since computeProgressionSteps would otherwise
   // display a rank number that disagrees with the tree/side panel.
+  //
+  // If a share link applied, applySharedBuildFromUrl already ran this same
+  // reconcile + saveLocal internally before returning - this second call
+  // will just find nothing left to fix. Otherwise, this is the only place
+  // that persists whatever applyLoaded(loadLocal()) clamped/dropped and this
+  // repaired: without it, the fix exists only in memory for this session,
+  // and every future visit repeats the same repair and the same toast.
   const repaired = reconcilePurchaseOrderCounts();
   if (repaired) {
     notices.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was out of sync and ${repaired === 1 ? "was" : "were"} repaired`);
   }
+  if (!shared.applied) saveLocal();
   // Data can drift out from under a saved build (a resync renaming/reshaping a
   // prereq target, say) — catch it once on load rather than leaving the user
   // to discover a quietly-broken pick on their own.

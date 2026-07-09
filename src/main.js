@@ -1,6 +1,6 @@
 // Entry point: wires everything together and boots the app on DOMContentLoaded.
 
-import { loadLocal, applyLoaded, DISCLAIMER_DISMISSED_KEY } from "./state.js";
+import { loadLocal, applyLoaded, saveLocal, DISCLAIMER_DISMISSED_KEY } from "./state.js";
 import { cacheDom, el } from "./dom.js";
 import { populateStaticControls, renderAll, showToast } from "./render.js";
 import { findInvalidatedPicks, reconcilePurchaseOrderCounts } from "./logic.js";
@@ -35,10 +35,18 @@ function init() {
   // actually held for an AA (see reconcilePurchaseOrderCounts) - repair it
   // before the first render, since computeProgressionSteps would otherwise
   // display a rank number that disagrees with the tree/side panel.
+  //
+  // If a share link applied, applySharedBuildFromUrl already ran this same
+  // reconcile + saveLocal internally before returning - this second call
+  // will just find nothing left to fix. Otherwise, this is the only place
+  // that persists whatever applyLoaded(loadLocal()) clamped/dropped and this
+  // repaired: without it, the fix exists only in memory for this session,
+  // and every future visit repeats the same repair and the same toast.
   const repaired = reconcilePurchaseOrderCounts();
   if (repaired) {
     notices.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was out of sync and ${repaired === 1 ? "was" : "were"} repaired`);
   }
+  if (!shared.applied) saveLocal();
   // Data can drift out from under a saved build (a resync renaming/reshaping a
   // prereq target, say) — catch it once on load rather than leaving the user
   // to discover a quietly-broken pick on their own.

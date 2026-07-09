@@ -510,17 +510,24 @@ if (e.scope === scope && (e.className || null) === (className || null) && e.idx 
 }
 return n;
 }
-function expectedFor(scope, className, idx, aa, held) {
+function expectedFor(aa, held) {
 const autoOffset = aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
 return Math.max(0, held - autoOffset);
 }
+function key(scope, className, idx) {
+return `${scope}|${className || ""}|${idx}`;
+}
 const targets = [];
+const targetKeys = new Set();
 ["general", "archetype", "special"].forEach((scope) => {
 const list = AA_DATA[scope] || [];
 Object.keys(state.ranks[scope] || {}).forEach((idxStr) => {
 const idx = parseInt(idxStr, 10);
 const aa = list[idx];
-if (aa && !aa.auto) targets.push({ scope, className: null, idx, aa, held: state.ranks[scope][idxStr] });
+if (aa && !aa.auto) {
+targets.push({ scope, className: null, idx, aa, held: state.ranks[scope][idxStr] });
+targetKeys.add(key(scope, null, idx));
+}
 });
 });
 Object.keys(state.ranks.classes || {}).forEach((className) => {
@@ -528,12 +535,24 @@ const list = AA_DATA.classes[className] || [];
 Object.keys(state.ranks.classes[className] || {}).forEach((idxStr) => {
 const idx = parseInt(idxStr, 10);
 const aa = list[idx];
-if (aa && !aa.auto) targets.push({ scope: "class", className, idx, aa, held: state.ranks.classes[className][idxStr] });
+if (aa && !aa.auto) {
+targets.push({ scope: "class", className, idx, aa, held: state.ranks.classes[className][idxStr] });
+targetKeys.add(key("class", className, idx));
+}
 });
 });
 let repaired = 0;
+const orphanKeys = new Set();
+state.purchaseOrder.forEach((e) => {
+const k = key(e.scope, e.className || null, e.idx);
+if (!targetKeys.has(k)) orphanKeys.add(k);
+});
+if (orphanKeys.size) {
+state.purchaseOrder = state.purchaseOrder.filter((e) => targetKeys.has(key(e.scope, e.className || null, e.idx)));
+repaired += orphanKeys.size;
+}
 targets.forEach(({ scope, className, idx, aa, held }) => {
-const expected = expectedFor(scope, className, idx, aa, held);
+const expected = expectedFor(aa, held);
 const actual = countFor(scope, className, idx);
 if (expected === actual) return;
 repaired++;
@@ -1475,6 +1494,7 @@ const repaired = reconcilePurchaseOrderCounts();
 if (repaired) {
 notices.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was out of sync and ${repaired === 1 ? "was" : "were"} repaired`);
 }
+if (!shared.applied) saveLocal();
 const invalidated = findInvalidatedPicks();
 if (invalidated.length) {
 const n = invalidated.length;
