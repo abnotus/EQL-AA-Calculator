@@ -69,7 +69,14 @@ function loadIssuesSuffix(result, repaired) {
 // { applied, notice } rather than toasting directly — main.js is the single
 // place that decides what to show, so this outcome can be combined with
 // other load-time notices into one toast instead of one overwriting another.
-export function applySharedBuildFromUrl() {
+//
+// localLoadResult is applyLoaded(loadLocal())'s result, from immediately
+// before this runs — needed because spentPoints() alone reflects the local
+// build *after* pruning any dropped picks. A build that lost every point
+// it had to a bad resync would otherwise read as empty, skip the confirm,
+// and get silently overwritten here (with an unconditional saveLocal below)
+// on the exact load where preserving the original save mattered most.
+export function applySharedBuildFromUrl(localLoadResult) {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get("build");
   if (!raw) return { applied: false, notice: null };
@@ -84,7 +91,7 @@ export function applySharedBuildFromUrl() {
   let applied = false;
   let notice = null;
   if (json) {
-    const hasExisting = spentPoints() > 0;
+    const hasExisting = spentPoints() > 0 || (localLoadResult && localLoadResult.droppedRanks > 0);
     const proceed = !hasExisting || confirm("Load the shared build from this link? This will replace your current build. Export your current build first if you want to keep it.");
     if (proceed) {
       const result = applyLoaded(json);

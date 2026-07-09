@@ -17,7 +17,7 @@ function init() {
   // one place that assembles and shows a load-time notice, so several
   // simultaneous issues combine into one toast instead of each overwriting
   // the last.
-  const shared = applySharedBuildFromUrl();
+  const shared = applySharedBuildFromUrl(localResult);
   wireEvents();
   try {
     if (!localStorage.getItem(DISCLAIMER_DISMISSED_KEY)) el.disclaimerBanner.classList.remove("hidden");
@@ -44,14 +44,21 @@ function init() {
   // once it's saved. Persisting a drop is not: localStorage is this path's
   // *only* copy of the build (unlike a share link or pasted import text,
   // where the source survives on its own), so writing back a build with a
-  // dropped AA missing turns a recoverable loss into a permanent one the
-  // moment a bad data.src.js touches this page — even if it gets fixed an
-  // hour later, there's nothing left on disk to recover into. So: only
-  // persist when something was actually repaired, and never on the same
-  // load a drop happened — the drop notice recurs every visit until the
-  // data is fixed, which is the point. (Also incidentally means a
+  // dropped AA missing risks turning a recoverable loss into a permanent
+  // one. So: only persist when something was actually repaired, and never
+  // on the same load a drop happened — the drop notice recurs every visit
+  // until the data is fixed, which is the point. (Also incidentally means a
   // brand-new visitor with nothing saved yet — repaired is always 0 for
   // them — no longer writes a default payload to storage for no reason.)
+  //
+  // This only protects against the load itself overwriting the save. It's
+  // not a durable "your original build is safe until the data is fixed"
+  // guarantee — any normal interaction afterward (changeRank, an import,
+  // accepting a share link — see applySharedBuildFromUrl's own hasExisting
+  // check) still calls saveLocal() as usual and persists whatever's in
+  // memory at that point, dropped picks included. This buys the user a
+  // chance to notice and export/back up before that happens; it doesn't
+  // guarantee they will.
   if (!shared.applied && repaired > 0 && !localResult.droppedRanks) saveLocal();
   // Data can drift out from under a saved build (a resync renaming/reshaping a
   // prereq target, say) — catch it once on load rather than leaving the user

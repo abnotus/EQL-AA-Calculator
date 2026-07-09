@@ -1210,7 +1210,7 @@ parts.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was
 }
 return parts.length ? ` (${parts.join("; ")})` : "";
 }
-function applySharedBuildFromUrl() {
+function applySharedBuildFromUrl(localLoadResult) {
 const params = new URLSearchParams(window.location.search);
 const raw = params.get("build");
 if (!raw) return { applied: false, notice: null };
@@ -1223,7 +1223,7 @@ json = null;
 let applied = false;
 let notice = null;
 if (json) {
-const hasExisting = spentPoints() > 0;
+const hasExisting = spentPoints() > 0 || (localLoadResult && localLoadResult.droppedRanks > 0);
 const proceed = !hasExisting || confirm("Load the shared build from this link? This will replace your current build. Export your current build first if you want to keep it.");
 if (proceed) {
 const result = applyLoaded(json);
@@ -1477,7 +1477,7 @@ function init() {
 cacheDom();
 populateStaticControls();
 const localResult = applyLoaded(loadLocal());
-const shared = applySharedBuildFromUrl();
+const shared = applySharedBuildFromUrl(localResult);
 wireEvents();
 try {
 if (!localStorage.getItem(DISCLAIMER_DISMISSED_KEY)) el.disclaimerBanner.classList.remove("hidden");

@@ -19,6 +19,16 @@
 // saves (from before this file existed) into name keys on load, and must
 // never be regenerated/updated after the fact, or it stops describing what
 // those old saves actually meant.
+//
+// Must also never be deleted, even once it feels obsolete. A legacy save
+// that migrates cleanly (nothing dropped, nothing to repair) is only
+// rewritten to v4 form on the user's next actual mutation (changeRank calls
+// saveLocal unconditionally) — state.js deliberately stopped persisting a
+// load-only migration by itself, so a quiet v3 save can sit in someone's
+// localStorage indefinitely without ever being upgraded on disk. This table
+// doesn't decay away as users' saves age out; assume it's load-bearing for
+// as long as this app has users with old saves, not just for a transition
+// period.
 const LEGACY_AA_ORDER = {
   "general": [
     "Adamant Will", "Alchemy Mastery", "Baking Mastery", "Blacksmithing Mastery",

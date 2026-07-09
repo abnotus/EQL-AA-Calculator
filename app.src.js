@@ -26,6 +26,16 @@
 // saves (from before this file existed) into name keys on load, and must
 // never be regenerated/updated after the fact, or it stops describing what
 // those old saves actually meant.
+//
+// Must also never be deleted, even once it feels obsolete. A legacy save
+// that migrates cleanly (nothing dropped, nothing to repair) is only
+// rewritten to v4 form on the user's next actual mutation (changeRank calls
+// saveLocal unconditionally) — state.js deliberately stopped persisting a
+// load-only migration by itself, so a quiet v3 save can sit in someone's
+// localStorage indefinitely without ever being upgraded on disk. This table
+// doesn't decay away as users' saves age out; assume it's load-bearing for
+// as long as this app has users with old saves, not just for a transition
+// period.
 const LEGACY_AA_ORDER = {
   "general": [
     "Adamant Will", "Alchemy Mastery", "Baking Mastery", "Blacksmithing Mastery",
@@ -1598,7 +1608,14 @@ function loadIssuesSuffix(result, repaired) {
 // { applied, notice } rather than toasting directly — main.js is the single
 // place that decides what to show, so this outcome can be combined with
 // other load-time notices into one toast instead of one overwriting another.
-function applySharedBuildFromUrl() {
+//
+// localLoadResult is applyLoaded(loadLocal())'s result, from immediately
+// before this runs — needed because spentPoints() alone reflects the local
+// build *after* pruning any dropped picks. A build that lost every point
+// it had to a bad resync would otherwise read as empty, skip the confirm,
+// and get silently overwritten here (with an unconditional saveLocal below)
+// on the exact load where preserving the original save mattered most.
+function applySharedBuildFromUrl(localLoadResult) {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get("build");
   if (!raw) return { applied: false, notice: null };
@@ -1613,7 +1630,7 @@ function applySharedBuildFromUrl() {
   let applied = false;
   let notice = null;
   if (json) {
-    const hasExisting = spentPoints() > 0;
+    const hasExisting = spentPoints() > 0 || (localLoadResult && localLoadResult.droppedRanks > 0);
     const proceed = !hasExisting || confirm("Load the shared build from this link? This will replace your current build. Export your current build first if you want to keep it.");
     if (proceed) {
       const result = applyLoaded(json);
@@ -1923,7 +1940,7 @@ function init() {
   // one place that assembles and shows a load-time notice, so several
   // simultaneous issues combine into one toast instead of each overwriting
   // the last.
-  const shared = applySharedBuildFromUrl();
+  const shared = applySharedBuildFromUrl(localResult);
   wireEvents();
   try {
     if (!localStorage.getItem(DISCLAIMER_DISMISSED_KEY)) el.disclaimerBanner.classList.remove("hidden");
@@ -1950,14 +1967,21 @@ function init() {
   // once it's saved. Persisting a drop is not: localStorage is this path's
   // *only* copy of the build (unlike a share link or pasted import text,
   // where the source survives on its own), so writing back a build with a
-  // dropped AA missing turns a recoverable loss into a permanent one the
-  // moment a bad data.src.js touches this page — even if it gets fixed an
-  // hour later, there's nothing left on disk to recover into. So: only
-  // persist when something was actually repaired, and never on the same
-  // load a drop happened — the drop notice recurs every visit until the
-  // data is fixed, which is the point. (Also incidentally means a
+  // dropped AA missing risks turning a recoverable loss into a permanent
+  // one. So: only persist when something was actually repaired, and never
+  // on the same load a drop happened — the drop notice recurs every visit
+  // until the data is fixed, which is the point. (Also incidentally means a
   // brand-new visitor with nothing saved yet — repaired is always 0 for
   // them — no longer writes a default payload to storage for no reason.)
+  //
+  // This only protects against the load itself overwriting the save. It's
+  // not a durable "your original build is safe until the data is fixed"
+  // guarantee — any normal interaction afterward (changeRank, an import,
+  // accepting a share link — see applySharedBuildFromUrl's own hasExisting
+  // check) still calls saveLocal() as usual and persists whatever's in
+  // memory at that point, dropped picks included. This buys the user a
+  // chance to notice and export/back up before that happens; it doesn't
+  // guarantee they will.
   if (!shared.applied && repaired > 0 && !localResult.droppedRanks) saveLocal();
   // Data can drift out from under a saved build (a resync renaming/reshaping a
   // prereq target, say) — catch it once on load rather than leaving the user
