@@ -871,6 +871,17 @@ main {
 /* ---------- misc ---------- */
 .hidden { display: none !important; }
 
+.version-tag {
+  position: fixed;
+  bottom: 6px;
+  right: 10px;
+  font-size: 10px;
+  color: var(--text-faint);
+  opacity: 0.6;
+  z-index: 40;
+  pointer-events: none;
+}
+
 #toast {
   position: fixed;
   bottom: 20px;
