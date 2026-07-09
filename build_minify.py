@@ -30,6 +30,7 @@ import re
 import sys
 
 SRC_MODULE_ORDER = [
+    "src/keys.js",
     "src/state.js",
     "src/logic.js",
     "src/dom.js",

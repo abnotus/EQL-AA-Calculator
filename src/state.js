@@ -1,6 +1,13 @@
 // App-wide constants, the mutable state object, and localStorage persistence.
 // Nothing here touches the DOM — that's render.js / dom.js.
 
+import { keyForIdx, idxForKey, currentIdxForLegacyIdx } from "./keys.js";
+
+// Bumped whenever the persisted shape changes. v4 introduced name-based keys
+// for ranks/purchaseOrder (see keys.js) — anything below that is index-based
+// against the frozen LEGACY_AA_ORDER snapshot and gets migrated on load.
+export const SAVE_FORMAT_VERSION = 4;
+
 export const STORAGE_KEY = "eql_aa_builder_v1";
 export const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed";
 export const CLASS_SLOT_KEYS = ["classSlot0", "classSlot1", "classSlot2"];
@@ -21,9 +28,86 @@ export let state = {
   browseFilter: "all"
 };
 
+// --- ranks/purchaseOrder <-> persisted-shape conversion -------------------
+// Runtime state always addresses AAs by index into AA_DATA (simple, and every
+// other module already works that way). Only these functions know that saved
+// data instead uses name keys (v4+) or, for anything saved before keys.js
+// existed, indexes against the frozen LEGACY_AA_ORDER snapshot.
+
+export function serializeRanks(ranks) {
+  const out = { general: {}, archetype: {}, special: {}, classes: {} };
+  ["general", "archetype", "special"].forEach((scope) => {
+    const store = ranks[scope] || {};
+    Object.keys(store).forEach((idxStr) => {
+      const key = keyForIdx(scope, null, parseInt(idxStr, 10));
+      if (key) out[scope][key] = store[idxStr];
+    });
+  });
+  const classes = ranks.classes || {};
+  Object.keys(classes).forEach((className) => {
+    const store = classes[className] || {};
+    const outStore = {};
+    Object.keys(store).forEach((idxStr) => {
+      const key = keyForIdx("class", className, parseInt(idxStr, 10));
+      if (key) outStore[key] = store[idxStr];
+    });
+    if (Object.keys(outStore).length) out.classes[className] = outStore;
+  });
+  return out;
+}
+
+function deserializeRanks(saved, resolveIdx) {
+  const out = { general: {}, archetype: {}, special: {}, classes: {} };
+  if (!saved || typeof saved !== "object") return out;
+  ["general", "archetype", "special"].forEach((scope) => {
+    const store = saved[scope] || {};
+    Object.keys(store).forEach((k) => {
+      const idx = resolveIdx(scope, null, k);
+      if (idx >= 0) out[scope][idx] = store[k];
+    });
+  });
+  const classes = saved.classes || {};
+  Object.keys(classes).forEach((className) => {
+    const store = classes[className] || {};
+    const outStore = {};
+    Object.keys(store).forEach((k) => {
+      const idx = resolveIdx("class", className, k);
+      if (idx >= 0) outStore[idx] = store[k];
+    });
+    if (Object.keys(outStore).length) out.classes[className] = outStore;
+  });
+  return out;
+}
+
+export function serializePurchaseOrder(purchaseOrder) {
+  return (purchaseOrder || []).map((e) => {
+    const key = keyForIdx(e.scope, e.className || null, e.idx);
+    return key ? { scope: e.scope, className: e.className || null, key } : null;
+  }).filter(Boolean);
+}
+
+function deserializePurchaseOrder(saved, entryIdOf, resolveIdx) {
+  return (Array.isArray(saved) ? saved : []).map((e) => {
+    if (!e || typeof e !== "object" || typeof e.scope !== "string") return null;
+    const id = entryIdOf(e);
+    if (id == null) return null;
+    const idx = resolveIdx(e.scope, e.className || null, id);
+    return idx >= 0 ? { scope: e.scope, className: e.className || null, idx } : null;
+  }).filter(Boolean);
+}
+
 export function saveLocal() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-  catch (e) { /* storage unavailable, ignore */ }
+  try {
+    const payload = {
+      v: SAVE_FORMAT_VERSION,
+      selectedClasses: state.selectedClasses,
+      charLevel: state.charLevel,
+      totalPoints: state.totalPoints,
+      ranks: serializeRanks(state.ranks),
+      purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch (e) { /* storage unavailable, ignore */ }
 }
 
 export function loadLocal() {
@@ -52,15 +136,21 @@ export function applyLoaded(loaded) {
   if (typeof loaded.totalPoints === "number" && !isNaN(loaded.totalPoints)) {
     state.totalPoints = Math.max(0, loaded.totalPoints);
   }
+  // v4+ saves store name keys, resolved straight against today's AA_DATA.
+  // Anything older stored raw indexes against the ordering AA_DATA happened
+  // to have at save time — resolved instead through the frozen snapshot, so
+  // reordering/regenerating the wiki data doesn't quietly reattach old points
+  // to the wrong ability. Either way, an AA that no longer resolves is
+  // dropped rather than guessed at.
+  const isLegacy = !(typeof loaded.v === "number" && loaded.v >= 4);
   if (loaded.ranks && typeof loaded.ranks === "object") {
-    state.ranks = {
-      general: loaded.ranks.general || {},
-      archetype: loaded.ranks.archetype || {},
-      special: loaded.ranks.special || {},
-      classes: loaded.ranks.classes || {}
-    };
+    state.ranks = isLegacy
+      ? deserializeRanks(loaded.ranks, (scope, cls, idxStr) => currentIdxForLegacyIdx(scope, cls, parseInt(idxStr, 10)))
+      : deserializeRanks(loaded.ranks, (scope, cls, key) => idxForKey(scope, cls, key));
   }
   if (Array.isArray(loaded.purchaseOrder)) {
-    state.purchaseOrder = loaded.purchaseOrder.filter((e) => e && typeof e === "object" && typeof e.scope === "string" && typeof e.idx === "number");
+    state.purchaseOrder = isLegacy
+      ? deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.idx === "number" ? e.idx : null), (scope, cls, legacyIdx) => currentIdxForLegacyIdx(scope, cls, legacyIdx))
+      : deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.key === "string" ? e.key : null), (scope, cls, key) => idxForKey(scope, cls, key));
   }
 }
