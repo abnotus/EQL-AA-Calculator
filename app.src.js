@@ -363,6 +363,15 @@ function entryForId(id) {
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
+    version: "1.1.0",
+    date: "2026-07-10",
+    items: [
+      "Much shorter share links and export codes — a heavily-built character's link is now roughly a tenth of its old length. Links and codes you already have saved or shared still work.",
+      "If a data update ever removes or reshapes an AA you'd picked, you'll now see a notice on load explaining what changed, instead of a build that's just quietly different than you left it.",
+      "AAs whose prerequisite is no longer met (because of a data update) are now flagged directly in the tree and side panel, not just silently blocked."
+    ]
+  },
+  {
     version: "1.0.0",
     date: "2026-07-09",
     items: [
