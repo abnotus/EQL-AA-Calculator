@@ -1,17 +1,18 @@
 // Build export/import: the text format, the share-code encoding, share links, and modal wiring.
 
-import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal } from "./state.js";
+import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, serializeRanks, serializePurchaseOrder } from "./state.js";
 import { el } from "./dom.js";
 import { getList, effectiveRank, labelFor, spentPoints, computeProgressionSteps, clearLastMutation } from "./logic.js";
 import { renderAll, showToast } from "./render.js";
 
 function buildCodeObject() {
   return {
-    v: 3,
+    v: SAVE_FORMAT_VERSION,
     selectedClasses: state.selectedClasses,
+    charLevel: state.charLevel,
     totalPoints: state.totalPoints,
-    ranks: state.ranks,
-    purchaseOrder: state.purchaseOrder
+    ranks: serializeRanks(state.ranks),
+    purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
   };
 }
 

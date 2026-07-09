@@ -1206,6 +1206,7 @@ function buildCodeObject() {
   return {
     v: SAVE_FORMAT_VERSION,
     selectedClasses: state.selectedClasses,
+    charLevel: state.charLevel,
     totalPoints: state.totalPoints,
     ranks: serializeRanks(state.ranks),
     purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
