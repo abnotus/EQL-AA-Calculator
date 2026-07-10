@@ -47,7 +47,7 @@ archetype: [
 { name: "Double Riposte", ranks: 3, costs: ["3","6","9"], levelReq: "15", description: "Grants 5%/10%/15% double riposte chance." },
 { name: "Exodus", ranks: 1, costs: ["6"], levelReq: "10", description: "Teleports group members within 100 feet to a safe zone location." },
 { name: "Finishing Blow", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Critical melee attacks deal 100/200/300% damage to level 50/53/55 or lower NPCs at 10/12/15% or less health." },
-{ name: "Fury of Magic", ranks: 4, costs: ["1","2","3","?"], levelReq: "1", description: "Increases critical hit chance with direct damage spells by 2% per rank." },
+{ name: "Fury of Magic", ranks: 4, costs: ["1","2","3","4"], levelReq: "1", description: "Increases critical hit chance with direct damage spells by 2% per rank." },
 { name: "Healing Adept", ranks: 3, costs: ["2","2","2"], levelReq: "1", description: "Increases instant-duration healing spell effectiveness by 2% per rank." },
 { name: "Healing Boon", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases HoT exceptional heal chance by 3/6/9%." },
 { name: "Healing Gift", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Grants instant healing spells 3%/6%/10% exceptional heal chance." },
@@ -82,7 +82,7 @@ classes: {
 { name: "Reaching Notes", ranks: 6, costs: ["2","4","6","?","?","?"], levelReq: "1", description: "Extends the radius of your beneficial area songs by 10% per rank. Enabled/expendable ability." },
 { name: "Scribble Notes", ranks: 1, costs: ["3"], levelReq: "1", description: "Reduces the amount of time it takes you to memorize a song by 50%." },
 { name: "Singing Mastery", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Further improves the singing bonus of your songs by 20/40/60%. Impacts songs that use the Singing skill." },
-{ name: "Symphonic Aura", ranks: 10, costs: ["0","3","?","?","?","?","?","?","?","?"], levelReq: "1", autoRanks: 1, description: "Allows one eligible Bard song (no mana cost, no cooldown, non-targeted AoE) to auto-pulse. Chooses the first eligible song starting from your final spell gem, working backwards." }
+{ name: "Symphonic Aura", ranks: 10, costs: ["0","0","3","0","3","0","3","0","3","0"], levelReq: "1", autoRanks: 1, description: "Enables eligible Bard songs to auto-pulse. A song is eligible if it has no mana cost, no cooldown, and is a non-targeted area of effect song; eligible songs cannot be played manually while the ability is on, and are chosen from your final spell gem working backwards. Rank 1 is auto-granted. Each additional song takes two ranks: the odd rank costs 3 and grants the slot, the following even rank enables it for free. Total 5 songs at max rank, 12 points." }
 ],
 "Beastlord": [
 { name: "Frenzy of Spirit", ranks: 1, costs: ["4"], levelReq: "45", description: "Activated: increases your melee speed by 99% and attack power by 250 points for 0:00:48. (Refresh 0:12:00)" },
@@ -123,7 +123,7 @@ classes: {
 { name: "Dragon Force", ranks: 1, costs: ["5"], levelReq: "15", description: "Activated: pushes your target backwards and deals 10 damage." },
 { name: "Improved Mend", ranks: 3, costs: ["3","?","?"], levelReq: "1", prereq: "Requires First Aid at level 3", description: "Gives you a 10% chance to perform a superior mend, doubling the healing of your mend skill." },
 { name: "Purify Body", ranks: 1, costs: ["9"], levelReq: "15", description: "Activated: instantly cures you of up to 20 detrimental effects (excluding charm, fear, resurrection, and revival sickness). (Refresh 0:30:00)" },
-{ name: "Rapid Feign", ranks: 3, costs: ["3","?","?"], levelReq: "17", description: "Reduces the reuse time of your Feign Death skill by 1 second per rank." }
+{ name: "Rapid Feign", ranks: 3, costs: ["3","6","?"], levelReq: "17", description: "Reduces the reuse time of your Feign Death skill by 1 second at rank 1, and by 3 more seconds at rank 2." }
 ],
 "Necromancer": [
 { name: "Dead Mesmerization", ranks: 1, costs: ["3"], levelReq: "40", description: "Activated: mesmerizes up to 12 level 59 or lower undead creatures within a 35 foot radius of your target for 0:00:36. (Refresh 0:15:00)" },

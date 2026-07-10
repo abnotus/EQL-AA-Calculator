@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 155458,
+  "revid": 155606,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -383,7 +383,7 @@
         "1",
         "2",
         "3",
-        "?"
+        "4"
       ],
       "description": "This passive ability increases your chance to land a critical hit with your direct damage spells by 2%. Requirements: level 1."
     },
@@ -629,17 +629,17 @@
       "ranks": "10",
       "costs": [
         "0",
+        "0",
         "3",
-        "?",
-        "?",
-        "?",
-        "?",
-        "?",
-        "?",
-        "?",
-        "?"
+        "0",
+        "3",
+        "0",
+        "3",
+        "0",
+        "3",
+        "0"
       ],
-      "description": "Ability Activation ID: 152 - Refresh Time: 0:00:01 - Ability Timer(s): 0. Expendable Charges: 1. This ability is ENABLED. Expend the current rank to disable its effects. When enabled, this passive ability allows one Bard song to auto pulse. In order for a song to be eligible, it must have no mana cost, have no cooldown, and be a non-targeted area of effect song. Any song that meets these criteria cannot be played manually while the ability is turned on. This ability chooses the first eligible song, starting from your final spell gem, and working backwards. Requirements: level 1."
+      "description": "Ability Activation ID: 152 - Refresh Time: 0:00:01 - Ability Timer(s): 0. Expendable Charges: 1. Expend the current rank to disable this ability's effects. When enabled, this passive ability allows one Bard song to auto pulse. In order for a song to be eligible, it must have no mana cost, have no cooldown, and be a non-targeted area of effect song. Any song that meets these criteria cannot be played manually while the ability is turned on. This ability chooses the first eligible song, starting from your final spell gem, and working backwards. Total 5 songs at max rank. Requirements: level 1. Rank 1 is auto-granted. Each additional auto-pulsing song takes two ranks: the odd rank costs 3 points and grants the song, and the following even rank re-enables the ability at no cost. All 5 songs cost 12 points total. (The tooltip's ENABLED/DISABLED line reflects the state of your current rank, not a property of the ability.)"
     },
     "class:Beastlord::Frenzy of Spirit::0": {
       "ranks": "1",
@@ -839,10 +839,10 @@
       "ranks": "3",
       "costs": [
         "3",
-        "?",
+        "6",
         "?"
       ],
-      "description": "This passive ability reduces the reuse time of your Feign Death skill by 1 second. Requirements: level 17."
+      "description": "This passive ability reduces the reuse time of your Feign Death skill by 1 second. Second level reduces the reuse time of FD skill by 3 seconds. Requirements: level 17."
     },
     "class:Necromancer::Dead Mesmerization::0": {
       "ranks": "1",
