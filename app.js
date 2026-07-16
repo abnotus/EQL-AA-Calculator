@@ -1392,6 +1392,10 @@ e.preventDefault();
 moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
 dragSrcIndex = null;
 });
+el.progressionContent.addEventListener("dragover", (e) => {
+if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+clearDragOverMarks();
+});
 }
 function populateStaticControls() {
 el.browseFilter.innerHTML =

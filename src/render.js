@@ -529,16 +529,18 @@ export function moveProgressionEntryTo(fromIndex, toIndex) {
 // (only progressionContent's innerHTML is replaced), so binding it there would
 // stack up a fresh listener on every render.
 //
-// Bound to progressionWrap, not progressionContent: progressionContent only
-// wraps its rows tightly (no min-height), so for a short list the visibly
-// empty space below the last row belongs to the scrollable progressionWrap
-// around it, not progressionContent itself - binding there would make this
+// Bound to progressionWrap, not progressionContent: progressionContent has no
+// padding/border/overflow of its own, so only the *last* row's bottom margin
+// collapses through it - its box ends exactly at the last row's bottom edge,
+// and everything below genuinely belongs to the scrollable progressionWrap
+// around it. Binding this to progressionContent instead would make the
 // fallback unreachable except in the ~8px margin strip right under the last
-// row. Rows also have margin-bottom for spacing, and margins don't
-// participate in hit-testing, so the pointer over the gap *between* two rows
-// lands on progressionWrap too, same as the pointer below the last row - only
-// the latter should count as "append to end", so isBelowLastRow still gates
-// both handlers on that instead of trusting the target check alone.
+// row - a strip that doesn't even exist post-collapse. isBelowLastRow's
+// remaining job here is filtering progressionWrap's own side padding and the
+// toolbar area above the rows, not inter-row gaps: a *middle* row's margin
+// does NOT collapse out, so the pointer over one of those still lands on
+// progressionContent (see the dedicated listener below), never reaching this
+// wrap-level handler at all.
 function lastProgressionRow() {
   const rows = el.progressionContent.querySelectorAll(".progression-row");
   return rows.length ? rows[rows.length - 1] : null;
@@ -569,6 +571,14 @@ export function wireProgressionDropZone() {
     e.preventDefault();
     moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
     dragSrcIndex = null;
+  });
+  // Inter-row gaps land here, not on progressionWrap (see above) - no row
+  // claims them and dropping does nothing, so just keep a stale indicator
+  // from sitting lit over a zone where a drop wouldn't do anything. No
+  // preventDefault: this must stay a non-drop target, not a silent no-op one.
+  el.progressionContent.addEventListener("dragover", (e) => {
+    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+    clearDragOverMarks();
   });
 }
 
