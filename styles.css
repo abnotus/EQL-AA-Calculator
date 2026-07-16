@@ -726,6 +726,13 @@ main {
 
 .progression-row.drag-over-bottom { box-shadow: inset 0 -2px 0 var(--accent-bright); }
 
+/* Dropping here would leave the dragged step's own prerequisite unmet at that
+   point in the sequence - same amber as the post-drop ⚠ and the tree's REQ
+   badge, so the color already means one consistent thing across the app. */
+.progression-row.drag-over-top.drag-warn { box-shadow: inset 0 2px 0 #e0a83a; }
+
+.progression-row.drag-over-bottom.drag-warn { box-shadow: inset 0 -2px 0 #e0a83a; }
+
 .drag-handle {
   flex-shrink: 0;
   color: var(--text-faint);

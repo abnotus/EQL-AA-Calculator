@@ -591,19 +591,22 @@ export function countPicked() {
 }
 
 // Shared by the Progression tab and the export text, so both always agree on
-// step ranks, per-step cost, and the running cumulative total.
-export function computeProgressionSteps() {
+// step ranks, per-step cost, and the running cumulative total. Takes an
+// explicit order (defaulting to the real state.purchaseOrder) so a caller can
+// also ask "what would this look like" for a hypothetical arrangement -
+// e.g. the drag-and-drop prereq indicator - without touching real state.
+export function computeProgressionSteps(order = state.purchaseOrder) {
   // Total occurrences of each AA, so a step can tell whether it's the topmost
   // (and therefore the only one that can be removed without leaving a rank gap).
   const totalCounts = {};
-  state.purchaseOrder.forEach((entry) => {
+  order.forEach((entry) => {
     const key = entryKey(entry.scope, entry.className, entry.idx);
     totalCounts[key] = (totalCounts[key] || 0) + 1;
   });
 
   const counts = {};
   let cumulative = 0;
-  return state.purchaseOrder.map((entry, i) => {
+  return order.map((entry, i) => {
     const key = entryKey(entry.scope, entry.className, entry.idx);
     const category = resolveEntryCategory(entry);
     const active = category !== null;

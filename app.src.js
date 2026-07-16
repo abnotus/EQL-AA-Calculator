@@ -1182,19 +1182,22 @@ function countPicked() {
 }
 
 // Shared by the Progression tab and the export text, so both always agree on
-// step ranks, per-step cost, and the running cumulative total.
-function computeProgressionSteps() {
+// step ranks, per-step cost, and the running cumulative total. Takes an
+// explicit order (defaulting to the real state.purchaseOrder) so a caller can
+// also ask "what would this look like" for a hypothetical arrangement -
+// e.g. the drag-and-drop prereq indicator - without touching real state.
+function computeProgressionSteps(order = state.purchaseOrder) {
   // Total occurrences of each AA, so a step can tell whether it's the topmost
   // (and therefore the only one that can be removed without leaving a rank gap).
   const totalCounts = {};
-  state.purchaseOrder.forEach((entry) => {
+  order.forEach((entry) => {
     const key = entryKey(entry.scope, entry.className, entry.idx);
     totalCounts[key] = (totalCounts[key] || 0) + 1;
   });
 
   const counts = {};
   let cumulative = 0;
-  return state.purchaseOrder.map((entry, i) => {
+  return order.map((entry, i) => {
     const key = entryKey(entry.scope, entry.className, entry.idx);
     const category = resolveEntryCategory(entry);
     const active = category !== null;
@@ -1649,8 +1652,26 @@ let dragSrcIndex = null;
 
 function clearDragOverMarks() {
   Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((r) => {
-    r.classList.remove("drag-over-top", "drag-over-bottom");
+    r.classList.remove("drag-over-top", "drag-over-bottom", "drag-warn");
   });
+}
+
+// Whether dropping the step currently being dragged at `toIndex` (an
+// insertion point, same convention as moveProgressionEntryTo) would leave
+// its OWN prerequisite unmet at that point in the resulting sequence - a
+// pure look-ahead for the drag indicator, computed against a throwaway copy
+// so it never touches real state. Deliberately scoped to just the dragged
+// step, not anything that might depend on it landing somewhere specific -
+// same scope as every other prereq indicator in the app (the post-drop ⚠,
+// structuralLockReason, etc. all only ever check a step's own prereq).
+function dragWouldLeavePrereqUnmet(toIndex) {
+  if (dragSrcIndex === null) return false;
+  let insertAt = toIndex > dragSrcIndex ? toIndex - 1 : toIndex;
+  if (insertAt === dragSrcIndex) return false; // no-op move, nothing changes
+  const hypothetical = state.purchaseOrder.slice();
+  const [entry] = hypothetical.splice(dragSrcIndex, 1);
+  hypothetical.splice(insertAt, 0, entry);
+  return computeProgressionSteps(hypothetical)[insertAt].prereqWarn;
 }
 
 function renderProgression() {
@@ -1752,7 +1773,9 @@ function renderProgression() {
       if (overIndex === dragSrcIndex) return; // dropping onto itself is a no-op, nothing to indicate
       const rect = rowEl.getBoundingClientRect();
       const before = e.clientY - rect.top < rect.height / 2;
+      const toIndex = before ? overIndex : overIndex + 1;
       rowEl.classList.add(before ? "drag-over-top" : "drag-over-bottom");
+      if (dragWouldLeavePrereqUnmet(toIndex)) rowEl.classList.add("drag-warn");
     });
     rowEl.addEventListener("drop", (e) => {
       if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
@@ -1782,6 +1805,7 @@ function renderProgression() {
       const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
       if (overIndex === dragSrcIndex) return;
       ownerRow.classList.add("drag-over-bottom");
+      if (dragWouldLeavePrereqUnmet(overIndex + 1)) ownerRow.classList.add("drag-warn");
     });
     boxEl.addEventListener("drop", (e) => {
       if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
@@ -1876,6 +1900,7 @@ function wireProgressionDropZone() {
     const last = lastProgressionRow();
     if (last && parseInt(last.getAttribute("data-index"), 10) !== dragSrcIndex) {
       last.classList.add("drag-over-bottom");
+      if (dragWouldLeavePrereqUnmet(state.purchaseOrder.length)) last.classList.add("drag-warn");
     }
   });
   el.progressionWrap.addEventListener("drop", (e) => {
