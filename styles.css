@@ -720,6 +720,14 @@ main {
 
 .progression-row.inactive { opacity: 0.45; }
 
+/* Currently out of order relative to its own prerequisite (the ⚠ case) - a
+   lighter dim than .inactive's, since this is a fixable ordering issue, not
+   "the class isn't even in your build" - inactive still wins if a row is
+   somehow both, since that's the more fundamental reason to dim it. */
+.progression-row.prereq-warn-row { opacity: 0.75; }
+
+.progression-row.inactive.prereq-warn-row { opacity: 0.45; }
+
 .progression-row.dragging { opacity: 0.4; }
 
 .progression-row.drag-over-top { box-shadow: inset 0 2px 0 var(--accent-bright); }
