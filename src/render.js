@@ -525,31 +525,46 @@ export function moveProgressionEntryTo(fromIndex, toIndex) {
 
 // One-time wiring (called from wireEvents) so dropping below the last row still
 // moves the dragged step to the end, instead of doing nothing. Lives here rather
-// than inside renderProgression because el.progressionContent itself persists
-// across renders (only its innerHTML is replaced), so binding it there would
+// than inside renderProgression because these elements persist across renders
+// (only progressionContent's innerHTML is replaced), so binding it there would
 // stack up a fresh listener on every render.
-// Rows have margin-bottom for spacing, and margins don't participate in hit-
-// testing - so the pointer over the gap *between* two rows lands on the
-// container, same as the pointer below the last row. Only the latter should
-// count as "append to end"; treating every inter-row gap that way would drop
-// a step at the end while the last-hovered row's indicator still claimed a
-// spot in the middle.
-function isBelowLastRow(e) {
+//
+// Bound to progressionWrap, not progressionContent: progressionContent only
+// wraps its rows tightly (no min-height), so for a short list the visibly
+// empty space below the last row belongs to the scrollable progressionWrap
+// around it, not progressionContent itself - binding there would make this
+// fallback unreachable except in the ~8px margin strip right under the last
+// row. Rows also have margin-bottom for spacing, and margins don't
+// participate in hit-testing, so the pointer over the gap *between* two rows
+// lands on progressionWrap too, same as the pointer below the last row - only
+// the latter should count as "append to end", so isBelowLastRow still gates
+// both handlers on that instead of trusting the target check alone.
+function lastProgressionRow() {
   const rows = el.progressionContent.querySelectorAll(".progression-row");
-  if (!rows.length) return false;
-  return e.clientY >= rows[rows.length - 1].getBoundingClientRect().bottom;
+  return rows.length ? rows[rows.length - 1] : null;
+}
+
+function isBelowLastRow(e) {
+  const last = lastProgressionRow();
+  return !!last && e.clientY >= last.getBoundingClientRect().bottom;
 }
 
 export function wireProgressionDropZone() {
-  el.progressionContent.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+  el.progressionWrap.addEventListener("dragover", (e) => {
+    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
     if (!isBelowLastRow(e)) { clearDragOverMarks(); return; }
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     clearDragOverMarks();
+    // Every other valid drop target draws a line; match that here so the
+    // append-to-end zone below the last row isn't the one invisible spot.
+    const last = lastProgressionRow();
+    if (last && parseInt(last.getAttribute("data-index"), 10) !== dragSrcIndex) {
+      last.classList.add("drag-over-bottom");
+    }
   });
-  el.progressionContent.addEventListener("drop", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+  el.progressionWrap.addEventListener("drop", (e) => {
+    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
     if (!isBelowLastRow(e)) return;
     e.preventDefault();
     moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);

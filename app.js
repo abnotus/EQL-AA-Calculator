@@ -920,6 +920,7 @@ el.summaryView = document.getElementById("summaryView");
 el.summaryHeader = document.getElementById("summaryHeader");
 el.summaryContent = document.getElementById("summaryContent");
 el.progressionView = document.getElementById("progressionView");
+el.progressionWrap = document.getElementById("progressionWrap");
 el.progressionContent = document.getElementById("progressionContent");
 el.undoLastBtn = document.getElementById("undoLastBtn");
 el.treeWrap = document.getElementById("treeWrap");
@@ -1364,21 +1365,28 @@ clearLastMutation();
 saveLocal();
 renderProgression();
 }
-function isBelowLastRow(e) {
+function lastProgressionRow() {
 const rows = el.progressionContent.querySelectorAll(".progression-row");
-if (!rows.length) return false;
-return e.clientY >= rows[rows.length - 1].getBoundingClientRect().bottom;
+return rows.length ? rows[rows.length - 1] : null;
+}
+function isBelowLastRow(e) {
+const last = lastProgressionRow();
+return !!last && e.clientY >= last.getBoundingClientRect().bottom;
 }
 function wireProgressionDropZone() {
-el.progressionContent.addEventListener("dragover", (e) => {
-if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+el.progressionWrap.addEventListener("dragover", (e) => {
+if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
 if (!isBelowLastRow(e)) { clearDragOverMarks(); return; }
 e.preventDefault();
 e.dataTransfer.dropEffect = "move";
 clearDragOverMarks();
+const last = lastProgressionRow();
+if (last && parseInt(last.getAttribute("data-index"), 10) !== dragSrcIndex) {
+last.classList.add("drag-over-bottom");
+}
 });
-el.progressionContent.addEventListener("drop", (e) => {
-if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+el.progressionWrap.addEventListener("drop", (e) => {
+if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
 if (!isBelowLastRow(e)) return;
 e.preventDefault();
 moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
