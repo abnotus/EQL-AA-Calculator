@@ -318,6 +318,17 @@ export function renderSummary() {
 const expandedSteps = new Set();
 function expandKey(s) { return `${s.category || ""}:${s.idx}:${s.stepRank}`; }
 
+// Index (into state.purchaseOrder) of the row currently being dragged, or null
+// when no drag is in progress. Module-level since dragstart/dragover/drop fire
+// on different row elements that get torn down and rebuilt on every render.
+let dragSrcIndex = null;
+
+function clearDragOverMarks() {
+  Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((r) => {
+    r.classList.remove("drag-over-top", "drag-over-bottom");
+  });
+}
+
 export function renderProgression() {
   el.undoLastBtn.disabled = !canUndo();
 
@@ -331,7 +342,8 @@ export function renderProgression() {
     const canExpand = !!(s.aa && s.stepRank < s.aa.ranks);
     const key = expandKey(s);
     const expanded = canExpand && expandedSteps.has(key);
-    const row = `<div class="progression-row${s.active ? "" : " inactive"}">
+    const row = `<div class="progression-row${s.active ? "" : " inactive"}" draggable="true" data-index="${s.index}">
+      <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.index + 1}</span>
       <span class="step-info">
         <span class="step-name">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
@@ -342,7 +354,7 @@ export function renderProgression() {
         <span class="cost-this">+${s.stepCost} pt${s.stepCost === 1 ? "" : "s"}</span>
         <span class="cost-total">${s.cumulative} total</span>
       </span>
-      <span class="step-controls">
+      <span class="step-controls" draggable="false">
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
@@ -392,6 +404,40 @@ export function renderProgression() {
       applyAttempt(attemptDecrement(category, idx));
     });
   });
+
+  Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((rowEl) => {
+    rowEl.addEventListener("dragstart", (e) => {
+      dragSrcIndex = parseInt(rowEl.getAttribute("data-index"), 10);
+      rowEl.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      // Firefox won't start the drag at all unless setData is called.
+      e.dataTransfer.setData("text/plain", String(dragSrcIndex));
+    });
+    rowEl.addEventListener("dragend", () => {
+      rowEl.classList.remove("dragging");
+      clearDragOverMarks();
+      dragSrcIndex = null;
+    });
+    rowEl.addEventListener("dragover", (e) => {
+      if (dragSrcIndex === null) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      clearDragOverMarks();
+      const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
+      if (overIndex === dragSrcIndex) return; // dropping onto itself is a no-op, nothing to indicate
+      const rect = rowEl.getBoundingClientRect();
+      const before = e.clientY - rect.top < rect.height / 2;
+      rowEl.classList.add(before ? "drag-over-top" : "drag-over-bottom");
+    });
+    rowEl.addEventListener("drop", (e) => {
+      e.preventDefault();
+      if (dragSrcIndex === null) return;
+      const rect = rowEl.getBoundingClientRect();
+      const before = e.clientY - rect.top < rect.height / 2;
+      const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
+      moveProgressionEntryTo(dragSrcIndex, before ? overIndex : overIndex + 1);
+    });
+  });
 }
 
 // Reverses whatever the single most recent rank change was — an add gets removed,
@@ -412,6 +458,39 @@ export function moveProgressionEntry(index, dir) {
   clearLastMutation(); // a pending undo's recorded position would now point at the wrong spot
   saveLocal();
   renderProgression();
+}
+
+// Drag-and-drop reorder: pulls the entry at fromIndex out and reinserts it at
+// toIndex (an insertion point, i.e. state.purchaseOrder.length is valid and
+// means "at the end"). Unlike moveProgressionEntry's adjacent swap, this never
+// needs a same-AA guard — removing and reinserting a single entry can't change
+// the relative order of any other entries, so two ranks of the same AA stay in
+// sequence no matter where a third step is dropped relative to them.
+export function moveProgressionEntryTo(fromIndex, toIndex) {
+  if (toIndex > fromIndex) toIndex -= 1; // account for the shift left after removal
+  if (fromIndex === toIndex) return;
+  const [entry] = state.purchaseOrder.splice(fromIndex, 1);
+  state.purchaseOrder.splice(toIndex, 0, entry);
+  clearLastMutation();
+  saveLocal();
+  renderProgression();
+}
+
+// One-time wiring (called from wireEvents) so dropping below the last row still
+// moves the dragged step to the end, instead of doing nothing. Lives here rather
+// than inside renderProgression because el.progressionContent itself persists
+// across renders (only its innerHTML is replaced), so binding it there would
+// stack up a fresh listener on every render.
+export function wireProgressionDropZone() {
+  el.progressionContent.addEventListener("dragover", (e) => {
+    if (dragSrcIndex === null || e.target !== el.progressionContent) return;
+    e.preventDefault();
+  });
+  el.progressionContent.addEventListener("drop", (e) => {
+    if (dragSrcIndex === null || e.target !== el.progressionContent) return;
+    e.preventDefault();
+    moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
+  });
 }
 
 export function populateStaticControls() {

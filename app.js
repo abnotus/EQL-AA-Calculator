@@ -1205,6 +1205,12 @@ el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs sele
 }
 const expandedSteps = new Set();
 function expandKey(s) { return `${s.category || ""}:${s.idx}:${s.stepRank}`; }
+let dragSrcIndex = null;
+function clearDragOverMarks() {
+Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((r) => {
+r.classList.remove("drag-over-top", "drag-over-bottom");
+});
+}
 function renderProgression() {
 el.undoLastBtn.disabled = !canUndo();
 if (!state.purchaseOrder.length) {
@@ -1216,7 +1222,8 @@ const rows = steps.map((s) => {
 const canExpand = !!(s.aa && s.stepRank < s.aa.ranks);
 const key = expandKey(s);
 const expanded = canExpand && expandedSteps.has(key);
-const row = `<div class="progression-row${s.active ? "" : " inactive"}">
+const row = `<div class="progression-row${s.active ? "" : " inactive"}" draggable="true" data-index="${s.index}">
+      <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.index + 1}</span>
       <span class="step-info">
         <span class="step-name">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
@@ -1227,7 +1234,7 @@ const row = `<div class="progression-row${s.active ? "" : " inactive"}">
         <span class="cost-this">+${s.stepCost} pt${s.stepCost === 1 ? "" : "s"}</span>
         <span class="cost-total">${s.cumulative} total</span>
       </span>
-      <span class="step-controls">
+      <span class="step-controls" draggable="false">
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
@@ -1276,6 +1283,38 @@ const idx = parseInt(btn.getAttribute("data-idx"), 10);
 applyAttempt(attemptDecrement(category, idx));
 });
 });
+Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((rowEl) => {
+rowEl.addEventListener("dragstart", (e) => {
+dragSrcIndex = parseInt(rowEl.getAttribute("data-index"), 10);
+rowEl.classList.add("dragging");
+e.dataTransfer.effectAllowed = "move";
+e.dataTransfer.setData("text/plain", String(dragSrcIndex));
+});
+rowEl.addEventListener("dragend", () => {
+rowEl.classList.remove("dragging");
+clearDragOverMarks();
+dragSrcIndex = null;
+});
+rowEl.addEventListener("dragover", (e) => {
+if (dragSrcIndex === null) return;
+e.preventDefault();
+e.dataTransfer.dropEffect = "move";
+clearDragOverMarks();
+const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
+if (overIndex === dragSrcIndex) return;
+const rect = rowEl.getBoundingClientRect();
+const before = e.clientY - rect.top < rect.height / 2;
+rowEl.classList.add(before ? "drag-over-top" : "drag-over-bottom");
+});
+rowEl.addEventListener("drop", (e) => {
+e.preventDefault();
+if (dragSrcIndex === null) return;
+const rect = rowEl.getBoundingClientRect();
+const before = e.clientY - rect.top < rect.height / 2;
+const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
+moveProgressionEntryTo(dragSrcIndex, before ? overIndex : overIndex + 1);
+});
+});
 }
 function undoLast() {
 applyAttempt(undoLastMutation());
@@ -1292,6 +1331,26 @@ state.purchaseOrder[target] = a;
 clearLastMutation();
 saveLocal();
 renderProgression();
+}
+function moveProgressionEntryTo(fromIndex, toIndex) {
+if (toIndex > fromIndex) toIndex -= 1;
+if (fromIndex === toIndex) return;
+const [entry] = state.purchaseOrder.splice(fromIndex, 1);
+state.purchaseOrder.splice(toIndex, 0, entry);
+clearLastMutation();
+saveLocal();
+renderProgression();
+}
+function wireProgressionDropZone() {
+el.progressionContent.addEventListener("dragover", (e) => {
+if (dragSrcIndex === null || e.target !== el.progressionContent) return;
+e.preventDefault();
+});
+el.progressionContent.addEventListener("drop", (e) => {
+if (dragSrcIndex === null || e.target !== el.progressionContent) return;
+e.preventDefault();
+moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
+});
 }
 function populateStaticControls() {
 el.browseFilter.innerHTML =
@@ -1705,6 +1764,7 @@ el.disclaimerBanner.classList.add("hidden");
 try { localStorage.setItem(DISCLAIMER_DISMISSED_KEY, "1"); } catch (e) { /* storage unavailable, ignore */ }
 });
 el.undoLastBtn.addEventListener("click", undoLast);
+wireProgressionDropZone();
 el.globalSearch.addEventListener("input", () => {
 state.browseSearch = el.globalSearch.value;
 renderAll();

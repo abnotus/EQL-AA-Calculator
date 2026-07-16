@@ -5,7 +5,7 @@ import { el } from "./dom.js";
 import { costNum, clearClassData, clearLastMutation } from "./logic.js";
 import {
   renderAll, showToast, populateClassSelects, renderTree, renderBrowse, undoLast,
-  openChangelogModal, closeChangelogModal
+  openChangelogModal, closeChangelogModal, wireProgressionDropZone
 } from "./render.js";
 import {
   openExportModal, copyExportText, copyShareLink, saveExportAsTxt, closeExportModal,
@@ -123,6 +123,8 @@ export function wireEvents() {
   });
 
   el.undoLastBtn.addEventListener("click", undoLast);
+
+  wireProgressionDropZone();
 
   el.globalSearch.addEventListener("input", () => {
     state.browseSearch = el.globalSearch.value;
