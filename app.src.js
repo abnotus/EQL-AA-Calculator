@@ -1587,6 +1587,17 @@ function expandKey(s) { return `${s.category || ""}:${s.idx}:${s.stepRank}`; }
 // Index (into state.purchaseOrder) of the row currently being dragged, or null
 // when no drag is in progress. Module-level since dragstart/dragover/drop fire
 // on different row elements that get torn down and rebuilt on every render.
+//
+// dragSrcIndex alone isn't a safe gate for "is a progression-step drag actually
+// in flight": if dragend never fires (detaching the source node mid-drag, e.g.
+// via renderProgression, is known to make some browsers skip it), it stays
+// non-null after the drag that set it has already ended. A later, unrelated
+// drag (a text selection, a file from the OS) over the list would then read as
+// a stale reorder instead of being ignored. PROGRESSION_DRAG_TYPE is a custom
+// dataTransfer MIME type set only in this module's dragstart, so dragover/drop
+// gate on e.dataTransfer.types instead of trusting dragSrcIndex - a foreign
+// drag simply won't carry it, no matter what dragSrcIndex last happened to be.
+const PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
 let dragSrcIndex = null;
 
 function clearDragOverMarks() {
@@ -1678,6 +1689,7 @@ function renderProgression() {
       e.dataTransfer.effectAllowed = "move";
       // Firefox won't start the drag at all unless setData is called.
       e.dataTransfer.setData("text/plain", String(dragSrcIndex));
+      e.dataTransfer.setData(PROGRESSION_DRAG_TYPE, String(dragSrcIndex));
     });
     rowEl.addEventListener("dragend", () => {
       rowEl.classList.remove("dragging");
@@ -1685,7 +1697,7 @@ function renderProgression() {
       dragSrcIndex = null;
     });
     rowEl.addEventListener("dragover", (e) => {
-      if (dragSrcIndex === null) return;
+      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       clearDragOverMarks();
@@ -1696,12 +1708,40 @@ function renderProgression() {
       rowEl.classList.add(before ? "drag-over-top" : "drag-over-bottom");
     });
     rowEl.addEventListener("drop", (e) => {
+      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
       e.preventDefault();
-      if (dragSrcIndex === null) return;
       const rect = rowEl.getBoundingClientRect();
       const before = e.clientY - rect.top < rect.height / 2;
       const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
       moveProgressionEntryTo(dragSrcIndex, before ? overIndex : overIndex + 1);
+      dragSrcIndex = null;
+    });
+  });
+
+  // An expanded next-rank preview is a sibling of its row, not a descendant, and
+  // carries no drag handlers of its own - hovering/dropping on one otherwise
+  // falls into a dead zone (no row claims it, and the container-level fallback
+  // below bails because e.target is the preview box, not the container itself).
+  // Treat it as an extension of the row right above it: dropping anywhere on
+  // the preview inserts after that row.
+  Array.from(el.progressionContent.querySelectorAll(".progression-next-rank")).forEach((boxEl) => {
+    const ownerRow = boxEl.previousElementSibling;
+    if (!ownerRow || !ownerRow.classList.contains("progression-row")) return;
+    boxEl.addEventListener("dragover", (e) => {
+      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      clearDragOverMarks();
+      const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
+      if (overIndex === dragSrcIndex) return;
+      ownerRow.classList.add("drag-over-bottom");
+    });
+    boxEl.addEventListener("drop", (e) => {
+      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+      e.preventDefault();
+      const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
+      moveProgressionEntryTo(dragSrcIndex, overIndex + 1);
+      dragSrcIndex = null;
     });
   });
 }
@@ -1729,9 +1769,16 @@ function moveProgressionEntry(index, dir) {
 // Drag-and-drop reorder: pulls the entry at fromIndex out and reinserts it at
 // toIndex (an insertion point, i.e. state.purchaseOrder.length is valid and
 // means "at the end"). Unlike moveProgressionEntry's adjacent swap, this never
-// needs a same-AA guard — removing and reinserting a single entry can't change
-// the relative order of any other entries, so two ranks of the same AA stay in
-// sequence no matter where a third step is dropped relative to them.
+// needs a same-AA guard, including for dragging one rank of an AA past its
+// own other rank (which the arrows explicitly block with a toast instead).
+// purchaseOrder entries only ever hold {scope, className, idx} - never a rank
+// number - so two occurrences of the same AA are structurally identical
+// objects, and computeProgressionSteps derives stepRank purely from an
+// entry's position among same-key entries. Dragging "rank 2" above "rank 1"
+// is therefore indistinguishable from having dragged "rank 1" instead: the
+// row you drop simply renders as rank 1 afterward. No corruption either way -
+// but this stops being true the moment an entry starts carrying its own rank,
+// so revisit this if that ever changes.
 function moveProgressionEntryTo(fromIndex, toIndex) {
   if (toIndex > fromIndex) toIndex -= 1; // account for the shift left after removal
   if (fromIndex === toIndex) return;
@@ -1747,15 +1794,32 @@ function moveProgressionEntryTo(fromIndex, toIndex) {
 // than inside renderProgression because el.progressionContent itself persists
 // across renders (only its innerHTML is replaced), so binding it there would
 // stack up a fresh listener on every render.
+// Rows have margin-bottom for spacing, and margins don't participate in hit-
+// testing - so the pointer over the gap *between* two rows lands on the
+// container, same as the pointer below the last row. Only the latter should
+// count as "append to end"; treating every inter-row gap that way would drop
+// a step at the end while the last-hovered row's indicator still claimed a
+// spot in the middle.
+function isBelowLastRow(e) {
+  const rows = el.progressionContent.querySelectorAll(".progression-row");
+  if (!rows.length) return false;
+  return e.clientY >= rows[rows.length - 1].getBoundingClientRect().bottom;
+}
+
 function wireProgressionDropZone() {
   el.progressionContent.addEventListener("dragover", (e) => {
-    if (dragSrcIndex === null || e.target !== el.progressionContent) return;
+    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+    if (!isBelowLastRow(e)) { clearDragOverMarks(); return; }
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    clearDragOverMarks();
   });
   el.progressionContent.addEventListener("drop", (e) => {
-    if (dragSrcIndex === null || e.target !== el.progressionContent) return;
+    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+    if (!isBelowLastRow(e)) return;
     e.preventDefault();
     moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
+    dragSrcIndex = null;
   });
 }
 

@@ -1205,6 +1205,7 @@ el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs sele
 }
 const expandedSteps = new Set();
 function expandKey(s) { return `${s.category || ""}:${s.idx}:${s.stepRank}`; }
+const PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
 let dragSrcIndex = null;
 function clearDragOverMarks() {
 Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((r) => {
@@ -1289,6 +1290,7 @@ dragSrcIndex = parseInt(rowEl.getAttribute("data-index"), 10);
 rowEl.classList.add("dragging");
 e.dataTransfer.effectAllowed = "move";
 e.dataTransfer.setData("text/plain", String(dragSrcIndex));
+e.dataTransfer.setData(PROGRESSION_DRAG_TYPE, String(dragSrcIndex));
 });
 rowEl.addEventListener("dragend", () => {
 rowEl.classList.remove("dragging");
@@ -1296,7 +1298,7 @@ clearDragOverMarks();
 dragSrcIndex = null;
 });
 rowEl.addEventListener("dragover", (e) => {
-if (dragSrcIndex === null) return;
+if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
 e.preventDefault();
 e.dataTransfer.dropEffect = "move";
 clearDragOverMarks();
@@ -1307,12 +1309,33 @@ const before = e.clientY - rect.top < rect.height / 2;
 rowEl.classList.add(before ? "drag-over-top" : "drag-over-bottom");
 });
 rowEl.addEventListener("drop", (e) => {
+if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
 e.preventDefault();
-if (dragSrcIndex === null) return;
 const rect = rowEl.getBoundingClientRect();
 const before = e.clientY - rect.top < rect.height / 2;
 const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
 moveProgressionEntryTo(dragSrcIndex, before ? overIndex : overIndex + 1);
+dragSrcIndex = null;
+});
+});
+Array.from(el.progressionContent.querySelectorAll(".progression-next-rank")).forEach((boxEl) => {
+const ownerRow = boxEl.previousElementSibling;
+if (!ownerRow || !ownerRow.classList.contains("progression-row")) return;
+boxEl.addEventListener("dragover", (e) => {
+if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+e.preventDefault();
+e.dataTransfer.dropEffect = "move";
+clearDragOverMarks();
+const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
+if (overIndex === dragSrcIndex) return;
+ownerRow.classList.add("drag-over-bottom");
+});
+boxEl.addEventListener("drop", (e) => {
+if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+e.preventDefault();
+const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
+moveProgressionEntryTo(dragSrcIndex, overIndex + 1);
+dragSrcIndex = null;
 });
 });
 }
@@ -1341,15 +1364,25 @@ clearLastMutation();
 saveLocal();
 renderProgression();
 }
+function isBelowLastRow(e) {
+const rows = el.progressionContent.querySelectorAll(".progression-row");
+if (!rows.length) return false;
+return e.clientY >= rows[rows.length - 1].getBoundingClientRect().bottom;
+}
 function wireProgressionDropZone() {
 el.progressionContent.addEventListener("dragover", (e) => {
-if (dragSrcIndex === null || e.target !== el.progressionContent) return;
+if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+if (!isBelowLastRow(e)) { clearDragOverMarks(); return; }
 e.preventDefault();
+e.dataTransfer.dropEffect = "move";
+clearDragOverMarks();
 });
 el.progressionContent.addEventListener("drop", (e) => {
-if (dragSrcIndex === null || e.target !== el.progressionContent) return;
+if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+if (!isBelowLastRow(e)) return;
 e.preventDefault();
 moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
+dragSrcIndex = null;
 });
 }
 function populateStaticControls() {
