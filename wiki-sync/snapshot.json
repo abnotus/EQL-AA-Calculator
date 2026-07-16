@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 156149,
+  "revid": 157981,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -1012,7 +1012,7 @@
       "costs": [
         "3",
         "6",
-        "?"
+        "9"
       ],
       "description": "This passive ability increases the base damage of lifetaps triggered by Vampiric Embrace and Scream of Death by 50/100/200%. Requirements: level 15."
     },

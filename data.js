@@ -158,7 +158,7 @@ classes: {
 { name: "Abyssal Steed", ranks: 1, costs: ["9"], levelReq: "50", prereq: "Requires Unholy Steed at level 1", description: "Activated: summons the bridle of a very fast Abyssal Nightmare." },
 { name: "Harm Touch", ranks: 10, costs: Array(10).fill("0"), levelReq: "6", auto: true, description: "Activated: grips a non-player target with agony, instantly dealing up to 751 damage based on your current level." },
 { name: "Leech Touch", ranks: 1, costs: ["6"], levelReq: "40", description: "Activated: instantly drains 900 health from your target." },
-{ name: "Soul Abrasion", ranks: 3, costs: ["3","6","?"], levelReq: "15", description: "Increases the base damage of lifetaps triggered by Vampiric Embrace and Scream of Death by 50/100/200%." }
+{ name: "Soul Abrasion", ranks: 3, costs: ["3","6","9"], levelReq: "15", description: "Increases the base damage of lifetaps triggered by Vampiric Embrace and Scream of Death by 50/100/200%." }
 ],
 "Shaman": [
 { name: "Cannibalization", ranks: 1, costs: ["5"], levelReq: "40", prereq: "Requires Mental Clarity at level 3", description: "Activated: consumes 1924 health to restore 1066 mana. (Refresh 0:03:00)" },
