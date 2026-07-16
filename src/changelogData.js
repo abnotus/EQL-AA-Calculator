@@ -4,6 +4,14 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.2.0",
+    date: "2026-07-16",
+    items: [
+      "Progression tab: drag and drop a row to reorder it, in addition to the existing arrows.",
+      "Data corrections from a fresh wiki scrape and in-game confirmation: Fury of Magic, Symphonic Aura (including its unusual per-rank cost/enable pattern), Rapid Feign, Fear Resistance, Holy Steed, and Soul Abrasion."
+    ]
+  },
+  {
     version: "1.1.0",
     date: "2026-07-10",
     items: [
