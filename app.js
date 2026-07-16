@@ -261,6 +261,15 @@ return idToEntry()[id] || null;
 }
 const USER_CHANGELOG = [
 {
+version: "1.2.1",
+date: "2026-07-16",
+items: [
+"Locked AAs in the tree now show whether they're blocked by a missing prerequisite (amber border + REQ badge) or just a level requirement, instead of looking identical either way.",
+"Browse view now flags a prerequisite you haven't met yet, matching the side panel.",
+"Progression tab: dragging a step shows an amber indicator if that drop would leave its own prerequisite unmet, and out-of-order steps are now dimmed for visibility, not just marked with ⚠."
+]
+},
+{
 version: "1.2.0",
 date: "2026-07-16",
 items: [
