@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 157981,
+  "revid": 158556,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -911,10 +911,10 @@
       "ranks": "3",
       "costs": [
         "3",
-        "?",
-        "?"
+        "6",
+        "9"
       ],
-      "description": "This passive ability grants your melee attacks a 2.25% chance to deal 445% damage against undead and vampiric targets. Requirements: level 1."
+      "description": "This passive ability grants your melee attacks a 2.25% / 2.35% / 2.4%  chance to deal 445% / 850% / 1250% damage against undead and vampiric targets. Requirements: level 1."
     },
     "class:Paladin::Valiant Steed::0": {
       "ranks": "1",

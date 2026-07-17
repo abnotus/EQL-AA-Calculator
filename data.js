@@ -137,7 +137,7 @@ classes: {
 { name: "Divine Stun", ranks: 1, costs: ["9"], levelReq: "35", description: "Activated: instantly pushes your target backwards and attempts to stun a level 70 or lower target for 2 seconds. (Refresh 0:00:30)" },
 { name: "Holy Steed", ranks: 1, costs: ["5"], levelReq: "20", description: "Activated: summons the bridle of a very fast Holy Steed (75 Velocity)." },
 { name: "Lay on Hands", ranks: 10, costs: ["0","0","0","0","0","0","0","0","0","0"], levelReq: "6", auto: true, description: "Activated: instantly heals a friendly target (or an unfriendly target's target) for 6251 health, scaling by level. (Refresh 0:15:00)" },
-{ name: "Slay Undead", ranks: 3, costs: ["3","?","?"], levelReq: "1", description: "Grants your melee attacks a 2.25% chance to deal 445% damage against undead and vampiric targets." },
+{ name: "Slay Undead", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Grants your melee attacks a 2.25/2.35/2.4% chance to deal 445/850/1250% damage against undead and vampiric targets." },
 { name: "Valiant Steed", ranks: 1, costs: ["9"], levelReq: "50", prereq: "Requires Holy Steed at level 1", description: "Activated: summons the bridle of a very fast Valiant Unicorn." }
 ],
 "Ranger": [
