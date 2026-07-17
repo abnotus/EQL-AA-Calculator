@@ -189,13 +189,17 @@ export function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, tr
 
 // The slot saveImportedBuild would target on its next call - whichever entry
 // is *currently* named "Imported Build", if any, regardless of id. Naming is
-// the reuse key, not the original id: the very first import fixes the id
-// "imported" to whatever it saves, but a rename only ever changes an entry's
-// name, so that id belongs to the (now renamed/adopted) entry forever. A
-// lookup keyed on id would keep finding that same permanently-adopted entry
-// after every future rename and concluding "adopted" each time - allocating
-// a fresh id per import forever after the first adoption, the exact
-// unbounded pile of same-named slots the fixed id existed to prevent.
+// the reuse key, not id: a rename only ever changes an entry's name, so
+// whatever id that entry has belongs to the (now renamed/adopted) entry
+// forever. A lookup keyed on id - as this used to be, back when a fixed
+// "imported" id existed for a first import to claim - would keep finding
+// that same permanently-adopted entry after every future rename and
+// concluding "adopted" each time, allocating a fresh id per import forever
+// after the first adoption: the exact unbounded pile of same-named slots the
+// fixed id existed to prevent. A user who saved before that changed may
+// still have a slot with the literal id "imported" sitting at the default
+// name - this lookup finds and reuses it exactly like any other, since it's
+// resolving by name, not by that now-meaningless id.
 // isActiveBuildTheImportedSlot and saveImportedBuild both need this exact
 // same answer (one to know what it's about to overwrite, one to know what to
 // distrust), so it's one predicate rather than two independent lookups that
