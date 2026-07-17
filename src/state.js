@@ -8,7 +8,7 @@ import { keyForIdx, idxForKey, currentIdxForLegacyIdx, aaAt } from "./keys.js";
 // generated), so it still gets an upper bound — generous enough that no real
 // build ever approaches it, tight enough that a bogus value doesn't produce
 // nonsense in the UI.
-const MAX_TOTAL_POINTS = 100000;
+export const MAX_TOTAL_POINTS = 100000;
 
 // Bumped whenever the persisted shape changes. v4 introduced name-based keys
 // for ranks/purchaseOrder (see keys.js) — anything below that is index-based

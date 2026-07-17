@@ -795,11 +795,12 @@ return !!lastMutation;
 function changeRank(category, idx, delta) {
 const store = getRanksStore(category);
 const aa = getList(category)[idx];
-const floor = aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+const levelReq = parseInt(aa.levelReq, 10) || 1;
+const floor = aa.autoRanks && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
 const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[idx] || 0);
 const next = cur + delta;
 if (next < floor || next > aa.ranks) return false;
-if (next === 0) delete store[idx]; else store[idx] = next;
+if (next <= floor) delete store[idx]; else store[idx] = next;
 if (delta > 0) {
 pushPurchase(category, idx);
 const { scope, className } = categoryToScopeClassName(category);
@@ -1746,7 +1747,7 @@ if (m) return m[1];
 const urlMatch = trimmed.match(/[?&]build=([^&\s]+)/);
 if (urlMatch) return urlMatch[1];
 const compact = trimmed.replace(/\s+/g, "");
-if (compact.length > 20 && /^[A-Za-z0-9_-]+={0,2}$/.test(compact)) return compact;
+if (compact.length > 20 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
 return null;
 }
 async function importBuildFromText(text) {
@@ -1823,7 +1824,7 @@ renderAll();
 });
 el.totalPointsInput.addEventListener("change", () => {
 const v = parseInt(el.totalPointsInput.value, 10);
-state.totalPoints = isNaN(v) ? state.totalPoints : Math.max(0, v);
+state.totalPoints = isNaN(v) ? state.totalPoints : Math.max(0, Math.min(MAX_TOTAL_POINTS, v));
 saveLocal();
 renderAll();
 });

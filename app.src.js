@@ -1105,12 +1105,22 @@ function changeRank(category, idx, delta) {
   const store = getRanksStore(category);
   const aa = getList(category)[idx];
   // For an autoRanks AA, the free ranks are a floor you can never buy below (they're
-  // not "purchased" at all) — step from the current effective rank, not the raw stored one.
-  const floor = aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+  // not "purchased" at all) — step from the current effective rank, not the raw stored
+  // one. The floor only applies once the character has actually reached the level that
+  // grants it, matching effectiveRank's own gating — below that level nothing is free
+  // yet, so a rank bought there is refundable like any other purchase, not stuck behind
+  // a floor for a grant that hasn't happened.
+  const levelReq = parseInt(aa.levelReq, 10) || 1;
+  const floor = aa.autoRanks && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
   const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[idx] || 0);
   const next = cur + delta;
   if (next < floor || next > aa.ranks) return false;
-  if (next === 0) delete store[idx]; else store[idx] = next;
+  // At or below the floor there's nothing left that counts as an actual purchase (the
+  // floor===0 case, i.e. every non-autoRanks AA, already worked this way at next===0) -
+  // without this, refunding an autoRanks AA back down to exactly its floor left a
+  // phantom store entry sitting at the floor's own value forever, e.g. buying and then
+  // refunding Symphonic Aura's rank 2 left store=1 persisted instead of cleared.
+  if (next <= floor) delete store[idx]; else store[idx] = next;
   if (delta > 0) {
     pushPurchase(category, idx);
     // Stored as {scope, className, idx} - the same shape as a "remove" record's
@@ -2368,7 +2378,7 @@ function extractBuildCode(text) {
   // Maybe they pasted just the bare code, possibly line-wrapped by whatever they copied
   // it from — strip all embedded whitespace before checking if it looks like base64/base64url.
   const compact = trimmed.replace(/\s+/g, "");
-  if (compact.length > 20 && /^[A-Za-z0-9_-]+={0,2}$/.test(compact)) return compact;
+  if (compact.length > 20 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
   return null;
 }
 
@@ -2462,7 +2472,7 @@ function wireEvents() {
 
   el.totalPointsInput.addEventListener("change", () => {
     const v = parseInt(el.totalPointsInput.value, 10);
-    state.totalPoints = isNaN(v) ? state.totalPoints : Math.max(0, v);
+    state.totalPoints = isNaN(v) ? state.totalPoints : Math.max(0, Math.min(MAX_TOTAL_POINTS, v));
     saveLocal();
     renderAll();
   });

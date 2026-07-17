@@ -335,7 +335,7 @@ export function extractBuildCode(text) {
   // Maybe they pasted just the bare code, possibly line-wrapped by whatever they copied
   // it from — strip all embedded whitespace before checking if it looks like base64/base64url.
   const compact = trimmed.replace(/\s+/g, "");
-  if (compact.length > 20 && /^[A-Za-z0-9_-]+={0,2}$/.test(compact)) return compact;
+  if (compact.length > 20 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
   return null;
 }
 
