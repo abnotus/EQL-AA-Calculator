@@ -261,6 +261,15 @@ return idToEntry()[id] || null;
 }
 const USER_CHANGELOG = [
 {
+version: "1.3.0",
+date: "2026-07-17",
+items: [
+"New: Builds — save named snapshots of your build and switch between them from the topbar, handy for comparing class combos or planning alternate paths side by side.",
+"Opening a share link or importing text now offers to save your current build first if it isn't already backed up, instead of just warning it'll be replaced. A share link's build is also auto-saved to a reusable \"Imported Build\" slot so it's easy to find again later.",
+"Progression tab: Undo Last now covers reordering too, not just adding/removing a rank — drag or arrow-move a step by mistake and Undo Last puts it back."
+]
+},
+{
 version: "1.2.1",
 date: "2026-07-16",
 items: [
