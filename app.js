@@ -792,6 +792,12 @@ lastMutation = null;
 function canUndo() {
 return !!lastMutation;
 }
+function moveEntry(fromIdx, toIdx) {
+const [entry] = state.purchaseOrder.splice(fromIdx, 1);
+state.purchaseOrder.splice(toIdx, 0, entry);
+lastMutation = { type: "reorder", from: fromIdx, to: toIdx };
+saveLocal();
+}
 function autoFloor(aa) {
 if (!aa.autoRanks) return 0;
 const levelReq = parseInt(aa.levelReq, 10) || 1;
@@ -829,6 +835,13 @@ if (isDependedOn(category, m.entry.idx, rank)) {
 return { changed: false, message: "Can't undo — another AA now depends on this rank." };
 }
 return { changed: changeRank(category, m.entry.idx, -1), message: null };
+}
+if (m.type === "reorder") {
+if (m.from < 0 || m.from >= state.purchaseOrder.length || m.to < 0 || m.to >= state.purchaseOrder.length) {
+return { changed: false, message: "Can't undo — the list has changed too much." };
+}
+moveEntry(m.to, m.from);
+return { changed: true, message: null };
 }
 const category = resolveEntryCategory(m.entry);
 if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
@@ -1422,19 +1435,13 @@ const a = state.purchaseOrder[index];
 const b = state.purchaseOrder[target];
 const sameAA = a.scope === b.scope && a.idx === b.idx && (a.className || null) === (b.className || null);
 if (sameAA) { showToast("Can't reorder different ranks of the same AA."); return; }
-state.purchaseOrder[index] = b;
-state.purchaseOrder[target] = a;
-clearLastMutation();
-saveLocal();
+moveEntry(index, target);
 renderProgression();
 }
 function moveProgressionEntryTo(fromIndex, toIndex) {
 if (toIndex > fromIndex) toIndex -= 1;
 if (fromIndex === toIndex) return;
-const [entry] = state.purchaseOrder.splice(fromIndex, 1);
-state.purchaseOrder.splice(toIndex, 0, entry);
-clearLastMutation();
-saveLocal();
+moveEntry(fromIndex, toIndex);
 renderProgression();
 }
 function lastProgressionRow() {

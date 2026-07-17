@@ -1084,11 +1084,14 @@ function isDependedOn(category, idx, currentRank) {
   return false;
 }
 
-// Single-level undo: remembers only the most recent changeRank call, in enough
-// detail to reverse it exactly (including restoring a removed entry to its
-// original position). Overwritten by every subsequent changeRank call, and
-// explicitly cleared by anything that mutates ranks/purchaseOrder without going
-// through changeRank (reordering, class swap wipe, Reset Build, Import).
+// Single-level undo: remembers only the most recent changeRank or moveEntry
+// call, in enough detail to reverse it exactly (including restoring a removed
+// entry to its original position). Overwritten by every subsequent changeRank/
+// moveEntry call - including the reversal itself, so undoing twice in a row
+// toggles back and forth between the two most recent arrangements rather than
+// walking further back; there's no deeper history than that. Explicitly
+// cleared by anything that mutates ranks/purchaseOrder without going through
+// either (class swap wipe, Reset Build, Import).
 let lastMutation = null;
 
 function clearLastMutation() {
@@ -1097,6 +1100,19 @@ function clearLastMutation() {
 
 function canUndo() {
   return !!lastMutation;
+}
+
+// Pure state mutation, same spirit as changeRank: moves the entry at fromIdx to
+// array position toIdx (both real positions, already resolved - not a drag's
+// "insertion point"; render.js's callers translate drag/arrow intent into
+// these first). Reversing this exact move is just calling it again with the
+// two positions swapped, which is also how undoLastMutation's "reorder" case
+// restores the original arrangement.
+function moveEntry(fromIdx, toIdx) {
+  const [entry] = state.purchaseOrder.splice(fromIdx, 1);
+  state.purchaseOrder.splice(toIdx, 0, entry);
+  lastMutation = { type: "reorder", from: fromIdx, to: toIdx };
+  saveLocal();
 }
 
 // The level-gated floor for an autoRanks AA: the free ranks it grants once the
@@ -1149,8 +1165,9 @@ function changeRank(category, idx, delta) {
   return true;
 }
 
-// Reverses whatever changeRank last did. Consumes the record either way, so this
-// is genuinely single-level — there's no undo-of-undo chain.
+// Reverses whatever changeRank or moveEntry last did. Consumes the record
+// either way, so pressing this twice in a row toggles between the last two
+// arrangements rather than walking back further - see the lastMutation comment.
 function undoLastMutation() {
   const m = lastMutation;
   if (!m) return { changed: false, message: "Nothing to undo." };
@@ -1165,6 +1182,16 @@ function undoLastMutation() {
       return { changed: false, message: "Can't undo — another AA now depends on this rank." };
     }
     return { changed: changeRank(category, m.entry.idx, -1), message: null };
+  }
+
+  if (m.type === "reorder") {
+    // The array may have changed shape since (an add/remove would have overwritten
+    // this record via changeRank, but check anyway rather than trust it blindly).
+    if (m.from < 0 || m.from >= state.purchaseOrder.length || m.to < 0 || m.to >= state.purchaseOrder.length) {
+      return { changed: false, message: "Can't undo — the list has changed too much." };
+    }
+    moveEntry(m.to, m.from);
+    return { changed: true, message: null };
   }
 
   // m.type === "remove": restore the entry to its original array position and
@@ -1896,8 +1923,9 @@ function renderProgression() {
   });
 }
 
-// Reverses whatever the single most recent rank change was — an add gets removed,
-// a remove gets restored to its exact original position in the list.
+// Reverses whatever the single most recent change was — an add gets removed, a
+// remove gets restored to its exact original position in the list, and a
+// reorder (drag or arrow) moves the entry back to where it was before.
 function undoLast() {
   applyAttempt(undoLastMutation());
 }
@@ -1909,10 +1937,7 @@ function moveProgressionEntry(index, dir) {
   const b = state.purchaseOrder[target];
   const sameAA = a.scope === b.scope && a.idx === b.idx && (a.className || null) === (b.className || null);
   if (sameAA) { showToast("Can't reorder different ranks of the same AA."); return; }
-  state.purchaseOrder[index] = b;
-  state.purchaseOrder[target] = a;
-  clearLastMutation(); // a pending undo's recorded position would now point at the wrong spot
-  saveLocal();
+  moveEntry(index, target);
   renderProgression();
 }
 
@@ -1932,10 +1957,7 @@ function moveProgressionEntry(index, dir) {
 function moveProgressionEntryTo(fromIndex, toIndex) {
   if (toIndex > fromIndex) toIndex -= 1; // account for the shift left after removal
   if (fromIndex === toIndex) return;
-  const [entry] = state.purchaseOrder.splice(fromIndex, 1);
-  state.purchaseOrder.splice(toIndex, 0, entry);
-  clearLastMutation();
-  saveLocal();
+  moveEntry(fromIndex, toIndex);
   renderProgression();
 }
 

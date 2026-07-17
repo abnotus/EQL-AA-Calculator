@@ -1,13 +1,13 @@
 // All DOM rendering. Reads from `state` and the logic layer, writes to `el.*`.
 
-import { state, AA_CATEGORY_KEYS, CLASS_SLOT_KEYS, saveLocal, LAST_SEEN_VERSION_KEY } from "./state.js";
+import { state, AA_CATEGORY_KEYS, CLASS_SLOT_KEYS, LAST_SEEN_VERSION_KEY } from "./state.js";
 import { USER_CHANGELOG } from "./changelogData.js";
 import { el } from "./dom.js";
 import {
   escapeHtml, iconLetter, highlightRankValue, applyPerRankTotal, labelFor, shortCategoryLabel,
   getList, effectiveRank, structuralLockReason, resolvePrereqTarget, getBlockReason,
   isDependedOn, attemptIncrement, attemptDecrement, countPicked, computeProgressionSteps,
-  costNum, spentPoints, undoLastMutation, canUndo, clearLastMutation, aaMatchesQuery, countMatches,
+  costNum, spentPoints, undoLastMutation, canUndo, moveEntry, aaMatchesQuery, countMatches,
   heldRankInvalidReason, findInvalidatedPicks
 } from "./logic.js";
 
@@ -562,8 +562,9 @@ export function renderProgression() {
   });
 }
 
-// Reverses whatever the single most recent rank change was — an add gets removed,
-// a remove gets restored to its exact original position in the list.
+// Reverses whatever the single most recent change was — an add gets removed, a
+// remove gets restored to its exact original position in the list, and a
+// reorder (drag or arrow) moves the entry back to where it was before.
 export function undoLast() {
   applyAttempt(undoLastMutation());
 }
@@ -575,10 +576,7 @@ export function moveProgressionEntry(index, dir) {
   const b = state.purchaseOrder[target];
   const sameAA = a.scope === b.scope && a.idx === b.idx && (a.className || null) === (b.className || null);
   if (sameAA) { showToast("Can't reorder different ranks of the same AA."); return; }
-  state.purchaseOrder[index] = b;
-  state.purchaseOrder[target] = a;
-  clearLastMutation(); // a pending undo's recorded position would now point at the wrong spot
-  saveLocal();
+  moveEntry(index, target);
   renderProgression();
 }
 
@@ -598,10 +596,7 @@ export function moveProgressionEntry(index, dir) {
 export function moveProgressionEntryTo(fromIndex, toIndex) {
   if (toIndex > fromIndex) toIndex -= 1; // account for the shift left after removal
   if (fromIndex === toIndex) return;
-  const [entry] = state.purchaseOrder.splice(fromIndex, 1);
-  state.purchaseOrder.splice(toIndex, 0, entry);
-  clearLastMutation();
-  saveLocal();
+  moveEntry(fromIndex, toIndex);
   renderProgression();
 }
 
