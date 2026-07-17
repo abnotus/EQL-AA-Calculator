@@ -1343,7 +1343,9 @@ function computeProgressionSteps(order = state.purchaseOrder) {
 
 const BUILDS_INDEX_KEY = "eql_aa_builds_index_v1";
 const BUILD_KEY_PREFIX = "eql_aa_build_";
-const IMPORTED_BUILD_ID = "imported";
+// The reuse key for an auto-imported share link is this name, not a fixed id
+// - see findImportedSlot for why an id can't serve that role once renames
+// enter the picture.
 const IMPORTED_BUILD_NAME = "Imported Build";
 // Which saved slot (if any) the current working state was last loaded from or
 // saved as — purely for UI orientation (highlighting it in the list, showing
@@ -1498,41 +1500,69 @@ function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, trustMatc
   if (wantsSave) {
     const name = prompt("Name this build:", "");
     if (!name || !name.trim()) return false;
-    return saveWithNameCheck(name.trim()) !== false;
+    const result = saveWithNameCheck(name.trim());
+    // saveWithNameCheck's three outcomes need telling apart here, not
+    // collapsing to a truthy check: false (declined the overwrite) backs out
+    // the same as declining to name it at all - nothing was asked to be
+    // saved, so proceeding would silently replace a build the user never
+    // agreed to lose. null (storage full/unavailable) is the one case that
+    // must NOT proceed either, despite being the exact moment the user
+    // affirmatively asked for protection - proceeding anyway on a failed
+    // save is data loss precisely when the user did everything right.
+    if (result === false) return false;
+    if (result === null) {
+      alert('Couldn\'t save — local storage may be full or unavailable. Nothing was changed.');
+      return false;
+    }
+    return true;
   }
   return confirm(`${verb.charAt(0).toUpperCase()}${verb.slice(1)} ${target}? This will replace your current build and can't be undone.`);
 }
 
-// True only while the active slot is *still at risk* from the next
-// saveImportedBuild() call - id "imported" AND still at the default name.
-// Once renamed, saveImportedBuild's own adopted-slot check (below) leaves it
-// alone regardless, so treating it as untrustworthy here too would just be
-// redundant caution: confirmReplaceCurrentBuild's caller would distrust an
-// activeBuildMatchesCurrent() match that's actually accurate, prompting to
-// save content that's already safely sitting under its adopted name.
+// The slot saveImportedBuild would target on its next call - whichever entry
+// is *currently* named "Imported Build", if any, regardless of id. Naming is
+// the reuse key, not the original id: the very first import fixes the id
+// "imported" to whatever it saves, but a rename only ever changes an entry's
+// name, so that id belongs to the (now renamed/adopted) entry forever. A
+// lookup keyed on id would keep finding that same permanently-adopted entry
+// after every future rename and concluding "adopted" each time - allocating
+// a fresh id per import forever after the first adoption, the exact
+// unbounded pile of same-named slots the fixed id existed to prevent.
+// isActiveBuildTheImportedSlot and saveImportedBuild both need this exact
+// same answer (one to know what it's about to overwrite, one to know what to
+// distrust), so it's one predicate rather than two independent lookups that
+// could drift the way autoFloor's split into changeRank/attemptDecrement did.
+//
+// One accepted consequence: naming your own build "Imported Build" opts it
+// into being the reuse target - already true before this fix (the id lookup
+// couldn't tell a user's own entry from an actually-imported one either), so
+// not a regression.
+function findImportedSlot() {
+  return loadIndex().find((b) => b.name === IMPORTED_BUILD_NAME) || null;
+}
+
+// True only while the active slot is the one the next saveImportedBuild()
+// call would actually overwrite. Once that slot's been renamed away from the
+// default name, findImportedSlot() no longer finds it, so there's nothing
+// left to distrust - confirmReplaceCurrentBuild's caller would otherwise
+// distrust an activeBuildMatchesCurrent() match that's actually accurate,
+// prompting to save content that's already safely sitting under its adopted
+// name.
 function isActiveBuildTheImportedSlot() {
-  if (getActiveBuildId() !== IMPORTED_BUILD_ID) return false;
-  const entry = loadIndex().find((b) => b.id === IMPORTED_BUILD_ID);
-  return !entry || entry.name === IMPORTED_BUILD_NAME;
+  const slot = findImportedSlot();
+  return !!slot && slot.id === getActiveBuildId();
 }
 
 // A share link is often opened passively (a link in chat), not a deliberate
 // "load a build" action the way pasting import text or using the Builds
 // modal is - easy to lose track of afterward once it's not the active
-// working state anymore. Auto-saves it under one fixed, reused slot (not
-// genId()'d, so opening another link overwrites this same entry rather than
-// accumulating a pile of them) so it stays one click away in the Builds list
-// even after you've moved on to something else.
-//
-// Reuses that fixed id only while the slot still has its default name. A
-// rename is the user explicitly adopting it - "Imported Build" opening the
-// NEXT link and silently overwriting a slot someone just renamed to keep it
-// would ignore that on-purpose choice, so an adopted slot gets left alone
-// and the next import gets a fresh id (and starts the default name over).
+// working state anymore. Auto-saves it under one reused slot (found by name,
+// see findImportedSlot - not genId()'d fresh every time) so it stays one
+// click away in the Builds list even after you've moved on to something
+// else, without piling up a fresh "Imported Build" entry per link opened.
 function saveImportedBuild() {
-  const existing = loadIndex().find((b) => b.id === IMPORTED_BUILD_ID);
-  const adopted = existing && existing.name !== IMPORTED_BUILD_NAME;
-  return saveBuildAs(IMPORTED_BUILD_NAME, adopted ? null : IMPORTED_BUILD_ID);
+  const existing = findImportedSlot();
+  return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null);
 }
 
 // Replaces the current working state with a saved slot's contents — same

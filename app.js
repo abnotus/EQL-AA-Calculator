@@ -940,7 +940,6 @@ return { index: i, aa, idx: entry.idx, category, active, stepRank, stepCost, cum
 }
 const BUILDS_INDEX_KEY = "eql_aa_builds_index_v1";
 const BUILD_KEY_PREFIX = "eql_aa_build_";
-const IMPORTED_BUILD_ID = "imported";
 const IMPORTED_BUILD_NAME = "Imported Build";
 const ACTIVE_BUILD_KEY = "eql_aa_active_build_id";
 function loadIndex() {
@@ -1031,19 +1030,26 @@ const wantsSave = confirm(`Your current build isn't saved. Save it as a named bu
 if (wantsSave) {
 const name = prompt("Name this build:", "");
 if (!name || !name.trim()) return false;
-return saveWithNameCheck(name.trim()) !== false;
+const result = saveWithNameCheck(name.trim());
+if (result === false) return false;
+if (result === null) {
+alert('Couldn\'t save — local storage may be full or unavailable. Nothing was changed.');
+return false;
+}
+return true;
 }
 return confirm(`${verb.charAt(0).toUpperCase()}${verb.slice(1)} ${target}? This will replace your current build and can't be undone.`);
 }
+function findImportedSlot() {
+return loadIndex().find((b) => b.name === IMPORTED_BUILD_NAME) || null;
+}
 function isActiveBuildTheImportedSlot() {
-if (getActiveBuildId() !== IMPORTED_BUILD_ID) return false;
-const entry = loadIndex().find((b) => b.id === IMPORTED_BUILD_ID);
-return !entry || entry.name === IMPORTED_BUILD_NAME;
+const slot = findImportedSlot();
+return !!slot && slot.id === getActiveBuildId();
 }
 function saveImportedBuild() {
-const existing = loadIndex().find((b) => b.id === IMPORTED_BUILD_ID);
-const adopted = existing && existing.name !== IMPORTED_BUILD_NAME;
-return saveBuildAs(IMPORTED_BUILD_NAME, adopted ? null : IMPORTED_BUILD_ID);
+const existing = findImportedSlot();
+return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null);
 }
 function loadBuild(id) {
 let parsed;
