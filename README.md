@@ -8,12 +8,13 @@ A talent-calculator-style planner for [EverQuest Legends](https://eqlwiki.com/Al
 
 - Pick up to 3 classes (EQL's tri-class combo system) and spend points across General, Archetype, Class, and Special AAs
 - Prerequisite (including rank-synced prereqs), level, and affordability checks before you can spend a point
+- Locked AAs show *why* at a glance, not just that they're locked — a missing prerequisite gets a distinct amber marker from a plain level gate, in both the tree and Browse All AAs
 - Next-rank preview — see what the next rank upgrades to before you buy it, in the side panel and as an expandable row in Progression
 - Global search — highlights matches in the tab you're on and shows match-count badges on other tabs that have matches too
 - **Browse All AAs** — a searchable reference independent of your current build
 - **Build Summary** — everything you've picked, grouped by category, with running totals shown for flat "N per rank" AAs
 - **Progression** tab — tracks the order you spent points in, drag-and-drop or arrow-key reorderable (with a warning if a drop would leave a step ahead of its own prerequisite), with per-step/running-total cost, add/remove controls, and single-level undo covering adds, removes, and reorders alike
-- **Builds** — save named snapshots of your current build and switch between them later (comparing class combos, planning alternate paths), stored locally in this browser
+- **Builds** — save named snapshots of your current build and switch between them later (comparing class combos, planning alternate paths), stored locally in this browser. Opening a share link or importing text offers to save your current build first if it isn't already backed up, and a share link's build is auto-saved to a reusable "Imported Build" slot so it's still easy to find after you've moved on
 - Export a build as text or a shareable URL (open the link, the build loads automatically); import by pasting text directly, pasting a full exported block, or loading a saved `.txt` file
 - Auto-granted AAs (free, level-gated abilities, including partially-free abilities) are applied automatically
 - Responsive layout, keyboard-accessible AA selection
