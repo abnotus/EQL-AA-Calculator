@@ -792,11 +792,15 @@ lastMutation = null;
 function canUndo() {
 return !!lastMutation;
 }
+function autoFloor(aa) {
+if (!aa.autoRanks) return 0;
+const levelReq = parseInt(aa.levelReq, 10) || 1;
+return state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+}
 function changeRank(category, idx, delta) {
 const store = getRanksStore(category);
 const aa = getList(category)[idx];
-const levelReq = parseInt(aa.levelReq, 10) || 1;
-const floor = aa.autoRanks && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+const floor = autoFloor(aa);
 const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[idx] || 0);
 const next = cur + delta;
 if (next < floor || next > aa.ranks) return false;
@@ -853,7 +857,7 @@ const aa = getList(category)[idx];
 if (aa.auto) return { changed: false, message: `${aa.name} is automatically granted and can't be removed.` };
 const rank = effectiveRank(category, idx);
 if (rank <= 0) return { changed: false, message: null };
-if (aa.autoRanks && rank <= Math.min(aa.autoRanks, aa.ranks)) {
+if (aa.autoRanks && rank <= autoFloor(aa)) {
 const plural = aa.autoRanks === 1 ? "rank is" : "ranks are";
 return { changed: false, message: `${aa.name}'s first ${aa.autoRanks} ${plural} automatically granted and can't be removed.` };
 }

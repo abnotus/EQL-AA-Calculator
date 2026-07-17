@@ -499,6 +499,19 @@ export function canUndo() {
   return !!lastMutation;
 }
 
+// The level-gated floor for an autoRanks AA: the free ranks it grants once the
+// character has actually reached the level that grants them (matching
+// effectiveRank's own gating), 0 below that since nothing is free yet. Shared by
+// changeRank (what a refund can't go below) and attemptDecrement (the UI-facing
+// gate in front of it) so the two can't drift apart the way they did before -
+// changeRank alone being level-gated is invisible if the layer above it still
+// blocks the refund unconditionally.
+function autoFloor(aa) {
+  if (!aa.autoRanks) return 0;
+  const levelReq = parseInt(aa.levelReq, 10) || 1;
+  return state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+}
+
 // Pure state mutation — no rendering, no user feedback. Returns whether a change
 // actually happened, so callers (the UI layer) decide what to do about it.
 export function changeRank(category, idx, delta) {
@@ -506,12 +519,8 @@ export function changeRank(category, idx, delta) {
   const aa = getList(category)[idx];
   // For an autoRanks AA, the free ranks are a floor you can never buy below (they're
   // not "purchased" at all) — step from the current effective rank, not the raw stored
-  // one. The floor only applies once the character has actually reached the level that
-  // grants it, matching effectiveRank's own gating — below that level nothing is free
-  // yet, so a rank bought there is refundable like any other purchase, not stuck behind
-  // a floor for a grant that hasn't happened.
-  const levelReq = parseInt(aa.levelReq, 10) || 1;
-  const floor = aa.autoRanks && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+  // one. See autoFloor for why the floor itself is level-gated.
+  const floor = autoFloor(aa);
   const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[idx] || 0);
   const next = cur + delta;
   if (next < floor || next > aa.ranks) return false;
@@ -592,7 +601,7 @@ export function attemptDecrement(category, idx) {
   if (aa.auto) return { changed: false, message: `${aa.name} is automatically granted and can't be removed.` };
   const rank = effectiveRank(category, idx);
   if (rank <= 0) return { changed: false, message: null };
-  if (aa.autoRanks && rank <= Math.min(aa.autoRanks, aa.ranks)) {
+  if (aa.autoRanks && rank <= autoFloor(aa)) {
     const plural = aa.autoRanks === 1 ? "rank is" : "ranks are";
     return { changed: false, message: `${aa.name}'s first ${aa.autoRanks} ${plural} automatically granted and can't be removed.` };
   }
