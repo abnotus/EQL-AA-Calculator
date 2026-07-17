@@ -802,7 +802,8 @@ if (next < floor || next > aa.ranks) return false;
 if (next === 0) delete store[idx]; else store[idx] = next;
 if (delta > 0) {
 pushPurchase(category, idx);
-lastMutation = { type: "add", category, idx };
+const { scope, className } = categoryToScopeClassName(category);
+lastMutation = { type: "add", entry: { scope, className, idx } };
 } else {
 const popped = popLastPurchase(category, idx);
 lastMutation = popped ? { type: "remove", entry: popped.entry, position: popped.position } : null;
@@ -815,12 +816,14 @@ const m = lastMutation;
 if (!m) return { changed: false, message: "Nothing to undo." };
 lastMutation = null;
 if (m.type === "add") {
-const rank = effectiveRank(m.category, m.idx);
+const category = resolveEntryCategory(m.entry);
+if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
+const rank = effectiveRank(category, m.entry.idx);
 if (rank <= 0) return { changed: false, message: "Nothing to undo." };
-if (isDependedOn(m.category, m.idx, rank)) {
+if (isDependedOn(category, m.entry.idx, rank)) {
 return { changed: false, message: "Can't undo — another AA now depends on this rank." };
 }
-return { changed: changeRank(m.category, m.idx, -1), message: null };
+return { changed: changeRank(category, m.entry.idx, -1), message: null };
 }
 const category = resolveEntryCategory(m.entry);
 if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
@@ -887,9 +890,14 @@ const attempt = tryResolvePrereq(aa.prereq, category);
 if (!attempt.ok) {
 prereqWarn = true;
 } else {
+const targetAA = getList(attempt.resolved.category)[attempt.resolved.idx];
+const targetAutoFloor = targetAA && targetAA.auto ? targetAA.ranks
+: targetAA && targetAA.autoRanks ? Math.min(targetAA.autoRanks, targetAA.ranks)
+: 0;
 const t = categoryToScopeClassName(attempt.resolved.category);
 const targetKey = entryKey(t.scope, t.className, attempt.resolved.idx);
-if ((counts[targetKey] || 0) < attempt.resolved.forRank(stepRank)) prereqWarn = true;
+const targetHeld = (counts[targetKey] || 0) + targetAutoFloor;
+if (targetHeld < attempt.resolved.forRank(stepRank)) prereqWarn = true;
 }
 }
 counts[key] = purchaseCount;

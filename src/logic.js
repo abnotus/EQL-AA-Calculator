@@ -513,7 +513,15 @@ export function changeRank(category, idx, delta) {
   if (next === 0) delete store[idx]; else store[idx] = next;
   if (delta > 0) {
     pushPurchase(category, idx);
-    lastMutation = { type: "add", category, idx };
+    // Stored as {scope, className, idx} - the same shape as a "remove" record's
+    // entry - rather than the raw category (slot key). A slot key means
+    // "whatever class currently occupies this slot", which stops meaning the
+    // class that was actually here at purchase time the moment slots 0-2 get
+    // swapped around; resolveEntryCategory below re-resolves through the
+    // *current* slot assignment by className, same as undo already does for
+    // "remove" records.
+    const { scope, className } = categoryToScopeClassName(category);
+    lastMutation = { type: "add", entry: { scope, className, idx } };
   } else {
     const popped = popLastPurchase(category, idx);
     lastMutation = popped ? { type: "remove", entry: popped.entry, position: popped.position } : null;
@@ -530,12 +538,14 @@ export function undoLastMutation() {
   lastMutation = null;
 
   if (m.type === "add") {
-    const rank = effectiveRank(m.category, m.idx);
+    const category = resolveEntryCategory(m.entry);
+    if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
+    const rank = effectiveRank(category, m.entry.idx);
     if (rank <= 0) return { changed: false, message: "Nothing to undo." };
-    if (isDependedOn(m.category, m.idx, rank)) {
+    if (isDependedOn(category, m.entry.idx, rank)) {
       return { changed: false, message: "Can't undo — another AA now depends on this rank." };
     }
-    return { changed: changeRank(m.category, m.idx, -1), message: null };
+    return { changed: changeRank(category, m.entry.idx, -1), message: null };
   }
 
   // m.type === "remove": restore the entry to its original array position and
@@ -624,9 +634,23 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
       if (!attempt.ok) {
         prereqWarn = true; // malformed or unresolvable - same "unmet" signal as elsewhere
       } else {
+        const targetAA = getList(attempt.resolved.category)[attempt.resolved.idx];
+        // A fully-auto target never goes through purchaseOrder at all (attemptIncrement
+        // refuses to touch one), and an autoRanks target's free floor doesn't either
+        // (see pushPurchase/changeRank) - counts[targetKey] alone would under- or
+        // never-count it, unlike effectiveRank elsewhere in the app
+        // (structuralLockReason, heldRankInvalidReason), which both fold the free
+        // floor in. Mirrors the source step's own autoOffset a few lines up rather
+        // than reusing effectiveRank directly, since effectiveRank reports the
+        // CURRENT total rank, not "how much had been trained at this point in the
+        // sequence" - purchases still need the sequence-aware count.
+        const targetAutoFloor = targetAA && targetAA.auto ? targetAA.ranks
+          : targetAA && targetAA.autoRanks ? Math.min(targetAA.autoRanks, targetAA.ranks)
+          : 0;
         const t = categoryToScopeClassName(attempt.resolved.category);
         const targetKey = entryKey(t.scope, t.className, attempt.resolved.idx);
-        if ((counts[targetKey] || 0) < attempt.resolved.forRank(stepRank)) prereqWarn = true;
+        const targetHeld = (counts[targetKey] || 0) + targetAutoFloor;
+        if (targetHeld < attempt.resolved.forRank(stepRank)) prereqWarn = true;
       }
     }
 
