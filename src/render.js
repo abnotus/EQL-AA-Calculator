@@ -912,6 +912,23 @@ export function showToast(msg) {
   showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
 }
 
+// The list has grown enough (several versions, some with multi-paragraph
+// entries) that it routinely needs scrolling to read in full, and this
+// app's custom scrollbar (see the ::-webkit-scrollbar rules) is thin enough
+// - and, on some platforms/browsers, invisible until actively scrolling -
+// that a first-time viewer can miss it's there at all and mistake a
+// mid-sentence cutoff for the end of the list. updateChangelogFade adds a
+// bottom fade while there's more to scroll to, matching the "more content
+// below" convention, and removes it once actually scrolled to the end (or
+// if everything already fits with no scrolling needed at all - same check
+// covers both, since scrollTop+clientHeight >= scrollHeight is true either
+// way).
+function updateChangelogFade() {
+  const el2 = el.changelogContent;
+  const atBottom = el2.scrollTop + el2.clientHeight >= el2.scrollHeight - 1;
+  el.changelogFade.classList.toggle("hidden", atBottom);
+}
+
 export function openChangelogModal() {
   el.changelogContent.innerHTML = USER_CHANGELOG.map((entry) => `
     <div class="changelog-entry">
@@ -919,6 +936,9 @@ export function openChangelogModal() {
       <ul>${entry.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
     </div>`).join("") || '<div class="empty">Nothing here yet.</div>';
   el.changelogModal.classList.remove("hidden");
+  el.changelogContent.scrollTop = 0;
+  updateChangelogFade();
+  el.changelogContent.onscroll = updateChangelogFade;
   el.versionTag.classList.remove("unread");
   if (USER_CHANGELOG[0]) {
     try { localStorage.setItem(LAST_SEEN_VERSION_KEY, USER_CHANGELOG[0].version); } catch (e) { /* storage unavailable */ }

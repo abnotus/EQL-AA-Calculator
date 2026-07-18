@@ -65,6 +65,7 @@ export function cacheDom() {
   el.versionTag = document.getElementById("versionTag");
   el.changelogModal = document.getElementById("changelogModal");
   el.changelogContent = document.getElementById("changelogContent");
+  el.changelogFade = document.getElementById("changelogFade");
   el.closeChangelogBtn = document.getElementById("closeChangelogBtn");
   el.buildsBtn = document.getElementById("buildsBtn");
   el.buildsModal = document.getElementById("buildsModal");

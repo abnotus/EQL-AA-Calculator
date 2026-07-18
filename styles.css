@@ -1073,7 +1073,7 @@ main {
 }
 
 .modal {
-  width: min(560px, 90vw);
+  width: min(600px, 90vw);
   max-height: 80vh;
   background: var(--bg-panel);
   border: 1px solid var(--border-light);
@@ -1082,6 +1082,15 @@ main {
   box-shadow: 0 10px 40px rgba(0,0,0,0.6);
   display: flex;
   flex-direction: column;
+  /* Modals only ever hold wrapping prose/lists, never tabular/code content
+     that would legitimately need to scroll sideways - so instead of giving
+     any of that an overflow-x container (the pattern wide content like the
+     progression rows uses), text is just forced to wrap no matter what a
+     single token looks like. Guarantees no modal ever needs or shows
+     horizontal scrolling at any width, down to the 90vw floor above. */
+  overflow-x: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .modal h2 {
@@ -1271,10 +1280,41 @@ main {
   background: #e0a83a;
 }
 
+.changelog-content-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
 .changelog-content {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  /* The custom scrollbar (::-webkit-scrollbar below) is 10px and lives
+     inside this box's own width - without reserved space, it sits flush
+     against wrapped text with no gap, visually overlapping the last
+     characters of a line. .modal's width was bumped to compensate so the
+     text column doesn't end up narrower than before. */
+  padding-right: 16px;
+}
+
+/* Cues that there's more to scroll to - this app's custom scrollbar (see
+   ::-webkit-scrollbar below) is thin enough, and on some platforms hidden
+   until actively scrolling, that a cut-off entry can otherwise look like
+   the end of the list. Toggled by updateChangelogFade in render.js: hidden
+   once actually scrolled to the bottom, or if everything already fits with
+   no scrolling needed. pointer-events:none so it never blocks scrolling
+   itself. */
+.changelog-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 32px;
+  background: linear-gradient(to bottom, transparent, var(--bg-panel));
+  pointer-events: none;
 }
 
 .changelog-entry + .changelog-entry {
