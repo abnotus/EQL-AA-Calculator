@@ -1778,10 +1778,16 @@ function closeWaypointModal() {
 el.waypointModal.classList.add("hidden");
 }
 function handleSaveWaypoint() {
-const pts = parseInt(el.waypointPtsInput.value.trim(), 10);
-if (!Number.isFinite(pts) || pts < 0) {
+const rawPts = parseInt(el.waypointPtsInput.value.trim(), 10);
+if (!Number.isFinite(rawPts) || rawPts < 0) {
 showToast("Enter a point total of 0 or more.");
 return;
+}
+const pts = Math.min(rawPts, MAX_TOTAL_POINTS);
+const colliding = state.waypoints.find((w) => w.pts === pts && w.pts !== editingWaypointPts);
+if (colliding) {
+const desc = colliding.label ? `"${colliding.label}"` : "the unnamed waypoint";
+if (!confirm(`${desc} is already set at ${pts} pts. Replace it?`)) return;
 }
 if (editingWaypointPts !== null && editingWaypointPts !== pts) {
 removeWaypoint(editingWaypointPts);
@@ -2357,7 +2363,14 @@ lines.push("");
 });
 if (state.purchaseOrder.length) {
 lines.push("== Progression (click order) ==");
-computeProgressionSteps().forEach((s) => {
+computeProgressionTimeline(computeProgressionSteps()).forEach((entry) => {
+if (entry.type === "divider") {
+const labelPart = entry.label ? ` · ${entry.label}` : "";
+const reachedNote = entry.unreached ? " (not reached yet)" : "";
+lines.push(`  --- ${entry.pts} pts${labelPart} ---${reachedNote}`);
+return;
+}
+const s = entry;
 const maxRank = s.aa ? `/${s.aa.ranks}` : "";
 const suffix = s.active ? "" : " (class not currently selected)";
 const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";

@@ -2,7 +2,7 @@
 
 import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, serializeRanks, serializePurchaseOrder, payloadOwnedHasContent, applyImportedOwned } from "./state.js";
 import { el } from "./dom.js";
-import { getList, effectiveRank, labelFor, spentPoints, computeProgressionSteps, clearLastMutation, reconcilePurchaseOrderCounts, loadIssuesSuffix } from "./logic.js";
+import { getList, effectiveRank, labelFor, spentPoints, computeProgressionSteps, computeProgressionTimeline, clearLastMutation, reconcilePurchaseOrderCounts, loadIssuesSuffix } from "./logic.js";
 import { clearActiveBuild, saveImportedBuild, confirmReplaceCurrentBuild, isActiveBuildTheImportedSlot } from "./builds.js";
 import { renderAll, showToast } from "./render.js";
 import { idForKey, entryForId } from "./keys.js";
@@ -295,7 +295,21 @@ export async function buildExportText(includeOwned) {
 
   if (state.purchaseOrder.length) {
     lines.push("== Progression (click order) ==");
-    computeProgressionSteps().forEach((s) => {
+    // Reuses computeProgressionTimeline (logic.js) rather than re-deriving
+    // where a waypoint's boundary falls - the readable listing should show
+    // the same divider placement the Progression tab itself does, not a
+    // second, independently-computed opinion of it. Waypoints ride the
+    // BUILD_CODE either way (unconditionally - see buildCodeObject), but
+    // without this a human just reading the text has no way to see them at
+    // all, unlike owned's [OWNED] marker a few lines below.
+    computeProgressionTimeline(computeProgressionSteps()).forEach((entry) => {
+      if (entry.type === "divider") {
+        const labelPart = entry.label ? ` · ${entry.label}` : "";
+        const reachedNote = entry.unreached ? " (not reached yet)" : "";
+        lines.push(`  --- ${entry.pts} pts${labelPart} ---${reachedNote}`);
+        return;
+      }
+      const s = entry;
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
       const suffix = s.active ? "" : " (class not currently selected)";
       const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";

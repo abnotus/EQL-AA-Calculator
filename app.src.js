@@ -2677,10 +2677,25 @@ function closeWaypointModal() {
 }
 
 function handleSaveWaypoint() {
-  const pts = parseInt(el.waypointPtsInput.value.trim(), 10);
-  if (!Number.isFinite(pts) || pts < 0) {
+  const rawPts = parseInt(el.waypointPtsInput.value.trim(), 10);
+  if (!Number.isFinite(rawPts) || rawPts < 0) {
     showToast("Enter a point total of 0 or more.");
     return;
+  }
+  // Clamped the same way sanitizeWaypoints itself will - checking the
+  // collision below against the pre-clamp value would miss the case where
+  // an enormous typed total lands on an existing waypoint only *after*
+  // being clamped to MAX_TOTAL_POINTS.
+  const pts = Math.min(rawPts, MAX_TOTAL_POINTS);
+  // A different waypoint already sitting at this exact total would
+  // otherwise be silently overwritten - its label and color just vanish
+  // with no trace, the moment this save goes through. Same "ask before
+  // clobbering something that already exists" instinct saveWithNameCheck
+  // applies to a named Build slot collision.
+  const colliding = state.waypoints.find((w) => w.pts === pts && w.pts !== editingWaypointPts);
+  if (colliding) {
+    const desc = colliding.label ? `"${colliding.label}"` : "the unnamed waypoint";
+    if (!confirm(`${desc} is already set at ${pts} pts. Replace it?`)) return;
   }
   // Editing can change the point total itself - that's a different identity
   // (waypoints are keyed by pts), so the old entry has to be explicitly
@@ -3493,7 +3508,21 @@ async function buildExportText(includeOwned) {
 
   if (state.purchaseOrder.length) {
     lines.push("== Progression (click order) ==");
-    computeProgressionSteps().forEach((s) => {
+    // Reuses computeProgressionTimeline (logic.js) rather than re-deriving
+    // where a waypoint's boundary falls - the readable listing should show
+    // the same divider placement the Progression tab itself does, not a
+    // second, independently-computed opinion of it. Waypoints ride the
+    // BUILD_CODE either way (unconditionally - see buildCodeObject), but
+    // without this a human just reading the text has no way to see them at
+    // all, unlike owned's [OWNED] marker a few lines below.
+    computeProgressionTimeline(computeProgressionSteps()).forEach((entry) => {
+      if (entry.type === "divider") {
+        const labelPart = entry.label ? ` · ${entry.label}` : "";
+        const reachedNote = entry.unreached ? " (not reached yet)" : "";
+        lines.push(`  --- ${entry.pts} pts${labelPart} ---${reachedNote}`);
+        return;
+      }
+      const s = entry;
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
       const suffix = s.active ? "" : " (class not currently selected)";
       const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";

@@ -1,6 +1,6 @@
 // All DOM rendering. Reads from `state` and the logic layer, writes to `el.*`.
 
-import { state, AA_CATEGORY_KEYS, CLASS_SLOT_KEYS, LAST_SEEN_VERSION_KEY, WAYPOINT_COLORS } from "./state.js";
+import { state, AA_CATEGORY_KEYS, CLASS_SLOT_KEYS, LAST_SEEN_VERSION_KEY, WAYPOINT_COLORS, MAX_TOTAL_POINTS } from "./state.js";
 import { USER_CHANGELOG } from "./changelogData.js";
 import { el } from "./dom.js";
 import {
@@ -521,10 +521,25 @@ export function closeWaypointModal() {
 }
 
 export function handleSaveWaypoint() {
-  const pts = parseInt(el.waypointPtsInput.value.trim(), 10);
-  if (!Number.isFinite(pts) || pts < 0) {
+  const rawPts = parseInt(el.waypointPtsInput.value.trim(), 10);
+  if (!Number.isFinite(rawPts) || rawPts < 0) {
     showToast("Enter a point total of 0 or more.");
     return;
+  }
+  // Clamped the same way sanitizeWaypoints itself will - checking the
+  // collision below against the pre-clamp value would miss the case where
+  // an enormous typed total lands on an existing waypoint only *after*
+  // being clamped to MAX_TOTAL_POINTS.
+  const pts = Math.min(rawPts, MAX_TOTAL_POINTS);
+  // A different waypoint already sitting at this exact total would
+  // otherwise be silently overwritten - its label and color just vanish
+  // with no trace, the moment this save goes through. Same "ask before
+  // clobbering something that already exists" instinct saveWithNameCheck
+  // applies to a named Build slot collision.
+  const colliding = state.waypoints.find((w) => w.pts === pts && w.pts !== editingWaypointPts);
+  if (colliding) {
+    const desc = colliding.label ? `"${colliding.label}"` : "the unnamed waypoint";
+    if (!confirm(`${desc} is already set at ${pts} pts. Replace it?`)) return;
   }
   // Editing can change the point total itself - that's a different identity
   // (waypoints are keyed by pts), so the old entry has to be explicitly
