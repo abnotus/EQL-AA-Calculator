@@ -9,7 +9,8 @@ import {
   isDependedOn, attemptIncrement, attemptDecrement, countPicked, computeProgressionSteps,
   costNum, spentPoints, undoLastMutation, canUndo, moveEntry, setOwnedRank, performReset,
   aaMatchesQuery, countMatches, heldRankInvalidReason, findInvalidatedPicks, loadIssuesSuffix,
-  hasAnyOwned, computeProgressionTimeline, addOrUpdateWaypoint, removeWaypoint, costGuess, costGuessScoped
+  hasAnyOwned, computeProgressionTimeline, addOrUpdateWaypoint, removeWaypoint, costGuess, costGuessScoped,
+  estimatedExtraPoints
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
@@ -44,11 +45,34 @@ export function renderTopbar() {
   el.levelInput.value = state.charLevel;
   el.totalPointsInput.value = state.totalPoints;
   const spent = spentPoints();
+  // remaining is deliberately always real-math (state.totalPoints - spent),
+  // never the blended estimate below - it's the number that answers "how
+  // many more points can I actually still allocate", which is exactly the
+  // real affordability math everywhere else in the app, and must never
+  // imply a guess changes that.
   const remaining = state.totalPoints - spent;
-  el.spentValue.textContent = spent;
   el.totalDisplayValue.textContent = state.totalPoints;
   el.remainingValue.textContent = `(${remaining} remaining)`;
   el.remainingValue.classList.toggle("over", remaining < 0);
+
+  const extra = estimatedExtraPoints();
+  if (extra > 0) {
+    // The headline number itself becomes the blended real+estimate total,
+    // colored to match - a guess is still never added to spentPoints()
+    // anywhere in real math (remaining above is proof: it stays keyed to
+    // the real `spent`), this is purely how the topbar's own number reads.
+    el.spentValue.textContent = `~${spent + extra}`;
+    el.spentValue.classList.add("is-estimate");
+    el.spentValue.title = `${spent} confirmed + ${extra} from pattern-inferred estimates on ranks you've already picked whose real cost isn't confirmed on the wiki yet.`;
+    el.estimatedNote.textContent = `+${extra} from estimates`;
+    el.estimatedNote.title = `${el.spentValue.title} Never counted toward affordability anywhere (that still uses the real ${spent}) — shown for reference only.`;
+    el.estimatedNote.classList.remove("hidden");
+  } else {
+    el.spentValue.textContent = spent;
+    el.spentValue.classList.remove("is-estimate");
+    el.spentValue.removeAttribute("title");
+    el.estimatedNote.classList.add("hidden");
+  }
   el.browseToggle.classList.toggle("active", state.activeView === "browse");
   const activeId = getActiveBuildId();
   const activeBuild = activeId ? listBuilds().find((b) => b.id === activeId) : null;

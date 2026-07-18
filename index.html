@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EverQuest Legends - AA Calculator</title>
-<link rel="stylesheet" href="styles.css?v=1addd887" />
+<link rel="stylesheet" href="styles.css?v=b6ac5948" />
 </head>
 <body>
 
@@ -38,7 +38,7 @@
 
   <div class="points-display">
     <span class="label">Points Spent</span>
-    <span class="value"><span id="spentValue">0</span> / <span id="totalDisplayValue">1000</span> <span id="remainingValue" class="remaining-note">(0 remaining)</span></span>
+    <span class="value"><span id="spentValue">0</span> / <span id="totalDisplayValue">1000</span> <span id="remainingValue" class="remaining-note">(0 remaining)</span><span id="estimatedNote" class="estimated-note hidden"></span></span>
   </div>
 
   <div class="topbar-actions">
@@ -53,7 +53,7 @@
 </header>
 
 <div id="disclaimerBanner" class="disclaimer-banner hidden">
-  <span>Some values marked <b>?</b> are undocumented on the source wiki and treated as 0 pts until confirmed &mdash; a few now show a <b class="banner-estimate">~pattern-inferred estimate</b> instead, color-coded by confidence and never counted toward your point totals. All data is scraped from <a href="https://eqlwiki.com/Alternate_Advancement" target="_blank" rel="noopener">eqlwiki.com/Alternate_Advancement</a> and may be incomplete or out of date during beta.</span>
+  <span>Some per-rank costs (marked <b>?</b>) aren't documented on the source wiki yet, so we show a <b class="banner-estimate">~pattern-inferred estimate</b> instead where we can, color-coded by confidence. All data is scraped from <a href="https://eqlwiki.com/Alternate_Advancement" target="_blank" rel="noopener">eqlwiki.com/Alternate_Advancement</a> and may be incomplete or out of date during beta.</span>
   <button id="dismissBannerBtn" aria-label="Dismiss">&times;</button>
 </div>
 
@@ -213,7 +213,7 @@
   </div>
 </div>
 
-<script src="data.js?v=1addd887"></script>
-<script src="app.js?v=1addd887"></script>
+<script src="data.js?v=b6ac5948"></script>
+<script src="app.js?v=b6ac5948"></script>
 </body>
 </html>

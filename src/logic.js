@@ -418,6 +418,35 @@ export function spentPoints() {
   return total;
 }
 
+// How much higher spentPoints() would probably be if every purchased rank
+// with an unconfirmed real cost ("?") actually cost what its pattern-
+// inferred guess says, instead of the 0 costNum() gives it. Purely
+// informational, same guarantee as costGuess/costDisplay everywhere else:
+// this number is never added into spentPoints() itself, never used for an
+// afford check, never persisted - the topbar shows it as a separate
+// "~N incl. estimates" note precisely so it can't be mistaken for the real
+// total. Exists because a real total that never moves regardless of
+// guesses (working exactly as designed) still reads as "the guesses aren't
+// doing anything" at a glance, unless there's somewhere that shows what
+// they'd add up to.
+export function estimatedExtraPoints() {
+  let extra = 0;
+  AA_CATEGORY_KEYS.forEach((catKey) => {
+    const list = getList(catKey);
+    const store = getRanksStore(catKey);
+    list.forEach((aa, idx) => {
+      if (aa.auto) return;
+      const r = store[idx] || 0;
+      for (let i = 0; i < r; i++) {
+        if (aa.costs[i] !== "?") continue;
+        const guess = costGuess(catKey, idx, i);
+        if (guess) extra += guess.value;
+      }
+    });
+  });
+  return extra;
+}
+
 // Plain "Requires X rank N" gates the whole ability behind a fixed target rank.
 // "Requires X rank 1/2/3" (matching the wiki's own phrasing for rank-synced
 // prereqs, e.g. Destructive Cascade needing the matching Critical Affliction

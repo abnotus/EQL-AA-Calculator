@@ -430,7 +430,7 @@ const USER_CHANGELOG = [
     date: "2026-07-18",
     items: [
       "New: undocumented per-rank costs (shown as \"?\" on the wiki) can now show a pattern-inferred estimate instead — everywhere a cost shows up: the tree, the side panel's next-rank box and per-rank cost list, Browse All AAs, and the Progression tab's per-step cost and its own next-rank preview. Marked with a ~ and color-coded by confidence, with a tooltip explaining what it's based on. It's a cross-check against other AAs with the same rank count and cost pattern, never a guess from one AA's own numbers alone — an AA that looks like a clean doubling sequence can still turn out wrong once compared against similar AAs that are fully documented.",
-      "An estimate never affects point totals or affordability — it's shown for reference only, and the instant the wiki documents the real cost, that takes over automatically.",
+      "An estimate never affects point totals or affordability — it's shown for reference only, and the instant the wiki documents the real cost, that takes over automatically. If your build has already purchased a rank like that, the topbar's Points Spent number turns blue and blends the estimate in (with a small note on how much came from estimates) so it doesn't just look inert; \"remaining\" next to it always stays tied to the real total either way.",
       "Data corrections from a fresh wiki scrape: Combat Fury and Combat Stability both had a previously-undocumented rank confirmed, and Packrat gained several confirmed ranks too.",
       "A handful of costs no comparable AA could cross-check now show a hand-picked estimate instead, marked with its own \"very low\" confidence color and tooltip so it never reads as the same kind of evidence as the others — still shown for reference only, and still replaced automatically the moment the wiki documents the real cost."
     ]
@@ -534,7 +534,7 @@ const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
 // flat "dismissed" flag has no notion of *which* text was dismissed, so
 // the only way to force a re-acknowledgment is a new key nobody's set yet.
 // v2 added the pattern-inferred cost estimate mention.
-const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v2";
+const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v3";
 const LAST_SEEN_VERSION_KEY = "eql_aa_last_seen_version";
 const CLASS_SLOT_KEYS = ["classSlot0", "classSlot1", "classSlot2"];
 // Canonical display/iteration order for the 6 real AA categories (excludes the
@@ -1299,6 +1299,35 @@ function spentPoints() {
     });
   });
   return total;
+}
+
+// How much higher spentPoints() would probably be if every purchased rank
+// with an unconfirmed real cost ("?") actually cost what its pattern-
+// inferred guess says, instead of the 0 costNum() gives it. Purely
+// informational, same guarantee as costGuess/costDisplay everywhere else:
+// this number is never added into spentPoints() itself, never used for an
+// afford check, never persisted - the topbar shows it as a separate
+// "~N incl. estimates" note precisely so it can't be mistaken for the real
+// total. Exists because a real total that never moves regardless of
+// guesses (working exactly as designed) still reads as "the guesses aren't
+// doing anything" at a glance, unless there's somewhere that shows what
+// they'd add up to.
+function estimatedExtraPoints() {
+  let extra = 0;
+  AA_CATEGORY_KEYS.forEach((catKey) => {
+    const list = getList(catKey);
+    const store = getRanksStore(catKey);
+    list.forEach((aa, idx) => {
+      if (aa.auto) return;
+      const r = store[idx] || 0;
+      for (let i = 0; i < r; i++) {
+        if (aa.costs[i] !== "?") continue;
+        const guess = costGuess(catKey, idx, i);
+        if (guess) extra += guess.value;
+      }
+    });
+  });
+  return extra;
 }
 
 // Plain "Requires X rank N" gates the whole ability behind a fixed target rank.
@@ -2204,6 +2233,7 @@ function cacheDom() {
   el.spentValue = document.getElementById("spentValue");
   el.totalDisplayValue = document.getElementById("totalDisplayValue");
   el.remainingValue = document.getElementById("remainingValue");
+  el.estimatedNote = document.getElementById("estimatedNote");
   el.browseToggle = document.getElementById("browseToggle");
   el.exportBtn = document.getElementById("exportBtn");
   el.importBtn = document.getElementById("importBtn");
@@ -2300,11 +2330,34 @@ function renderTopbar() {
   el.levelInput.value = state.charLevel;
   el.totalPointsInput.value = state.totalPoints;
   const spent = spentPoints();
+  // remaining is deliberately always real-math (state.totalPoints - spent),
+  // never the blended estimate below - it's the number that answers "how
+  // many more points can I actually still allocate", which is exactly the
+  // real affordability math everywhere else in the app, and must never
+  // imply a guess changes that.
   const remaining = state.totalPoints - spent;
-  el.spentValue.textContent = spent;
   el.totalDisplayValue.textContent = state.totalPoints;
   el.remainingValue.textContent = `(${remaining} remaining)`;
   el.remainingValue.classList.toggle("over", remaining < 0);
+
+  const extra = estimatedExtraPoints();
+  if (extra > 0) {
+    // The headline number itself becomes the blended real+estimate total,
+    // colored to match - a guess is still never added to spentPoints()
+    // anywhere in real math (remaining above is proof: it stays keyed to
+    // the real `spent`), this is purely how the topbar's own number reads.
+    el.spentValue.textContent = `~${spent + extra}`;
+    el.spentValue.classList.add("is-estimate");
+    el.spentValue.title = `${spent} confirmed + ${extra} from pattern-inferred estimates on ranks you've already picked whose real cost isn't confirmed on the wiki yet.`;
+    el.estimatedNote.textContent = `+${extra} from estimates`;
+    el.estimatedNote.title = `${el.spentValue.title} Never counted toward affordability anywhere (that still uses the real ${spent}) — shown for reference only.`;
+    el.estimatedNote.classList.remove("hidden");
+  } else {
+    el.spentValue.textContent = spent;
+    el.spentValue.classList.remove("is-estimate");
+    el.spentValue.removeAttribute("title");
+    el.estimatedNote.classList.add("hidden");
+  }
   el.browseToggle.classList.toggle("active", state.activeView === "browse");
   const activeId = getActiveBuildId();
   const activeBuild = activeId ? listBuilds().find((b) => b.id === activeId) : null;

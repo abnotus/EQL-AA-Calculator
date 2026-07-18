@@ -26,7 +26,7 @@ export const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
 // flat "dismissed" flag has no notion of *which* text was dismissed, so
 // the only way to force a re-acknowledgment is a new key nobody's set yet.
 // v2 added the pattern-inferred cost estimate mention.
-export const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v2";
+export const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v3";
 export const LAST_SEEN_VERSION_KEY = "eql_aa_last_seen_version";
 export const CLASS_SLOT_KEYS = ["classSlot0", "classSlot1", "classSlot2"];
 // Canonical display/iteration order for the 6 real AA categories (excludes the
