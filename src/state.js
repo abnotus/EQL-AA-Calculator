@@ -16,6 +16,11 @@ export const MAX_TOTAL_POINTS = 100000;
 export const SAVE_FORMAT_VERSION = 4;
 
 export const STORAGE_KEY = "eql_aa_builder_v1";
+// Owned status lives in its own key, deliberately separate from the build
+// payload above - it's character-global real-world truth, not part of any
+// one plan, so it must survive switching between builds/slots/share links
+// untouched by any of that (see loadAndApplyOwned/saveOwned below).
+export const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
 export const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed";
 export const LAST_SEEN_VERSION_KEY = "eql_aa_last_seen_version";
 export const CLASS_SLOT_KEYS = ["classSlot0", "classSlot1", "classSlot2"];
@@ -35,7 +40,11 @@ export let state = {
   // purchaseOrder entries - it shouldn't matter which of the 3 class slots
   // a class currently occupies. Independent of ranks/purchaseOrder (the
   // *plan*): owned tracks what's actually true in-game, which is why Reset
-  // Build keeps it by default instead of wiping it along with the plan.
+  // Build keeps it by default instead of wiping it along with the plan, and
+  // why it's persisted under its own storage key (OWNED_STORAGE_KEY) rather
+  // than inside any one build's payload - loading a different build/slot/
+  // share link must never overwrite or wipe it, since it isn't part of "the
+  // build" at all. See loadAndApplyOwned/saveOwned.
   owned: { general: {}, archetype: {}, special: {}, classes: {} },
   activeView: "calculator", // 'calculator' | 'browse' | 'summary' | 'progression'
   activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
@@ -147,11 +156,28 @@ export function saveLocal() {
       charLevel: state.charLevel,
       totalPoints: state.totalPoints,
       ranks: serializeRanks(state.ranks),
-      purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
-      owned: serializeRanks(state.owned)
+      purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch (e) { /* storage unavailable, ignore */ }
+}
+
+// Persists owned separately from the build payload above (see
+// OWNED_STORAGE_KEY) - called by setOwnedRank/performReset in logic.js
+// whenever owned itself changes, independent of saveLocal.
+export function saveOwned() {
+  try {
+    localStorage.setItem(OWNED_STORAGE_KEY, JSON.stringify({ v: SAVE_FORMAT_VERSION, owned: serializeRanks(state.owned) }));
+  } catch (e) { /* storage unavailable, ignore */ }
+}
+
+function loadOwnedStorage() {
+  try {
+    const raw = localStorage.getItem(OWNED_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (e) { return null; }
 }
 
 export function loadLocal() {
@@ -204,21 +230,40 @@ export function applyLoaded(loaded) {
       ? deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.idx === "number" ? e.idx : null), (scope, cls, legacyIdx) => currentIdxForLegacyIdx(scope, cls, legacyIdx))
       : deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.key === "string" ? e.key : null), (scope, cls, key) => idxForKey(scope, cls, key));
   }
-  // Unlike ranks/purchaseOrder above (which leave state as-is if the loaded
-  // payload just doesn't have that field, e.g. a malformed partial payload),
-  // owned always gets reset here, present or not - this is a wholesale
-  // replacement of "the build", and a share link's build not including
-  // owned data (the default - see buildCodeObject) must actually clear
-  // whatever owned data the *previous* build in memory had, not silently
-  // carry it over onto an unrelated build it was never true of.
-  if (loaded.owned && typeof loaded.owned === "object") {
-    const ownedResult = isLegacy
-      ? deserializeRanks(loaded.owned, (scope, cls, idxStr) => currentIdxForLegacyIdx(scope, cls, parseInt(idxStr, 10)))
-      : deserializeRanks(loaded.owned, (scope, cls, key) => idxForKey(scope, cls, key));
-    state.owned = ownedResult.ranks;
-    droppedRanks += ownedResult.dropped;
-  } else {
-    state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
-  }
+  // owned is deliberately NOT handled here - it lives outside the build
+  // payload entirely now (see OWNED_STORAGE_KEY/loadAndApplyOwned) and must
+  // survive loading any build/slot/share link untouched, so applyLoaded
+  // never reads or writes state.owned regardless of whether `loaded` has an
+  // owned field (an old payload saved during this feature's brief window of
+  // embedding it there, or a share code that once carried it, both just get
+  // ignored here as an unrecognized extra field).
   return { droppedRanks };
+}
+
+// Owned is character-global, loaded once at boot from its own storage key -
+// independent of whichever build ends up active (local save, a share link,
+// an import). rawMainPayload is the raw object loadLocal() returned, needed
+// for exactly one purpose: a one-time migration for saves made while this
+// feature briefly stored owned inside the main build payload instead of its
+// own key. Once OWNED_STORAGE_KEY exists, rawMainPayload is never consulted
+// again. Returns { droppedOwned } in the same spirit as applyLoaded's
+// droppedRanks, so main.js can fold it into the same load-time notice.
+export function loadAndApplyOwned(rawMainPayload) {
+  const stored = loadOwnedStorage();
+  if (stored && stored.owned && typeof stored.owned === "object") {
+    const result = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key));
+    state.owned = result.ranks;
+    return { droppedOwned: result.dropped };
+  }
+  if (rawMainPayload && rawMainPayload.owned && typeof rawMainPayload.owned === "object") {
+    // owned only ever existed in the main payload under SAVE_FORMAT_VERSION
+    // 4 (it shipped well after v4 became name-keyed) - no legacy index-based
+    // form to handle here, unlike ranks/purchaseOrder above.
+    const result = deserializeRanks(rawMainPayload.owned, (scope, cls, key) => idxForKey(scope, cls, key));
+    state.owned = result.ranks;
+    saveOwned();
+    return { droppedOwned: result.dropped };
+  }
+  state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+  return { droppedOwned: 0 };
 }

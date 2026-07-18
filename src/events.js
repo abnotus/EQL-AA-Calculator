@@ -75,7 +75,7 @@ export function wireEvents() {
   });
 
   el.exportBtn.addEventListener("click", openExportModal);
-  el.includeOwnedCheckbox.addEventListener("change", regenerateExportContent);
+  el.includeOwnedCheckbox.addEventListener("change", () => regenerateExportContent(false));
   el.copyExportBtn.addEventListener("click", copyExportText);
   el.copyShareLinkBtn.addEventListener("click", copyShareLink);
   el.saveExportBtn.addEventListener("click", saveExportAsTxt);

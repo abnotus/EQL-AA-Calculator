@@ -430,10 +430,16 @@ export function renderProgression() {
 
   if (!state.purchaseOrder.length) {
     el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
+    el.ownedSummary.textContent = "";
     return;
   }
 
   const steps = computeProgressionSteps();
+  // The number this feature exists to answer: of what's currently planned,
+  // how much have you actually trained in-game vs. still have to grind out.
+  const ownedPts = steps.reduce((sum, s) => sum + (s.owned ? s.stepCost : 0), 0);
+  const togoPts = spentPoints() - ownedPts;
+  el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
   const rows = steps.map((s) => {
     const canExpand = !!(s.aa && s.stepRank < s.aa.ranks);
     const key = expandKey(s);

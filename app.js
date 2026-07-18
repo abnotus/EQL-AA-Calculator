@@ -264,9 +264,9 @@ const USER_CHANGELOG = [
 version: "1.4.0",
 date: "2026-07-18",
 items: [
-"New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable.",
+"New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable. The toolbar shows a running total of points owned vs. still to go.",
 "Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate.",
-"Owned progress is left out of exported text and share links by default (it's personal, not part of the plan you're sharing) — check \"Include owned progress\" in the Export modal to share it anyway. Named Build slots always keep it, since those are your own saved snapshots."
+"Owned progress is tracked per character, not per plan — it's independent of whichever build you're editing, so switching between saved Builds or opening a share link never adds, removes, or overwrites an owned mark. It's also never included in a share link or export code; the Export modal has a checkbox to note owned steps with [OWNED] in the copyable text, for reference only."
 ]
 },
 {
@@ -320,6 +320,7 @@ items: [
 const MAX_TOTAL_POINTS = 100000;
 const SAVE_FORMAT_VERSION = 4;
 const STORAGE_KEY = "eql_aa_builder_v1";
+const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
 const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed";
 const LAST_SEEN_VERSION_KEY = "eql_aa_last_seen_version";
 const CLASS_SLOT_KEYS = ["classSlot0", "classSlot1", "classSlot2"];
@@ -413,11 +414,23 @@ selectedClasses: state.selectedClasses,
 charLevel: state.charLevel,
 totalPoints: state.totalPoints,
 ranks: serializeRanks(state.ranks),
-purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
-owned: serializeRanks(state.owned)
+purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
 };
 localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 } catch (e) { /* storage unavailable, ignore */ }
+}
+function saveOwned() {
+try {
+localStorage.setItem(OWNED_STORAGE_KEY, JSON.stringify({ v: SAVE_FORMAT_VERSION, owned: serializeRanks(state.owned) }));
+} catch (e) { /* storage unavailable, ignore */ }
+}
+function loadOwnedStorage() {
+try {
+const raw = localStorage.getItem(OWNED_STORAGE_KEY);
+if (!raw) return null;
+const parsed = JSON.parse(raw);
+return parsed && typeof parsed === "object" ? parsed : null;
+} catch (e) { return null; }
 }
 function loadLocal() {
 try {
@@ -458,16 +471,23 @@ state.purchaseOrder = isLegacy
 ? deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.idx === "number" ? e.idx : null), (scope, cls, legacyIdx) => currentIdxForLegacyIdx(scope, cls, legacyIdx))
 : deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.key === "string" ? e.key : null), (scope, cls, key) => idxForKey(scope, cls, key));
 }
-if (loaded.owned && typeof loaded.owned === "object") {
-const ownedResult = isLegacy
-? deserializeRanks(loaded.owned, (scope, cls, idxStr) => currentIdxForLegacyIdx(scope, cls, parseInt(idxStr, 10)))
-: deserializeRanks(loaded.owned, (scope, cls, key) => idxForKey(scope, cls, key));
-state.owned = ownedResult.ranks;
-droppedRanks += ownedResult.dropped;
-} else {
-state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
-}
 return { droppedRanks };
+}
+function loadAndApplyOwned(rawMainPayload) {
+const stored = loadOwnedStorage();
+if (stored && stored.owned && typeof stored.owned === "object") {
+const result = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key));
+state.owned = result.ranks;
+return { droppedOwned: result.dropped };
+}
+if (rawMainPayload && rawMainPayload.owned && typeof rawMainPayload.owned === "object") {
+const result = deserializeRanks(rawMainPayload.owned, (scope, cls, key) => idxForKey(scope, cls, key));
+state.owned = result.ranks;
+saveOwned();
+return { droppedOwned: result.dropped };
+}
+state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+return { droppedOwned: 0 };
 }
 function costNum(c) {
 const n = parseInt(c, 10);
@@ -559,6 +579,9 @@ return Math.max(freeRanks, purchased);
 }
 return purchased;
 }
+function autoRanksOffset(aa) {
+return aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+}
 function getRanksStore(catKey) {
 const slot = classSlotIndex(catKey);
 if (slot >= 0) {
@@ -583,7 +606,7 @@ const store = getOwnedStore(scope, className);
 const from = store[idx] || 0;
 if (rank <= 0) delete store[idx]; else store[idx] = rank;
 lastMutation = { type: "own", scope, className, idx, from, to: rank };
-saveLocal();
+saveOwned();
 }
 function scopeForCategory(category) {
 const slot = classSlotIndex(category);
@@ -632,8 +655,9 @@ Object.keys(ranksStore).forEach((idxStr) => {
 const idx = parseInt(idxStr, 10);
 const aa = list[idx];
 if (!aa) return;
-const owned = clearOwnedToo ? 0 : (ownedStore[idx] || 0);
-if (owned > 0) kept[idx] = Math.min(owned, aa.ranks);
+const planned = ranksStore[idx] || 0;
+const owned = clearOwnedToo ? 0 : Math.min(ownedStore[idx] || 0, planned);
+if (owned > autoRanksOffset(aa)) kept[idx] = owned;
 });
 return kept;
 }
@@ -651,13 +675,17 @@ if (Object.keys(kept).length) newRanks.classes[className] = kept;
 });
 const remaining = {};
 ["general", "archetype", "special"].forEach((scope) => {
+const list = AA_DATA[scope] || [];
 Object.keys(newRanks[scope]).forEach((idxStr) => {
-remaining[entryKey(scope, null, idxStr)] = newRanks[scope][idxStr];
+const idx = parseInt(idxStr, 10);
+remaining[entryKey(scope, null, idxStr)] = newRanks[scope][idxStr] - autoRanksOffset(list[idx]);
 });
 });
 Object.keys(newRanks.classes).forEach((className) => {
+const list = AA_DATA.classes[className] || [];
 Object.keys(newRanks.classes[className]).forEach((idxStr) => {
-remaining[entryKey("class", className, idxStr)] = newRanks.classes[className][idxStr];
+const idx = parseInt(idxStr, 10);
+remaining[entryKey("class", className, idxStr)] = newRanks.classes[className][idxStr] - autoRanksOffset(list[idx]);
 });
 });
 const newPurchaseOrder = [];
@@ -673,7 +701,9 @@ state.purchaseOrder = newPurchaseOrder;
 if (clearOwnedToo) state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
 state.selectedNode = null;
 lastMutation = null;
+reconcilePurchaseOrderCounts();
 saveLocal();
+saveOwned();
 }
 function spentPoints() {
 let total = 0;
@@ -794,8 +824,7 @@ if (e.scope === scope && (e.className || null) === (className || null) && e.idx 
 return n;
 }
 function expectedFor(aa, held) {
-const autoOffset = aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
-return Math.max(0, held - autoOffset);
+return Math.max(0, held - autoRanksOffset(aa));
 }
 function key(scope, className, idx) {
 return `${scope}|${className || ""}|${idx}`;
@@ -1011,7 +1040,7 @@ const category = resolveEntryCategory(entry);
 const active = category !== null;
 const aa = entry.scope === "class" ? (AA_DATA.classes[entry.className] || [])[entry.idx] : (AA_DATA[entry.scope] || [])[entry.idx];
 const purchaseCount = (counts[key] || 0) + 1;
-const autoOffset = aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+const autoOffset = autoRanksOffset(aa);
 const stepRank = purchaseCount + autoOffset;
 let prereqWarn = false;
 if (active && aa && aa.prereq) {
@@ -1089,8 +1118,7 @@ selectedClasses: state.selectedClasses,
 charLevel: state.charLevel,
 totalPoints: state.totalPoints,
 ranks: serializeRanks(state.ranks),
-purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
-owned: serializeRanks(state.owned)
+purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
 };
 }
 function activeBuildMatchesCurrent() {
@@ -1229,6 +1257,7 @@ el.progressionView = document.getElementById("progressionView");
 el.progressionWrap = document.getElementById("progressionWrap");
 el.progressionContent = document.getElementById("progressionContent");
 el.undoLastBtn = document.getElementById("undoLastBtn");
+el.ownedSummary = document.getElementById("ownedSummary");
 el.treeWrap = document.getElementById("treeWrap");
 el.sidePanel = document.getElementById("sidePanel");
 el.globalSearch = document.getElementById("globalSearch");
@@ -1574,9 +1603,13 @@ function renderProgression() {
 el.undoLastBtn.disabled = !canUndo();
 if (!state.purchaseOrder.length) {
 el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
+el.ownedSummary.textContent = "";
 return;
 }
 const steps = computeProgressionSteps();
+const ownedPts = steps.reduce((sum, s) => sum + (s.owned ? s.stepCost : 0), 0);
+const togoPts = spentPoints() - ownedPts;
+el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
 const rows = steps.map((s) => {
 const canExpand = !!(s.aa && s.stepRank < s.aa.ranks);
 const key = expandKey(s);
@@ -1914,11 +1947,11 @@ Object.keys(store).forEach((key) => pushCompactRank(out, "class", className, key
 });
 return out;
 }
-function buildCodeObject(includeOwned) {
+function buildCodeObject() {
 const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
 .map((e) => idForKey(e.scope, e.className, e.key))
 .filter((id) => id != null);
-const payload = {
+return {
 v: BUILD_CODE_VERSION,
 c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
 l: state.charLevel,
@@ -1926,11 +1959,6 @@ t: state.totalPoints,
 r: compactRanksFor(state.ranks),
 p: compactPurchaseOrder
 };
-if (includeOwned) {
-const compactOwned = compactRanksFor(state.owned);
-if (compactOwned.length) payload.o = compactOwned;
-}
-return payload;
 }
 function expandCompactRanks(list) {
 const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
@@ -1957,8 +1985,7 @@ selectedClasses: (compact.c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
 charLevel: compact.l,
 totalPoints: compact.t,
 ranks: expandCompactRanks(compact.r),
-purchaseOrder,
-owned: expandCompactRanks(compact.o)
+purchaseOrder
 };
 }
 async function gzipCompress(bytes) {
@@ -1986,8 +2013,8 @@ const bytes = new Uint8Array(binary.length);
 for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 return bytes;
 }
-async function encodeBuildCode(includeOwned) {
-const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject(includeOwned)));
+async function encodeBuildCode() {
+const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject()));
 return bytesToBase64(await gzipCompress(bytes));
 }
 async function decodeBuildCode(code) {
@@ -2009,11 +2036,11 @@ let b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
 while (b64.length % 4) b64 += "=";
 return b64;
 }
-async function buildShareUrl(includeOwned) {
+async function buildShareUrl() {
 const url = new URL(window.location.href);
 url.search = "";
 url.hash = "";
-url.searchParams.set("build", toBase64Url(await encodeBuildCode(includeOwned)));
+url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
 return url.toString();
 }
 async function applySharedBuildFromUrl(localLoadResult) {
@@ -2079,7 +2106,7 @@ lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.ste
 });
 lines.push("");
 }
-lines.push(`BUILD_CODE:${await encodeBuildCode(includeOwned)}`);
+lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
 return lines.join("\n");
 }
 async function openExportModal() {
@@ -2089,13 +2116,15 @@ el.includeOwnedCheckbox.checked = false;
 el.exportModal.classList.remove("hidden");
 await regenerateExportContent();
 }
-async function regenerateExportContent() {
+async function regenerateExportContent(focusText = true) {
 const includeOwned = el.includeOwnedCheckbox.checked;
-const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
+const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl()]);
 el.exportText.value = text;
 el.shareLinkInput.value = url;
+if (focusText) {
 el.exportText.focus();
 el.exportText.select();
+}
 }
 function closeExportModal() {
 el.exportModal.classList.add("hidden");
@@ -2238,7 +2267,7 @@ state.activeView = state.activeView === "browse" ? "calculator" : "browse";
 renderAll();
 });
 el.exportBtn.addEventListener("click", openExportModal);
-el.includeOwnedCheckbox.addEventListener("change", regenerateExportContent);
+el.includeOwnedCheckbox.addEventListener("change", () => regenerateExportContent(false));
 el.copyExportBtn.addEventListener("click", copyExportText);
 el.copyShareLinkBtn.addEventListener("click", copyShareLink);
 el.saveExportBtn.addEventListener("click", saveExportAsTxt);
@@ -2309,7 +2338,10 @@ if (state.activeView === "calculator") renderTree(state.activeTab);
 async function init() {
 cacheDom();
 populateStaticControls();
-const localResult = applyLoaded(loadLocal());
+const rawLocal = loadLocal();
+const localResult = applyLoaded(rawLocal);
+const ownedResult = loadAndApplyOwned(rawLocal);
+localResult.droppedRanks += ownedResult.droppedOwned;
 const shared = await applySharedBuildFromUrl(localResult);
 wireEvents();
 try {

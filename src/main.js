@@ -1,6 +1,6 @@
 // Entry point: wires everything together and boots the app on DOMContentLoaded.
 
-import { loadLocal, applyLoaded, saveLocal, DISCLAIMER_DISMISSED_KEY } from "./state.js";
+import { loadLocal, applyLoaded, saveLocal, loadAndApplyOwned, DISCLAIMER_DISMISSED_KEY } from "./state.js";
 import { cacheDom, el } from "./dom.js";
 import { populateStaticControls, renderAll, showToast } from "./render.js";
 import { findInvalidatedPicks, reconcilePurchaseOrderCounts } from "./logic.js";
@@ -10,7 +10,17 @@ import { applySharedBuildFromUrl } from "./exportImport.js";
 async function init() {
   cacheDom();
   populateStaticControls();
-  const localResult = applyLoaded(loadLocal());
+  const rawLocal = loadLocal();
+  const localResult = applyLoaded(rawLocal);
+  // Owned is character-global (its own storage key, not the build payload
+  // above - see state.js) so it loads independently of whichever build ends
+  // up active below. rawLocal is only consulted for a one-time migration of
+  // saves made during this feature's brief window of embedding owned inside
+  // the main payload instead. Folded into localResult.droppedRanks so the
+  // notice below and applySharedBuildFromUrl's extraRisk gate both already
+  // account for it without any further plumbing.
+  const ownedResult = loadAndApplyOwned(rawLocal);
+  localResult.droppedRanks += ownedResult.droppedOwned;
   // If a share link applies, it replaces whatever localStorage just loaded -
   // so the local load's result no longer describes the build actually in
   // front of the user. Neither path toasts directly; this function is the

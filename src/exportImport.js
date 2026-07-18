@@ -40,16 +40,17 @@ function compactRanksFor(ranksLike) {
   return out;
 }
 
-// includeOwned is false by default everywhere this is called from - owned
-// status is personal real-world progress, not part of the plan being
-// shared, so a share link/export leaves it out unless the user explicitly
-// opts in via the Export modal's checkbox.
-function buildCodeObject(includeOwned) {
+// owned is never part of this - it's character-global (state.js's
+// OWNED_STORAGE_KEY), not part of any one plan, so a share link/export code
+// structurally can't carry it regardless of the Export modal's "Include
+// owned progress" checkbox. That checkbox only affects the readable
+// [OWNED] markers buildExportText adds to its own text listing.
+function buildCodeObject() {
   const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
     .map((e) => idForKey(e.scope, e.className, e.key))
     .filter((id) => id != null);
 
-  const payload = {
+  return {
     v: BUILD_CODE_VERSION,
     c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
     l: state.charLevel,
@@ -57,18 +58,11 @@ function buildCodeObject(includeOwned) {
     r: compactRanksFor(state.ranks),
     p: compactPurchaseOrder
   };
-  if (includeOwned) {
-    const compactOwned = compactRanksFor(state.owned);
-    if (compactOwned.length) payload.o = compactOwned;
-  }
-  return payload;
 }
 
 // An id that no longer resolves (entryForId returns null - the AA was
 // removed since this link's ranks were assigned their ids) is dropped, same
-// degrade-gracefully philosophy as an unresolved name key elsewhere. Shared
-// by expandCompactPayload for both r (ranks) and o (owned) - same shape,
-// same resolution.
+// degrade-gracefully philosophy as an unresolved name key elsewhere.
 function expandCompactRanks(list) {
   const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
   (list || []).forEach(([id, rank]) => {
@@ -99,12 +93,11 @@ function expandCompactPayload(compact) {
     charLevel: compact.l,
     totalPoints: compact.t,
     ranks: expandCompactRanks(compact.r),
-    purchaseOrder,
-    // compact.o is absent whenever the sender didn't opt in (the default) -
-    // expandCompactRanks(undefined) returns the same empty shape applyLoaded
-    // already treats as "clear owned", so no separate absent-vs-empty branch
-    // is needed here to get "sharing strips progress by default" right.
-    owned: expandCompactRanks(compact.o)
+    purchaseOrder
+    // No owned field - applyLoaded doesn't read one anyway (owned is
+    // character-global, loaded separately - see state.js), and an old link
+    // minted during this feature's brief window of embedding an `o` field
+    // here just has that field ignored below rather than expanded.
   };
 }
 
@@ -145,8 +138,8 @@ function base64ToBytes(b64) {
   return bytes;
 }
 
-async function encodeBuildCode(includeOwned) {
-  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject(includeOwned)));
+async function encodeBuildCode() {
+  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject()));
   return bytesToBase64(await gzipCompress(bytes));
 }
 
@@ -184,11 +177,11 @@ function fromBase64Url(b64url) {
   return b64;
 }
 
-export async function buildShareUrl(includeOwned) {
+export async function buildShareUrl() {
   const url = new URL(window.location.href);
   url.search = "";
   url.hash = "";
-  url.searchParams.set("build", toBase64Url(await encodeBuildCode(includeOwned)));
+  url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
   return url.toString();
 }
 
@@ -277,16 +270,17 @@ export async function buildExportText(includeOwned) {
     computeProgressionSteps().forEach((s) => {
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
       const suffix = s.active ? "" : " (class not currently selected)";
-      // The readable listing reflects owned status too when opted in, not
-      // just the embedded BUILD_CODE - otherwise a human skimming the text
-      // (as opposed to importing it) would see no sign of it at all.
+      // Owned isn't part of BUILD_CODE at all (it's character-global, not
+      // plan data - see state.js) - this readable marker is purely
+      // informational, opt-in via the Export modal's checkbox, and never
+      // round-trips back in through Import.
       const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";
       lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}${ownedSuffix}`);
     });
     lines.push("");
   }
 
-  lines.push(`BUILD_CODE:${await encodeBuildCode(includeOwned)}`);
+  lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
   return lines.join("\n");
 }
 
@@ -298,16 +292,24 @@ export async function openExportModal() {
   await regenerateExportContent();
 }
 
-// Re-populates both the export text and share link for the current
-// includeOwned checkbox state - called on open, and again on the checkbox's
-// own change event so toggling it actually changes what gets copied/shared.
-export async function regenerateExportContent() {
+// Re-populates the export text for the current includeOwned checkbox state
+// - called on open, and again on the checkbox's own change event so
+// toggling it actually changes the [OWNED] markers in the text. The share
+// link never varies with this checkbox (owned isn't part of BUILD_CODE at
+// all), but is regenerated alongside it anyway since both come from the
+// same modal-open/refresh path.
+// focusText only applies on the initial open - re-running it on every
+// checkbox toggle would yank focus out of the checkbox and back into the
+// textarea on each click.
+export async function regenerateExportContent(focusText = true) {
   const includeOwned = el.includeOwnedCheckbox.checked;
-  const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
+  const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl()]);
   el.exportText.value = text;
   el.shareLinkInput.value = url;
-  el.exportText.focus();
-  el.exportText.select();
+  if (focusText) {
+    el.exportText.focus();
+    el.exportText.select();
+  }
 }
 
 export function closeExportModal() {

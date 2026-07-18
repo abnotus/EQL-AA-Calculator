@@ -366,9 +366,9 @@ const USER_CHANGELOG = [
     version: "1.4.0",
     date: "2026-07-18",
     items: [
-      "New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable.",
+      "New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable. The toolbar shows a running total of points owned vs. still to go.",
       "Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate.",
-      "Owned progress is left out of exported text and share links by default (it's personal, not part of the plan you're sharing) — check \"Include owned progress\" in the Export modal to share it anyway. Named Build slots always keep it, since those are your own saved snapshots."
+      "Owned progress is tracked per character, not per plan — it's independent of whichever build you're editing, so switching between saved Builds or opening a share link never adds, removes, or overwrites an owned mark. It's also never included in a share link or export code; the Export modal has a checkbox to note owned steps with [OWNED] in the copyable text, for reference only."
     ]
   },
   {
@@ -436,6 +436,11 @@ const MAX_TOTAL_POINTS = 100000;
 const SAVE_FORMAT_VERSION = 4;
 
 const STORAGE_KEY = "eql_aa_builder_v1";
+// Owned status lives in its own key, deliberately separate from the build
+// payload above - it's character-global real-world truth, not part of any
+// one plan, so it must survive switching between builds/slots/share links
+// untouched by any of that (see loadAndApplyOwned/saveOwned below).
+const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
 const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed";
 const LAST_SEEN_VERSION_KEY = "eql_aa_last_seen_version";
 const CLASS_SLOT_KEYS = ["classSlot0", "classSlot1", "classSlot2"];
@@ -455,7 +460,11 @@ let state = {
   // purchaseOrder entries - it shouldn't matter which of the 3 class slots
   // a class currently occupies. Independent of ranks/purchaseOrder (the
   // *plan*): owned tracks what's actually true in-game, which is why Reset
-  // Build keeps it by default instead of wiping it along with the plan.
+  // Build keeps it by default instead of wiping it along with the plan, and
+  // why it's persisted under its own storage key (OWNED_STORAGE_KEY) rather
+  // than inside any one build's payload - loading a different build/slot/
+  // share link must never overwrite or wipe it, since it isn't part of "the
+  // build" at all. See loadAndApplyOwned/saveOwned.
   owned: { general: {}, archetype: {}, special: {}, classes: {} },
   activeView: "calculator", // 'calculator' | 'browse' | 'summary' | 'progression'
   activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
@@ -567,11 +576,28 @@ function saveLocal() {
       charLevel: state.charLevel,
       totalPoints: state.totalPoints,
       ranks: serializeRanks(state.ranks),
-      purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
-      owned: serializeRanks(state.owned)
+      purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch (e) { /* storage unavailable, ignore */ }
+}
+
+// Persists owned separately from the build payload above (see
+// OWNED_STORAGE_KEY) - called by setOwnedRank/performReset in logic.js
+// whenever owned itself changes, independent of saveLocal.
+function saveOwned() {
+  try {
+    localStorage.setItem(OWNED_STORAGE_KEY, JSON.stringify({ v: SAVE_FORMAT_VERSION, owned: serializeRanks(state.owned) }));
+  } catch (e) { /* storage unavailable, ignore */ }
+}
+
+function loadOwnedStorage() {
+  try {
+    const raw = localStorage.getItem(OWNED_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (e) { return null; }
 }
 
 function loadLocal() {
@@ -624,23 +650,42 @@ function applyLoaded(loaded) {
       ? deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.idx === "number" ? e.idx : null), (scope, cls, legacyIdx) => currentIdxForLegacyIdx(scope, cls, legacyIdx))
       : deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.key === "string" ? e.key : null), (scope, cls, key) => idxForKey(scope, cls, key));
   }
-  // Unlike ranks/purchaseOrder above (which leave state as-is if the loaded
-  // payload just doesn't have that field, e.g. a malformed partial payload),
-  // owned always gets reset here, present or not - this is a wholesale
-  // replacement of "the build", and a share link's build not including
-  // owned data (the default - see buildCodeObject) must actually clear
-  // whatever owned data the *previous* build in memory had, not silently
-  // carry it over onto an unrelated build it was never true of.
-  if (loaded.owned && typeof loaded.owned === "object") {
-    const ownedResult = isLegacy
-      ? deserializeRanks(loaded.owned, (scope, cls, idxStr) => currentIdxForLegacyIdx(scope, cls, parseInt(idxStr, 10)))
-      : deserializeRanks(loaded.owned, (scope, cls, key) => idxForKey(scope, cls, key));
-    state.owned = ownedResult.ranks;
-    droppedRanks += ownedResult.dropped;
-  } else {
-    state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
-  }
+  // owned is deliberately NOT handled here - it lives outside the build
+  // payload entirely now (see OWNED_STORAGE_KEY/loadAndApplyOwned) and must
+  // survive loading any build/slot/share link untouched, so applyLoaded
+  // never reads or writes state.owned regardless of whether `loaded` has an
+  // owned field (an old payload saved during this feature's brief window of
+  // embedding it there, or a share code that once carried it, both just get
+  // ignored here as an unrecognized extra field).
   return { droppedRanks };
+}
+
+// Owned is character-global, loaded once at boot from its own storage key -
+// independent of whichever build ends up active (local save, a share link,
+// an import). rawMainPayload is the raw object loadLocal() returned, needed
+// for exactly one purpose: a one-time migration for saves made while this
+// feature briefly stored owned inside the main build payload instead of its
+// own key. Once OWNED_STORAGE_KEY exists, rawMainPayload is never consulted
+// again. Returns { droppedOwned } in the same spirit as applyLoaded's
+// droppedRanks, so main.js can fold it into the same load-time notice.
+function loadAndApplyOwned(rawMainPayload) {
+  const stored = loadOwnedStorage();
+  if (stored && stored.owned && typeof stored.owned === "object") {
+    const result = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key));
+    state.owned = result.ranks;
+    return { droppedOwned: result.dropped };
+  }
+  if (rawMainPayload && rawMainPayload.owned && typeof rawMainPayload.owned === "object") {
+    // owned only ever existed in the main payload under SAVE_FORMAT_VERSION
+    // 4 (it shipped well after v4 became name-keyed) - no legacy index-based
+    // form to handle here, unlike ranks/purchaseOrder above.
+    const result = deserializeRanks(rawMainPayload.owned, (scope, cls, key) => idxForKey(scope, cls, key));
+    state.owned = result.ranks;
+    saveOwned();
+    return { droppedOwned: result.dropped };
+  }
+  state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+  return { droppedOwned: 0 };
 }
 
 // Business logic: everything that reads or derives from `state` and AA_DATA,
@@ -768,6 +813,18 @@ function effectiveRank(catKey, idx) {
   return purchased;
 }
 
+// The static, level-independent count of an autoRanks AA's free ranks -
+// unlike autoFloor below, this doesn't check state.charLevel, because it's
+// used to reconcile purchaseOrder entry counts against a held rank
+// (reconcilePurchaseOrderCounts, computeProgressionSteps, performReset),
+// where the question is "how many of these ranks never went through
+// purchaseOrder at all" rather than "what can currently be bought/refunded
+// down to" - those two questions coincide most of the time but diverge if
+// charLevel changes after the free ranks were already granted.
+function autoRanksOffset(aa) {
+  return aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+}
+
 function getRanksStore(catKey) {
   const slot = classSlotIndex(catKey);
   if (slot >= 0) {
@@ -808,7 +865,10 @@ function setOwnedRank(scope, className, idx, rank) {
   const from = store[idx] || 0;
   if (rank <= 0) delete store[idx]; else store[idx] = rank;
   lastMutation = { type: "own", scope, className, idx, from, to: rank };
-  saveLocal();
+  // Owned persists to its own storage key (see state.js), not the build
+  // payload saveLocal writes - nothing about ranks/purchaseOrder changed
+  // here, so saveLocal itself has nothing new to persist.
+  saveOwned();
 }
 
 // Purchase-order entries key AA picks by class NAME (not slot position), since class
@@ -872,14 +932,32 @@ function clearClassData(className) {
 // ranks/purchaseOrder entry in the first place (attemptIncrement refuses to
 // touch one), so there's nothing here to trim for them.
 function performReset(clearOwnedToo) {
+  // Trims each currently-planned rank down to the min of its owned watermark
+  // and what's actually planned - never up. Owned can legitimately exceed
+  // the current plan (mark rank 2 owned, then refund the plan back to rank
+  // 1 - replanning below something you've already trained in-game is fine,
+  // and nothing about that touches owned), so capping against the AA's max
+  // rank instead of its current planned rank would let Reset re-inflate a
+  // plan the user deliberately lowered. An AA with no ranks entry at all
+  // (owned but not currently planned) is simply never visited here, so
+  // Reset never adds a pick that isn't already part of the plan either.
+  //
+  // A kept rank at or below the AA's free autoRanks floor is dropped
+  // entirely rather than kept at that value - changeRank's own convention
+  // (see its floor-clearing comment) is that a ranks-store entry only
+  // exists for ranks actually purchased beyond the free floor, and
+  // reconcilePurchaseOrderCounts' expected-entry-count check assumes the
+  // same. Keeping a phantom floor-value entry here would violate that
+  // invariant the moment reconcilePurchaseOrderCounts next runs.
   function trimmedRanks(ranksStore, ownedStore, list) {
     const kept = {};
     Object.keys(ranksStore).forEach((idxStr) => {
       const idx = parseInt(idxStr, 10);
       const aa = list[idx];
       if (!aa) return;
-      const owned = clearOwnedToo ? 0 : (ownedStore[idx] || 0);
-      if (owned > 0) kept[idx] = Math.min(owned, aa.ranks);
+      const planned = ranksStore[idx] || 0;
+      const owned = clearOwnedToo ? 0 : Math.min(ownedStore[idx] || 0, planned);
+      if (owned > autoRanksOffset(aa)) kept[idx] = owned;
     });
     return kept;
   }
@@ -898,18 +976,25 @@ function performReset(clearOwnedToo) {
   });
 
   // Rebuild purchaseOrder to match: keep only the first N entries per AA
-  // (N = the rank just kept above), in their original relative order - the
-  // owned portion's progression history survives intact this way, rather
-  // than being wiped and silently re-synthesized in some arbitrary order.
+  // (N = the rank just kept above, minus its free autoRanks floor - entries
+  // represent purchases beyond that floor, same accounting
+  // reconcilePurchaseOrderCounts uses), in their original relative order -
+  // the owned portion's progression history survives intact this way,
+  // rather than being wiped and silently re-synthesized in some arbitrary
+  // order.
   const remaining = {};
   ["general", "archetype", "special"].forEach((scope) => {
+    const list = AA_DATA[scope] || [];
     Object.keys(newRanks[scope]).forEach((idxStr) => {
-      remaining[entryKey(scope, null, idxStr)] = newRanks[scope][idxStr];
+      const idx = parseInt(idxStr, 10);
+      remaining[entryKey(scope, null, idxStr)] = newRanks[scope][idxStr] - autoRanksOffset(list[idx]);
     });
   });
   Object.keys(newRanks.classes).forEach((className) => {
+    const list = AA_DATA.classes[className] || [];
     Object.keys(newRanks.classes[className]).forEach((idxStr) => {
-      remaining[entryKey("class", className, idxStr)] = newRanks.classes[className][idxStr];
+      const idx = parseInt(idxStr, 10);
+      remaining[entryKey("class", className, idxStr)] = newRanks.classes[className][idxStr] - autoRanksOffset(list[idx]);
     });
   });
   const newPurchaseOrder = [];
@@ -926,7 +1011,14 @@ function performReset(clearOwnedToo) {
   if (clearOwnedToo) state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
   state.selectedNode = null;
   lastMutation = null;
+  // Belt-and-suspenders: the trimming above should already leave
+  // ranks/purchaseOrder in sync, but this is the invariant's real enforcer
+  // (see its own comment) and cheap enough to just always run here too.
+  reconcilePurchaseOrderCounts();
   saveLocal();
+  // Only clearOwnedToo actually mutates state.owned - saveOwned unconditionally
+  // anyway rather than adding a branch that could drift from what's above.
+  saveOwned();
 }
 
 function spentPoints() {
@@ -1124,8 +1216,7 @@ function reconcilePurchaseOrderCounts() {
     return n;
   }
   function expectedFor(aa, held) {
-    const autoOffset = aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
-    return Math.max(0, held - autoOffset);
+    return Math.max(0, held - autoRanksOffset(aa));
   }
   function key(scope, className, idx) {
     return `${scope}|${className || ""}|${idx}`;
@@ -1440,7 +1531,7 @@ function computeProgressionSteps(order = state.purchaseOrder) {
     // reordering bookkeeping); stepRank is the true effective rank it represents,
     // offset by any free autoRanks that never went through purchaseOrder at all.
     const purchaseCount = (counts[key] || 0) + 1;
-    const autoOffset = aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+    const autoOffset = autoRanksOffset(aa);
     const stepRank = purchaseCount + autoOffset;
 
     let prereqWarn = false;
@@ -1565,12 +1656,10 @@ function buildPayload() {
     charLevel: state.charLevel,
     totalPoints: state.totalPoints,
     ranks: serializeRanks(state.ranks),
-    purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
-    // Unlike a share link/export (owned left out unless explicitly opted
-    // in - see exportImport.js's buildCodeObject), a named slot always
-    // captures it: this is a full snapshot of your own build for your own
-    // later use, not something being handed to someone else.
-    owned: serializeRanks(state.owned)
+    purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
+    // owned is deliberately NOT part of a slot's snapshot - it's character-
+    // global (see state.js's OWNED_STORAGE_KEY), not something any one plan
+    // owns, so switching between saved slots must never touch it.
   };
 }
 
@@ -1820,6 +1909,7 @@ function cacheDom() {
   el.progressionWrap = document.getElementById("progressionWrap");
   el.progressionContent = document.getElementById("progressionContent");
   el.undoLastBtn = document.getElementById("undoLastBtn");
+  el.ownedSummary = document.getElementById("ownedSummary");
   el.treeWrap = document.getElementById("treeWrap");
   el.sidePanel = document.getElementById("sidePanel");
   el.globalSearch = document.getElementById("globalSearch");
@@ -2262,10 +2352,16 @@ function renderProgression() {
 
   if (!state.purchaseOrder.length) {
     el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
+    el.ownedSummary.textContent = "";
     return;
   }
 
   const steps = computeProgressionSteps();
+  // The number this feature exists to answer: of what's currently planned,
+  // how much have you actually trained in-game vs. still have to grind out.
+  const ownedPts = steps.reduce((sum, s) => sum + (s.owned ? s.stepCost : 0), 0);
+  const togoPts = spentPoints() - ownedPts;
+  el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
   const rows = steps.map((s) => {
     const canExpand = !!(s.aa && s.stepRank < s.aa.ranks);
     const key = expandKey(s);
@@ -2705,16 +2801,17 @@ function compactRanksFor(ranksLike) {
   return out;
 }
 
-// includeOwned is false by default everywhere this is called from - owned
-// status is personal real-world progress, not part of the plan being
-// shared, so a share link/export leaves it out unless the user explicitly
-// opts in via the Export modal's checkbox.
-function buildCodeObject(includeOwned) {
+// owned is never part of this - it's character-global (state.js's
+// OWNED_STORAGE_KEY), not part of any one plan, so a share link/export code
+// structurally can't carry it regardless of the Export modal's "Include
+// owned progress" checkbox. That checkbox only affects the readable
+// [OWNED] markers buildExportText adds to its own text listing.
+function buildCodeObject() {
   const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
     .map((e) => idForKey(e.scope, e.className, e.key))
     .filter((id) => id != null);
 
-  const payload = {
+  return {
     v: BUILD_CODE_VERSION,
     c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
     l: state.charLevel,
@@ -2722,18 +2819,11 @@ function buildCodeObject(includeOwned) {
     r: compactRanksFor(state.ranks),
     p: compactPurchaseOrder
   };
-  if (includeOwned) {
-    const compactOwned = compactRanksFor(state.owned);
-    if (compactOwned.length) payload.o = compactOwned;
-  }
-  return payload;
 }
 
 // An id that no longer resolves (entryForId returns null - the AA was
 // removed since this link's ranks were assigned their ids) is dropped, same
-// degrade-gracefully philosophy as an unresolved name key elsewhere. Shared
-// by expandCompactPayload for both r (ranks) and o (owned) - same shape,
-// same resolution.
+// degrade-gracefully philosophy as an unresolved name key elsewhere.
 function expandCompactRanks(list) {
   const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
   (list || []).forEach(([id, rank]) => {
@@ -2764,12 +2854,11 @@ function expandCompactPayload(compact) {
     charLevel: compact.l,
     totalPoints: compact.t,
     ranks: expandCompactRanks(compact.r),
-    purchaseOrder,
-    // compact.o is absent whenever the sender didn't opt in (the default) -
-    // expandCompactRanks(undefined) returns the same empty shape applyLoaded
-    // already treats as "clear owned", so no separate absent-vs-empty branch
-    // is needed here to get "sharing strips progress by default" right.
-    owned: expandCompactRanks(compact.o)
+    purchaseOrder
+    // No owned field - applyLoaded doesn't read one anyway (owned is
+    // character-global, loaded separately - see state.js), and an old link
+    // minted during this feature's brief window of embedding an `o` field
+    // here just has that field ignored below rather than expanded.
   };
 }
 
@@ -2810,8 +2899,8 @@ function base64ToBytes(b64) {
   return bytes;
 }
 
-async function encodeBuildCode(includeOwned) {
-  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject(includeOwned)));
+async function encodeBuildCode() {
+  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject()));
   return bytesToBase64(await gzipCompress(bytes));
 }
 
@@ -2849,11 +2938,11 @@ function fromBase64Url(b64url) {
   return b64;
 }
 
-async function buildShareUrl(includeOwned) {
+async function buildShareUrl() {
   const url = new URL(window.location.href);
   url.search = "";
   url.hash = "";
-  url.searchParams.set("build", toBase64Url(await encodeBuildCode(includeOwned)));
+  url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
   return url.toString();
 }
 
@@ -2942,16 +3031,17 @@ async function buildExportText(includeOwned) {
     computeProgressionSteps().forEach((s) => {
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
       const suffix = s.active ? "" : " (class not currently selected)";
-      // The readable listing reflects owned status too when opted in, not
-      // just the embedded BUILD_CODE - otherwise a human skimming the text
-      // (as opposed to importing it) would see no sign of it at all.
+      // Owned isn't part of BUILD_CODE at all (it's character-global, not
+      // plan data - see state.js) - this readable marker is purely
+      // informational, opt-in via the Export modal's checkbox, and never
+      // round-trips back in through Import.
       const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";
       lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}${ownedSuffix}`);
     });
     lines.push("");
   }
 
-  lines.push(`BUILD_CODE:${await encodeBuildCode(includeOwned)}`);
+  lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
   return lines.join("\n");
 }
 
@@ -2963,16 +3053,24 @@ async function openExportModal() {
   await regenerateExportContent();
 }
 
-// Re-populates both the export text and share link for the current
-// includeOwned checkbox state - called on open, and again on the checkbox's
-// own change event so toggling it actually changes what gets copied/shared.
-async function regenerateExportContent() {
+// Re-populates the export text for the current includeOwned checkbox state
+// - called on open, and again on the checkbox's own change event so
+// toggling it actually changes the [OWNED] markers in the text. The share
+// link never varies with this checkbox (owned isn't part of BUILD_CODE at
+// all), but is regenerated alongside it anyway since both come from the
+// same modal-open/refresh path.
+// focusText only applies on the initial open - re-running it on every
+// checkbox toggle would yank focus out of the checkbox and back into the
+// textarea on each click.
+async function regenerateExportContent(focusText = true) {
   const includeOwned = el.includeOwnedCheckbox.checked;
-  const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
+  const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl()]);
   el.exportText.value = text;
   el.shareLinkInput.value = url;
-  el.exportText.focus();
-  el.exportText.select();
+  if (focusText) {
+    el.exportText.focus();
+    el.exportText.select();
+  }
 }
 
 function closeExportModal() {
@@ -3150,7 +3248,7 @@ function wireEvents() {
   });
 
   el.exportBtn.addEventListener("click", openExportModal);
-  el.includeOwnedCheckbox.addEventListener("change", regenerateExportContent);
+  el.includeOwnedCheckbox.addEventListener("change", () => regenerateExportContent(false));
   el.copyExportBtn.addEventListener("click", copyExportText);
   el.copyShareLinkBtn.addEventListener("click", copyShareLink);
   el.saveExportBtn.addEventListener("click", saveExportAsTxt);
@@ -3235,7 +3333,17 @@ function wireEvents() {
 async function init() {
   cacheDom();
   populateStaticControls();
-  const localResult = applyLoaded(loadLocal());
+  const rawLocal = loadLocal();
+  const localResult = applyLoaded(rawLocal);
+  // Owned is character-global (its own storage key, not the build payload
+  // above - see state.js) so it loads independently of whichever build ends
+  // up active below. rawLocal is only consulted for a one-time migration of
+  // saves made during this feature's brief window of embedding owned inside
+  // the main payload instead. Folded into localResult.droppedRanks so the
+  // notice below and applySharedBuildFromUrl's extraRisk gate both already
+  // account for it without any further plumbing.
+  const ownedResult = loadAndApplyOwned(rawLocal);
+  localResult.droppedRanks += ownedResult.droppedOwned;
   // If a share link applies, it replaces whatever localStorage just loaded -
   // so the local load's result no longer describes the build actually in
   // front of the user. Neither path toasts directly; this function is the

@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EverQuest Legends - AA Calculator</title>
-<link rel="stylesheet" href="styles.css?v=038f7ac4" />
+<link rel="stylesheet" href="styles.css?v=14478b30" />
 </head>
 <body>
 
@@ -90,6 +90,7 @@
     <div id="progressionWrap">
       <div class="progression-toolbar">
         <div class="progression-hint">The order you've spent points in, for planning a leveling path. Drag a row to reorder it (or use the arrows) &mdash; ranks of the same AA always stay in order, the drop line turns amber if that spot would leave the row's own prerequisite unmet, and a &#9888; means a step's prerequisite hasn't been reached yet at that point in the sequence.</div>
+        <span id="ownedSummary" class="owned-summary"></span>
         <button class="btn" id="undoLastBtn">Undo Last</button>
       </div>
       <div id="progressionContent"></div>
@@ -132,7 +133,7 @@
     <p class="modal-hint">Copy this text to share your build, or save it as a .txt file. Pasting it back in via Import restores everything.</p>
     <label class="modal-checkbox-row">
       <input type="checkbox" id="includeOwnedCheckbox" />
-      Include owned progress (off by default &mdash; this is personal, not part of the plan)
+      Mark owned steps in the text below with [OWNED] (informational only &mdash; owned progress is never included in the share link or code)
     </label>
     <textarea id="exportText" readonly spellcheck="false"></textarea>
     <div class="modal-actions">
@@ -178,7 +179,7 @@
   </div>
 </div>
 
-<script src="data.js?v=038f7ac4"></script>
-<script src="app.js?v=038f7ac4"></script>
+<script src="data.js?v=14478b30"></script>
+<script src="app.js?v=14478b30"></script>
 </body>
 </html>

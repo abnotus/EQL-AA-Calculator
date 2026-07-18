@@ -3,7 +3,7 @@
 // Depends only on state.js — never on render.js — so the dependency graph stays
 // one-directional (render depends on logic, not the other way around).
 
-import { state, CLASS_SLOT_KEYS, AA_CATEGORY_KEYS, saveLocal } from "./state.js";
+import { state, CLASS_SLOT_KEYS, AA_CATEGORY_KEYS, saveLocal, saveOwned } from "./state.js";
 
 export function costNum(c) {
   const n = parseInt(c, 10);
@@ -125,6 +125,18 @@ export function effectiveRank(catKey, idx) {
   return purchased;
 }
 
+// The static, level-independent count of an autoRanks AA's free ranks -
+// unlike autoFloor below, this doesn't check state.charLevel, because it's
+// used to reconcile purchaseOrder entry counts against a held rank
+// (reconcilePurchaseOrderCounts, computeProgressionSteps, performReset),
+// where the question is "how many of these ranks never went through
+// purchaseOrder at all" rather than "what can currently be bought/refunded
+// down to" - those two questions coincide most of the time but diverge if
+// charLevel changes after the free ranks were already granted.
+function autoRanksOffset(aa) {
+  return aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+}
+
 export function getRanksStore(catKey) {
   const slot = classSlotIndex(catKey);
   if (slot >= 0) {
@@ -165,7 +177,10 @@ export function setOwnedRank(scope, className, idx, rank) {
   const from = store[idx] || 0;
   if (rank <= 0) delete store[idx]; else store[idx] = rank;
   lastMutation = { type: "own", scope, className, idx, from, to: rank };
-  saveLocal();
+  // Owned persists to its own storage key (see state.js), not the build
+  // payload saveLocal writes - nothing about ranks/purchaseOrder changed
+  // here, so saveLocal itself has nothing new to persist.
+  saveOwned();
 }
 
 // Purchase-order entries key AA picks by class NAME (not slot position), since class
@@ -229,14 +244,32 @@ export function clearClassData(className) {
 // ranks/purchaseOrder entry in the first place (attemptIncrement refuses to
 // touch one), so there's nothing here to trim for them.
 export function performReset(clearOwnedToo) {
+  // Trims each currently-planned rank down to the min of its owned watermark
+  // and what's actually planned - never up. Owned can legitimately exceed
+  // the current plan (mark rank 2 owned, then refund the plan back to rank
+  // 1 - replanning below something you've already trained in-game is fine,
+  // and nothing about that touches owned), so capping against the AA's max
+  // rank instead of its current planned rank would let Reset re-inflate a
+  // plan the user deliberately lowered. An AA with no ranks entry at all
+  // (owned but not currently planned) is simply never visited here, so
+  // Reset never adds a pick that isn't already part of the plan either.
+  //
+  // A kept rank at or below the AA's free autoRanks floor is dropped
+  // entirely rather than kept at that value - changeRank's own convention
+  // (see its floor-clearing comment) is that a ranks-store entry only
+  // exists for ranks actually purchased beyond the free floor, and
+  // reconcilePurchaseOrderCounts' expected-entry-count check assumes the
+  // same. Keeping a phantom floor-value entry here would violate that
+  // invariant the moment reconcilePurchaseOrderCounts next runs.
   function trimmedRanks(ranksStore, ownedStore, list) {
     const kept = {};
     Object.keys(ranksStore).forEach((idxStr) => {
       const idx = parseInt(idxStr, 10);
       const aa = list[idx];
       if (!aa) return;
-      const owned = clearOwnedToo ? 0 : (ownedStore[idx] || 0);
-      if (owned > 0) kept[idx] = Math.min(owned, aa.ranks);
+      const planned = ranksStore[idx] || 0;
+      const owned = clearOwnedToo ? 0 : Math.min(ownedStore[idx] || 0, planned);
+      if (owned > autoRanksOffset(aa)) kept[idx] = owned;
     });
     return kept;
   }
@@ -255,18 +288,25 @@ export function performReset(clearOwnedToo) {
   });
 
   // Rebuild purchaseOrder to match: keep only the first N entries per AA
-  // (N = the rank just kept above), in their original relative order - the
-  // owned portion's progression history survives intact this way, rather
-  // than being wiped and silently re-synthesized in some arbitrary order.
+  // (N = the rank just kept above, minus its free autoRanks floor - entries
+  // represent purchases beyond that floor, same accounting
+  // reconcilePurchaseOrderCounts uses), in their original relative order -
+  // the owned portion's progression history survives intact this way,
+  // rather than being wiped and silently re-synthesized in some arbitrary
+  // order.
   const remaining = {};
   ["general", "archetype", "special"].forEach((scope) => {
+    const list = AA_DATA[scope] || [];
     Object.keys(newRanks[scope]).forEach((idxStr) => {
-      remaining[entryKey(scope, null, idxStr)] = newRanks[scope][idxStr];
+      const idx = parseInt(idxStr, 10);
+      remaining[entryKey(scope, null, idxStr)] = newRanks[scope][idxStr] - autoRanksOffset(list[idx]);
     });
   });
   Object.keys(newRanks.classes).forEach((className) => {
+    const list = AA_DATA.classes[className] || [];
     Object.keys(newRanks.classes[className]).forEach((idxStr) => {
-      remaining[entryKey("class", className, idxStr)] = newRanks.classes[className][idxStr];
+      const idx = parseInt(idxStr, 10);
+      remaining[entryKey("class", className, idxStr)] = newRanks.classes[className][idxStr] - autoRanksOffset(list[idx]);
     });
   });
   const newPurchaseOrder = [];
@@ -283,7 +323,14 @@ export function performReset(clearOwnedToo) {
   if (clearOwnedToo) state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
   state.selectedNode = null;
   lastMutation = null;
+  // Belt-and-suspenders: the trimming above should already leave
+  // ranks/purchaseOrder in sync, but this is the invariant's real enforcer
+  // (see its own comment) and cheap enough to just always run here too.
+  reconcilePurchaseOrderCounts();
   saveLocal();
+  // Only clearOwnedToo actually mutates state.owned - saveOwned unconditionally
+  // anyway rather than adding a branch that could drift from what's above.
+  saveOwned();
 }
 
 export function spentPoints() {
@@ -481,8 +528,7 @@ export function reconcilePurchaseOrderCounts() {
     return n;
   }
   function expectedFor(aa, held) {
-    const autoOffset = aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
-    return Math.max(0, held - autoOffset);
+    return Math.max(0, held - autoRanksOffset(aa));
   }
   function key(scope, className, idx) {
     return `${scope}|${className || ""}|${idx}`;
@@ -797,7 +843,7 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
     // reordering bookkeeping); stepRank is the true effective rank it represents,
     // offset by any free autoRanks that never went through purchaseOrder at all.
     const purchaseCount = (counts[key] || 0) + 1;
-    const autoOffset = aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+    const autoOffset = autoRanksOffset(aa);
     const stepRank = purchaseCount + autoOffset;
 
     let prereqWarn = false;
