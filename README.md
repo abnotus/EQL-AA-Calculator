@@ -59,6 +59,10 @@ The app logic is authored as real ES modules under `src/` (`keys.js`, `changelog
 
 `state.js`'s `STORAGE_KEY` keeps meaning exactly what it always has — whatever build you're currently looking at, autosaved on every change, loaded unconditionally on boot. `src/builds.js` adds named snapshots on top of that as a separate concern: saving one copies the current state into its own storage key, loading one overwrites the current state with a saved copy (which then goes on autosaving as normal). The "active build" a loaded/saved slot is associated with is tracked purely for UI display (highlighting it in the list, showing its name near the Builds button) — never trusted for anything beyond that, and explicitly cleared on Reset/Import/a share link, so a later save can't mistake unrelated content for an update to a slot it no longer corresponds to.
 
+### Owned progress lives outside any single build
+
+`state.owned` (the Progression tab's "actually trained in-game" watermark) persists to its own `localStorage` key (`OWNED_STORAGE_KEY`), not inside the autosaving build payload or a named Builds slot. It's loaded once at boot and is never touched by `applyLoaded` — switching Builds, loading a share link, or importing text never adds, removes, or overwrites it on its own, which is what lets owned survive flipping between two saved plans without re-syncing it into each one by hand. A build/share code can still opt into *carrying* owned data (the Export modal's checkbox), for moving your own progress to another browser or handing it to someone else — but on the way back in, `exportImport.js` checks for it explicitly and asks before applying it (`applyImportedOwned`), since silently overwriting someone's real-world progress from an untrusted paste/link is the one case here that isn't easily undone.
+
 To make a change:
 
 1. Edit files under `src/` (app logic), `data.src.js` (AA data), or `styles.css`.
