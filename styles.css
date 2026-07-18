@@ -658,6 +658,14 @@ main {
   flex: 1;
   overflow-y: auto;
   padding: 20px 24px;
+  /* Unlike the tree/side-panel layout (which naturally leaves the bottom
+     corner empty), cards here pack edge-to-edge and fill the full height of
+     the view at any scroll position - a padding-bottom on the scrollable
+     content only clears the fixed .version-tag once scrolled to the very
+     end, not while scrolling through the middle. Shrinking the container
+     itself via margin-bottom leaves a permanent gap in that corner instead,
+     at every scroll position. */
+  margin-bottom: 34px;
 }
 
 .summary-meta {
@@ -685,6 +693,9 @@ main {
   flex: 1;
   overflow-y: auto;
   padding: 20px 24px;
+  /* See #summaryWrap - margin-bottom (not padding) so the gap is there at
+     every scroll position, not just once scrolled to the end. */
+  margin-bottom: 34px;
 }
 
 .progression-toolbar {

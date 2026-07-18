@@ -4,6 +4,13 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.4.1",
+    date: "2026-07-18",
+    items: [
+      "Fixed: on the Summary and Progression tabs, the version tag in the bottom-right corner could end up sitting right on top of the last card/row instead of having its own clear space."
+    ]
+  },
+  {
     version: "1.4.0",
     date: "2026-07-18",
     items: [
