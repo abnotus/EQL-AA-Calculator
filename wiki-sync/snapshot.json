@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 158556,
+  "revid": 158910,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -71,7 +71,7 @@
       "ranks": "4",
       "costs": [
         "1",
-        "?",
+        "2",
         "4",
         "6"
       ],
@@ -81,7 +81,7 @@
       "ranks": "3",
       "costs": [
         "2",
-        "?",
+        "4",
         "?"
       ],
       "description": "This passive ability increases the armor class soft cap of your class by 2/5/?%. The armor class soft cap is the amount of armor class that functions at 100% effectiveness. Armor class gains in excess of this cap are reduced in effectiveness by a percentage based on your class and level."
@@ -224,9 +224,9 @@
       "ranks": "10",
       "costs": [
         "1",
-        "?",
-        "?",
-        "?",
+        "1",
+        "1",
+        "1",
         "?",
         "?",
         "?",

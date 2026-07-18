@@ -178,8 +178,7 @@ const COST_GUESS_TABLE = {
   "general::baking-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
   "general::blacksmithing-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
   "general::brewing-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
-  "general::combat-fury": { "1": { value: 2, confidence: "low", basedOn: [], interpolated: true } },
-  "general::combat-stability": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
+  "general::combat-stability": { "2": { value: 6, confidence: "high", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
   "general::fletching-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
   "general::innate-metabolism": { "1": { value: 1, confidence: "medium", basedOn: ["Innate Lung Capacity"] }, "2": { value: 1, confidence: "medium", basedOn: ["Innate Lung Capacity"] } },
   "general::jewel-craft-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
@@ -420,7 +419,8 @@ const USER_CHANGELOG = [
     date: "2026-07-18",
     items: [
       "New: undocumented per-rank costs (shown as \"?\" on the wiki) can now show a pattern-inferred estimate instead — in the tree, the side panel's next-rank box, and its per-rank cost list. Marked with a ~ and color-coded by confidence, with a tooltip explaining what it's based on. It's a cross-check against other AAs with the same rank count and cost pattern, never a guess from one AA's own numbers alone — an AA that looks like a clean doubling sequence can still turn out wrong once compared against similar AAs that are fully documented.",
-      "An estimate never affects point totals or affordability — it's shown for reference only, and the instant the wiki documents the real cost, that takes over automatically."
+      "An estimate never affects point totals or affordability — it's shown for reference only, and the instant the wiki documents the real cost, that takes over automatically.",
+      "Data corrections from a fresh wiki scrape: Combat Fury and Combat Stability both had a previously-undocumented rank confirmed, and Packrat gained several confirmed ranks too."
     ]
   },
   {
@@ -517,7 +517,12 @@ const STORAGE_KEY = "eql_aa_builder_v1";
 // one plan, so it must survive switching between builds/slots/share links
 // untouched by any of that (see loadAndApplyOwned/saveOwned below).
 const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
-const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed";
+// Bumped (v1 -> v2) when the banner's content changed enough to be worth
+// re-showing even to someone who already dismissed the old wording - a
+// flat "dismissed" flag has no notion of *which* text was dismissed, so
+// the only way to force a re-acknowledgment is a new key nobody's set yet.
+// v2 added the pattern-inferred cost estimate mention.
+const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v2";
 const LAST_SEEN_VERSION_KEY = "eql_aa_last_seen_version";
 const CLASS_SLOT_KEYS = ["classSlot0", "classSlot1", "classSlot2"];
 // Canonical display/iteration order for the 6 real AA categories (excludes the

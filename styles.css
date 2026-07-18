@@ -192,6 +192,15 @@ a.btn {
   text-decoration: underline;
 }
 
+/* Deliberately breaks from the banner's own amber palette - the whole
+   point is to visually echo the actual ~9-style badge this refers to (see
+   .costtag.is-estimate), so it reads as "this exact thing, over there" and
+   not just more banner text. */
+.disclaimer-banner .banner-estimate {
+  color: var(--estimate-high);
+  font-style: italic;
+}
+
 .disclaimer-banner span { flex: 1; }
 
 .disclaimer-banner button {

@@ -21,7 +21,12 @@ export const STORAGE_KEY = "eql_aa_builder_v1";
 // one plan, so it must survive switching between builds/slots/share links
 // untouched by any of that (see loadAndApplyOwned/saveOwned below).
 export const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
-export const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed";
+// Bumped (v1 -> v2) when the banner's content changed enough to be worth
+// re-showing even to someone who already dismissed the old wording - a
+// flat "dismissed" flag has no notion of *which* text was dismissed, so
+// the only way to force a re-acknowledgment is a new key nobody's set yet.
+// v2 added the pattern-inferred cost estimate mention.
+export const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v2";
 export const LAST_SEEN_VERSION_KEY = "eql_aa_last_seen_version";
 export const CLASS_SLOT_KEYS = ["classSlot0", "classSlot1", "classSlot2"];
 // Canonical display/iteration order for the 6 real AA categories (excludes the
