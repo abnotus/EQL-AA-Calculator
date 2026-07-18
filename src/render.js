@@ -8,7 +8,8 @@ import {
   getList, effectiveRank, structuralLockReason, resolvePrereqTarget, getBlockReason,
   isDependedOn, attemptIncrement, attemptDecrement, countPicked, computeProgressionSteps,
   costNum, spentPoints, undoLastMutation, canUndo, moveEntry, setOwnedRank, performReset,
-  aaMatchesQuery, countMatches, heldRankInvalidReason, findInvalidatedPicks, loadIssuesSuffix
+  aaMatchesQuery, countMatches, heldRankInvalidReason, findInvalidatedPicks, loadIssuesSuffix,
+  hasAnyOwned
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
@@ -427,6 +428,11 @@ function dragWouldIntroduceWarn(toIndex) {
 
 export function renderProgression() {
   el.undoLastBtn.disabled = !canUndo();
+  // hasAnyOwned checks state.owned globally, not just the current
+  // progression list - owned can hold marks for classes outside the 3
+  // active slots, so this has to be set before (and independent of) the
+  // empty-purchaseOrder early return below.
+  el.clearOwnedBtn.disabled = !hasAnyOwned();
 
   if (!state.purchaseOrder.length) {
     el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';

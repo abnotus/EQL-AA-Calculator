@@ -367,7 +367,7 @@ const USER_CHANGELOG = [
     date: "2026-07-18",
     items: [
       "New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable. The toolbar shows a running total of points owned vs. still to go.",
-      "Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate.",
+      "Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate. A separate \"Clear Owned\" button on the Progression toolbar clears owned progress on its own, without touching your plan.",
       "Owned progress is tracked per character, not per plan — it's independent of whichever build you're editing, so switching between saved Builds or opening a share link never adds, removes, or overwrites an owned mark. It's also never included in a share link or export code; the Export modal has a checkbox to note owned steps with [OWNED] in the copyable text, for reference only."
     ]
   },
@@ -871,6 +871,30 @@ function setOwnedRank(scope, className, idx, rank) {
   saveOwned();
 }
 
+// Whether state.owned holds anything at all, across every scope/class - not
+// just what's visible in the current 3 class slots or current progression,
+// since owned is global. Used to disable the standalone "Clear Owned"
+// control when there's nothing for it to do (same spirit as canUndo below).
+function hasAnyOwned() {
+  const o = state.owned;
+  if (Object.keys(o.general).length || Object.keys(o.archetype).length || Object.keys(o.special).length) return true;
+  return Object.keys(o.classes).some((className) => Object.keys(o.classes[className]).length > 0);
+}
+
+// Wipes owned entirely - the standalone counterpart to performReset's
+// clearOwnedToo option, for clearing real-world progress without touching
+// the plan at all (the reverse of what Reset Build's checkbox can express,
+// which only ever clears owned alongside the plan). A bulk wipe like this
+// isn't something the single-level own-mutation undo can represent (it only
+// ever records one AA's watermark), so this is deliberately not undoable -
+// the confirm before calling this is the only safety net, same as Reset
+// Build's own destructive actions.
+function clearAllOwned() {
+  state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+  lastMutation = null;
+  saveOwned();
+}
+
 // Purchase-order entries key AA picks by class NAME (not slot position), since class
 // names are already unique and stable — swapping which slot a class occupies shouldn't
 // orphan its place in the progression list.
@@ -1342,7 +1366,7 @@ function isDependedOn(category, idx, currentRank) {
 // states rather than walking further back; there's no deeper history than
 // that. Explicitly cleared by anything that mutates ranks/purchaseOrder/owned
 // without going through one of the three (class swap wipe, Reset Build,
-// Import).
+// Import, clearAllOwned).
 let lastMutation = null;
 
 function clearLastMutation() {
@@ -1910,6 +1934,7 @@ function cacheDom() {
   el.progressionContent = document.getElementById("progressionContent");
   el.undoLastBtn = document.getElementById("undoLastBtn");
   el.ownedSummary = document.getElementById("ownedSummary");
+  el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
   el.treeWrap = document.getElementById("treeWrap");
   el.sidePanel = document.getElementById("sidePanel");
   el.globalSearch = document.getElementById("globalSearch");
@@ -2349,6 +2374,11 @@ function dragWouldIntroduceWarn(toIndex) {
 
 function renderProgression() {
   el.undoLastBtn.disabled = !canUndo();
+  // hasAnyOwned checks state.owned globally, not just the current
+  // progression list - owned can hold marks for classes outside the 3
+  // active slots, so this has to be set before (and independent of) the
+  // empty-purchaseOrder early return below.
+  el.clearOwnedBtn.disabled = !hasAnyOwned();
 
   if (!state.purchaseOrder.length) {
     el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
@@ -3296,6 +3326,19 @@ function wireEvents() {
   el.cancelResetBtn.addEventListener("click", closeResetModal);
   el.confirmResetBtn.addEventListener("click", handleConfirmReset);
   el.resetModal.addEventListener("click", (e) => { if (e.target === el.resetModal) closeResetModal(); });
+
+  // Standalone counterpart to Reset Build's checkbox: clears owned progress
+  // without touching the plan (the checkbox only ever clears owned alongside
+  // the plan, never alone). No modal needed - there's no option to offer,
+  // just a yes/no on a destructive action, so a plain confirm() is enough.
+  el.clearOwnedBtn.addEventListener("click", () => {
+    if (el.clearOwnedBtn.disabled) return;
+    const ok = confirm("Clear all owned progress? This can't be undone, and won't affect your planned picks.");
+    if (!ok) return;
+    clearAllOwned();
+    renderProgression();
+    showToast("Owned progress cleared");
+  });
 
   el.dismissBannerBtn.addEventListener("click", () => {
     el.disclaimerBanner.classList.add("hidden");

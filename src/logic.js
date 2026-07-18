@@ -183,6 +183,30 @@ export function setOwnedRank(scope, className, idx, rank) {
   saveOwned();
 }
 
+// Whether state.owned holds anything at all, across every scope/class - not
+// just what's visible in the current 3 class slots or current progression,
+// since owned is global. Used to disable the standalone "Clear Owned"
+// control when there's nothing for it to do (same spirit as canUndo below).
+export function hasAnyOwned() {
+  const o = state.owned;
+  if (Object.keys(o.general).length || Object.keys(o.archetype).length || Object.keys(o.special).length) return true;
+  return Object.keys(o.classes).some((className) => Object.keys(o.classes[className]).length > 0);
+}
+
+// Wipes owned entirely - the standalone counterpart to performReset's
+// clearOwnedToo option, for clearing real-world progress without touching
+// the plan at all (the reverse of what Reset Build's checkbox can express,
+// which only ever clears owned alongside the plan). A bulk wipe like this
+// isn't something the single-level own-mutation undo can represent (it only
+// ever records one AA's watermark), so this is deliberately not undoable -
+// the confirm before calling this is the only safety net, same as Reset
+// Build's own destructive actions.
+export function clearAllOwned() {
+  state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+  lastMutation = null;
+  saveOwned();
+}
+
 // Purchase-order entries key AA picks by class NAME (not slot position), since class
 // names are already unique and stable — swapping which slot a class occupies shouldn't
 // orphan its place in the progression list.
@@ -654,7 +678,7 @@ export function isDependedOn(category, idx, currentRank) {
 // states rather than walking further back; there's no deeper history than
 // that. Explicitly cleared by anything that mutates ranks/purchaseOrder/owned
 // without going through one of the three (class swap wipe, Reset Build,
-// Import).
+// Import, clearAllOwned).
 let lastMutation = null;
 
 export function clearLastMutation() {

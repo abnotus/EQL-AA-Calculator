@@ -8,7 +8,7 @@ export const USER_CHANGELOG = [
     date: "2026-07-18",
     items: [
       "New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable. The toolbar shows a running total of points owned vs. still to go.",
-      "Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate.",
+      "Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate. A separate \"Clear Owned\" button on the Progression toolbar clears owned progress on its own, without touching your plan.",
       "Owned progress is tracked per character, not per plan — it's independent of whichever build you're editing, so switching between saved Builds or opening a share link never adds, removes, or overwrites an owned mark. It's also never included in a share link or export code; the Export modal has a checkbox to note owned steps with [OWNED] in the copyable text, for reference only."
     ]
   },

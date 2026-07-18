@@ -265,7 +265,7 @@ version: "1.4.0",
 date: "2026-07-18",
 items: [
 "New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable. The toolbar shows a running total of points owned vs. still to go.",
-"Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate.",
+"Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate. A separate \"Clear Owned\" button on the Progression toolbar clears owned progress on its own, without touching your plan.",
 "Owned progress is tracked per character, not per plan — it's independent of whichever build you're editing, so switching between saved Builds or opening a share link never adds, removes, or overwrites an owned mark. It's also never included in a share link or export code; the Export modal has a checkbox to note owned steps with [OWNED] in the copyable text, for reference only."
 ]
 },
@@ -606,6 +606,16 @@ const store = getOwnedStore(scope, className);
 const from = store[idx] || 0;
 if (rank <= 0) delete store[idx]; else store[idx] = rank;
 lastMutation = { type: "own", scope, className, idx, from, to: rank };
+saveOwned();
+}
+function hasAnyOwned() {
+const o = state.owned;
+if (Object.keys(o.general).length || Object.keys(o.archetype).length || Object.keys(o.special).length) return true;
+return Object.keys(o.classes).some((className) => Object.keys(o.classes[className]).length > 0);
+}
+function clearAllOwned() {
+state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+lastMutation = null;
 saveOwned();
 }
 function scopeForCategory(category) {
@@ -1258,6 +1268,7 @@ el.progressionWrap = document.getElementById("progressionWrap");
 el.progressionContent = document.getElementById("progressionContent");
 el.undoLastBtn = document.getElementById("undoLastBtn");
 el.ownedSummary = document.getElementById("ownedSummary");
+el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
 el.treeWrap = document.getElementById("treeWrap");
 el.sidePanel = document.getElementById("sidePanel");
 el.globalSearch = document.getElementById("globalSearch");
@@ -1601,6 +1612,7 @@ return countPrereqWarns(hypoSteps) > dragBaselineWarnCount;
 }
 function renderProgression() {
 el.undoLastBtn.disabled = !canUndo();
+el.clearOwnedBtn.disabled = !hasAnyOwned();
 if (!state.purchaseOrder.length) {
 el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
 el.ownedSummary.textContent = "";
@@ -2311,6 +2323,14 @@ el.resetBtn.addEventListener("click", openResetModal);
 el.cancelResetBtn.addEventListener("click", closeResetModal);
 el.confirmResetBtn.addEventListener("click", handleConfirmReset);
 el.resetModal.addEventListener("click", (e) => { if (e.target === el.resetModal) closeResetModal(); });
+el.clearOwnedBtn.addEventListener("click", () => {
+if (el.clearOwnedBtn.disabled) return;
+const ok = confirm("Clear all owned progress? This can't be undone, and won't affect your planned picks.");
+if (!ok) return;
+clearAllOwned();
+renderProgression();
+showToast("Owned progress cleared");
+});
 el.dismissBannerBtn.addEventListener("click", () => {
 el.disclaimerBanner.classList.add("hidden");
 try { localStorage.setItem(DISCLAIMER_DISMISSED_KEY, "1"); } catch (e) { /* storage unavailable, ignore */ }

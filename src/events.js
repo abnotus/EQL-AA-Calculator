@@ -2,12 +2,12 @@
 
 import { state, CLASS_SLOT_KEYS, DISCLAIMER_DISMISSED_KEY, MAX_TOTAL_POINTS, saveLocal } from "./state.js";
 import { el } from "./dom.js";
-import { costNum, clearClassData } from "./logic.js";
+import { costNum, clearClassData, clearAllOwned } from "./logic.js";
 import {
   renderAll, showToast, populateClassSelects, renderTree, renderBrowse, undoLast,
   openChangelogModal, closeChangelogModal, wireProgressionDropZone,
   openBuildsModal, closeBuildsModal, handleBuildSave,
-  openResetModal, closeResetModal, handleConfirmReset
+  openResetModal, closeResetModal, handleConfirmReset, renderProgression
 } from "./render.js";
 import {
   openExportModal, copyExportText, copyShareLink, saveExportAsTxt, closeExportModal,
@@ -123,6 +123,19 @@ export function wireEvents() {
   el.cancelResetBtn.addEventListener("click", closeResetModal);
   el.confirmResetBtn.addEventListener("click", handleConfirmReset);
   el.resetModal.addEventListener("click", (e) => { if (e.target === el.resetModal) closeResetModal(); });
+
+  // Standalone counterpart to Reset Build's checkbox: clears owned progress
+  // without touching the plan (the checkbox only ever clears owned alongside
+  // the plan, never alone). No modal needed - there's no option to offer,
+  // just a yes/no on a destructive action, so a plain confirm() is enough.
+  el.clearOwnedBtn.addEventListener("click", () => {
+    if (el.clearOwnedBtn.disabled) return;
+    const ok = confirm("Clear all owned progress? This can't be undone, and won't affect your planned picks.");
+    if (!ok) return;
+    clearAllOwned();
+    renderProgression();
+    showToast("Owned progress cleared");
+  });
 
   el.dismissBannerBtn.addEventListener("click", () => {
     el.disclaimerBanner.classList.add("hidden");

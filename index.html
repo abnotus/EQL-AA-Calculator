@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EverQuest Legends - AA Calculator</title>
-<link rel="stylesheet" href="styles.css?v=14478b30" />
+<link rel="stylesheet" href="styles.css?v=1e53e8d9" />
 </head>
 <body>
 
@@ -91,6 +91,7 @@
       <div class="progression-toolbar">
         <div class="progression-hint">The order you've spent points in, for planning a leveling path. Drag a row to reorder it (or use the arrows) &mdash; ranks of the same AA always stay in order, the drop line turns amber if that spot would leave the row's own prerequisite unmet, and a &#9888; means a step's prerequisite hasn't been reached yet at that point in the sequence.</div>
         <span id="ownedSummary" class="owned-summary"></span>
+        <button class="btn danger" id="clearOwnedBtn" title="Clear all owned progress without touching your planned picks">Clear Owned</button>
         <button class="btn" id="undoLastBtn">Undo Last</button>
       </div>
       <div id="progressionContent"></div>
@@ -179,7 +180,7 @@
   </div>
 </div>
 
-<script src="data.js?v=14478b30"></script>
-<script src="app.js?v=14478b30"></script>
+<script src="data.js?v=1e53e8d9"></script>
+<script src="app.js?v=1e53e8d9"></script>
 </body>
 </html>

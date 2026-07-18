@@ -695,9 +695,14 @@ main {
   margin-bottom: 16px;
 }
 
-.progression-toolbar #undoLastBtn {
+.progression-toolbar #undoLastBtn,
+.progression-toolbar #clearOwnedBtn {
   flex-shrink: 0;
   white-space: nowrap;
+}
+
+.progression-toolbar #clearOwnedBtn {
+  align-self: center;
 }
 
 .progression-hint {
