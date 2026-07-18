@@ -46,7 +46,7 @@ No build tools, no server — just open `index.html` in a browser.
 
 ## Development
 
-The app logic is authored as real ES modules under `src/` (`keys.js`, `changelogData.js`, `state.js`, `logic.js`, `builds.js`, `dom.js`, `render.js`, `exportImport.js`, `events.js`, `main.js`). Native ES modules don't work over `file://` in Chrome, and this app is deliberately built to run by just double-clicking `index.html` with no local server — so `build_minify.py` assembles the `src/` modules back into a single classic script and minifies it, which is what `index.html` actually loads.
+The app logic is authored as real ES modules under `src/` (`aaIds.js`, `keys.js`, `changelogData.js`, `state.js`, `logic.js`, `builds.js`, `dom.js`, `render.js`, `exportImport.js`, `events.js`, `main.js`). Native ES modules don't work over `file://` in Chrome, and this app is deliberately built to run by just double-clicking `index.html` with no local server — so `build_minify.py` assembles the `src/` modules back into a single classic script and minifies it, which is what `index.html` actually loads.
 
 `build_minify.py` also checks a data-integrity invariant before building (see the comment on `check_prereq_disambiguation_invariant`) and fails the build with an explanation if it's violated, rather than shipping AA data that would resolve a prerequisite unpredictably. If a build fails on this, the error message says what to fix.
 
