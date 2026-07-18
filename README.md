@@ -87,6 +87,10 @@ To make a change:
 2. Run `python build_minify.py`. This regenerates `app.src.js` (assembled, readable — generated, don't edit directly), `app.js`/`data.js` (minified, what ships), and re-stamps `index.html` with a cache-busting version hash.
 3. Open `index.html` to test.
 
+## Testing
+
+`tests/` has a data-independent Python unit test for `wiki-sync/guess_costs.py`'s core logic, plus a handful of Playwright browser tests that drive the actual app (cost-guess rendering across every tab, the topbar's blended estimate total, the disclaimer banner's dismiss-key versioning). See `tests/README.md` for prerequisites and how to run them — none are wired into CI, so run the relevant ones by hand after touching the cost-guessing feature or anything it renders through.
+
 ## Deployment
 
 Hosted on GitHub Pages, served from `main` on every push.
