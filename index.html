@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EverQuest Legends - AA Calculator</title>
-<link rel="stylesheet" href="styles.css?v=830ae258" />
+<link rel="stylesheet" href="styles.css?v=038f7ac4" />
 </head>
 <body>
 
@@ -130,6 +130,10 @@
   <div class="modal">
     <h2>Export Build</h2>
     <p class="modal-hint">Copy this text to share your build, or save it as a .txt file. Pasting it back in via Import restores everything.</p>
+    <label class="modal-checkbox-row">
+      <input type="checkbox" id="includeOwnedCheckbox" />
+      Include owned progress (off by default &mdash; this is personal, not part of the plan)
+    </label>
     <textarea id="exportText" readonly spellcheck="false"></textarea>
     <div class="modal-actions">
       <button class="btn primary" id="copyExportBtn">Copy to Clipboard</button>
@@ -159,7 +163,22 @@
   </div>
 </div>
 
-<script src="data.js?v=830ae258"></script>
-<script src="app.js?v=830ae258"></script>
+<div id="resetModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h2>Reset Build</h2>
+    <p class="modal-hint">Clears every planned pick. AAs marked as owned are kept by default, since those aren't just plans anymore &mdash; check the box below to clear everything, owned included.</p>
+    <label class="modal-checkbox-row">
+      <input type="checkbox" id="resetClearOwnedCheckbox" />
+      Also clear owned progress
+    </label>
+    <div class="modal-actions">
+      <button class="btn" id="cancelResetBtn">Cancel</button>
+      <button class="btn danger" id="confirmResetBtn">Reset Build</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js?v=038f7ac4"></script>
+<script src="app.js?v=038f7ac4"></script>
 </body>
 </html>

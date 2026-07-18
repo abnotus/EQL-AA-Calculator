@@ -135,6 +135,39 @@ export function getRanksStore(catKey) {
   return state.ranks[catKey];
 }
 
+// Unlike getRanksStore, keyed by scope/className directly rather than a
+// slot-relative catKey - owned status is about the AA's real identity, not
+// which of the 3 slots a class currently occupies (same reasoning
+// purchaseOrder entries already use, and the same bug class the undo-after-
+// class-swap fix closed for "add" records: a slot key means "whatever's in
+// this slot right now", which stops meaning the class it meant when this was
+// set the moment slots get rearranged).
+function getOwnedStore(scope, className) {
+  if (scope === "class") {
+    if (!state.owned.classes[className]) state.owned.classes[className] = {};
+    return state.owned.classes[className];
+  }
+  return state.owned[scope];
+}
+
+export function ownedRank(scope, className, idx) {
+  return getOwnedStore(scope, className)[idx] || 0;
+}
+
+// Pure state mutation, same spirit as changeRank/moveEntry: sets the owned
+// watermark for one AA and records enough to undo it. Like changeRank, the
+// caller is responsible for the rank actually making sense (Progression's
+// toggle only ever asks for "this step's rank" or "one below it" - see
+// render.js - so this doesn't independently re-derive or clamp against the
+// AA's own rank count the way changeRank does for a purchase).
+export function setOwnedRank(scope, className, idx, rank) {
+  const store = getOwnedStore(scope, className);
+  const from = store[idx] || 0;
+  if (rank <= 0) delete store[idx]; else store[idx] = rank;
+  lastMutation = { type: "own", scope, className, idx, from, to: rank };
+  saveLocal();
+}
+
 // Purchase-order entries key AA picks by class NAME (not slot position), since class
 // names are already unique and stable — swapping which slot a class occupies shouldn't
 // orphan its place in the progression list.
@@ -188,6 +221,69 @@ export function clearClassData(className) {
   delete state.ranks.classes[className];
   state.purchaseOrder = state.purchaseOrder.filter((e) => !(e.scope === "class" && e.className === className));
   lastMutation = null;
+}
+
+// Reset Build, but selective: wipes every planned pick down to its owned
+// watermark instead of to zero, unless clearOwnedToo also wipes owned itself.
+// Auto-granted AAs need no special handling either way - they never have a
+// ranks/purchaseOrder entry in the first place (attemptIncrement refuses to
+// touch one), so there's nothing here to trim for them.
+export function performReset(clearOwnedToo) {
+  function trimmedRanks(ranksStore, ownedStore, list) {
+    const kept = {};
+    Object.keys(ranksStore).forEach((idxStr) => {
+      const idx = parseInt(idxStr, 10);
+      const aa = list[idx];
+      if (!aa) return;
+      const owned = clearOwnedToo ? 0 : (ownedStore[idx] || 0);
+      if (owned > 0) kept[idx] = Math.min(owned, aa.ranks);
+    });
+    return kept;
+  }
+
+  const newRanks = { general: {}, archetype: {}, special: {}, classes: {} };
+  ["general", "archetype", "special"].forEach((scope) => {
+    newRanks[scope] = trimmedRanks(state.ranks[scope] || {}, state.owned[scope] || {}, AA_DATA[scope] || []);
+  });
+  Object.keys(state.ranks.classes || {}).forEach((className) => {
+    const kept = trimmedRanks(
+      state.ranks.classes[className] || {},
+      (state.owned.classes || {})[className] || {},
+      AA_DATA.classes[className] || []
+    );
+    if (Object.keys(kept).length) newRanks.classes[className] = kept;
+  });
+
+  // Rebuild purchaseOrder to match: keep only the first N entries per AA
+  // (N = the rank just kept above), in their original relative order - the
+  // owned portion's progression history survives intact this way, rather
+  // than being wiped and silently re-synthesized in some arbitrary order.
+  const remaining = {};
+  ["general", "archetype", "special"].forEach((scope) => {
+    Object.keys(newRanks[scope]).forEach((idxStr) => {
+      remaining[entryKey(scope, null, idxStr)] = newRanks[scope][idxStr];
+    });
+  });
+  Object.keys(newRanks.classes).forEach((className) => {
+    Object.keys(newRanks.classes[className]).forEach((idxStr) => {
+      remaining[entryKey("class", className, idxStr)] = newRanks.classes[className][idxStr];
+    });
+  });
+  const newPurchaseOrder = [];
+  state.purchaseOrder.forEach((e) => {
+    const k = entryKey(e.scope, e.className, e.idx);
+    if (remaining[k] > 0) {
+      newPurchaseOrder.push(e);
+      remaining[k]--;
+    }
+  });
+
+  state.ranks = newRanks;
+  state.purchaseOrder = newPurchaseOrder;
+  if (clearOwnedToo) state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+  state.selectedNode = null;
+  lastMutation = null;
+  saveLocal();
 }
 
 export function spentPoints() {
@@ -504,14 +600,15 @@ export function isDependedOn(category, idx, currentRank) {
   return false;
 }
 
-// Single-level undo: remembers only the most recent changeRank or moveEntry
-// call, in enough detail to reverse it exactly (including restoring a removed
-// entry to its original position). Overwritten by every subsequent changeRank/
-// moveEntry call - including the reversal itself, so undoing twice in a row
-// toggles back and forth between the two most recent arrangements rather than
-// walking further back; there's no deeper history than that. Explicitly
-// cleared by anything that mutates ranks/purchaseOrder without going through
-// either (class swap wipe, Reset Build, Import).
+// Single-level undo: remembers only the most recent changeRank, moveEntry, or
+// setOwnedRank call, in enough detail to reverse it exactly (including
+// restoring a removed entry to its original position). Overwritten by every
+// subsequent call to any of the three - including the reversal itself, so
+// undoing twice in a row toggles back and forth between the two most recent
+// states rather than walking further back; there's no deeper history than
+// that. Explicitly cleared by anything that mutates ranks/purchaseOrder/owned
+// without going through one of the three (class swap wipe, Reset Build,
+// Import).
 let lastMutation = null;
 
 export function clearLastMutation() {
@@ -585,9 +682,10 @@ export function changeRank(category, idx, delta) {
   return true;
 }
 
-// Reverses whatever changeRank or moveEntry last did. Consumes the record
-// either way, so pressing this twice in a row toggles between the last two
-// arrangements rather than walking back further - see the lastMutation comment.
+// Reverses whatever changeRank, moveEntry, or setOwnedRank last did. Consumes
+// the record either way, so pressing this twice in a row toggles between the
+// last two states rather than walking back further - see the lastMutation
+// comment.
 export function undoLastMutation() {
   const m = lastMutation;
   if (!m) return { changed: false, message: "Nothing to undo." };
@@ -611,6 +709,14 @@ export function undoLastMutation() {
       return { changed: false, message: "Can't undo — the list has changed too much." };
     }
     moveEntry(m.to, m.from);
+    return { changed: true, message: null };
+  }
+
+  if (m.type === "own") {
+    // Unlike ranks, owned isn't slot-relative (see getOwnedStore) - no class-
+    // selection check needed, this always resolves regardless of what's
+    // currently in the 3 slots.
+    setOwnedRank(m.scope, m.className, m.idx, m.from);
     return { changed: true, message: null };
   }
 
@@ -728,7 +834,14 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
 
     const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
     const name = aa ? aa.name : "(unknown AA)";
+    // Real-world progress, independent of active/prereqWarn - you can own a
+    // rank for a class that isn't in one of the 3 slots right now, same as
+    // the rank itself can be held that way.
+    const owned = stepRank <= ownedRank(entry.scope, entry.className, entry.idx);
 
-    return { index: i, aa, idx: entry.idx, category, active, stepRank, stepCost, cumulative, prereqWarn, label, name, isLast };
+    return {
+      index: i, aa, idx: entry.idx, scope: entry.scope, className: entry.className,
+      category, active, stepRank, stepCost, cumulative, prereqWarn, label, name, isLast, owned
+    };
   });
 }

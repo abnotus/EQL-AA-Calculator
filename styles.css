@@ -790,6 +790,11 @@ main {
   color: var(--text);
 }
 
+.step-name.owned {
+  text-decoration: line-through;
+  color: var(--text-faint);
+}
+
 .step-rank {
   font-size: 11px;
   font-weight: 400;
@@ -858,6 +863,14 @@ main {
 .step-remove:hover:not(:disabled) { border-color: #e08b78; color: #e08b78; background: rgba(224,139,120,0.1); }
 
 .step-expand.active { border-color: var(--accent-bright); color: var(--accent-bright); }
+
+.step-own:hover { border-color: var(--green); color: var(--green); }
+
+.step-own.active {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(76,140,82,0.1);
+}
 
 .progression-next-rank {
   margin: -4px 0 8px 40px;
@@ -938,6 +951,23 @@ main {
 .share-link-controls {
   display: flex;
   gap: 8px;
+}
+
+.modal-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 4px 0 14px;
+  cursor: pointer;
+}
+
+.modal-checkbox-row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .share-link-controls input[type="text"] {

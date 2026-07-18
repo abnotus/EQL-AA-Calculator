@@ -77,7 +77,12 @@ function buildPayload() {
     charLevel: state.charLevel,
     totalPoints: state.totalPoints,
     ranks: serializeRanks(state.ranks),
-    purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
+    purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
+    // Unlike a share link/export (owned left out unless explicitly opted
+    // in - see exportImport.js's buildCodeObject), a named slot always
+    // captures it: this is a full snapshot of your own build for your own
+    // later use, not something being handed to someone else.
+    owned: serializeRanks(state.owned)
   };
 }
 

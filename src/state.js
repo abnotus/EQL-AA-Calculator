@@ -29,6 +29,14 @@ export let state = {
   totalPoints: 1000,
   ranks: { general: {}, archetype: {}, special: {}, classes: {} },
   purchaseOrder: [], // [{ scope: 'general'|'archetype'|'special'|'class', className?: string, idx: number }, ...] in click order
+  // Real-world "I've actually trained this" watermark, same shape as ranks
+  // (idx -> highest owned rank) and deliberately identity-keyed by
+  // scope/className rather than anything slot-relative, same reasoning as
+  // purchaseOrder entries - it shouldn't matter which of the 3 class slots
+  // a class currently occupies. Independent of ranks/purchaseOrder (the
+  // *plan*): owned tracks what's actually true in-game, which is why Reset
+  // Build keeps it by default instead of wiping it along with the plan.
+  owned: { general: {}, archetype: {}, special: {}, classes: {} },
   activeView: "calculator", // 'calculator' | 'browse' | 'summary' | 'progression'
   activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
   selectedNode: null, // { category, idx }
@@ -139,7 +147,8 @@ export function saveLocal() {
       charLevel: state.charLevel,
       totalPoints: state.totalPoints,
       ranks: serializeRanks(state.ranks),
-      purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
+      purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
+      owned: serializeRanks(state.owned)
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch (e) { /* storage unavailable, ignore */ }
@@ -194,6 +203,22 @@ export function applyLoaded(loaded) {
     state.purchaseOrder = isLegacy
       ? deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.idx === "number" ? e.idx : null), (scope, cls, legacyIdx) => currentIdxForLegacyIdx(scope, cls, legacyIdx))
       : deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.key === "string" ? e.key : null), (scope, cls, key) => idxForKey(scope, cls, key));
+  }
+  // Unlike ranks/purchaseOrder above (which leave state as-is if the loaded
+  // payload just doesn't have that field, e.g. a malformed partial payload),
+  // owned always gets reset here, present or not - this is a wholesale
+  // replacement of "the build", and a share link's build not including
+  // owned data (the default - see buildCodeObject) must actually clear
+  // whatever owned data the *previous* build in memory had, not silently
+  // carry it over onto an unrelated build it was never true of.
+  if (loaded.owned && typeof loaded.owned === "object") {
+    const ownedResult = isLegacy
+      ? deserializeRanks(loaded.owned, (scope, cls, idxStr) => currentIdxForLegacyIdx(scope, cls, parseInt(idxStr, 10)))
+      : deserializeRanks(loaded.owned, (scope, cls, key) => idxForKey(scope, cls, key));
+    state.owned = ownedResult.ranks;
+    droppedRanks += ownedResult.dropped;
+  } else {
+    state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
   }
   return { droppedRanks };
 }

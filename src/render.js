@@ -7,12 +7,12 @@ import {
   escapeHtml, iconLetter, highlightRankValue, applyPerRankTotal, labelFor, shortCategoryLabel,
   getList, effectiveRank, structuralLockReason, resolvePrereqTarget, getBlockReason,
   isDependedOn, attemptIncrement, attemptDecrement, countPicked, computeProgressionSteps,
-  costNum, spentPoints, undoLastMutation, canUndo, moveEntry, aaMatchesQuery, countMatches,
-  heldRankInvalidReason, findInvalidatedPicks, loadIssuesSuffix
+  costNum, spentPoints, undoLastMutation, canUndo, moveEntry, setOwnedRank, performReset,
+  aaMatchesQuery, countMatches, heldRankInvalidReason, findInvalidatedPicks, loadIssuesSuffix
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
-  saveWithNameCheck, confirmReplaceCurrentBuild
+  saveWithNameCheck, confirmReplaceCurrentBuild, clearActiveBuild
 } from "./builds.js";
 
 export function renderAll() {
@@ -442,7 +442,7 @@ export function renderProgression() {
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.index + 1}</span>
       <span class="step-info">
-        <span class="step-name">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
+        <span class="step-name${s.owned ? " owned" : ""}">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
         <span class="step-cat">${escapeHtml(s.label)}${s.active ? "" : " &middot; class not currently selected"}</span>
       </span>
       ${s.prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
@@ -451,6 +451,7 @@ export function renderProgression() {
         <span class="cost-total">${s.cumulative} total</span>
       </span>
       <span class="step-controls" draggable="false">
+        <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
@@ -498,6 +499,21 @@ export function renderProgression() {
       const category = btn.getAttribute("data-category");
       const idx = parseInt(btn.getAttribute("data-idx"), 10);
       applyAttempt(attemptDecrement(category, idx));
+    });
+  });
+  // Toggles the owned watermark's boundary at this exact step: marking an
+  // unowned step owns it and everything below (you can't have actually
+  // trained rank 3 without ranks 1-2), unmarking an owned one drops the
+  // watermark to just below it, leaving anything still lower alone.
+  Array.from(el.progressionContent.querySelectorAll(".step-own")).forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const scope = btn.getAttribute("data-scope");
+      const className = btn.getAttribute("data-classname") || null;
+      const idx = parseInt(btn.getAttribute("data-idx"), 10);
+      const rank = parseInt(btn.getAttribute("data-rank"), 10);
+      const nowOwned = btn.classList.contains("active");
+      setOwnedRank(scope, className, idx, nowOwned ? rank - 1 : rank);
+      renderProgression();
     });
   });
 
@@ -786,6 +802,24 @@ export function openBuildsModal() {
 
 export function closeBuildsModal() {
   el.buildsModal.classList.add("hidden");
+}
+
+export function openResetModal() {
+  el.resetClearOwnedCheckbox.checked = false;
+  el.resetModal.classList.remove("hidden");
+}
+
+export function closeResetModal() {
+  el.resetModal.classList.add("hidden");
+}
+
+export function handleConfirmReset() {
+  const clearOwnedToo = el.resetClearOwnedCheckbox.checked;
+  performReset(clearOwnedToo);
+  clearActiveBuild();
+  closeResetModal();
+  renderAll();
+  showToast(clearOwnedToo ? "Build reset" : "Build reset — owned progress kept");
 }
 
 // Snapshots the current build under whatever name is in the input — a new

@@ -25,6 +25,7 @@ export function cacheDom() {
   el.resetBtn = document.getElementById("resetBtn");
   el.exportModal = document.getElementById("exportModal");
   el.exportText = document.getElementById("exportText");
+  el.includeOwnedCheckbox = document.getElementById("includeOwnedCheckbox");
   el.shareLinkInput = document.getElementById("shareLinkInput");
   el.copyShareLinkBtn = document.getElementById("copyShareLinkBtn");
   el.copyExportBtn = document.getElementById("copyExportBtn");
@@ -59,4 +60,8 @@ export function cacheDom() {
   el.buildSaveBtn = document.getElementById("buildSaveBtn");
   el.buildsList = document.getElementById("buildsList");
   el.closeBuildsBtn = document.getElementById("closeBuildsBtn");
+  el.resetModal = document.getElementById("resetModal");
+  el.resetClearOwnedCheckbox = document.getElementById("resetClearOwnedCheckbox");
+  el.confirmResetBtn = document.getElementById("confirmResetBtn");
+  el.cancelResetBtn = document.getElementById("cancelResetBtn");
 }

@@ -4,6 +4,15 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.4.0",
+    date: "2026-07-18",
+    items: [
+      "New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable.",
+      "Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate.",
+      "Owned progress is left out of exported text and share links by default (it's personal, not part of the plan you're sharing) — check \"Include owned progress\" in the Export modal to share it anyway. Named Build slots always keep it, since those are your own saved snapshots."
+    ]
+  },
+  {
     version: "1.3.0",
     date: "2026-07-17",
     items: [

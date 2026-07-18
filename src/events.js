@@ -2,16 +2,16 @@
 
 import { state, CLASS_SLOT_KEYS, DISCLAIMER_DISMISSED_KEY, MAX_TOTAL_POINTS, saveLocal } from "./state.js";
 import { el } from "./dom.js";
-import { costNum, clearClassData, clearLastMutation } from "./logic.js";
-import { clearActiveBuild } from "./builds.js";
+import { costNum, clearClassData } from "./logic.js";
 import {
   renderAll, showToast, populateClassSelects, renderTree, renderBrowse, undoLast,
   openChangelogModal, closeChangelogModal, wireProgressionDropZone,
-  openBuildsModal, closeBuildsModal, handleBuildSave
+  openBuildsModal, closeBuildsModal, handleBuildSave,
+  openResetModal, closeResetModal, handleConfirmReset
 } from "./render.js";
 import {
   openExportModal, copyExportText, copyShareLink, saveExportAsTxt, closeExportModal,
-  openImportModal, closeImportModal, doImport
+  openImportModal, closeImportModal, doImport, regenerateExportContent
 } from "./exportImport.js";
 
 export function wireEvents() {
@@ -75,6 +75,7 @@ export function wireEvents() {
   });
 
   el.exportBtn.addEventListener("click", openExportModal);
+  el.includeOwnedCheckbox.addEventListener("change", regenerateExportContent);
   el.copyExportBtn.addEventListener("click", copyExportText);
   el.copyShareLinkBtn.addEventListener("click", copyShareLink);
   el.saveExportBtn.addEventListener("click", saveExportAsTxt);
@@ -86,6 +87,7 @@ export function wireEvents() {
     if (!el.importModal.classList.contains("hidden")) closeImportModal();
     if (!el.changelogModal.classList.contains("hidden")) closeChangelogModal();
     if (!el.buildsModal.classList.contains("hidden")) closeBuildsModal();
+    if (!el.resetModal.classList.contains("hidden")) closeResetModal();
   });
 
   el.versionTag.addEventListener("click", openChangelogModal);
@@ -117,17 +119,10 @@ export function wireEvents() {
   el.closeImportBtn.addEventListener("click", closeImportModal);
   el.importModal.addEventListener("click", (e) => { if (e.target === el.importModal) closeImportModal(); });
 
-  el.resetBtn.addEventListener("click", () => {
-    if (!confirm("Reset all spent AA points across every category and class? This cannot be undone.")) return;
-    state.ranks = { general: {}, archetype: {}, special: {}, classes: {} };
-    state.purchaseOrder = [];
-    state.selectedNode = null;
-    clearLastMutation();
-    clearActiveBuild();
-    saveLocal();
-    renderAll();
-    showToast("Build reset");
-  });
+  el.resetBtn.addEventListener("click", openResetModal);
+  el.cancelResetBtn.addEventListener("click", closeResetModal);
+  el.confirmResetBtn.addEventListener("click", handleConfirmReset);
+  el.resetModal.addEventListener("click", (e) => { if (e.target === el.resetModal) closeResetModal(); });
 
   el.dismissBannerBtn.addEventListener("click", () => {
     el.disclaimerBanner.classList.add("hidden");

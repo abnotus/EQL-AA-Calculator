@@ -261,6 +261,15 @@ return idToEntry()[id] || null;
 }
 const USER_CHANGELOG = [
 {
+version: "1.4.0",
+date: "2026-07-18",
+items: [
+"New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable.",
+"Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate.",
+"Owned progress is left out of exported text and share links by default (it's personal, not part of the plan you're sharing) — check \"Include owned progress\" in the Export modal to share it anyway. Named Build slots always keep it, since those are your own saved snapshots."
+]
+},
+{
 version: "1.3.0",
 date: "2026-07-17",
 items: [
@@ -321,6 +330,7 @@ charLevel: 50,
 totalPoints: 1000,
 ranks: { general: {}, archetype: {}, special: {}, classes: {} },
 purchaseOrder: [],
+owned: { general: {}, archetype: {}, special: {}, classes: {} },
 activeView: "calculator", // 'calculator' | 'browse' | 'summary' | 'progression'
 activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
 selectedNode: null,
@@ -403,7 +413,8 @@ selectedClasses: state.selectedClasses,
 charLevel: state.charLevel,
 totalPoints: state.totalPoints,
 ranks: serializeRanks(state.ranks),
-purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
+purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
+owned: serializeRanks(state.owned)
 };
 localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 } catch (e) { /* storage unavailable, ignore */ }
@@ -446,6 +457,15 @@ if (Array.isArray(loaded.purchaseOrder)) {
 state.purchaseOrder = isLegacy
 ? deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.idx === "number" ? e.idx : null), (scope, cls, legacyIdx) => currentIdxForLegacyIdx(scope, cls, legacyIdx))
 : deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.key === "string" ? e.key : null), (scope, cls, key) => idxForKey(scope, cls, key));
+}
+if (loaded.owned && typeof loaded.owned === "object") {
+const ownedResult = isLegacy
+? deserializeRanks(loaded.owned, (scope, cls, idxStr) => currentIdxForLegacyIdx(scope, cls, parseInt(idxStr, 10)))
+: deserializeRanks(loaded.owned, (scope, cls, key) => idxForKey(scope, cls, key));
+state.owned = ownedResult.ranks;
+droppedRanks += ownedResult.dropped;
+} else {
+state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
 }
 return { droppedRanks };
 }
@@ -548,6 +568,23 @@ return state.ranks.classes[className];
 }
 return state.ranks[catKey];
 }
+function getOwnedStore(scope, className) {
+if (scope === "class") {
+if (!state.owned.classes[className]) state.owned.classes[className] = {};
+return state.owned.classes[className];
+}
+return state.owned[scope];
+}
+function ownedRank(scope, className, idx) {
+return getOwnedStore(scope, className)[idx] || 0;
+}
+function setOwnedRank(scope, className, idx, rank) {
+const store = getOwnedStore(scope, className);
+const from = store[idx] || 0;
+if (rank <= 0) delete store[idx]; else store[idx] = rank;
+lastMutation = { type: "own", scope, className, idx, from, to: rank };
+saveLocal();
+}
 function scopeForCategory(category) {
 const slot = classSlotIndex(category);
 return slot >= 0 ? "class" : category;
@@ -587,6 +624,56 @@ function clearClassData(className) {
 delete state.ranks.classes[className];
 state.purchaseOrder = state.purchaseOrder.filter((e) => !(e.scope === "class" && e.className === className));
 lastMutation = null;
+}
+function performReset(clearOwnedToo) {
+function trimmedRanks(ranksStore, ownedStore, list) {
+const kept = {};
+Object.keys(ranksStore).forEach((idxStr) => {
+const idx = parseInt(idxStr, 10);
+const aa = list[idx];
+if (!aa) return;
+const owned = clearOwnedToo ? 0 : (ownedStore[idx] || 0);
+if (owned > 0) kept[idx] = Math.min(owned, aa.ranks);
+});
+return kept;
+}
+const newRanks = { general: {}, archetype: {}, special: {}, classes: {} };
+["general", "archetype", "special"].forEach((scope) => {
+newRanks[scope] = trimmedRanks(state.ranks[scope] || {}, state.owned[scope] || {}, AA_DATA[scope] || []);
+});
+Object.keys(state.ranks.classes || {}).forEach((className) => {
+const kept = trimmedRanks(
+state.ranks.classes[className] || {},
+(state.owned.classes || {})[className] || {},
+AA_DATA.classes[className] || []
+);
+if (Object.keys(kept).length) newRanks.classes[className] = kept;
+});
+const remaining = {};
+["general", "archetype", "special"].forEach((scope) => {
+Object.keys(newRanks[scope]).forEach((idxStr) => {
+remaining[entryKey(scope, null, idxStr)] = newRanks[scope][idxStr];
+});
+});
+Object.keys(newRanks.classes).forEach((className) => {
+Object.keys(newRanks.classes[className]).forEach((idxStr) => {
+remaining[entryKey("class", className, idxStr)] = newRanks.classes[className][idxStr];
+});
+});
+const newPurchaseOrder = [];
+state.purchaseOrder.forEach((e) => {
+const k = entryKey(e.scope, e.className, e.idx);
+if (remaining[k] > 0) {
+newPurchaseOrder.push(e);
+remaining[k]--;
+}
+});
+state.ranks = newRanks;
+state.purchaseOrder = newPurchaseOrder;
+if (clearOwnedToo) state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+state.selectedNode = null;
+lastMutation = null;
+saveLocal();
 }
 function spentPoints() {
 let total = 0;
@@ -863,6 +950,10 @@ return { changed: false, message: "Can't undo — the list has changed too much.
 moveEntry(m.to, m.from);
 return { changed: true, message: null };
 }
+if (m.type === "own") {
+setOwnedRank(m.scope, m.className, m.idx, m.from);
+return { changed: true, message: null };
+}
 const category = resolveEntryCategory(m.entry);
 if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
 const aa = getList(category)[m.entry.idx];
@@ -944,7 +1035,11 @@ const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
 cumulative += stepCost;
 const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
 const name = aa ? aa.name : "(unknown AA)";
-return { index: i, aa, idx: entry.idx, category, active, stepRank, stepCost, cumulative, prereqWarn, label, name, isLast };
+const owned = stepRank <= ownedRank(entry.scope, entry.className, entry.idx);
+return {
+index: i, aa, idx: entry.idx, scope: entry.scope, className: entry.className,
+category, active, stepRank, stepCost, cumulative, prereqWarn, label, name, isLast, owned
+};
 });
 }
 const BUILDS_INDEX_KEY = "eql_aa_builds_index_v1";
@@ -994,7 +1089,8 @@ selectedClasses: state.selectedClasses,
 charLevel: state.charLevel,
 totalPoints: state.totalPoints,
 ranks: serializeRanks(state.ranks),
-purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
+purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
+owned: serializeRanks(state.owned)
 };
 }
 function activeBuildMatchesCurrent() {
@@ -1117,6 +1213,7 @@ el.closeImportBtn = document.getElementById("closeImportBtn");
 el.resetBtn = document.getElementById("resetBtn");
 el.exportModal = document.getElementById("exportModal");
 el.exportText = document.getElementById("exportText");
+el.includeOwnedCheckbox = document.getElementById("includeOwnedCheckbox");
 el.shareLinkInput = document.getElementById("shareLinkInput");
 el.copyShareLinkBtn = document.getElementById("copyShareLinkBtn");
 el.copyExportBtn = document.getElementById("copyExportBtn");
@@ -1151,6 +1248,10 @@ el.buildSaveName = document.getElementById("buildSaveName");
 el.buildSaveBtn = document.getElementById("buildSaveBtn");
 el.buildsList = document.getElementById("buildsList");
 el.closeBuildsBtn = document.getElementById("closeBuildsBtn");
+el.resetModal = document.getElementById("resetModal");
+el.resetClearOwnedCheckbox = document.getElementById("resetClearOwnedCheckbox");
+el.confirmResetBtn = document.getElementById("confirmResetBtn");
+el.cancelResetBtn = document.getElementById("cancelResetBtn");
 }
 function renderAll() {
 renderTopbar();
@@ -1484,7 +1585,7 @@ const row = `<div class="progression-row${s.active ? "" : " inactive"}${s.prereq
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.index + 1}</span>
       <span class="step-info">
-        <span class="step-name">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
+        <span class="step-name${s.owned ? " owned" : ""}">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
         <span class="step-cat">${escapeHtml(s.label)}${s.active ? "" : " &middot; class not currently selected"}</span>
       </span>
       ${s.prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
@@ -1493,6 +1594,7 @@ const row = `<div class="progression-row${s.active ? "" : " inactive"}${s.prereq
         <span class="cost-total">${s.cumulative} total</span>
       </span>
       <span class="step-controls" draggable="false">
+        <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
@@ -1539,6 +1641,17 @@ btn.addEventListener("click", () => {
 const category = btn.getAttribute("data-category");
 const idx = parseInt(btn.getAttribute("data-idx"), 10);
 applyAttempt(attemptDecrement(category, idx));
+});
+});
+Array.from(el.progressionContent.querySelectorAll(".step-own")).forEach((btn) => {
+btn.addEventListener("click", () => {
+const scope = btn.getAttribute("data-scope");
+const className = btn.getAttribute("data-classname") || null;
+const idx = parseInt(btn.getAttribute("data-idx"), 10);
+const rank = parseInt(btn.getAttribute("data-rank"), 10);
+const nowOwned = btn.classList.contains("active");
+setOwnedRank(scope, className, idx, nowOwned ? rank - 1 : rank);
+renderProgression();
 });
 });
 Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((rowEl) => {
@@ -1757,6 +1870,21 @@ el.buildSaveName.focus();
 function closeBuildsModal() {
 el.buildsModal.classList.add("hidden");
 }
+function openResetModal() {
+el.resetClearOwnedCheckbox.checked = false;
+el.resetModal.classList.remove("hidden");
+}
+function closeResetModal() {
+el.resetModal.classList.add("hidden");
+}
+function handleConfirmReset() {
+const clearOwnedToo = el.resetClearOwnedCheckbox.checked;
+performReset(clearOwnedToo);
+clearActiveBuild();
+closeResetModal();
+renderAll();
+showToast(clearOwnedToo ? "Build reset" : "Build reset — owned progress kept");
+}
 function handleBuildSave() {
 const name = el.buildSaveName.value.trim();
 if (!name) { showToast("Enter a name for this build."); return; }
@@ -1769,36 +1897,44 @@ renderTopbar();
 showToast(`Saved "${name}"`);
 }
 const BUILD_CODE_VERSION = 2;
-function buildCodeObject() {
-const serializedRanks = serializeRanks(state.ranks);
-const compactRanks = [];
-const pushRank = (scope, className, key, rank) => {
+function pushCompactRank(arr, scope, className, key, rank) {
 const id = idForKey(scope, className, key);
-if (id != null) compactRanks.push([id, rank]);
-};
+if (id != null) arr.push([id, rank]);
+}
+function compactRanksFor(ranksLike) {
+const serialized = serializeRanks(ranksLike);
+const out = [];
 ["general", "archetype", "special"].forEach((scope) => {
-const store = serializedRanks[scope] || {};
-Object.keys(store).forEach((key) => pushRank(scope, null, key, store[key]));
+const store = serialized[scope] || {};
+Object.keys(store).forEach((key) => pushCompactRank(out, scope, null, key, store[key]));
 });
-Object.keys(serializedRanks.classes || {}).forEach((className) => {
-const store = serializedRanks.classes[className] || {};
-Object.keys(store).forEach((key) => pushRank("class", className, key, store[key]));
+Object.keys(serialized.classes || {}).forEach((className) => {
+const store = serialized.classes[className] || {};
+Object.keys(store).forEach((key) => pushCompactRank(out, "class", className, key, store[key]));
 });
+return out;
+}
+function buildCodeObject(includeOwned) {
 const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
 .map((e) => idForKey(e.scope, e.className, e.key))
 .filter((id) => id != null);
-return {
+const payload = {
 v: BUILD_CODE_VERSION,
 c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
 l: state.charLevel,
 t: state.totalPoints,
-r: compactRanks,
+r: compactRanksFor(state.ranks),
 p: compactPurchaseOrder
 };
+if (includeOwned) {
+const compactOwned = compactRanksFor(state.owned);
+if (compactOwned.length) payload.o = compactOwned;
 }
-function expandCompactPayload(compact) {
+return payload;
+}
+function expandCompactRanks(list) {
 const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
-(compact.r || []).forEach(([id, rank]) => {
+(list || []).forEach(([id, rank]) => {
 const entry = entryForId(id);
 if (!entry) return;
 if (entry.scope === "class") {
@@ -1808,6 +1944,9 @@ ranks.classes[entry.className][entry.key] = rank;
 ranks[entry.scope][entry.key] = rank;
 }
 });
+return ranks;
+}
+function expandCompactPayload(compact) {
 const purchaseOrder = (compact.p || []).map((id) => {
 const entry = entryForId(id);
 return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
@@ -1817,8 +1956,9 @@ v: SAVE_FORMAT_VERSION,
 selectedClasses: (compact.c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
 charLevel: compact.l,
 totalPoints: compact.t,
-ranks,
-purchaseOrder
+ranks: expandCompactRanks(compact.r),
+purchaseOrder,
+owned: expandCompactRanks(compact.o)
 };
 }
 async function gzipCompress(bytes) {
@@ -1846,8 +1986,8 @@ const bytes = new Uint8Array(binary.length);
 for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 return bytes;
 }
-async function encodeBuildCode() {
-const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject()));
+async function encodeBuildCode(includeOwned) {
+const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject(includeOwned)));
 return bytesToBase64(await gzipCompress(bytes));
 }
 async function decodeBuildCode(code) {
@@ -1869,11 +2009,11 @@ let b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
 while (b64.length % 4) b64 += "=";
 return b64;
 }
-async function buildShareUrl() {
+async function buildShareUrl(includeOwned) {
 const url = new URL(window.location.href);
 url.search = "";
 url.hash = "";
-url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
+url.searchParams.set("build", toBase64Url(await encodeBuildCode(includeOwned)));
 return url.toString();
 }
 async function applySharedBuildFromUrl(localLoadResult) {
@@ -1913,7 +2053,7 @@ cleanUrl.searchParams.delete("build");
 window.history.replaceState({}, "", cleanUrl.toString());
 return { applied, notice };
 }
-async function buildExportText() {
+async function buildExportText(includeOwned) {
 const spent = spentPoints();
 const lines = [];
 lines.push("EverQuest Legends - AA Build");
@@ -1934,18 +2074,24 @@ lines.push("== Progression (click order) ==");
 computeProgressionSteps().forEach((s) => {
 const maxRank = s.aa ? `/${s.aa.ranks}` : "";
 const suffix = s.active ? "" : " (class not currently selected)";
-lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}`);
+const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";
+lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}${ownedSuffix}`);
 });
 lines.push("");
 }
-lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
+lines.push(`BUILD_CODE:${await encodeBuildCode(includeOwned)}`);
 return lines.join("\n");
 }
 async function openExportModal() {
 el.exportText.value = "Generating…";
 el.shareLinkInput.value = "";
+el.includeOwnedCheckbox.checked = false;
 el.exportModal.classList.remove("hidden");
-const [text, url] = await Promise.all([buildExportText(), buildShareUrl()]);
+await regenerateExportContent();
+}
+async function regenerateExportContent() {
+const includeOwned = el.includeOwnedCheckbox.checked;
+const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
 el.exportText.value = text;
 el.shareLinkInput.value = url;
 el.exportText.focus();
@@ -2092,6 +2238,7 @@ state.activeView = state.activeView === "browse" ? "calculator" : "browse";
 renderAll();
 });
 el.exportBtn.addEventListener("click", openExportModal);
+el.includeOwnedCheckbox.addEventListener("change", regenerateExportContent);
 el.copyExportBtn.addEventListener("click", copyExportText);
 el.copyShareLinkBtn.addEventListener("click", copyShareLink);
 el.saveExportBtn.addEventListener("click", saveExportAsTxt);
@@ -2103,6 +2250,7 @@ if (!el.exportModal.classList.contains("hidden")) closeExportModal();
 if (!el.importModal.classList.contains("hidden")) closeImportModal();
 if (!el.changelogModal.classList.contains("hidden")) closeChangelogModal();
 if (!el.buildsModal.classList.contains("hidden")) closeBuildsModal();
+if (!el.resetModal.classList.contains("hidden")) closeResetModal();
 });
 el.versionTag.addEventListener("click", openChangelogModal);
 el.closeChangelogBtn.addEventListener("click", closeChangelogModal);
@@ -2130,17 +2278,10 @@ el.importFile.value = "";
 el.doImportBtn.addEventListener("click", doImport);
 el.closeImportBtn.addEventListener("click", closeImportModal);
 el.importModal.addEventListener("click", (e) => { if (e.target === el.importModal) closeImportModal(); });
-el.resetBtn.addEventListener("click", () => {
-if (!confirm("Reset all spent AA points across every category and class? This cannot be undone.")) return;
-state.ranks = { general: {}, archetype: {}, special: {}, classes: {} };
-state.purchaseOrder = [];
-state.selectedNode = null;
-clearLastMutation();
-clearActiveBuild();
-saveLocal();
-renderAll();
-showToast("Build reset");
-});
+el.resetBtn.addEventListener("click", openResetModal);
+el.cancelResetBtn.addEventListener("click", closeResetModal);
+el.confirmResetBtn.addEventListener("click", handleConfirmReset);
+el.resetModal.addEventListener("click", (e) => { if (e.target === el.resetModal) closeResetModal(); });
 el.dismissBannerBtn.addEventListener("click", () => {
 el.disclaimerBanner.classList.add("hidden");
 try { localStorage.setItem(DISCLAIMER_DISMISSED_KEY, "1"); } catch (e) { /* storage unavailable, ignore */ }

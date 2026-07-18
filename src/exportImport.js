@@ -17,50 +17,61 @@ import { idForKey, entryForId } from "./keys.js";
 // with an old share code's v.
 const BUILD_CODE_VERSION = 2;
 
-function buildCodeObject() {
-  const serializedRanks = serializeRanks(state.ranks);
-  const compactRanks = [];
-  const pushRank = (scope, className, key, rank) => {
-    const id = idForKey(scope, className, key);
-    // An AA missing from aaIds.js shouldn't happen for anything currently
-    // pickable (build_minify.py's invariant check + assign_aa_ids.py being
-    // run together keep them in sync) - degrades to "dropped" rather than
-    // guessed at, same as everywhere else this app handles an unresolved key.
-    if (id != null) compactRanks.push([id, rank]);
-  };
-  ["general", "archetype", "special"].forEach((scope) => {
-    const store = serializedRanks[scope] || {};
-    Object.keys(store).forEach((key) => pushRank(scope, null, key, store[key]));
-  });
-  Object.keys(serializedRanks.classes || {}).forEach((className) => {
-    const store = serializedRanks.classes[className] || {};
-    Object.keys(store).forEach((key) => pushRank("class", className, key, store[key]));
-  });
+// An AA missing from aaIds.js shouldn't happen for anything currently
+// pickable (build_minify.py's invariant check + assign_aa_ids.py being run
+// together keep them in sync) - degrades to "dropped" rather than guessed
+// at, same as everywhere else this app handles an unresolved key.
+function pushCompactRank(arr, scope, className, key, rank) {
+  const id = idForKey(scope, className, key);
+  if (id != null) arr.push([id, rank]);
+}
 
+function compactRanksFor(ranksLike) {
+  const serialized = serializeRanks(ranksLike);
+  const out = [];
+  ["general", "archetype", "special"].forEach((scope) => {
+    const store = serialized[scope] || {};
+    Object.keys(store).forEach((key) => pushCompactRank(out, scope, null, key, store[key]));
+  });
+  Object.keys(serialized.classes || {}).forEach((className) => {
+    const store = serialized.classes[className] || {};
+    Object.keys(store).forEach((key) => pushCompactRank(out, "class", className, key, store[key]));
+  });
+  return out;
+}
+
+// includeOwned is false by default everywhere this is called from - owned
+// status is personal real-world progress, not part of the plan being
+// shared, so a share link/export leaves it out unless the user explicitly
+// opts in via the Export modal's checkbox.
+function buildCodeObject(includeOwned) {
   const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
     .map((e) => idForKey(e.scope, e.className, e.key))
     .filter((id) => id != null);
 
-  return {
+  const payload = {
     v: BUILD_CODE_VERSION,
     c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
     l: state.charLevel,
     t: state.totalPoints,
-    r: compactRanks,
+    r: compactRanksFor(state.ranks),
     p: compactPurchaseOrder
   };
+  if (includeOwned) {
+    const compactOwned = compactRanksFor(state.owned);
+    if (compactOwned.length) payload.o = compactOwned;
+  }
+  return payload;
 }
 
-// Reconstructs the verbose, name-keyed shape applyLoaded already understands
-// (the same shape a v4 localStorage/legacy payload is in) from a decoded
-// BUILD_CODE_VERSION payload, so applyLoaded itself never needs to know the
-// compact format exists — only this file and keys.js do. An id that no
-// longer resolves (entryForId returns null - the AA was removed since this
-// link's ranks were assigned their ids) is dropped, same degrade-gracefully
-// philosophy as an unresolved name key elsewhere.
-function expandCompactPayload(compact) {
+// An id that no longer resolves (entryForId returns null - the AA was
+// removed since this link's ranks were assigned their ids) is dropped, same
+// degrade-gracefully philosophy as an unresolved name key elsewhere. Shared
+// by expandCompactPayload for both r (ranks) and o (owned) - same shape,
+// same resolution.
+function expandCompactRanks(list) {
   const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
-  (compact.r || []).forEach(([id, rank]) => {
+  (list || []).forEach(([id, rank]) => {
     const entry = entryForId(id);
     if (!entry) return;
     if (entry.scope === "class") {
@@ -70,6 +81,14 @@ function expandCompactPayload(compact) {
       ranks[entry.scope][entry.key] = rank;
     }
   });
+  return ranks;
+}
+
+// Reconstructs the verbose, name-keyed shape applyLoaded already understands
+// (the same shape a v4 localStorage/legacy payload is in) from a decoded
+// BUILD_CODE_VERSION payload, so applyLoaded itself never needs to know the
+// compact format exists — only this file and keys.js do.
+function expandCompactPayload(compact) {
   const purchaseOrder = (compact.p || []).map((id) => {
     const entry = entryForId(id);
     return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
@@ -79,8 +98,13 @@ function expandCompactPayload(compact) {
     selectedClasses: (compact.c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
     charLevel: compact.l,
     totalPoints: compact.t,
-    ranks,
-    purchaseOrder
+    ranks: expandCompactRanks(compact.r),
+    purchaseOrder,
+    // compact.o is absent whenever the sender didn't opt in (the default) -
+    // expandCompactRanks(undefined) returns the same empty shape applyLoaded
+    // already treats as "clear owned", so no separate absent-vs-empty branch
+    // is needed here to get "sharing strips progress by default" right.
+    owned: expandCompactRanks(compact.o)
   };
 }
 
@@ -121,8 +145,8 @@ function base64ToBytes(b64) {
   return bytes;
 }
 
-async function encodeBuildCode() {
-  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject()));
+async function encodeBuildCode(includeOwned) {
+  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject(includeOwned)));
   return bytesToBase64(await gzipCompress(bytes));
 }
 
@@ -160,11 +184,11 @@ function fromBase64Url(b64url) {
   return b64;
 }
 
-export async function buildShareUrl() {
+export async function buildShareUrl(includeOwned) {
   const url = new URL(window.location.href);
   url.search = "";
   url.hash = "";
-  url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
+  url.searchParams.set("build", toBase64Url(await encodeBuildCode(includeOwned)));
   return url.toString();
 }
 
@@ -230,7 +254,7 @@ export async function applySharedBuildFromUrl(localLoadResult) {
   return { applied, notice };
 }
 
-export async function buildExportText() {
+export async function buildExportText(includeOwned) {
   const spent = spentPoints();
   const lines = [];
   lines.push("EverQuest Legends - AA Build");
@@ -253,20 +277,33 @@ export async function buildExportText() {
     computeProgressionSteps().forEach((s) => {
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
       const suffix = s.active ? "" : " (class not currently selected)";
-      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}`);
+      // The readable listing reflects owned status too when opted in, not
+      // just the embedded BUILD_CODE - otherwise a human skimming the text
+      // (as opposed to importing it) would see no sign of it at all.
+      const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";
+      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}${ownedSuffix}`);
     });
     lines.push("");
   }
 
-  lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
+  lines.push(`BUILD_CODE:${await encodeBuildCode(includeOwned)}`);
   return lines.join("\n");
 }
 
 export async function openExportModal() {
   el.exportText.value = "Generating…";
   el.shareLinkInput.value = "";
+  el.includeOwnedCheckbox.checked = false;
   el.exportModal.classList.remove("hidden");
-  const [text, url] = await Promise.all([buildExportText(), buildShareUrl()]);
+  await regenerateExportContent();
+}
+
+// Re-populates both the export text and share link for the current
+// includeOwned checkbox state - called on open, and again on the checkbox's
+// own change event so toggling it actually changes what gets copied/shared.
+export async function regenerateExportContent() {
+  const includeOwned = el.includeOwnedCheckbox.checked;
+  const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
   el.exportText.value = text;
   el.shareLinkInput.value = url;
   el.exportText.focus();

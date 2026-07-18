@@ -363,6 +363,15 @@ function entryForId(id) {
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
+    version: "1.4.0",
+    date: "2026-07-18",
+    items: [
+      "New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable.",
+      "Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate.",
+      "Owned progress is left out of exported text and share links by default (it's personal, not part of the plan you're sharing) — check \"Include owned progress\" in the Export modal to share it anyway. Named Build slots always keep it, since those are your own saved snapshots."
+    ]
+  },
+  {
     version: "1.3.0",
     date: "2026-07-17",
     items: [
@@ -440,6 +449,14 @@ let state = {
   totalPoints: 1000,
   ranks: { general: {}, archetype: {}, special: {}, classes: {} },
   purchaseOrder: [], // [{ scope: 'general'|'archetype'|'special'|'class', className?: string, idx: number }, ...] in click order
+  // Real-world "I've actually trained this" watermark, same shape as ranks
+  // (idx -> highest owned rank) and deliberately identity-keyed by
+  // scope/className rather than anything slot-relative, same reasoning as
+  // purchaseOrder entries - it shouldn't matter which of the 3 class slots
+  // a class currently occupies. Independent of ranks/purchaseOrder (the
+  // *plan*): owned tracks what's actually true in-game, which is why Reset
+  // Build keeps it by default instead of wiping it along with the plan.
+  owned: { general: {}, archetype: {}, special: {}, classes: {} },
   activeView: "calculator", // 'calculator' | 'browse' | 'summary' | 'progression'
   activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
   selectedNode: null, // { category, idx }
@@ -550,7 +567,8 @@ function saveLocal() {
       charLevel: state.charLevel,
       totalPoints: state.totalPoints,
       ranks: serializeRanks(state.ranks),
-      purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
+      purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
+      owned: serializeRanks(state.owned)
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch (e) { /* storage unavailable, ignore */ }
@@ -605,6 +623,22 @@ function applyLoaded(loaded) {
     state.purchaseOrder = isLegacy
       ? deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.idx === "number" ? e.idx : null), (scope, cls, legacyIdx) => currentIdxForLegacyIdx(scope, cls, legacyIdx))
       : deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.key === "string" ? e.key : null), (scope, cls, key) => idxForKey(scope, cls, key));
+  }
+  // Unlike ranks/purchaseOrder above (which leave state as-is if the loaded
+  // payload just doesn't have that field, e.g. a malformed partial payload),
+  // owned always gets reset here, present or not - this is a wholesale
+  // replacement of "the build", and a share link's build not including
+  // owned data (the default - see buildCodeObject) must actually clear
+  // whatever owned data the *previous* build in memory had, not silently
+  // carry it over onto an unrelated build it was never true of.
+  if (loaded.owned && typeof loaded.owned === "object") {
+    const ownedResult = isLegacy
+      ? deserializeRanks(loaded.owned, (scope, cls, idxStr) => currentIdxForLegacyIdx(scope, cls, parseInt(idxStr, 10)))
+      : deserializeRanks(loaded.owned, (scope, cls, key) => idxForKey(scope, cls, key));
+    state.owned = ownedResult.ranks;
+    droppedRanks += ownedResult.dropped;
+  } else {
+    state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
   }
   return { droppedRanks };
 }
@@ -744,6 +778,39 @@ function getRanksStore(catKey) {
   return state.ranks[catKey];
 }
 
+// Unlike getRanksStore, keyed by scope/className directly rather than a
+// slot-relative catKey - owned status is about the AA's real identity, not
+// which of the 3 slots a class currently occupies (same reasoning
+// purchaseOrder entries already use, and the same bug class the undo-after-
+// class-swap fix closed for "add" records: a slot key means "whatever's in
+// this slot right now", which stops meaning the class it meant when this was
+// set the moment slots get rearranged).
+function getOwnedStore(scope, className) {
+  if (scope === "class") {
+    if (!state.owned.classes[className]) state.owned.classes[className] = {};
+    return state.owned.classes[className];
+  }
+  return state.owned[scope];
+}
+
+function ownedRank(scope, className, idx) {
+  return getOwnedStore(scope, className)[idx] || 0;
+}
+
+// Pure state mutation, same spirit as changeRank/moveEntry: sets the owned
+// watermark for one AA and records enough to undo it. Like changeRank, the
+// caller is responsible for the rank actually making sense (Progression's
+// toggle only ever asks for "this step's rank" or "one below it" - see
+// render.js - so this doesn't independently re-derive or clamp against the
+// AA's own rank count the way changeRank does for a purchase).
+function setOwnedRank(scope, className, idx, rank) {
+  const store = getOwnedStore(scope, className);
+  const from = store[idx] || 0;
+  if (rank <= 0) delete store[idx]; else store[idx] = rank;
+  lastMutation = { type: "own", scope, className, idx, from, to: rank };
+  saveLocal();
+}
+
 // Purchase-order entries key AA picks by class NAME (not slot position), since class
 // names are already unique and stable — swapping which slot a class occupies shouldn't
 // orphan its place in the progression list.
@@ -797,6 +864,69 @@ function clearClassData(className) {
   delete state.ranks.classes[className];
   state.purchaseOrder = state.purchaseOrder.filter((e) => !(e.scope === "class" && e.className === className));
   lastMutation = null;
+}
+
+// Reset Build, but selective: wipes every planned pick down to its owned
+// watermark instead of to zero, unless clearOwnedToo also wipes owned itself.
+// Auto-granted AAs need no special handling either way - they never have a
+// ranks/purchaseOrder entry in the first place (attemptIncrement refuses to
+// touch one), so there's nothing here to trim for them.
+function performReset(clearOwnedToo) {
+  function trimmedRanks(ranksStore, ownedStore, list) {
+    const kept = {};
+    Object.keys(ranksStore).forEach((idxStr) => {
+      const idx = parseInt(idxStr, 10);
+      const aa = list[idx];
+      if (!aa) return;
+      const owned = clearOwnedToo ? 0 : (ownedStore[idx] || 0);
+      if (owned > 0) kept[idx] = Math.min(owned, aa.ranks);
+    });
+    return kept;
+  }
+
+  const newRanks = { general: {}, archetype: {}, special: {}, classes: {} };
+  ["general", "archetype", "special"].forEach((scope) => {
+    newRanks[scope] = trimmedRanks(state.ranks[scope] || {}, state.owned[scope] || {}, AA_DATA[scope] || []);
+  });
+  Object.keys(state.ranks.classes || {}).forEach((className) => {
+    const kept = trimmedRanks(
+      state.ranks.classes[className] || {},
+      (state.owned.classes || {})[className] || {},
+      AA_DATA.classes[className] || []
+    );
+    if (Object.keys(kept).length) newRanks.classes[className] = kept;
+  });
+
+  // Rebuild purchaseOrder to match: keep only the first N entries per AA
+  // (N = the rank just kept above), in their original relative order - the
+  // owned portion's progression history survives intact this way, rather
+  // than being wiped and silently re-synthesized in some arbitrary order.
+  const remaining = {};
+  ["general", "archetype", "special"].forEach((scope) => {
+    Object.keys(newRanks[scope]).forEach((idxStr) => {
+      remaining[entryKey(scope, null, idxStr)] = newRanks[scope][idxStr];
+    });
+  });
+  Object.keys(newRanks.classes).forEach((className) => {
+    Object.keys(newRanks.classes[className]).forEach((idxStr) => {
+      remaining[entryKey("class", className, idxStr)] = newRanks.classes[className][idxStr];
+    });
+  });
+  const newPurchaseOrder = [];
+  state.purchaseOrder.forEach((e) => {
+    const k = entryKey(e.scope, e.className, e.idx);
+    if (remaining[k] > 0) {
+      newPurchaseOrder.push(e);
+      remaining[k]--;
+    }
+  });
+
+  state.ranks = newRanks;
+  state.purchaseOrder = newPurchaseOrder;
+  if (clearOwnedToo) state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+  state.selectedNode = null;
+  lastMutation = null;
+  saveLocal();
 }
 
 function spentPoints() {
@@ -1113,14 +1243,15 @@ function isDependedOn(category, idx, currentRank) {
   return false;
 }
 
-// Single-level undo: remembers only the most recent changeRank or moveEntry
-// call, in enough detail to reverse it exactly (including restoring a removed
-// entry to its original position). Overwritten by every subsequent changeRank/
-// moveEntry call - including the reversal itself, so undoing twice in a row
-// toggles back and forth between the two most recent arrangements rather than
-// walking further back; there's no deeper history than that. Explicitly
-// cleared by anything that mutates ranks/purchaseOrder without going through
-// either (class swap wipe, Reset Build, Import).
+// Single-level undo: remembers only the most recent changeRank, moveEntry, or
+// setOwnedRank call, in enough detail to reverse it exactly (including
+// restoring a removed entry to its original position). Overwritten by every
+// subsequent call to any of the three - including the reversal itself, so
+// undoing twice in a row toggles back and forth between the two most recent
+// states rather than walking further back; there's no deeper history than
+// that. Explicitly cleared by anything that mutates ranks/purchaseOrder/owned
+// without going through one of the three (class swap wipe, Reset Build,
+// Import).
 let lastMutation = null;
 
 function clearLastMutation() {
@@ -1194,9 +1325,10 @@ function changeRank(category, idx, delta) {
   return true;
 }
 
-// Reverses whatever changeRank or moveEntry last did. Consumes the record
-// either way, so pressing this twice in a row toggles between the last two
-// arrangements rather than walking back further - see the lastMutation comment.
+// Reverses whatever changeRank, moveEntry, or setOwnedRank last did. Consumes
+// the record either way, so pressing this twice in a row toggles between the
+// last two states rather than walking back further - see the lastMutation
+// comment.
 function undoLastMutation() {
   const m = lastMutation;
   if (!m) return { changed: false, message: "Nothing to undo." };
@@ -1220,6 +1352,14 @@ function undoLastMutation() {
       return { changed: false, message: "Can't undo — the list has changed too much." };
     }
     moveEntry(m.to, m.from);
+    return { changed: true, message: null };
+  }
+
+  if (m.type === "own") {
+    // Unlike ranks, owned isn't slot-relative (see getOwnedStore) - no class-
+    // selection check needed, this always resolves regardless of what's
+    // currently in the 3 slots.
+    setOwnedRank(m.scope, m.className, m.idx, m.from);
     return { changed: true, message: null };
   }
 
@@ -1337,8 +1477,15 @@ function computeProgressionSteps(order = state.purchaseOrder) {
 
     const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
     const name = aa ? aa.name : "(unknown AA)";
+    // Real-world progress, independent of active/prereqWarn - you can own a
+    // rank for a class that isn't in one of the 3 slots right now, same as
+    // the rank itself can be held that way.
+    const owned = stepRank <= ownedRank(entry.scope, entry.className, entry.idx);
 
-    return { index: i, aa, idx: entry.idx, category, active, stepRank, stepCost, cumulative, prereqWarn, label, name, isLast };
+    return {
+      index: i, aa, idx: entry.idx, scope: entry.scope, className: entry.className,
+      category, active, stepRank, stepCost, cumulative, prereqWarn, label, name, isLast, owned
+    };
   });
 }
 
@@ -1418,7 +1565,12 @@ function buildPayload() {
     charLevel: state.charLevel,
     totalPoints: state.totalPoints,
     ranks: serializeRanks(state.ranks),
-    purchaseOrder: serializePurchaseOrder(state.purchaseOrder)
+    purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
+    // Unlike a share link/export (owned left out unless explicitly opted
+    // in - see exportImport.js's buildCodeObject), a named slot always
+    // captures it: this is a full snapshot of your own build for your own
+    // later use, not something being handed to someone else.
+    owned: serializeRanks(state.owned)
   };
 }
 
@@ -1652,6 +1804,7 @@ function cacheDom() {
   el.resetBtn = document.getElementById("resetBtn");
   el.exportModal = document.getElementById("exportModal");
   el.exportText = document.getElementById("exportText");
+  el.includeOwnedCheckbox = document.getElementById("includeOwnedCheckbox");
   el.shareLinkInput = document.getElementById("shareLinkInput");
   el.copyShareLinkBtn = document.getElementById("copyShareLinkBtn");
   el.copyExportBtn = document.getElementById("copyExportBtn");
@@ -1686,6 +1839,10 @@ function cacheDom() {
   el.buildSaveBtn = document.getElementById("buildSaveBtn");
   el.buildsList = document.getElementById("buildsList");
   el.closeBuildsBtn = document.getElementById("closeBuildsBtn");
+  el.resetModal = document.getElementById("resetModal");
+  el.resetClearOwnedCheckbox = document.getElementById("resetClearOwnedCheckbox");
+  el.confirmResetBtn = document.getElementById("confirmResetBtn");
+  el.cancelResetBtn = document.getElementById("cancelResetBtn");
 }
 
 // All DOM rendering. Reads from `state` and the logic layer, writes to `el.*`.
@@ -2117,7 +2274,7 @@ function renderProgression() {
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.index + 1}</span>
       <span class="step-info">
-        <span class="step-name">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
+        <span class="step-name${s.owned ? " owned" : ""}">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
         <span class="step-cat">${escapeHtml(s.label)}${s.active ? "" : " &middot; class not currently selected"}</span>
       </span>
       ${s.prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
@@ -2126,6 +2283,7 @@ function renderProgression() {
         <span class="cost-total">${s.cumulative} total</span>
       </span>
       <span class="step-controls" draggable="false">
+        <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
@@ -2173,6 +2331,21 @@ function renderProgression() {
       const category = btn.getAttribute("data-category");
       const idx = parseInt(btn.getAttribute("data-idx"), 10);
       applyAttempt(attemptDecrement(category, idx));
+    });
+  });
+  // Toggles the owned watermark's boundary at this exact step: marking an
+  // unowned step owns it and everything below (you can't have actually
+  // trained rank 3 without ranks 1-2), unmarking an owned one drops the
+  // watermark to just below it, leaving anything still lower alone.
+  Array.from(el.progressionContent.querySelectorAll(".step-own")).forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const scope = btn.getAttribute("data-scope");
+      const className = btn.getAttribute("data-classname") || null;
+      const idx = parseInt(btn.getAttribute("data-idx"), 10);
+      const rank = parseInt(btn.getAttribute("data-rank"), 10);
+      const nowOwned = btn.classList.contains("active");
+      setOwnedRank(scope, className, idx, nowOwned ? rank - 1 : rank);
+      renderProgression();
     });
   });
 
@@ -2463,6 +2636,24 @@ function closeBuildsModal() {
   el.buildsModal.classList.add("hidden");
 }
 
+function openResetModal() {
+  el.resetClearOwnedCheckbox.checked = false;
+  el.resetModal.classList.remove("hidden");
+}
+
+function closeResetModal() {
+  el.resetModal.classList.add("hidden");
+}
+
+function handleConfirmReset() {
+  const clearOwnedToo = el.resetClearOwnedCheckbox.checked;
+  performReset(clearOwnedToo);
+  clearActiveBuild();
+  closeResetModal();
+  renderAll();
+  showToast(clearOwnedToo ? "Build reset" : "Build reset — owned progress kept");
+}
+
 // Snapshots the current build under whatever name is in the input — a new
 // slot, or an overwrite (after confirming) if the name matches an existing
 // one. Exported for events.js to wire to both the Save button and an Enter
@@ -2491,50 +2682,61 @@ function handleBuildSave() {
 // with an old share code's v.
 const BUILD_CODE_VERSION = 2;
 
-function buildCodeObject() {
-  const serializedRanks = serializeRanks(state.ranks);
-  const compactRanks = [];
-  const pushRank = (scope, className, key, rank) => {
-    const id = idForKey(scope, className, key);
-    // An AA missing from aaIds.js shouldn't happen for anything currently
-    // pickable (build_minify.py's invariant check + assign_aa_ids.py being
-    // run together keep them in sync) - degrades to "dropped" rather than
-    // guessed at, same as everywhere else this app handles an unresolved key.
-    if (id != null) compactRanks.push([id, rank]);
-  };
-  ["general", "archetype", "special"].forEach((scope) => {
-    const store = serializedRanks[scope] || {};
-    Object.keys(store).forEach((key) => pushRank(scope, null, key, store[key]));
-  });
-  Object.keys(serializedRanks.classes || {}).forEach((className) => {
-    const store = serializedRanks.classes[className] || {};
-    Object.keys(store).forEach((key) => pushRank("class", className, key, store[key]));
-  });
+// An AA missing from aaIds.js shouldn't happen for anything currently
+// pickable (build_minify.py's invariant check + assign_aa_ids.py being run
+// together keep them in sync) - degrades to "dropped" rather than guessed
+// at, same as everywhere else this app handles an unresolved key.
+function pushCompactRank(arr, scope, className, key, rank) {
+  const id = idForKey(scope, className, key);
+  if (id != null) arr.push([id, rank]);
+}
 
+function compactRanksFor(ranksLike) {
+  const serialized = serializeRanks(ranksLike);
+  const out = [];
+  ["general", "archetype", "special"].forEach((scope) => {
+    const store = serialized[scope] || {};
+    Object.keys(store).forEach((key) => pushCompactRank(out, scope, null, key, store[key]));
+  });
+  Object.keys(serialized.classes || {}).forEach((className) => {
+    const store = serialized.classes[className] || {};
+    Object.keys(store).forEach((key) => pushCompactRank(out, "class", className, key, store[key]));
+  });
+  return out;
+}
+
+// includeOwned is false by default everywhere this is called from - owned
+// status is personal real-world progress, not part of the plan being
+// shared, so a share link/export leaves it out unless the user explicitly
+// opts in via the Export modal's checkbox.
+function buildCodeObject(includeOwned) {
   const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
     .map((e) => idForKey(e.scope, e.className, e.key))
     .filter((id) => id != null);
 
-  return {
+  const payload = {
     v: BUILD_CODE_VERSION,
     c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
     l: state.charLevel,
     t: state.totalPoints,
-    r: compactRanks,
+    r: compactRanksFor(state.ranks),
     p: compactPurchaseOrder
   };
+  if (includeOwned) {
+    const compactOwned = compactRanksFor(state.owned);
+    if (compactOwned.length) payload.o = compactOwned;
+  }
+  return payload;
 }
 
-// Reconstructs the verbose, name-keyed shape applyLoaded already understands
-// (the same shape a v4 localStorage/legacy payload is in) from a decoded
-// BUILD_CODE_VERSION payload, so applyLoaded itself never needs to know the
-// compact format exists — only this file and keys.js do. An id that no
-// longer resolves (entryForId returns null - the AA was removed since this
-// link's ranks were assigned their ids) is dropped, same degrade-gracefully
-// philosophy as an unresolved name key elsewhere.
-function expandCompactPayload(compact) {
+// An id that no longer resolves (entryForId returns null - the AA was
+// removed since this link's ranks were assigned their ids) is dropped, same
+// degrade-gracefully philosophy as an unresolved name key elsewhere. Shared
+// by expandCompactPayload for both r (ranks) and o (owned) - same shape,
+// same resolution.
+function expandCompactRanks(list) {
   const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
-  (compact.r || []).forEach(([id, rank]) => {
+  (list || []).forEach(([id, rank]) => {
     const entry = entryForId(id);
     if (!entry) return;
     if (entry.scope === "class") {
@@ -2544,6 +2746,14 @@ function expandCompactPayload(compact) {
       ranks[entry.scope][entry.key] = rank;
     }
   });
+  return ranks;
+}
+
+// Reconstructs the verbose, name-keyed shape applyLoaded already understands
+// (the same shape a v4 localStorage/legacy payload is in) from a decoded
+// BUILD_CODE_VERSION payload, so applyLoaded itself never needs to know the
+// compact format exists — only this file and keys.js do.
+function expandCompactPayload(compact) {
   const purchaseOrder = (compact.p || []).map((id) => {
     const entry = entryForId(id);
     return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
@@ -2553,8 +2763,13 @@ function expandCompactPayload(compact) {
     selectedClasses: (compact.c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
     charLevel: compact.l,
     totalPoints: compact.t,
-    ranks,
-    purchaseOrder
+    ranks: expandCompactRanks(compact.r),
+    purchaseOrder,
+    // compact.o is absent whenever the sender didn't opt in (the default) -
+    // expandCompactRanks(undefined) returns the same empty shape applyLoaded
+    // already treats as "clear owned", so no separate absent-vs-empty branch
+    // is needed here to get "sharing strips progress by default" right.
+    owned: expandCompactRanks(compact.o)
   };
 }
 
@@ -2595,8 +2810,8 @@ function base64ToBytes(b64) {
   return bytes;
 }
 
-async function encodeBuildCode() {
-  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject()));
+async function encodeBuildCode(includeOwned) {
+  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject(includeOwned)));
   return bytesToBase64(await gzipCompress(bytes));
 }
 
@@ -2634,11 +2849,11 @@ function fromBase64Url(b64url) {
   return b64;
 }
 
-async function buildShareUrl() {
+async function buildShareUrl(includeOwned) {
   const url = new URL(window.location.href);
   url.search = "";
   url.hash = "";
-  url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
+  url.searchParams.set("build", toBase64Url(await encodeBuildCode(includeOwned)));
   return url.toString();
 }
 
@@ -2704,7 +2919,7 @@ async function applySharedBuildFromUrl(localLoadResult) {
   return { applied, notice };
 }
 
-async function buildExportText() {
+async function buildExportText(includeOwned) {
   const spent = spentPoints();
   const lines = [];
   lines.push("EverQuest Legends - AA Build");
@@ -2727,20 +2942,33 @@ async function buildExportText() {
     computeProgressionSteps().forEach((s) => {
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
       const suffix = s.active ? "" : " (class not currently selected)";
-      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}`);
+      // The readable listing reflects owned status too when opted in, not
+      // just the embedded BUILD_CODE - otherwise a human skimming the text
+      // (as opposed to importing it) would see no sign of it at all.
+      const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";
+      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}${ownedSuffix}`);
     });
     lines.push("");
   }
 
-  lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
+  lines.push(`BUILD_CODE:${await encodeBuildCode(includeOwned)}`);
   return lines.join("\n");
 }
 
 async function openExportModal() {
   el.exportText.value = "Generating…";
   el.shareLinkInput.value = "";
+  el.includeOwnedCheckbox.checked = false;
   el.exportModal.classList.remove("hidden");
-  const [text, url] = await Promise.all([buildExportText(), buildShareUrl()]);
+  await regenerateExportContent();
+}
+
+// Re-populates both the export text and share link for the current
+// includeOwned checkbox state - called on open, and again on the checkbox's
+// own change event so toggling it actually changes what gets copied/shared.
+async function regenerateExportContent() {
+  const includeOwned = el.includeOwnedCheckbox.checked;
+  const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
   el.exportText.value = text;
   el.shareLinkInput.value = url;
   el.exportText.focus();
@@ -2922,6 +3150,7 @@ function wireEvents() {
   });
 
   el.exportBtn.addEventListener("click", openExportModal);
+  el.includeOwnedCheckbox.addEventListener("change", regenerateExportContent);
   el.copyExportBtn.addEventListener("click", copyExportText);
   el.copyShareLinkBtn.addEventListener("click", copyShareLink);
   el.saveExportBtn.addEventListener("click", saveExportAsTxt);
@@ -2933,6 +3162,7 @@ function wireEvents() {
     if (!el.importModal.classList.contains("hidden")) closeImportModal();
     if (!el.changelogModal.classList.contains("hidden")) closeChangelogModal();
     if (!el.buildsModal.classList.contains("hidden")) closeBuildsModal();
+    if (!el.resetModal.classList.contains("hidden")) closeResetModal();
   });
 
   el.versionTag.addEventListener("click", openChangelogModal);
@@ -2964,17 +3194,10 @@ function wireEvents() {
   el.closeImportBtn.addEventListener("click", closeImportModal);
   el.importModal.addEventListener("click", (e) => { if (e.target === el.importModal) closeImportModal(); });
 
-  el.resetBtn.addEventListener("click", () => {
-    if (!confirm("Reset all spent AA points across every category and class? This cannot be undone.")) return;
-    state.ranks = { general: {}, archetype: {}, special: {}, classes: {} };
-    state.purchaseOrder = [];
-    state.selectedNode = null;
-    clearLastMutation();
-    clearActiveBuild();
-    saveLocal();
-    renderAll();
-    showToast("Build reset");
-  });
+  el.resetBtn.addEventListener("click", openResetModal);
+  el.cancelResetBtn.addEventListener("click", closeResetModal);
+  el.confirmResetBtn.addEventListener("click", handleConfirmReset);
+  el.resetModal.addEventListener("click", (e) => { if (e.target === el.resetModal) closeResetModal(); });
 
   el.dismissBannerBtn.addEventListener("click", () => {
     el.disclaimerBanner.classList.add("hidden");
