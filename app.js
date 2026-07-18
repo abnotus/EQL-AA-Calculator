@@ -266,7 +266,7 @@ date: "2026-07-18",
 items: [
 "New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable. The toolbar shows a running total of points owned vs. still to go.",
 "Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate. A separate \"Clear Owned\" button on the Progression toolbar clears owned progress on its own, without touching your plan.",
-"Owned progress is tracked per character, not per plan — it's independent of whichever build you're editing, so switching between saved Builds or opening a share link never adds, removes, or overwrites an owned mark. It's also never included in a share link or export code; the Export modal has a checkbox to note owned steps with [OWNED] in the copyable text, for reference only."
+"Owned progress is tracked per character, not per plan — it's independent of whichever build you're editing, so switching between saved Builds or opening a share link never touches it on its own. It's left out of exported text/share links by default; a checkbox in the Export modal opts in to including it, for moving your own progress to another browser or sharing it with someone. Importing a build that carries owned data now asks first, since it would otherwise overwrite your own — decline to import just the plan."
 ]
 },
 {
@@ -488,6 +488,18 @@ return { droppedOwned: result.dropped };
 }
 state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
 return { droppedOwned: 0 };
+}
+function payloadOwnedHasContent(owned) {
+if (!owned || typeof owned !== "object") return false;
+if (Object.keys(owned.general || {}).length || Object.keys(owned.archetype || {}).length || Object.keys(owned.special || {}).length) return true;
+const classes = owned.classes || {};
+return Object.keys(classes).some((className) => Object.keys(classes[className] || {}).length > 0);
+}
+function applyImportedOwned(ownedField) {
+const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
+state.owned = result.ranks;
+saveOwned();
+return { dropped: result.dropped };
 }
 function costNum(c) {
 const n = parseInt(c, 10);
@@ -1959,11 +1971,11 @@ Object.keys(store).forEach((key) => pushCompactRank(out, "class", className, key
 });
 return out;
 }
-function buildCodeObject() {
+function buildCodeObject(includeOwned) {
 const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
 .map((e) => idForKey(e.scope, e.className, e.key))
 .filter((id) => id != null);
-return {
+const payload = {
 v: BUILD_CODE_VERSION,
 c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
 l: state.charLevel,
@@ -1971,6 +1983,11 @@ t: state.totalPoints,
 r: compactRanksFor(state.ranks),
 p: compactPurchaseOrder
 };
+if (includeOwned) {
+const compactOwned = compactRanksFor(state.owned);
+if (compactOwned.length) payload.o = compactOwned;
+}
+return payload;
 }
 function expandCompactRanks(list) {
 const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
@@ -1997,7 +2014,8 @@ selectedClasses: (compact.c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
 charLevel: compact.l,
 totalPoints: compact.t,
 ranks: expandCompactRanks(compact.r),
-purchaseOrder
+purchaseOrder,
+owned: expandCompactRanks(compact.o)
 };
 }
 async function gzipCompress(bytes) {
@@ -2025,8 +2043,8 @@ const bytes = new Uint8Array(binary.length);
 for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 return bytes;
 }
-async function encodeBuildCode() {
-const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject()));
+async function encodeBuildCode(includeOwned) {
+const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject(includeOwned)));
 return bytesToBase64(await gzipCompress(bytes));
 }
 async function decodeBuildCode(code) {
@@ -2048,11 +2066,11 @@ let b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
 while (b64.length % 4) b64 += "=";
 return b64;
 }
-async function buildShareUrl() {
+async function buildShareUrl(includeOwned) {
 const url = new URL(window.location.href);
 url.search = "";
 url.hash = "";
-url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
+url.searchParams.set("build", toBase64Url(await encodeBuildCode(includeOwned)));
 return url.toString();
 }
 async function applySharedBuildFromUrl(localLoadResult) {
@@ -2079,9 +2097,11 @@ state.selectedNode = null;
 clearLastMutation();
 clearActiveBuild();
 const repaired = reconcilePurchaseOrderCounts();
+const ownedOutcome = maybeImportOwned(json);
+result.droppedRanks += ownedOutcome.dropped;
 saveLocal();
 saveImportedBuild();
-notice = `Loaded shared build from link — saved as "Imported Build" in Builds${loadIssuesSuffix(result, repaired)}`;
+notice = `Loaded shared build from link — saved as "Imported Build" in Builds${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`;
 applied = true;
 }
 } else {
@@ -2118,7 +2138,7 @@ lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.ste
 });
 lines.push("");
 }
-lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
+lines.push(`BUILD_CODE:${await encodeBuildCode(includeOwned)}`);
 return lines.join("\n");
 }
 async function openExportModal() {
@@ -2130,7 +2150,7 @@ await regenerateExportContent();
 }
 async function regenerateExportContent(focusText = true) {
 const includeOwned = el.includeOwnedCheckbox.checked;
-const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl()]);
+const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
 el.exportText.value = text;
 el.shareLinkInput.value = url;
 if (focusText) {
@@ -2188,6 +2208,20 @@ const compact = trimmed.replace(/\s+/g, "");
 if (compact.length > 20 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
 return null;
 }
+function maybeImportOwned(json) {
+if (!payloadOwnedHasContent(json.owned)) return { imported: false, dropped: 0, hadOwned: false };
+const include = confirm(
+"This build also includes real-world owned progress. Importing it will overwrite your own owned progress with theirs.\n\n" +
+"OK to include it, Cancel to import just the plan and leave your own owned progress untouched."
+);
+if (!include) return { imported: false, dropped: 0, hadOwned: true };
+const result = applyImportedOwned(json.owned);
+return { imported: true, dropped: result.dropped, hadOwned: true };
+}
+function ownedNoticeSuffix(ownedOutcome) {
+if (!ownedOutcome.hadOwned) return "";
+return ownedOutcome.imported ? " — owned progress included" : " — owned progress was not imported (yours was kept)";
+}
 async function importBuildFromText(text) {
 const code = extractBuildCode(text);
 if (!code) { showToast("No build code found in that text"); return false; }
@@ -2205,9 +2239,11 @@ state.selectedNode = null;
 clearLastMutation();
 clearActiveBuild();
 const repaired = reconcilePurchaseOrderCounts();
+const ownedOutcome = maybeImportOwned(json);
+result.droppedRanks += ownedOutcome.dropped;
 saveLocal();
 renderAll();
-showToast(`Build imported${loadIssuesSuffix(result, repaired)}`);
+showToast(`Build imported${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`);
 return true;
 } catch (e) {
 showToast("Failed to read build text");

@@ -267,3 +267,28 @@ export function loadAndApplyOwned(rawMainPayload) {
   state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
   return { droppedOwned: 0 };
 }
+
+// Whether a name-keyed owned payload (the shape loadLocal/decodeBuildCode
+// hand around, before deserializeRanks turns it into idx-keyed state.owned)
+// actually has anything in it - used by exportImport.js to decide whether an
+// imported build is even carrying owned data worth asking about, without
+// needing to deserialize it first just to find out it's empty.
+export function payloadOwnedHasContent(owned) {
+  if (!owned || typeof owned !== "object") return false;
+  if (Object.keys(owned.general || {}).length || Object.keys(owned.archetype || {}).length || Object.keys(owned.special || {}).length) return true;
+  const classes = owned.classes || {};
+  return Object.keys(classes).some((className) => Object.keys(classes[className] || {}).length > 0);
+}
+
+// Deliberate overwrite of the GLOBAL owned store from untrusted external
+// content (a pasted build code or share link that opted into carrying owned
+// data) - unlike loadAndApplyOwned (boot-time load from this app's own
+// storage), this is only ever called after the user has been warned via
+// exportImport.js's import flow and explicitly chosen to bring the incoming
+// progress in, since it overwrites whatever owned data already exists.
+export function applyImportedOwned(ownedField) {
+  const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
+  state.owned = result.ranks;
+  saveOwned();
+  return { dropped: result.dropped };
+}

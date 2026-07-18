@@ -368,7 +368,7 @@ const USER_CHANGELOG = [
     items: [
       "New: mark AAs as owned on the Progression tab (the checkmark next to a step) to track what you've actually trained in-game, separate from what you're just planning — owned steps show a strikethrough, and marking/unmarking is undoable. The toolbar shows a running total of points owned vs. still to go.",
       "Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear owned progress too if you really want a clean slate. A separate \"Clear Owned\" button on the Progression toolbar clears owned progress on its own, without touching your plan.",
-      "Owned progress is tracked per character, not per plan — it's independent of whichever build you're editing, so switching between saved Builds or opening a share link never adds, removes, or overwrites an owned mark. It's also never included in a share link or export code; the Export modal has a checkbox to note owned steps with [OWNED] in the copyable text, for reference only."
+      "Owned progress is tracked per character, not per plan — it's independent of whichever build you're editing, so switching between saved Builds or opening a share link never touches it on its own. It's left out of exported text/share links by default; a checkbox in the Export modal opts in to including it, for moving your own progress to another browser or sharing it with someone. Importing a build that carries owned data now asks first, since it would otherwise overwrite your own — decline to import just the plan."
     ]
   },
   {
@@ -686,6 +686,31 @@ function loadAndApplyOwned(rawMainPayload) {
   }
   state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
   return { droppedOwned: 0 };
+}
+
+// Whether a name-keyed owned payload (the shape loadLocal/decodeBuildCode
+// hand around, before deserializeRanks turns it into idx-keyed state.owned)
+// actually has anything in it - used by exportImport.js to decide whether an
+// imported build is even carrying owned data worth asking about, without
+// needing to deserialize it first just to find out it's empty.
+function payloadOwnedHasContent(owned) {
+  if (!owned || typeof owned !== "object") return false;
+  if (Object.keys(owned.general || {}).length || Object.keys(owned.archetype || {}).length || Object.keys(owned.special || {}).length) return true;
+  const classes = owned.classes || {};
+  return Object.keys(classes).some((className) => Object.keys(classes[className] || {}).length > 0);
+}
+
+// Deliberate overwrite of the GLOBAL owned store from untrusted external
+// content (a pasted build code or share link that opted into carrying owned
+// data) - unlike loadAndApplyOwned (boot-time load from this app's own
+// storage), this is only ever called after the user has been warned via
+// exportImport.js's import flow and explicitly chosen to bring the incoming
+// progress in, since it overwrites whatever owned data already exists.
+function applyImportedOwned(ownedField) {
+  const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
+  state.owned = result.ranks;
+  saveOwned();
+  return { dropped: result.dropped };
 }
 
 // Business logic: everything that reads or derives from `state` and AA_DATA,
@@ -2831,17 +2856,22 @@ function compactRanksFor(ranksLike) {
   return out;
 }
 
-// owned is never part of this - it's character-global (state.js's
-// OWNED_STORAGE_KEY), not part of any one plan, so a share link/export code
-// structurally can't carry it regardless of the Export modal's "Include
-// owned progress" checkbox. That checkbox only affects the readable
-// [OWNED] markers buildExportText adds to its own text listing.
-function buildCodeObject() {
+// owned is character-global (state.js's OWNED_STORAGE_KEY), not part of any
+// one plan, so it's left out of the code unless the Export modal's "Include
+// owned progress" checkbox explicitly opts in - e.g. to move your own owned
+// data to another browser/device via export+import, or to hand a friend a
+// build that also shows what you've already trained. Off by default: most
+// exports are just sharing a plan, and owned is personal real-world data the
+// sender may not intend to broadcast. On the import side, an incoming `o`
+// field is never applied silently - see importBuildFromText/
+// applySharedBuildFromUrl, which warn and ask before overwriting the
+// receiver's own owned data with it.
+function buildCodeObject(includeOwned) {
   const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
     .map((e) => idForKey(e.scope, e.className, e.key))
     .filter((id) => id != null);
 
-  return {
+  const payload = {
     v: BUILD_CODE_VERSION,
     c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
     l: state.charLevel,
@@ -2849,6 +2879,11 @@ function buildCodeObject() {
     r: compactRanksFor(state.ranks),
     p: compactPurchaseOrder
   };
+  if (includeOwned) {
+    const compactOwned = compactRanksFor(state.owned);
+    if (compactOwned.length) payload.o = compactOwned;
+  }
+  return payload;
 }
 
 // An id that no longer resolves (entryForId returns null - the AA was
@@ -2884,11 +2919,14 @@ function expandCompactPayload(compact) {
     charLevel: compact.l,
     totalPoints: compact.t,
     ranks: expandCompactRanks(compact.r),
-    purchaseOrder
-    // No owned field - applyLoaded doesn't read one anyway (owned is
-    // character-global, loaded separately - see state.js), and an old link
-    // minted during this feature's brief window of embedding an `o` field
-    // here just has that field ignored below rather than expanded.
+    purchaseOrder,
+    // Present only if the sender opted in and actually had owned data (see
+    // buildCodeObject) - expandCompactRanks(undefined) degrades to the empty
+    // shape either way. applyLoaded itself still never reads this (owned
+    // isn't part of "the build" it applies); the import layer inspects it
+    // separately via payloadOwnedHasContent before deciding whether to ask
+    // about it at all.
+    owned: expandCompactRanks(compact.o)
   };
 }
 
@@ -2929,8 +2967,8 @@ function base64ToBytes(b64) {
   return bytes;
 }
 
-async function encodeBuildCode() {
-  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject()));
+async function encodeBuildCode(includeOwned) {
+  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject(includeOwned)));
   return bytesToBase64(await gzipCompress(bytes));
 }
 
@@ -2968,11 +3006,11 @@ function fromBase64Url(b64url) {
   return b64;
 }
 
-async function buildShareUrl() {
+async function buildShareUrl(includeOwned) {
   const url = new URL(window.location.href);
   url.search = "";
   url.hash = "";
-  url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
+  url.searchParams.set("build", toBase64Url(await encodeBuildCode(includeOwned)));
   return url.toString();
 }
 
@@ -3023,9 +3061,11 @@ async function applySharedBuildFromUrl(localLoadResult) {
       clearLastMutation();
       clearActiveBuild();
       const repaired = reconcilePurchaseOrderCounts();
+      const ownedOutcome = maybeImportOwned(json);
+      result.droppedRanks += ownedOutcome.dropped;
       saveLocal();
       saveImportedBuild();
-      notice = `Loaded shared build from link — saved as "Imported Build" in Builds${loadIssuesSuffix(result, repaired)}`;
+      notice = `Loaded shared build from link — saved as "Imported Build" in Builds${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`;
       applied = true;
     }
   } else {
@@ -3061,17 +3101,13 @@ async function buildExportText(includeOwned) {
     computeProgressionSteps().forEach((s) => {
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
       const suffix = s.active ? "" : " (class not currently selected)";
-      // Owned isn't part of BUILD_CODE at all (it's character-global, not
-      // plan data - see state.js) - this readable marker is purely
-      // informational, opt-in via the Export modal's checkbox, and never
-      // round-trips back in through Import.
       const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";
       lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}${ownedSuffix}`);
     });
     lines.push("");
   }
 
-  lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
+  lines.push(`BUILD_CODE:${await encodeBuildCode(includeOwned)}`);
   return lines.join("\n");
 }
 
@@ -3083,18 +3119,15 @@ async function openExportModal() {
   await regenerateExportContent();
 }
 
-// Re-populates the export text for the current includeOwned checkbox state
-// - called on open, and again on the checkbox's own change event so
-// toggling it actually changes the [OWNED] markers in the text. The share
-// link never varies with this checkbox (owned isn't part of BUILD_CODE at
-// all), but is regenerated alongside it anyway since both come from the
-// same modal-open/refresh path.
+// Re-populates both the export text and share link for the current
+// includeOwned checkbox state - called on open, and again on the checkbox's
+// own change event so toggling it actually changes what gets copied/shared.
 // focusText only applies on the initial open - re-running it on every
 // checkbox toggle would yank focus out of the checkbox and back into the
 // textarea on each click.
 async function regenerateExportContent(focusText = true) {
   const includeOwned = el.includeOwnedCheckbox.checked;
-  const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl()]);
+  const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
   el.exportText.value = text;
   el.shareLinkInput.value = url;
   if (focusText) {
@@ -3166,6 +3199,32 @@ function extractBuildCode(text) {
   return null;
 }
 
+// Owned is character-global and normally untouched by import entirely - see
+// state.js. The one exception is a build that explicitly opted into
+// carrying owned data (the Export modal's "Include owned progress too"
+// checkbox), which the recipient's own owned data would otherwise get
+// silently overwritten by. Asked separately from - and after -
+// confirmReplaceCurrentBuild's plan-replacement gate, and only if the
+// decoded payload actually has owned content worth asking about; a plain
+// build with no `o` field (the common case) never triggers this at all.
+// Declining leaves the receiver's own owned data untouched while the rest
+// of the import (the plan) still proceeds - "import just the build".
+function maybeImportOwned(json) {
+  if (!payloadOwnedHasContent(json.owned)) return { imported: false, dropped: 0, hadOwned: false };
+  const include = confirm(
+    "This build also includes real-world owned progress. Importing it will overwrite your own owned progress with theirs.\n\n" +
+    "OK to include it, Cancel to import just the plan and leave your own owned progress untouched."
+  );
+  if (!include) return { imported: false, dropped: 0, hadOwned: true };
+  const result = applyImportedOwned(json.owned);
+  return { imported: true, dropped: result.dropped, hadOwned: true };
+}
+
+function ownedNoticeSuffix(ownedOutcome) {
+  if (!ownedOutcome.hadOwned) return "";
+  return ownedOutcome.imported ? " — owned progress included" : " — owned progress was not imported (yours was kept)";
+}
+
 async function importBuildFromText(text) {
   const code = extractBuildCode(text);
   if (!code) { showToast("No build code found in that text"); return false; }
@@ -3189,9 +3248,11 @@ async function importBuildFromText(text) {
     clearLastMutation();
     clearActiveBuild();
     const repaired = reconcilePurchaseOrderCounts();
+    const ownedOutcome = maybeImportOwned(json);
+    result.droppedRanks += ownedOutcome.dropped;
     saveLocal();
     renderAll();
-    showToast(`Build imported${loadIssuesSuffix(result, repaired)}`);
+    showToast(`Build imported${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`);
     return true;
   } catch (e) {
     showToast("Failed to read build text");
