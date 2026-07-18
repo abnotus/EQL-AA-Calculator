@@ -9,7 +9,7 @@ import {
   isDependedOn, attemptIncrement, attemptDecrement, countPicked, computeProgressionSteps,
   costNum, spentPoints, undoLastMutation, canUndo, moveEntry, setOwnedRank, performReset,
   aaMatchesQuery, countMatches, heldRankInvalidReason, findInvalidatedPicks, loadIssuesSuffix,
-  hasAnyOwned, computeProgressionTimeline, addOrUpdateWaypoint, removeWaypoint
+  hasAnyOwned, computeProgressionTimeline, addOrUpdateWaypoint, removeWaypoint, costGuess
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
@@ -93,6 +93,23 @@ export function renderTabs() {
   });
 }
 
+// Shared by the tree node's cost badge, the side panel's next-rank box, and
+// its rank-costs pip strip - three places that all need the same "is this
+// rank's real cost known, or are we showing a pattern-inferred estimate"
+// decision, and shouldn't each reimplement it slightly differently. A guess
+// is display-only: nothing here ever feeds costNum()/spentPoints() - those
+// keep treating "?" as 0 exactly like before, regardless of whether a guess
+// exists for display.
+function costDisplay(catKey, idx, rankIdx, rawCost) {
+  if (rawCost !== "?") return { text: escapeHtml(rawCost), isGuess: false };
+  const guess = costGuess(catKey, idx, rankIdx);
+  if (!guess) return { text: "?", isGuess: false };
+  const title = guess.interpolated
+    ? `Estimated (${guess.confidence} confidence) — no comparable AA found, interpolated between this AA's own known ranks. Not confirmed on the wiki.`
+    : `Estimated (${guess.confidence} confidence) from ${guess.basedOn.join(", ")} — not confirmed on the wiki.`;
+  return { text: `~${guess.value}`, isGuess: true, confidence: guess.confidence, basedOn: guess.basedOn, interpolated: !!guess.interpolated, title };
+}
+
 export function renderTree(catKey) {
   const list = getList(catKey);
 
@@ -162,8 +179,10 @@ export function renderTree(catKey) {
       node.appendChild(tag);
     } else if (rank < aa.ranks) {
       const tag = document.createElement("div");
-      tag.className = "costtag";
-      tag.textContent = aa.costs[rank];
+      const disp = costDisplay(catKey, idx, rank, aa.costs[rank]);
+      tag.className = disp.isGuess ? `costtag is-estimate tier-${disp.confidence}` : "costtag";
+      tag.textContent = disp.text;
+      if (disp.isGuess) tag.title = disp.title;
       node.appendChild(tag);
     }
     if (lockReason && lockReason.kind === "prereq") {
@@ -246,14 +265,24 @@ export function renderSidePanel() {
     }
     if (nextCost !== null) {
       const nextRank = rank + 1;
-      html += `<div class="next-rank-box">
-        <div class="next-rank-title">Next Rank (${nextRank}/${aa.ranks}) &middot; costs <b>${escapeHtml(aa.costs[rank])}</b> pt(s)</div>
+      const nextDisp = costDisplay(sel.category, sel.idx, rank, aa.costs[rank]);
+      const chip = nextDisp.isGuess
+        ? ` <span class="confidence-chip tier-${nextDisp.confidence}" title="${escapeHtml(nextDisp.title)}">${nextDisp.confidence}</span>`
+        : "";
+      html += `<div class="next-rank-box${nextDisp.isGuess ? " is-estimate" : ""}">
+        <div class="next-rank-title">Next Rank (${nextRank}/${aa.ranks}) &middot; costs <b class="${nextDisp.isGuess ? "is-estimate" : ""}" title="${nextDisp.isGuess ? escapeHtml(nextDisp.title) : ""}">${nextDisp.text}</b> pt(s)${chip}</div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, nextRank), nextRank)}</div>
       </div>`;
     }
-    html += `<div class="rank-costs">` + aa.costs.map((c, i) => `<span class="pip ${i < rank ? "spent" : ""}">R${i + 1}: ${escapeHtml(c)}</span>`).join("") + `</div>`;
+    html += `<div class="rank-costs">` + aa.costs.map((c, i) => {
+      const disp = costDisplay(sel.category, sel.idx, i, c);
+      const cls = `pip${i < rank ? " spent" : ""}${disp.isGuess ? ` is-estimate tier-${disp.confidence}` : ""}`;
+      const title = disp.isGuess ? ` title="${escapeHtml(disp.title)}"` : "";
+      return `<span class="${cls}"${title}>R${i + 1}: ${disp.text}</span>`;
+    }).join("") + `</div>`;
     if (aa.costs.some((c) => String(c).trim() === "?")) {
-      html += `<div class="req-line" style="margin-top:10px; color:#63636a;">Some per-rank costs are undocumented on the wiki source ("?") and are treated as 0 pts until known.</div>`;
+      const anyGuessed = aa.costs.some((c, i) => c === "?" && costGuess(sel.category, sel.idx, i));
+      html += `<div class="req-line" style="margin-top:10px; color:#63636a;">Some per-rank costs are undocumented on the wiki source ("?") and are treated as 0 pts until known${anyGuessed ? " &mdash; ranks marked with a ~ show a pattern-inferred estimate instead, for reference only" : ""}.</div>`;
     }
   }
 

@@ -1,9 +1,11 @@
 // Business logic: everything that reads or derives from `state` and AA_DATA,
 // plus the mutation functions for spending/refunding points. No HTML/DOM here.
-// Depends only on state.js — never on render.js — so the dependency graph stays
-// one-directional (render depends on logic, not the other way around).
+// Depends on state.js and (for costGuess) keys.js — never on render.js — so
+// the dependency graph stays one-directional (render depends on logic, not
+// the other way around).
 
 import { state, CLASS_SLOT_KEYS, AA_CATEGORY_KEYS, saveLocal, saveOwned, sanitizeWaypoints } from "./state.js";
+import { costGuessFor } from "./keys.js";
 
 export function costNum(c) {
   const n = parseInt(c, 10);
@@ -247,6 +249,19 @@ export function classNameForCategory(category) {
 export function categoryToScopeClassName(category) {
   const slot = classSlotIndex(category);
   return slot >= 0 ? { scope: "class", className: state.selectedClasses[slot] } : { scope: category, className: null };
+}
+
+// A pattern-inferred cost estimate for rank rankIdx of the AA at
+// (catKey, idx), or null. Only ever meaningful to call when the AA's real
+// costs[rankIdx] is "?" — callers check that themselves (render.js does,
+// right where it already has both the AA and the rank in hand), since this
+// function has no way to know which string produced the miss and
+// shouldn't guess about that either. See costGuesses.js for the guarantee
+// that a real confirmed value always wins: nothing here or upstream ever
+// substitutes a guess into costNum()/spentPoints() — purely a display hint.
+export function costGuess(catKey, idx, rankIdx) {
+  const { scope, className } = categoryToScopeClassName(catKey);
+  return costGuessFor(scope, className, idx, rankIdx);
 }
 
 export function entryKey(scope, className, idx) {

@@ -138,6 +138,26 @@ const AA_ID_TABLE = {
 "class:Wizard:strong-root": 134,
 "class:Wizard:unbound-destruction": 135
 };
+const COST_GUESS_TABLE = {
+"archetype::burst-of-power": { "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] } },
+"class:Druid:quick-evacuation": { "1": { value: 6, confidence: "medium", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] }, "2": { value: 9, confidence: "medium", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] } },
+"class:Magician:turn-summoned": { "1": { value: 6, confidence: "medium", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] }, "2": { value: 9, confidence: "medium", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] } },
+"class:Monk:improved-mend": { "1": { value: 6, confidence: "medium", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] }, "2": { value: 9, confidence: "medium", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] } },
+"class:Monk:rapid-feign": { "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] } },
+"class:Wizard:quick-evacuation": { "1": { value: 6, confidence: "medium", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] }, "2": { value: 9, confidence: "medium", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] } },
+"general::adamant-will": { "3": { value: 9, confidence: "medium", basedOn: ["Fear Resistance"] } },
+"general::alchemy-mastery": { "1": { value: 6, confidence: "medium", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] }, "2": { value: 9, confidence: "medium", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] } },
+"general::baking-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
+"general::blacksmithing-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
+"general::brewing-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
+"general::combat-fury": { "1": { value: 2, confidence: "low", basedOn: [], interpolated: true } },
+"general::combat-stability": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
+"general::fletching-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
+"general::innate-metabolism": { "1": { value: 1, confidence: "medium", basedOn: ["Innate Lung Capacity"] }, "2": { value: 1, confidence: "medium", basedOn: ["Innate Lung Capacity"] } },
+"general::jewel-craft-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
+"general::pottery-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } },
+"general::tailoring-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } }
+};
 const LEGACY_AA_ORDER = {
 "general": [
 "Adamant Will", "Alchemy Mastery", "Baking Mastery", "Blacksmithing Mastery",
@@ -259,7 +279,22 @@ return Object.prototype.hasOwnProperty.call(AA_ID_TABLE, idKey) ? AA_ID_TABLE[id
 function entryForId(id) {
 return idToEntry()[id] || null;
 }
+function costGuessFor(scope, className, aaIdx, rankIdx) {
+const key = keyForIdx(scope, className, aaIdx);
+if (!key) return null;
+const idKey = `${scope}:${className || ""}:${key}`;
+const entry = COST_GUESS_TABLE[idKey];
+return entry ? (entry[rankIdx] || null) : null;
+}
 const USER_CHANGELOG = [
+{
+version: "1.6.0",
+date: "2026-07-18",
+items: [
+"New: undocumented per-rank costs (shown as \"?\" on the wiki) can now show a pattern-inferred estimate instead — in the tree, the side panel's next-rank box, and its per-rank cost list. Marked with a ~ and color-coded by confidence, with a tooltip explaining what it's based on. It's a cross-check against other AAs with the same rank count and cost pattern, never a guess from one AA's own numbers alone — an AA that looks like a clean doubling sequence can still turn out wrong once compared against similar AAs that are fully documented.",
+"An estimate never affects point totals or affordability — it's shown for reference only, and the instant the wiki documents the real cost, that takes over automatically."
+]
+},
 {
 version: "1.5.0",
 date: "2026-07-18",
@@ -703,6 +738,10 @@ return slot >= 0 ? state.selectedClasses[slot] : null;
 function categoryToScopeClassName(category) {
 const slot = classSlotIndex(category);
 return slot >= 0 ? { scope: "class", className: state.selectedClasses[slot] } : { scope: category, className: null };
+}
+function costGuess(catKey, idx, rankIdx) {
+const { scope, className } = categoryToScopeClassName(catKey);
+return costGuessFor(scope, className, idx, rankIdx);
 }
 function entryKey(scope, className, idx) {
 return `${scope}|${className || ""}|${idx}`;
@@ -1472,6 +1511,15 @@ renderAll();
 });
 });
 }
+function costDisplay(catKey, idx, rankIdx, rawCost) {
+if (rawCost !== "?") return { text: escapeHtml(rawCost), isGuess: false };
+const guess = costGuess(catKey, idx, rankIdx);
+if (!guess) return { text: "?", isGuess: false };
+const title = guess.interpolated
+? `Estimated (${guess.confidence} confidence) — no comparable AA found, interpolated between this AA's own known ranks. Not confirmed on the wiki.`
+: `Estimated (${guess.confidence} confidence) from ${guess.basedOn.join(", ")} — not confirmed on the wiki.`;
+return { text: `~${guess.value}`, isGuess: true, confidence: guess.confidence, basedOn: guess.basedOn, interpolated: !!guess.interpolated, title };
+}
 function renderTree(catKey) {
 const list = getList(catKey);
 if (!list.length) {
@@ -1530,8 +1578,10 @@ tag.textContent = `Lv.${aa.levelReq}`;
 node.appendChild(tag);
 } else if (rank < aa.ranks) {
 const tag = document.createElement("div");
-tag.className = "costtag";
-tag.textContent = aa.costs[rank];
+const disp = costDisplay(catKey, idx, rank, aa.costs[rank]);
+tag.className = disp.isGuess ? `costtag is-estimate tier-${disp.confidence}` : "costtag";
+tag.textContent = disp.text;
+if (disp.isGuess) tag.title = disp.title;
 node.appendChild(tag);
 }
 if (lockReason && lockReason.kind === "prereq") {
@@ -1610,14 +1660,24 @@ html += `<div class="req-line warn">Another AA depends on this rank &mdash; lowe
 }
 if (nextCost !== null) {
 const nextRank = rank + 1;
-html += `<div class="next-rank-box">
-        <div class="next-rank-title">Next Rank (${nextRank}/${aa.ranks}) &middot; costs <b>${escapeHtml(aa.costs[rank])}</b> pt(s)</div>
+const nextDisp = costDisplay(sel.category, sel.idx, rank, aa.costs[rank]);
+const chip = nextDisp.isGuess
+? ` <span class="confidence-chip tier-${nextDisp.confidence}" title="${escapeHtml(nextDisp.title)}">${nextDisp.confidence}</span>`
+: "";
+html += `<div class="next-rank-box${nextDisp.isGuess ? " is-estimate" : ""}">
+        <div class="next-rank-title">Next Rank (${nextRank}/${aa.ranks}) &middot; costs <b class="${nextDisp.isGuess ? "is-estimate" : ""}" title="${nextDisp.isGuess ? escapeHtml(nextDisp.title) : ""}">${nextDisp.text}</b> pt(s)${chip}</div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, nextRank), nextRank)}</div>
       </div>`;
 }
-html += `<div class="rank-costs">` + aa.costs.map((c, i) => `<span class="pip ${i < rank ? "spent" : ""}">R${i + 1}: ${escapeHtml(c)}</span>`).join("") + `</div>`;
+html += `<div class="rank-costs">` + aa.costs.map((c, i) => {
+const disp = costDisplay(sel.category, sel.idx, i, c);
+const cls = `pip${i < rank ? " spent" : ""}${disp.isGuess ? ` is-estimate tier-${disp.confidence}` : ""}`;
+const title = disp.isGuess ? ` title="${escapeHtml(disp.title)}"` : "";
+return `<span class="${cls}"${title}>R${i + 1}: ${disp.text}</span>`;
+}).join("") + `</div>`;
 if (aa.costs.some((c) => String(c).trim() === "?")) {
-html += `<div class="req-line" style="margin-top:10px; color:#63636a;">Some per-rank costs are undocumented on the wiki source ("?") and are treated as 0 pts until known.</div>`;
+const anyGuessed = aa.costs.some((c, i) => c === "?" && costGuess(sel.category, sel.idx, i));
+html += `<div class="req-line" style="margin-top:10px; color:#63636a;">Some per-rank costs are undocumented on the wiki source ("?") and are treated as 0 pts until known${anyGuessed ? " &mdash; ranks marked with a ~ show a pattern-inferred estimate instead, for reference only" : ""}.</div>`;
 }
 }
 el.sidePanel.innerHTML = html;

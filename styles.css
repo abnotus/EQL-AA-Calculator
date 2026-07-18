@@ -11,6 +11,18 @@
   --text-faint: #63636a;
   --green: #4c8c52;
   --node-gap: 18px;
+
+  /* Pattern-inferred cost estimates (see costGuesses.js) - distinct colors
+     per confidence tier, not one hue at different lightness, so a tier
+     reads as a genuinely different category rather than "more/less of the
+     same". None of the three overlaps red (spend/accent), green
+     (afford/maxed/owned), amber (locked/warn/drag-warn), or the waypoint
+     palette's saturated hues (a different axis of meaning - which zone of
+     the plan - reusing one of those here would make a guess look like it
+     belongs to a waypoint zone). */
+  --estimate-high: #5aa9e6;
+  --estimate-medium: #a67cd9;
+  --estimate-low: #93877a;
 }
 
 * { box-sizing: border-box; }
@@ -445,6 +457,18 @@ main {
   letter-spacing: 0.5px;
 }
 
+/* Pattern-inferred estimate, shown wherever the real cost is still "?" -
+   see costDisplay in render.js. .is-estimate carries the shared shape
+   (italic, distinguishing it from a real number at a glance even before
+   the color registers); the .tier-* modifier carries the confidence color. */
+.node .costtag.is-estimate {
+  font-style: italic;
+  font-weight: 600;
+}
+.node .costtag.is-estimate.tier-high { border-color: var(--estimate-high); color: var(--estimate-high); }
+.node .costtag.is-estimate.tier-medium { border-color: var(--estimate-medium); color: var(--estimate-medium); }
+.node .costtag.is-estimate.tier-low { border-color: var(--estimate-low); color: var(--estimate-low); }
+
 .auto-badge {
   color: #c9c9ce;
   font-size: 10px;
@@ -560,6 +584,29 @@ main {
   margin-bottom: 0;
 }
 
+/* The next-rank box's own cost figure being a guess doesn't change its
+   green dashed framing (that already means "here's what's next", true
+   either way) - only the cost number and an added confidence chip. */
+.next-rank-title b.is-estimate {
+  font-style: italic;
+  color: var(--estimate-high);
+}
+
+.confidence-chip {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  vertical-align: middle;
+}
+.confidence-chip.tier-high { color: var(--estimate-high); }
+.confidence-chip.tier-medium { color: var(--estimate-medium); }
+.confidence-chip.tier-low { color: var(--estimate-low); }
+
 .rank-costs {
   display: flex;
   flex-wrap: wrap;
@@ -580,6 +627,23 @@ main {
   color: var(--accent-bright);
   background: rgba(217,76,76,0.08);
 }
+
+.rank-costs .pip.is-estimate { font-style: italic; }
+.rank-costs .pip.is-estimate.tier-high { border-color: var(--estimate-high); color: var(--estimate-high); background: rgba(90,169,230,0.08); }
+.rank-costs .pip.is-estimate.tier-medium { border-color: var(--estimate-medium); color: var(--estimate-medium); background: rgba(166,124,217,0.08); }
+.rank-costs .pip.is-estimate.tier-low { border-color: var(--estimate-low); color: var(--estimate-low); background: rgba(147,135,122,0.08); }
+
+/* A rank can be both .spent (already purchased, via costNum() treating its
+   unknown real cost as 0) and .is-estimate (a guess exists for what it
+   probably really costs) at once - the estimate coloring should win
+   explicitly here, not by relying on which rule happens to load later, so
+   this combination doesn't silently flip if the stylesheet gets reordered.
+   Surfacing "you got this for 0 pts, but it's probably worth ~4" is more
+   useful than the plain spent-red styling, which would look identical to a
+   rank whose cost is genuinely fully known and confirmed. */
+.rank-costs .pip.spent.is-estimate.tier-high { border-color: var(--estimate-high); color: var(--estimate-high); background: rgba(90,169,230,0.08); }
+.rank-costs .pip.spent.is-estimate.tier-medium { border-color: var(--estimate-medium); color: var(--estimate-medium); background: rgba(166,124,217,0.08); }
+.rank-costs .pip.spent.is-estimate.tier-low { border-color: var(--estimate-low); color: var(--estimate-low); background: rgba(147,135,122,0.08); }
 
 #sidePanel .empty {
   color: var(--text-faint);

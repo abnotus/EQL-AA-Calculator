@@ -38,6 +38,7 @@
 // period.
 
 import { AA_ID_TABLE } from "./aaIds.js";
+import { COST_GUESS_TABLE } from "./costGuesses.js";
 
 const LEGACY_AA_ORDER = {
   "general": [
@@ -205,4 +206,20 @@ export function idForKey(scope, className, key) {
 // assigned — the id itself is never reused, so this is unambiguous).
 export function entryForId(id) {
   return idToEntry()[id] || null;
+}
+
+// (scope, className, aaIdx, rankIdx) -> a pattern-inferred cost estimate
+// for that one rank, or null. aaIdx picks WHICH AA (resolved through
+// keyForIdx, same identity keying as everything else here); rankIdx is the
+// position within THAT AA's own costs array (0-based) - a different axis
+// entirely, not an AA identity. Callers are expected to only ask this when
+// the real costs[rankIdx] is already known to be "?" (see logic.js's
+// costGuess) - this function itself doesn't check, it just answers "what
+// does costGuesses.js say about this exact slot, if anything".
+export function costGuessFor(scope, className, aaIdx, rankIdx) {
+  const key = keyForIdx(scope, className, aaIdx);
+  if (!key) return null;
+  const idKey = `${scope}:${className || ""}:${key}`;
+  const entry = COST_GUESS_TABLE[idKey];
+  return entry ? (entry[rankIdx] || null) : null;
 }
