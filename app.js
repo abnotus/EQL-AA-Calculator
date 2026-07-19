@@ -1401,9 +1401,16 @@ return a.every((v, i) => deepEqual(v, b[i]));
 return Object.keys(a).length === Object.keys(b).length
 && Object.keys(a).every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
 }
+function isEmptyComposite(v) {
+if (Array.isArray(v)) return v.length === 0;
+return typeof v === "object" && v !== null && Object.keys(v).length === 0;
+}
 function deepEqualIgnoringExtraKeys(stored, current) {
 if (typeof stored !== "object" || stored === null) return false;
-return Object.keys(current).every((k) => deepEqual(stored[k], current[k]));
+return Object.keys(current).every((k) => {
+if (stored[k] === undefined && isEmptyComposite(current[k])) return true;
+return deepEqual(stored[k], current[k]);
+});
 }
 function activeBuildMatchesCurrent() {
 const id = getActiveBuildId();

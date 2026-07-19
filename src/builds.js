@@ -150,17 +150,42 @@ function deepEqual(a, b) {
     && Object.keys(a).every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
 }
 
+function isEmptyComposite(v) {
+  if (Array.isArray(v)) return v.length === 0;
+  return typeof v === "object" && v !== null && Object.keys(v).length === 0;
+}
+
 // Whether every field current buildPayload() defines matches the
 // corresponding field in a stored slot - deliberately checking only
 // `current`'s own keys, not requiring the two objects to have the *same*
-// key set. A stored slot from before some past field was retired (owned
-// briefly living in the main payload; totalPoints before the point-cap
-// removal) can carry a key current buildPayload() no longer produces at
-// all; that's an artifact of history, not a real difference in plan
-// content, and must never make an untouched slot register as "changed".
+// key set, in EITHER direction:
+//
+// - stored has a key current doesn't (extra): a field that's since been
+//   retired (owned briefly living in the main payload; totalPoints before
+//   the point-cap removal). Simply never looked at, via Object.keys(current).
+// - current has a key stored doesn't (missing): a field that didn't exist
+//   *yet* when the slot was saved - waypoints shipped in 1.5.0, so any slot
+//   saved in 1.3.x-1.4.x has no waypoints key in its stored payload at all.
+//   applyLoaded itself proves the equivalence: loading that exact slot
+//   produces state.waypoints = [] (sanitizeWaypoints(undefined) -> []),
+//   the same empty default current buildPayload() would emit right now -
+//   so a missing key is only safely treated as a match when today's value
+//   for that key is an empty composite ([] or {}). Anything else (a
+//   non-empty array/object, a primitive) is a real difference and must
+//   still fail. Top-level only: nested shapes (ranks' four scope buckets,
+//   say) have been stable since slots first shipped, so a missing NESTED
+//   key can't legitimately occur this way and correctly still fails via
+//   plain deepEqual below.
+//
+// Both directions share the same justification - a key one side lacks
+// entirely is an artifact of history, not a real difference in plan
+// content - and must never make an untouched slot register as "changed".
 function deepEqualIgnoringExtraKeys(stored, current) {
   if (typeof stored !== "object" || stored === null) return false;
-  return Object.keys(current).every((k) => deepEqual(stored[k], current[k]));
+  return Object.keys(current).every((k) => {
+    if (stored[k] === undefined && isEmptyComposite(current[k])) return true;
+    return deepEqual(stored[k], current[k]);
+  });
 }
 
 // Whether the current working state matches what's actually stored under
