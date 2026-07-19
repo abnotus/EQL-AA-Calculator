@@ -10,7 +10,7 @@ import {
   costNum, spentPoints, undoLastMutation, canUndo, moveEntry, setOwnedRank, performReset,
   aaMatchesQuery, countMatches, heldRankInvalidReason, findInvalidatedPicks, loadIssuesSuffix,
   hasAnyOwned, computeProgressionTimeline, addOrUpdateWaypoint, removeWaypoint, costGuess, costGuessScoped,
-  estimatedExtraPoints
+  estimatedExtraPoints, effectGuess, effectGuessScoped, guessTitle
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
@@ -129,12 +129,7 @@ export function renderTabs() {
 function formatGuessDisplay(rawCost, guess) {
   if (rawCost !== "?") return { text: escapeHtml(rawCost), isGuess: false };
   if (!guess) return { text: "?", isGuess: false };
-  const title = guess.manual
-    ? `Estimated (very low confidence) — hand-picked pending wiki confirmation, not derived from other AAs. Not confirmed on the wiki.`
-    : guess.interpolated
-    ? `Estimated (${guess.confidence} confidence) — no comparable AA found, interpolated between this AA's own known ranks. Not confirmed on the wiki.`
-    : `Estimated (${guess.confidence} confidence) from ${guess.basedOn.join(", ")} — not confirmed on the wiki.`;
-  return { text: `~${guess.value}`, isGuess: true, confidence: guess.confidence, basedOn: guess.basedOn, interpolated: !!guess.interpolated, manual: !!guess.manual, title };
+  return { text: `~${guess.value}`, isGuess: true, confidence: guess.confidence, basedOn: guess.basedOn, interpolated: !!guess.interpolated, manual: !!guess.manual, title: guessTitle(guess) };
 }
 
 // catKey-based lookup - one of the 3 currently-active class slots (or
@@ -149,6 +144,20 @@ function costDisplay(catKey, idx, rankIdx, rawCost) {
 // class is one of the 3 currently selected.
 function costDisplayScoped(scope, className, idx, rankIdx, rawCost) {
   return formatGuessDisplay(rawCost, rawCost === "?" ? costGuessScoped(scope, className, idx, rankIdx) : null);
+}
+
+// Builds the (progIdx, rankIdx) => guess|null closure highlightRankValue
+// expects, bound to one AA - so every .desc call site just passes
+// effectLookup(catKey, idx) instead of repeating the same arrow function.
+// catKey-based (one of the 3 active slots), mirrors costDisplay.
+function effectLookup(catKey, idx) {
+  return (progIdx, rankIdx) => effectGuess(catKey, idx, progIdx, rankIdx);
+}
+
+// (scope, className)-based, mirrors costDisplayScoped - for Browse and any
+// inactive-class Progression step, same reasoning as costGuessScoped.
+function effectLookupScoped(scope, className, idx) {
+  return (progIdx, rankIdx) => effectGuessScoped(scope, className, idx, progIdx, rankIdx);
 }
 
 export function renderTree(catKey) {
@@ -275,7 +284,7 @@ export function renderSidePanel() {
 
   let html = `<h2>${escapeHtml(aa.name)}</h2>`;
   html += `<div class="meta">${escapeHtml(labelFor(sel.category))} &middot; Level ${escapeHtml(aa.levelReq)}+</div>`;
-  html += `<div class="desc">${highlightRankValue(aa.description, rank)}</div>`;
+  html += `<div class="desc">${highlightRankValue(aa.description, rank, effectLookup(sel.category, sel.idx))}</div>`;
   if (invalidReason) {
     html += `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>`;
   }
@@ -312,7 +321,7 @@ export function renderSidePanel() {
         : "";
       html += `<div class="next-rank-box${nextDisp.isGuess ? " is-estimate" : ""}">
         <div class="next-rank-title">Next Rank (${nextRank}/${aa.ranks}) &middot; costs <b class="${nextDisp.isGuess ? "is-estimate" : ""}" title="${nextDisp.isGuess ? escapeHtml(nextDisp.title) : ""}">${nextDisp.text}</b> pt(s)${chip}</div>
-        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, nextRank), nextRank)}</div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, nextRank), nextRank, effectLookup(sel.category, sel.idx))}</div>
       </div>`;
     }
     html += `<div class="rank-costs">` + aa.costs.map((c, i) => {
@@ -409,7 +418,7 @@ export function renderBrowse() {
         return `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">${escapeHtml(cat)}</span></div>
-        <div class="desc">${escapeHtml(aa.description)}</div>
+        <div class="desc">${highlightRankValue(aa.description, null, effectLookupScoped(scope, className, idx))}</div>
         <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${costList} &middot; Level ${escapeHtml(aa.levelReq)}+${prereqInfo}</div>
       </div>`;
       }).join("")
@@ -427,14 +436,14 @@ export function renderSummary() {
   let anyPicked = false;
   sections.forEach(({ key, label }) => {
     const list = getList(key);
-    const picked = list.map((aa, idx) => ({ aa, rank: effectiveRank(key, idx) })).filter((x) => x.rank > 0);
+    const picked = list.map((aa, idx) => ({ aa, idx, rank: effectiveRank(key, idx) })).filter((x) => x.rank > 0);
     if (!picked.length) return;
     anyPicked = true;
     html += `<h3 class="summary-section-title">${escapeHtml(label)}</h3>`;
-    html += `<div class="browse-grid">` + picked.map(({ aa, rank }) => `
+    html += `<div class="browse-grid">` + picked.map(({ aa, idx, rank }) => `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
-        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, rank), rank)}</div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, rank), rank, effectLookup(key, idx))}</div>
       </div>`).join("") + `</div>`;
   });
 
@@ -731,9 +740,12 @@ export function renderProgression() {
     const nextChip = nextDisp.isGuess
       ? ` <span class="confidence-chip tier-${nextDisp.confidence}" title="${escapeHtml(nextDisp.title)}">${nextDisp.confidence}</span>`
       : "";
+    const nextDescLookup = s.category
+      ? effectLookup(s.category, s.idx)
+      : effectLookupScoped(s.scope, s.className, s.idx);
     return row + `<div class="next-rank-box progression-next-rank${nextDisp.isGuess ? " is-estimate" : ""}">
         <div class="next-rank-title">Next Rank (${nextRank}/${s.aa.ranks}) &middot; costs <b class="${nextDisp.isGuess ? "is-estimate" : ""}" title="${nextDisp.isGuess ? escapeHtml(nextDisp.title) : ""}">${nextDisp.text}</b> pt(s)${nextChip}</div>
-        <div class="desc">${highlightRankValue(applyPerRankTotal(s.aa.description, nextRank), nextRank)}</div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(s.aa.description, nextRank), nextRank, nextDescLookup)}</div>
       </div>`;
   });
 

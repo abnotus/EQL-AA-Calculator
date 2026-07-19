@@ -1,11 +1,11 @@
 // Business logic: everything that reads or derives from `state` and AA_DATA,
 // plus the mutation functions for spending/refunding points. No HTML/DOM here.
-// Depends on state.js and (for costGuess) keys.js — never on render.js — so
-// the dependency graph stays one-directional (render depends on logic, not
-// the other way around).
+// Depends on state.js and (for costGuess/effectGuess) keys.js — never on
+// render.js — so the dependency graph stays one-directional (render depends
+// on logic, not the other way around).
 
 import { state, CLASS_SLOT_KEYS, AA_CATEGORY_KEYS, saveLocal, saveOwned, sanitizeWaypoints } from "./state.js";
-import { costGuessFor } from "./keys.js";
+import { costGuessFor, effectGuessFor } from "./keys.js";
 
 export function costNum(c) {
   const n = parseInt(c, 10);
@@ -22,17 +22,47 @@ export function iconLetter(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
 }
 
-// Highlights the value matching the current rank inside slash-separated progressions
-// in a description, e.g. "20/40/60%" at rank 2 -> "20/<mark>40</mark>/60%".
-export function highlightRankValue(text, rank) {
+// Builds the tooltip text for a guess object ({value, confidence, basedOn,
+// interpolated, manual}) - identical phrasing regardless of which domain
+// the guess came from (a cost or an effect magnitude both read fine with
+// this wording), so both formatGuessDisplay (render.js, per-rank costs) and
+// highlightRankValue (below, effect values embedded in description text)
+// share this one implementation instead of drifting apart.
+export function guessTitle(guess) {
+  if (guess.manual) return `Estimated (very low confidence) — hand-picked pending wiki confirmation, not derived from other AAs. Not confirmed on the wiki.`;
+  if (guess.interpolated) return `Estimated (${guess.confidence} confidence) — no comparable AA found, interpolated between this AA's own known ranks. Not confirmed on the wiki.`;
+  return `Estimated (${guess.confidence} confidence) from ${guess.basedOn.join(", ")} — not confirmed on the wiki.`;
+}
+
+// Highlights the value matching the current rank inside slash-separated
+// progressions in a description, e.g. "20/40/60%" at rank 2 ->
+// "20/<mark>40</mark>/60%" - and, if guessLookup is given, substitutes a
+// pattern-inferred estimate for any "?" slot it has a guess for (styled
+// like every other guess in the app: is-estimate + tier-X, with a
+// tooltip), whether or not that slot happens to also be the current rank.
+// guessLookup(progIdx, rankIdx) -> guess object or null; progIdx counts
+// which progression this is within the description, in order of
+// appearance (a description can hold more than one - see effectGuesses.js).
+// rank may be falsy/0 (no current-rank bolding at all, e.g. Browse's
+// rank-agnostic reference view) while guessLookup still runs - the two are
+// independent, unlike the old version where no rank meant no work at all.
+export function highlightRankValue(text, rank, guessLookup) {
   const escaped = escapeHtml(text);
-  if (!rank || rank < 1) return escaped;
+  if (!guessLookup && (!rank || rank < 1)) return escaped;
+  let progIdx = -1;
   return escaped.replace(/\d+(?:\.\d+)?%?(?:\/(?:\d+(?:\.\d+)?%?|\?)){1,}/g, (match) => {
+    progIdx++;
     const parts = match.split("/");
-    const idx = rank - 1;
-    if (idx < 0 || idx >= parts.length) return match;
-    parts[idx] = `<span class="rank-highlight">${parts[idx]}</span>`;
-    return parts.join("/");
+    const highlightIdx = rank && rank >= 1 ? rank - 1 : -1;
+    return parts.map((part, i) => {
+      if (part === "?") {
+        const guess = guessLookup ? guessLookup(progIdx, i) : null;
+        if (!guess) return part;
+        const cls = `is-estimate tier-${guess.confidence}${i === highlightIdx ? " rank-highlight" : ""}`;
+        return `<span class="${cls}" title="${escapeHtml(guessTitle(guess))}">~${guess.value}</span>`;
+      }
+      return i === highlightIdx ? `<span class="rank-highlight">${part}</span>` : part;
+    }).join("/");
   });
 }
 
@@ -270,6 +300,19 @@ export function costGuess(catKey, idx, rankIdx) {
 // would return null for a class sitting outside the active 3.
 export function costGuessScoped(scope, className, idx, rankIdx) {
   return costGuessFor(scope, className, idx, rankIdx);
+}
+
+// Same shape as costGuess/costGuessScoped, one axis deeper for progIdx (a
+// description can hold more than one independent progression - see
+// effectGuesses.js's own header). Only ever meaningful to call when the
+// real slot at that position is "?", same contract as costGuess.
+export function effectGuess(catKey, idx, progIdx, rankIdx) {
+  const { scope, className } = categoryToScopeClassName(catKey);
+  return effectGuessFor(scope, className, idx, progIdx, rankIdx);
+}
+
+export function effectGuessScoped(scope, className, idx, progIdx, rankIdx) {
+  return effectGuessFor(scope, className, idx, progIdx, rankIdx);
 }
 
 export function entryKey(scope, className, idx) {

@@ -567,6 +567,19 @@ main {
   border-radius: 3px;
 }
 
+/* An effect value can be both .rank-highlight (this is the rank being
+   viewed) and .is-estimate.tier-* (the wiki hasn't confirmed it) at once -
+   the color already resolves correctly on its own (.is-estimate.tier-* is
+   two classes, higher specificity than .rank-highlight's one, so it wins
+   regardless of source order without needing a compound override the way
+   the Progression cost pill did), but .rank-highlight's own red background
+   would otherwise clash with an estimate-colored number sitting inside it.
+   Explicit compound rule swaps the background to match instead. */
+.rank-highlight.is-estimate.tier-high { background: rgba(90,169,230,0.12); }
+.rank-highlight.is-estimate.tier-medium { background: rgba(166,124,217,0.12); }
+.rank-highlight.is-estimate.tier-low { background: rgba(147,135,122,0.12); }
+.rank-highlight.is-estimate.tier-very-low { background: rgba(107,100,89,0.12); }
+
 #sidePanel .req-line {
   font-size: 12px;
   margin-bottom: 6px;

@@ -31,7 +31,7 @@ const AA_DATA = {
     { name: "Jewel Craft Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Jewelcrafting recipes by 10/?/?%." },
     { name: "Natural Durability", ranks: 4, costs: ["2","4","6","2"], levelReq: "1", description: "Increases your maximum base health (derived from your stamina) by 2/5/10/12%." },
     { name: "Origin", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Transports you back to your starting city. Check location with /charinfo. Automatically granted to every character — per the wiki's own General AA intro text." },
-    { name: "Packrat", ranks: 10, costs: ["1","1","1","1","?","?","?","?","?","?"], levelReq: "1", description: "Reduces the weight of all equipped and carried items by 5/?/?/?/?/?/?/?/?/?%." },
+    { name: "Packrat", ranks: 10, costs: ["1","1","1","1","?","?","?","?","?","?"], levelReq: "1", description: "Reduces the weight of all equipped and carried items by 5/10/15/?/?/?/?/?/?/?%." },
     { name: "Permanent Illusion", ranks: 1, costs: ["5"], levelReq: "1", description: "Extends the duration of your beneficial illusion spells to 16.6 hours and allows persistence when zoning." },
     { name: "Pottery Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Pottery recipes by 10/?/?%." },
     { name: "Quick Buff", ranks: 1, costs: ["5"], levelReq: "1", description: "Cast all currently memorized beneficial spells on all valid group and raid targets in range." },

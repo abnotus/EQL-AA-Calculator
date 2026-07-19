@@ -39,6 +39,7 @@
 
 import { AA_ID_TABLE } from "./aaIds.js";
 import { COST_GUESS_TABLE } from "./costGuesses.js";
+import { EFFECT_GUESS_TABLE } from "./effectGuesses.js";
 
 const LEGACY_AA_ORDER = {
   "general": [
@@ -222,4 +223,20 @@ export function costGuessFor(scope, className, aaIdx, rankIdx) {
   const idKey = `${scope}:${className || ""}:${key}`;
   const entry = COST_GUESS_TABLE[idKey];
   return entry ? (entry[rankIdx] || null) : null;
+}
+
+// Same shape as costGuessFor, one axis deeper: progIdx picks WHICH
+// progression within the AA's description (order of appearance - a
+// description can hold more than one, see effectGuesses.js's own header),
+// rankIdx the slot position within THAT progression. Callers are expected
+// to only ask this when the real slot text is already known to be "?"
+// (see logic.js's effectGuess), same contract as costGuessFor.
+export function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
+  const key = keyForIdx(scope, className, aaIdx);
+  if (!key) return null;
+  const idKey = `${scope}:${className || ""}:${key}`;
+  const entry = EFFECT_GUESS_TABLE[idKey];
+  if (!entry) return null;
+  const prog = entry[progIdx];
+  return prog ? (prog[rankIdx] || null) : null;
 }

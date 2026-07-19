@@ -32,6 +32,7 @@ import sys
 SRC_MODULE_ORDER = [
     "src/aaIds.js",
     "src/costGuesses.js",
+    "src/effectGuesses.js",
     "src/keys.js",
     "src/changelogData.js",
     "src/state.js",

@@ -6,29 +6,33 @@ loudly on failure.
 
 ## Data-independent unit tests
 
-`test_guess_costs_interpolation.py` exercises `wiki-sync/guess_costs.py`'s
-core logic (`interpolate_bounded_gaps`, `guess_for_entry`) directly, against
-synthetic reference pools rather than the live dataset. No server, no
-browser — just:
+`test_guess_costs_interpolation.py` and `test_guess_effects.py` exercise
+`wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic
+directly, against synthetic reference pools rather than the live dataset. No
+server, no browser — just:
 
 ```
 python tests/test_guess_costs_interpolation.py
+python tests/test_guess_effects.py
 ```
 
 This is deliberately *not* pinned to any AA's current confidence tier: the
-whole point of the cost-guessing feature is that a guess resolves away the
-moment the wiki confirms the real value, so a test asserting "AA X is
-currently medium-confidence" would break the instant the feature does its
-job. It tests the algorithm's rules instead (unanimous vs. majority voting,
-bounded-vs-trailing interpolation, non-monotonic sibling exclusion, the
-manual-guess fallback and its zero-known-ranks edge case) with hand-built
-inputs that stay true regardless of what `data.src.js` says on any given day.
+whole point of the guessing feature is that a guess resolves away the moment
+the wiki confirms the real value, so a test asserting "AA X is currently
+medium-confidence" would break the instant the feature does its job. They
+test the algorithms' rules instead (unanimous vs. majority voting,
+bounded-vs-trailing interpolation, the manual-guess fallback and its
+zero-known edge case, and — for effects specifically — multi-progression
+extraction and that sibling-matching only works within an explicitly
+declared group, never a coincidental text match) with hand-built inputs that
+stay true regardless of what `data.src.js` says on any given day.
 
 ## Browser (Playwright) tests
 
 `test_cost_guess.py`, `test_manual_guess.py`, `test_guess_all_tabs.py`,
-`test_disclaimer_banner.py`, `test_estimated_total.py` drive the actual app
-in a real Chrome instance via [Playwright](https://playwright.dev/python/).
+`test_disclaimer_banner.py`, `test_estimated_total.py`, `test_effect_guess.py`
+drive the actual app in a real Chrome instance via
+[Playwright](https://playwright.dev/python/).
 
 **Prerequisites:**
 - `pip install playwright`
@@ -49,6 +53,7 @@ python tests/test_manual_guess.py
 python tests/test_guess_all_tabs.py
 python tests/test_disclaimer_banner.py
 python tests/test_estimated_total.py
+python tests/test_effect_guess.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -58,8 +63,15 @@ than clicking through the UI to build it up live — faster, and pins the
 exact scenario being tested instead of leaving it implicit in a sequence of
 clicks.
 
+`test_effect_guess.py` currently relies on Combat Fury being the one live
+AA with a guessable effect value (an interpolated gap) — if a future wiki
+scrape confirms that specific rank, regenerate `effectGuesses.js` first and
+this test will need a new live example (same as `test_cost_guess.py`'s own
+Combat Fury section had to be rewritten once its cost got confirmed - see
+that file's comments for how that played out).
+
 None of these are wired into CI; run them by hand after a change that
-touches the cost-guessing feature (`wiki-sync/guess_costs.py`,
-`src/costGuesses.js`'s consumers in `src/keys.js`/`src/logic.js`/
-`src/render.js`, the disclaimer banner, or the topbar) before rebuilding
-and committing.
+touches either guessing feature (`wiki-sync/guess_costs.py` or
+`wiki-sync/guess_effects.py`, their consumers in `src/keys.js`/
+`src/logic.js`/`src/render.js`, the disclaimer banner, or the topbar) before
+rebuilding and committing.

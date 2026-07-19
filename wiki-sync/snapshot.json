@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 158910,
+  "revid": 158923,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -234,7 +234,7 @@
         "?",
         "?"
       ],
-      "description": "This passive ability reduces the weight of all equipped and carried items by 5/?/?/?/?/?/?/?/?/?%. Requirements: level 1."
+      "description": "This passive ability reduces the weight of all equipped and carried items by 5/10/15/?/?/?/?/?/?/?%. Requirements: level 1."
     },
     "general::Permanent Illusion::0": {
       "ranks": "1",

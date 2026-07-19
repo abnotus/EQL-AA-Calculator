@@ -168,6 +168,9 @@ const COST_GUESS_TABLE = {
 "general::stoicism": { "1": { value: 3, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 4, confidence: "very-low", basedOn: [], manual: true }, "3": { value: 5, confidence: "very-low", basedOn: [], manual: true }, "4": { value: 6, confidence: "very-low", basedOn: [], manual: true } },
 "general::tailoring-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Gift", "Mastery of the Past", "Spell Casting Mastery"] } }
 };
+const EFFECT_GUESS_TABLE = {
+"general::combat-fury": { "0": { "1": { value: 3, confidence: "low", basedOn: [], interpolated: true } } }
+};
 const LEGACY_AA_ORDER = {
 "general": [
 "Adamant Will", "Alchemy Mastery", "Baking Mastery", "Blacksmithing Mastery",
@@ -296,7 +299,24 @@ const idKey = `${scope}:${className || ""}:${key}`;
 const entry = COST_GUESS_TABLE[idKey];
 return entry ? (entry[rankIdx] || null) : null;
 }
+function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
+const key = keyForIdx(scope, className, aaIdx);
+if (!key) return null;
+const idKey = `${scope}:${className || ""}:${key}`;
+const entry = EFFECT_GUESS_TABLE[idKey];
+if (!entry) return null;
+const prog = entry[progIdx];
+return prog ? (prog[rankIdx] || null) : null;
+}
 const USER_CHANGELOG = [
+{
+version: "1.6.1",
+date: "2026-07-19",
+items: [
+"New: pattern-inferred estimates now cover effect values too, not just costs — the \"?\" in something like \"Increases your critical hit chance by 1/?/5/10%.\" can show an estimate the same way an undocumented cost does, wherever a description appears (the side panel, Browse All AAs, Summary, and Progression's next-rank preview). Same confidence tiers, same tooltip, same guarantee: purely a display hint, never read by search or export text as anything but the original \"?\".",
+"Data correction from a fresh wiki scrape: Packrat's ranks 2 and 3 weight-reduction values are now confirmed (10% and 15%)."
+]
+},
 {
 version: "1.6.0",
 date: "2026-07-18",
@@ -383,7 +403,7 @@ const MAX_TOTAL_POINTS = 100000;
 const SAVE_FORMAT_VERSION = 4;
 const STORAGE_KEY = "eql_aa_builder_v1";
 const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
-const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v3";
+const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v4";
 const LAST_SEEN_VERSION_KEY = "eql_aa_last_seen_version";
 const CLASS_SLOT_KEYS = ["classSlot0", "classSlot1", "classSlot2"];
 const AA_CATEGORY_KEYS = ["general", "archetype", ...CLASS_SLOT_KEYS, "special"];
@@ -609,15 +629,28 @@ return String(str == null ? "" : str)
 function iconLetter(name) {
 return (name || "?").trim().charAt(0).toUpperCase();
 }
-function highlightRankValue(text, rank) {
+function guessTitle(guess) {
+if (guess.manual) return `Estimated (very low confidence) — hand-picked pending wiki confirmation, not derived from other AAs. Not confirmed on the wiki.`;
+if (guess.interpolated) return `Estimated (${guess.confidence} confidence) — no comparable AA found, interpolated between this AA's own known ranks. Not confirmed on the wiki.`;
+return `Estimated (${guess.confidence} confidence) from ${guess.basedOn.join(", ")} — not confirmed on the wiki.`;
+}
+function highlightRankValue(text, rank, guessLookup) {
 const escaped = escapeHtml(text);
-if (!rank || rank < 1) return escaped;
+if (!guessLookup && (!rank || rank < 1)) return escaped;
+let progIdx = -1;
 return escaped.replace(/\d+(?:\.\d+)?%?(?:\/(?:\d+(?:\.\d+)?%?|\?)){1,}/g, (match) => {
+progIdx++;
 const parts = match.split("/");
-const idx = rank - 1;
-if (idx < 0 || idx >= parts.length) return match;
-parts[idx] = `<span class="rank-highlight">${parts[idx]}</span>`;
-return parts.join("/");
+const highlightIdx = rank && rank >= 1 ? rank - 1 : -1;
+return parts.map((part, i) => {
+if (part === "?") {
+const guess = guessLookup ? guessLookup(progIdx, i) : null;
+if (!guess) return part;
+const cls = `is-estimate tier-${guess.confidence}${i === highlightIdx ? " rank-highlight" : ""}`;
+return `<span class="${cls}" title="${escapeHtml(guessTitle(guess))}">~${guess.value}</span>`;
+}
+return i === highlightIdx ? `<span class="rank-highlight">${part}</span>` : part;
+}).join("/");
 });
 }
 function applyPerRankTotal(text, rank) {
@@ -757,6 +790,13 @@ return costGuessFor(scope, className, idx, rankIdx);
 }
 function costGuessScoped(scope, className, idx, rankIdx) {
 return costGuessFor(scope, className, idx, rankIdx);
+}
+function effectGuess(catKey, idx, progIdx, rankIdx) {
+const { scope, className } = categoryToScopeClassName(catKey);
+return effectGuessFor(scope, className, idx, progIdx, rankIdx);
+}
+function effectGuessScoped(scope, className, idx, progIdx, rankIdx) {
+return effectGuessFor(scope, className, idx, progIdx, rankIdx);
 }
 function entryKey(scope, className, idx) {
 return `${scope}|${className || ""}|${idx}`;
@@ -1560,18 +1600,19 @@ renderAll();
 function formatGuessDisplay(rawCost, guess) {
 if (rawCost !== "?") return { text: escapeHtml(rawCost), isGuess: false };
 if (!guess) return { text: "?", isGuess: false };
-const title = guess.manual
-? `Estimated (very low confidence) — hand-picked pending wiki confirmation, not derived from other AAs. Not confirmed on the wiki.`
-: guess.interpolated
-? `Estimated (${guess.confidence} confidence) — no comparable AA found, interpolated between this AA's own known ranks. Not confirmed on the wiki.`
-: `Estimated (${guess.confidence} confidence) from ${guess.basedOn.join(", ")} — not confirmed on the wiki.`;
-return { text: `~${guess.value}`, isGuess: true, confidence: guess.confidence, basedOn: guess.basedOn, interpolated: !!guess.interpolated, manual: !!guess.manual, title };
+return { text: `~${guess.value}`, isGuess: true, confidence: guess.confidence, basedOn: guess.basedOn, interpolated: !!guess.interpolated, manual: !!guess.manual, title: guessTitle(guess) };
 }
 function costDisplay(catKey, idx, rankIdx, rawCost) {
 return formatGuessDisplay(rawCost, rawCost === "?" ? costGuess(catKey, idx, rankIdx) : null);
 }
 function costDisplayScoped(scope, className, idx, rankIdx, rawCost) {
 return formatGuessDisplay(rawCost, rawCost === "?" ? costGuessScoped(scope, className, idx, rankIdx) : null);
+}
+function effectLookup(catKey, idx) {
+return (progIdx, rankIdx) => effectGuess(catKey, idx, progIdx, rankIdx);
+}
+function effectLookupScoped(scope, className, idx) {
+return (progIdx, rankIdx) => effectGuessScoped(scope, className, idx, progIdx, rankIdx);
 }
 function renderTree(catKey) {
 const list = getList(catKey);
@@ -1682,7 +1723,7 @@ const dependedOn = rank > 0 && isDependedOn(sel.category, sel.idx, rank);
 const invalidReason = rank > 0 ? heldRankInvalidReason(sel.category, sel.idx) : null;
 let html = `<h2>${escapeHtml(aa.name)}</h2>`;
 html += `<div class="meta">${escapeHtml(labelFor(sel.category))} &middot; Level ${escapeHtml(aa.levelReq)}+</div>`;
-html += `<div class="desc">${highlightRankValue(aa.description, rank)}</div>`;
+html += `<div class="desc">${highlightRankValue(aa.description, rank, effectLookup(sel.category, sel.idx))}</div>`;
 if (invalidReason) {
 html += `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>`;
 }
@@ -1719,7 +1760,7 @@ const chip = nextDisp.isGuess
 : "";
 html += `<div class="next-rank-box${nextDisp.isGuess ? " is-estimate" : ""}">
         <div class="next-rank-title">Next Rank (${nextRank}/${aa.ranks}) &middot; costs <b class="${nextDisp.isGuess ? "is-estimate" : ""}" title="${nextDisp.isGuess ? escapeHtml(nextDisp.title) : ""}">${nextDisp.text}</b> pt(s)${chip}</div>
-        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, nextRank), nextRank)}</div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, nextRank), nextRank, effectLookup(sel.category, sel.idx))}</div>
       </div>`;
 }
 html += `<div class="rank-costs">` + aa.costs.map((c, i) => {
@@ -1791,7 +1832,7 @@ return disp.isGuess
 return `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">${escapeHtml(cat)}</span></div>
-        <div class="desc">${escapeHtml(aa.description)}</div>
+        <div class="desc">${highlightRankValue(aa.description, null, effectLookupScoped(scope, className, idx))}</div>
         <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${costList} &middot; Level ${escapeHtml(aa.levelReq)}+${prereqInfo}</div>
       </div>`;
 }).join("")
@@ -1806,14 +1847,14 @@ let html = "";
 let anyPicked = false;
 sections.forEach(({ key, label }) => {
 const list = getList(key);
-const picked = list.map((aa, idx) => ({ aa, rank: effectiveRank(key, idx) })).filter((x) => x.rank > 0);
+const picked = list.map((aa, idx) => ({ aa, idx, rank: effectiveRank(key, idx) })).filter((x) => x.rank > 0);
 if (!picked.length) return;
 anyPicked = true;
 html += `<h3 class="summary-section-title">${escapeHtml(label)}</h3>`;
-html += `<div class="browse-grid">` + picked.map(({ aa, rank }) => `
+html += `<div class="browse-grid">` + picked.map(({ aa, idx, rank }) => `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
-        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, rank), rank)}</div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, rank), rank, effectLookup(key, idx))}</div>
       </div>`).join("") + `</div>`;
 });
 el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
@@ -1987,9 +2028,12 @@ const nextDisp = s.category
 const nextChip = nextDisp.isGuess
 ? ` <span class="confidence-chip tier-${nextDisp.confidence}" title="${escapeHtml(nextDisp.title)}">${nextDisp.confidence}</span>`
 : "";
+const nextDescLookup = s.category
+? effectLookup(s.category, s.idx)
+: effectLookupScoped(s.scope, s.className, s.idx);
 return row + `<div class="next-rank-box progression-next-rank${nextDisp.isGuess ? " is-estimate" : ""}">
         <div class="next-rank-title">Next Rank (${nextRank}/${s.aa.ranks}) &middot; costs <b class="${nextDisp.isGuess ? "is-estimate" : ""}" title="${nextDisp.isGuess ? escapeHtml(nextDisp.title) : ""}">${nextDisp.text}</b> pt(s)${nextChip}</div>
-        <div class="desc">${highlightRankValue(applyPerRankTotal(s.aa.description, nextRank), nextRank)}</div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(s.aa.description, nextRank), nextRank, nextDescLookup)}</div>
       </div>`;
 });
 el.progressionContent.innerHTML = htmlParts.join("");

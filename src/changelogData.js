@@ -4,6 +4,14 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.6.1",
+    date: "2026-07-19",
+    items: [
+      "New: pattern-inferred estimates now cover effect values too, not just costs — the \"?\" in something like \"Increases your critical hit chance by 1/?/5/10%.\" can show an estimate the same way an undocumented cost does, wherever a description appears (the side panel, Browse All AAs, Summary, and Progression's next-rank preview). Same confidence tiers, same tooltip, same guarantee: purely a display hint, never read by search or export text as anything but the original \"?\".",
+      "Data correction from a fresh wiki scrape: Packrat's ranks 2 and 3 weight-reduction values are now confirmed (10% and 15%)."
+    ]
+  },
+  {
     version: "1.6.0",
     date: "2026-07-18",
     items: [
