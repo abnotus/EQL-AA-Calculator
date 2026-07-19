@@ -2200,20 +2200,62 @@ function buildPayload() {
   };
 }
 
-// Whether the current working state is byte-for-byte identical to what's
-// actually stored under the active slot — not just "there is an active
-// slot", since further changes since the last save/load would leave the two
-// diverged even with an id still set. Lets a caller about to replace the
-// current build (a share link, a text import) skip warning about losing
-// something that's already safely backed up, without needing a separate
-// "dirty" flag threaded through every mutation path - this just compares
-// on demand instead.
+// Order-independent (for object keys; array order still matters, since it's
+// semantically meaningful for purchaseOrder/waypoints/selectedClasses)
+// equality check. Deliberately not a generic "are these two values equal"
+// utility - see deepEqualIgnoringExtraKeys below for the one-directional
+// twist activeBuildMatchesCurrent actually needs.
+function deepEqual(a, b) {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    return a.every((v, i) => deepEqual(v, b[i]));
+  }
+  return Object.keys(a).length === Object.keys(b).length
+    && Object.keys(a).every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
+}
+
+// Whether every field current buildPayload() defines matches the
+// corresponding field in a stored slot - deliberately checking only
+// `current`'s own keys, not requiring the two objects to have the *same*
+// key set. A stored slot from before some past field was retired (owned
+// briefly living in the main payload; totalPoints before the point-cap
+// removal) can carry a key current buildPayload() no longer produces at
+// all; that's an artifact of history, not a real difference in plan
+// content, and must never make an untouched slot register as "changed".
+function deepEqualIgnoringExtraKeys(stored, current) {
+  if (typeof stored !== "object" || stored === null) return false;
+  return Object.keys(current).every((k) => deepEqual(stored[k], current[k]));
+}
+
+// Whether the current working state matches what's actually stored under
+// the active slot — not just "there is an active slot", since further
+// changes since the last save/load would leave the two diverged even with
+// an id still set. Lets a caller about to replace the current build (the
+// Builds menu's own Load button, a share link, a text import - every
+// caller of confirmReplaceCurrentBuild, see that function) skip warning
+// about losing something that's already safely backed up, without needing
+// a separate "dirty" flag threaded through every mutation path - this just
+// compares on demand instead.
+//
+// Structural, not a raw string/JSON.stringify comparison - the string
+// version broke the instant a field ever got added or removed from
+// buildPayload's shape (that happened for real: totalPoints's removal made
+// every pre-existing slot read as "unsaved" the first time this ran
+// against it, healed only by an extra one-time migration sweep). A
+// structural, current-keys-only comparison is immune to that entire class
+// of bug permanently - past or future field removals, additions, or a
+// slot whose stored JSON simply serialized its keys in a different order
+// than today's buildPayload happens to - none of it can ever cause a false
+// "unsaved" reading again, in any of the menus that ask this question.
 function activeBuildMatchesCurrent() {
   const id = getActiveBuildId();
   if (!id) return false;
   try {
     const raw = localStorage.getItem(BUILD_KEY_PREFIX + id);
-    return raw != null && raw === JSON.stringify(buildPayload());
+    if (raw == null) return false;
+    return deepEqualIgnoringExtraKeys(JSON.parse(raw), buildPayload());
   } catch (e) {
     return false;
   }

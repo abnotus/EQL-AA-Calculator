@@ -1391,12 +1391,27 @@ purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
 waypoints: state.waypoints
 };
 }
+function deepEqual(a, b) {
+if (a === b) return true;
+if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+if (Array.isArray(a) || Array.isArray(b)) {
+if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+return a.every((v, i) => deepEqual(v, b[i]));
+}
+return Object.keys(a).length === Object.keys(b).length
+&& Object.keys(a).every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
+}
+function deepEqualIgnoringExtraKeys(stored, current) {
+if (typeof stored !== "object" || stored === null) return false;
+return Object.keys(current).every((k) => deepEqual(stored[k], current[k]));
+}
 function activeBuildMatchesCurrent() {
 const id = getActiveBuildId();
 if (!id) return false;
 try {
 const raw = localStorage.getItem(BUILD_KEY_PREFIX + id);
-return raw != null && raw === JSON.stringify(buildPayload());
+if (raw == null) return false;
+return deepEqualIgnoringExtraKeys(JSON.parse(raw), buildPayload());
 } catch (e) {
 return false;
 }
