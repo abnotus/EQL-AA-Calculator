@@ -30,9 +30,9 @@ stay true regardless of what `data.src.js` says on any given day.
 ## Browser (Playwright) tests
 
 `test_cost_guess.py`, `test_manual_guess.py`, `test_guess_all_tabs.py`,
-`test_disclaimer_banner.py`, `test_estimated_total.py`, `test_effect_guess.py`
-drive the actual app in a real Chrome instance via
-[Playwright](https://playwright.dev/python/).
+`test_disclaimer_banner.py`, `test_estimated_total.py`, `test_effect_guess.py`,
+`test_build_slot_migration.py` drive the actual app in a real Chrome
+instance via [Playwright](https://playwright.dev/python/).
 
 **Prerequisites:**
 - `pip install playwright`
@@ -54,6 +54,7 @@ python tests/test_guess_all_tabs.py
 python tests/test_disclaimer_banner.py
 python tests/test_estimated_total.py
 python tests/test_effect_guess.py
+python tests/test_build_slot_migration.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to

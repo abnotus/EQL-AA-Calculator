@@ -2136,6 +2136,56 @@ function clearActiveBuild() {
   setActiveBuildId(null);
 }
 
+// One-time migration: strip the dead `totalPoints` field from every saved
+// slot's stored payload. buildPayload stopped emitting it when the total-
+// points cap was removed (see MAX_WAYPOINT_PTS's own history), but every
+// slot saved before that upgrade still has it baked into the stored JSON
+// string. Left in place, that mismatch makes activeBuildMatchesCurrent()'s
+// string comparison report "unsaved changes" for a slot the user hasn't
+// actually touched, the first time it's compared post-upgrade - self-
+// healing (a real save clears it) but a false "unsaved" reading is exactly
+// the wrong thing to get wrong in the one subsystem whose entire job is
+// telling the user whether their work is backed up, nine days before
+// launch, with slots up to three versions old. Parse -> delete -> re-
+// stringify preserves the remaining keys' insertion order (the string came
+// from that same object-literal shape originally), so a healed slot
+// compares byte-identical to what today's buildPayload produces for the
+// same content - the fix works entirely through the same string-equality
+// activeBuildMatchesCurrent already relies on, no structural comparison
+// needed. Strips only the one field buildPayload genuinely stopped
+// emitting - no opportunistic normalizing of anything else in the stored
+// payload. An unparseable slot is left alone, same tolerance
+// listBuilds/loadBuild already have for one. Runs once at boot (see
+// main.js), before anything could compare against a slot; every slot that
+// doesn't need touching is left byte-identical, so this is a no-op after
+// the first run per slot.
+function migrateStaleBuildSlots() {
+  loadIndex().forEach(({ id }) => {
+    const key = BUILD_KEY_PREFIX + id;
+    let raw;
+    try {
+      raw = localStorage.getItem(key);
+    } catch (e) {
+      return;
+    }
+    if (!raw) return;
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      return;
+    }
+    if (!parsed || typeof parsed !== "object" || !("totalPoints" in parsed)) return;
+    delete parsed.totalPoints;
+    try {
+      localStorage.setItem(key, JSON.stringify(parsed));
+    } catch (e) {
+      // storage unavailable/full - leave the stale field in place, same
+      // "nothing changed" outcome as any other failed write here
+    }
+  });
+}
+
 function buildPayload() {
   return {
     v: SAVE_FORMAT_VERSION,
@@ -4239,6 +4289,12 @@ function wireEvents() {
 async function init() {
   cacheDom();
   populateStaticControls();
+  // Before anything (a share link, later normal use) could call
+  // activeBuildMatchesCurrent() and compare a saved slot's stored payload
+  // against today's buildPayload() - see migrateStaleBuildSlots's own
+  // comment for why a stale field left in an old slot would otherwise read
+  // as "unsaved changes" the first time that comparison runs post-upgrade.
+  migrateStaleBuildSlots();
   const rawLocal = loadLocal();
   const localResult = applyLoaded(rawLocal);
   // Owned is character-global (its own storage key, not the build payload

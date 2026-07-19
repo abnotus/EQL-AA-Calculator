@@ -1357,6 +1357,30 @@ else localStorage.removeItem(ACTIVE_BUILD_KEY);
 function clearActiveBuild() {
 setActiveBuildId(null);
 }
+function migrateStaleBuildSlots() {
+loadIndex().forEach(({ id }) => {
+const key = BUILD_KEY_PREFIX + id;
+let raw;
+try {
+raw = localStorage.getItem(key);
+} catch (e) {
+return;
+}
+if (!raw) return;
+let parsed;
+try {
+parsed = JSON.parse(raw);
+} catch (e) {
+return;
+}
+if (!parsed || typeof parsed !== "object" || !("totalPoints" in parsed)) return;
+delete parsed.totalPoints;
+try {
+localStorage.setItem(key, JSON.stringify(parsed));
+} catch (e) {
+}
+});
+}
 function buildPayload() {
 return {
 v: SAVE_FORMAT_VERSION,
@@ -2832,6 +2856,7 @@ if (state.activeView === "calculator") renderTree(state.activeTab);
 async function init() {
 cacheDom();
 populateStaticControls();
+migrateStaleBuildSlots();
 const rawLocal = loadLocal();
 const localResult = applyLoaded(rawLocal);
 const ownedResult = loadAndApplyOwned(rawLocal);

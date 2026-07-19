@@ -6,10 +6,17 @@ import { populateStaticControls, renderAll, showToast } from "./render.js";
 import { findInvalidatedPicks, reconcilePurchaseOrderCounts } from "./logic.js";
 import { wireEvents } from "./events.js";
 import { applySharedBuildFromUrl } from "./exportImport.js";
+import { migrateStaleBuildSlots } from "./builds.js";
 
 async function init() {
   cacheDom();
   populateStaticControls();
+  // Before anything (a share link, later normal use) could call
+  // activeBuildMatchesCurrent() and compare a saved slot's stored payload
+  // against today's buildPayload() - see migrateStaleBuildSlots's own
+  // comment for why a stale field left in an old slot would otherwise read
+  // as "unsaved changes" the first time that comparison runs post-upgrade.
+  migrateStaleBuildSlots();
   const rawLocal = loadLocal();
   const localResult = applyLoaded(rawLocal);
   // Owned is character-global (its own storage key, not the build payload
