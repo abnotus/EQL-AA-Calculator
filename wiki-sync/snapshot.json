@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 159028,
+  "revid": 159035,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -380,12 +380,12 @@
     "archetype::Fury of Magic::0": {
       "ranks": "4",
       "costs": [
+        "1",
         "2",
-        "4",
-        "7",
-        "10"
+        "3",
+        "4"
       ],
-      "description": "This passive ability increases your chance to land a critical hit with your direct damage spells by 2%. Requirements: level 1."
+      "description": "This passive ability increases your chance to land a critical hit with your direct damage spells by 2/4/7/10%. Requirements: level 1."
     },
     "archetype::Healing Adept::0": {
       "ranks": "3",
@@ -762,7 +762,7 @@
       "costs": [
         "0"
       ],
-      "description": "This passive ability increases the chance that you will land a critical hit with a spell by 2/3/?%. Requirements: level 12."
+      "description": "This passive ability increases the chance that you will land a critical hit with a spell by 2/4/5%. Requirements: level 12."
     },
     "class:Enchanter::Unbound Clarity::0": {
       "ranks": "3",

@@ -51,7 +51,7 @@ const AA_DATA = {
     { name: "Double Riposte", ranks: 3, costs: ["3","6","9"], levelReq: "15", description: "Grants 5%/10%/15% double riposte chance." },
     { name: "Exodus", ranks: 1, costs: ["6"], levelReq: "10", description: "Teleports group members within 100 feet to a safe zone location." },
     { name: "Finishing Blow", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Critical melee attacks deal 100/200/300% damage to level 50/53/55 or lower NPCs at 10/12/15% or less health." },
-    { name: "Fury of Magic", ranks: 4, costs: ["2","4","7","10"], levelReq: "1", description: "Increases critical hit chance with direct damage spells by 2% per rank." },
+    { name: "Fury of Magic", ranks: 4, costs: ["1","2","3","4"], levelReq: "1", description: "Increases critical hit chance with direct damage spells by 2/4/7/10%." },
     { name: "Healing Adept", ranks: 3, costs: ["2","2","2"], levelReq: "1", description: "Increases instant-duration healing spell effectiveness by 2% per rank." },
     { name: "Healing Boon", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases HoT exceptional heal chance by 3/6/9%." },
     { name: "Healing Gift", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Grants instant healing spells 3%/6%/10% exceptional heal chance." },
@@ -113,7 +113,7 @@ const AA_DATA = {
     "Druid": [
       { name: "Enhanced Root", ranks: 1, costs: ["5"], levelReq: "1", description: "Reduces the chance that an NPC target entangled by your root spells will break free when struck by a non-melee attack by 50%." },
       { name: "Quick Evacuation", ranks: 3, costs: ["3","?","?"], levelReq: "1", description: "Reduces the cast time of your evacuation and succor spells and abilities by 10%/?/?." },
-      { name: "Unbound Nature", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance that you will land a critical hit with a spell by 2/3/?%." }
+      { name: "Unbound Nature", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance that you will land a critical hit with a spell by 2/4/5%." }
     ],
     "Enchanter": [
       { name: "Unbound Clarity", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your mana regeneration by 2 points per rank." }
