@@ -4,7 +4,7 @@ import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, s
 import { el } from "./dom.js";
 import { getList, effectiveRank, labelFor, spentPoints, computeProgressionSteps, computeProgressionTimeline, clearLastMutation, reconcilePurchaseOrderCounts, loadIssuesSuffix } from "./logic.js";
 import { clearActiveBuild, saveImportedBuild, confirmReplaceCurrentBuild, isActiveBuildTheImportedSlot } from "./builds.js";
-import { renderAll, showToast } from "./render.js";
+import { renderAll, showToast, costDisplay } from "./render.js";
 import { idForKey, entryForId } from "./keys.js";
 
 // Wire-format version for BUILD_CODE specifically (share links, export
@@ -318,7 +318,17 @@ export async function buildExportText(includeOwned) {
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
       const suffix = s.active ? "" : " (class not currently selected)";
       const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";
-      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}${ownedSuffix}`);
+      // Mirrors the Progression tab's own row exactly, both pieces: a
+      // guessed step (real cost still "?", stepCost forced to 0) shows its
+      // "~N" estimate instead of a flat 0, and the running total blends the
+      // same way s.blendedCumulative does there (see computeProgressionSteps)
+      // instead of freezing through every guessed step. Only for an active
+      // step - an inactive one's pill stays plain in the UI too (see
+      // render.js), so costDisplay is skipped here the same way.
+      const stepDisp = s.active && s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+      const costText = stepDisp.isGuess ? stepDisp.text : s.stepCost;
+      const totalText = s.blendedCumulative !== s.cumulative ? `~${s.blendedCumulative}` : s.cumulative;
+      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costText} pt(s), ${totalText} total${suffix}${ownedSuffix}`);
     });
     lines.push("");
   }

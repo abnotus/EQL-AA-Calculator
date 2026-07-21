@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
 # The topbar's "Points Spent" headline number blends real + estimated costs
-# (colored blue, ~199 instead of 167) when the build includes at least one
+# (colored blue, ~196 instead of 164) when the build includes at least one
 # purchased-but-unconfirmed rank with a guess - the ~ prefix and color are
 # the only visible cue; the confirmed/estimated breakdown lives in the
 # title tooltip only, same hover-to-disclose pattern as every other
 # estimate badge in the app (no separate visible note element anymore -
-# topbar is glanceable-density territory). Critically, nothing else in the
-# app - Progression's own running total, chief among them - is ever
-# computed from the blended figure; that's the number that used to matter
-# for affordability before the total-points/remaining concept was removed,
-# and still matters for Progression's owned/to-go split and per-step
-# running totals. This is a real shared build with several purchased-but-
-# unconfirmed ranks (Combat Stability, First Aid, Innate Eminence, Improved
-# Mend), independently verified by hand: real total 164, guesses add 32,
-# so the headline should read "~196". (Real total was 167 before a wiki
+# topbar is glanceable-density territory). Progression's own running total
+# blends the exact same way now (it used to stay strictly real while the
+# topbar blended, but a cumulative frozen through a step whose own pill
+# shows a nonzero ~N estimate read as "the estimate isn't doing anything" -
+# see logic.js's computeProgressionSteps for blendedCumulative). What's
+# still guaranteed: spentPoints()/affordability math itself never reads a
+# guess - "?" still costs exactly 0 there - proven here by the real/
+# estimated split staying separately trackable (the "164 confirmed" portion
+# of the tooltip) rather than the two numbers ever being silently merged
+# into one indistinguishable figure. This is a real shared build with
+# several purchased-but-unconfirmed ranks (Combat Stability, First Aid,
+# Innate Eminence, Improved Mend), independently verified by hand: real
+# total 164, guesses add 32, so the headline (and now Progression's own
+# last-row total) should read "~196". (Real total was 167 before a wiki
 # scrape confirmed Combat Fury's costs as 1/2/3/4 instead of 1/2/4/6 - a
 # real, non-guessed 3-point drop, unrelated to the guessed 32.)
 #
@@ -74,15 +79,66 @@ with sync_playwright() as p:
     assert title == "164 confirmed + 32 estimated.", f"FAIL: unexpected tooltip text: {title}"
     print("PASS: headline blends to ~196 in blue, full breakdown lives only in the tooltip")
 
-    # --- Progression's own running total (built straight from costNum(),
-    # never a guess) must stay the real 164, proving the blend is purely a
-    # topbar display choice and never leaks into the rest of the app. ---
+    # --- Progression's own running total now blends the same way the
+    # topbar does - the last row's total must match the headline exactly
+    # (~196), with the same "164 confirmed + 32 estimated." breakdown in
+    # its own tooltip, proving the two displays agree rather than showing
+    # two different numbers for the same underlying build. ---
     page.click('button[data-tab="progression"]')
     page.wait_for_timeout(100)
-    real_total = page.locator(".progression-row .cost-total").last.inner_text()
-    print("Progression's real running total (must stay 164, not the blended 196):", real_total)
-    assert real_total == "164 total", f"FAIL: expected Progression's real total to stay 164, got {real_total}"
-    print("PASS: Progression's running total stays real even while the topbar headline blends in estimates")
+    prog_total_el = page.locator(".progression-row .cost-total").last
+    prog_total = prog_total_el.inner_text()
+    prog_title = prog_total_el.get_attribute("title")
+    print("Progression's blended running total (must match the topbar's ~196):", prog_total, "|", prog_title)
+    assert prog_total == "~196 total", f"FAIL: expected Progression's total to blend to ~196 like the topbar, got {prog_total}"
+    assert "is-estimate" in prog_total_el.get_attribute("class")
+    assert prog_title == "164 confirmed + 32 estimated.", f"FAIL: unexpected breakdown tooltip: {prog_title}"
+    print("PASS: Progression's running total blends in estimates exactly like the topbar headline does, agreeing on both the figure and its breakdown")
+
+    # --- Second, independent build: this is the exact scenario the bug was
+    # originally reported against - Packrat trained to rank 10, its last 6
+    # ranks (5-10) all carrying the same flat "~1" manual guess, mixed in
+    # with plenty of real, fully-confirmed ranks earlier in the click
+    # order. Real total 187, guesses add 12 (Packrat's 6 guessed ranks +
+    # Combat Stability rank 3's own guess), so the headline - and every
+    # Progression row from the first guessed step onward - should read
+    # "~199". Before the blendedCumulative fix, every one of Packrat's
+    # guessed-rank rows showed the SAME frozen total (whatever the real
+    # total was at that point), even though each row's own pill showed a
+    # nonzero ~1 estimate - a visibly increasing per-step cost next to a
+    # cumulative that never moved. ---
+    page2 = browser.new_page(viewport={"width": 1400, "height": 900})
+    errors2 = []
+    page2.on("pageerror", lambda exc: errors2.append(str(exc)))
+    BUILD2 = "H4sIAAAAAAAACn2OsQ4CMQxD_yWzh0vStL3-SpWJlQExsCD-HSW9EwwI5UmuJdfJkx40BHShMXc0sDroSsM20J3GnBXqmA3FMXu-hdOIgrfQCg5p6I6pnE5LRtWWrBLdU8qW_03SmaKGrBaOVnfQjUYkTCAVpl8IlCHtNyvTjqk5PScWiCKWn8RZifCHOHJRTuxA9A_-egN0VogmSwEAAA"
+    page2.goto(f"{BASE}?build={BUILD2}")
+    page2.wait_for_selector("#treeWrap .node")
+    page2.wait_for_timeout(200)
+
+    sv2 = page2.locator("#spentValue")
+    print("second build spentValue:", sv2.inner_text(), sv2.get_attribute("title"))
+    assert sv2.inner_text() == "~199"
+    assert sv2.get_attribute("title") == "187 confirmed + 12 estimated."
+
+    page2.click('button[data-tab="progression"]')
+    page2.wait_for_timeout(150)
+    packrat_rows = page2.locator(".progression-row", has=page2.locator(".step-name", has_text="Packrat"))
+    totals = [packrat_rows.nth(i).locator(".cost-total").inner_text() for i in range(packrat_rows.count())]
+    print("Packrat rank 1-10's running totals in order:", totals)
+    # All 10 already carry "~" by the time Packrat's own ranks start - an
+    # earlier step (Combat Stability rank 3) is itself guessed, so the
+    # blend is already live before Packrat enters the sequence. Ranks 1-4
+    # are Packrat's own real ranks (just riding on top of that earlier
+    # blend); ranks 5-10 are each independently guessed on top of that -
+    # every one of the 10 must show a DIFFERENT, increasing total, proving
+    # neither Packrat's real ranks nor its guessed ones ever freeze it.
+    assert totals == [f"~{n} total" for n in range(190, 200)], \
+        f"FAIL: Packrat's running total must climb by exactly 1 every rank, real or guessed - got {totals}"
+    print("PASS: the running total climbs through Packrat's real ranks and its guessed ones alike, never freezing")
+
+    print("ERRORS:", errors2)
+    assert not errors2
+    page2.close()
 
     print("ERRORS:", errors)
     assert not errors

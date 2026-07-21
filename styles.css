@@ -1138,6 +1138,14 @@ main {
   color: var(--text-faint);
 }
 
+/* Same flat "blends however many tiers are involved" blue as #spentValue.is-
+   estimate - this is a running SUM across possibly-several differently-
+   tiered guesses, so no single tier color would mean anything here either. */
+.step-cost .cost-total.is-estimate {
+  color: var(--estimate-high);
+  font-style: italic;
+}
+
 .step-controls {
   display: flex;
   gap: 4px;

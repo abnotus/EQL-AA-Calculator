@@ -84,9 +84,11 @@ with sync_playwright() as p:
     assert color4 == "rgb(166, 124, 217)", f"FAIL: guessed step still rendering in the real 'spent' red, got {color4}"
     print("PASS: the guessed step's cost pill actually renders in its tier color, not red")
     cost_total = row4.locator(".cost-total")
-    print("Progression row4 cost-total (real, unaffected by the guess):", cost_total.inner_text())
-    assert cost_total.inner_text().strip() == "12 total", "FAIL: the guess must never leak into the real running total"
-    print("PASS: Progression's per-step pill shows the estimate, the running total stays real math")
+    print("Progression row4 cost-total (blends the guess in, like the topbar):", cost_total.inner_text(), cost_total.get_attribute("title"))
+    assert cost_total.inner_text().strip() == "~21 total", "FAIL: expected the running total to blend real 12 + guessed 9"
+    assert "is-estimate" in cost_total.get_attribute("class")
+    assert cost_total.get_attribute("title") == "12 confirmed + 9 estimated."
+    print("PASS: Progression's per-step pill shows the estimate, and the running total blends it in the same way the topbar does")
 
     # --- A real, fully-known step (rank 1, cost 2) must NOT get estimate
     # styling on its cost pill. ---

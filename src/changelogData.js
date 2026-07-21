@@ -4,6 +4,14 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.6.3",
+    date: "2026-07-21",
+    items: [
+      "Fixed: a purchased rank with a pattern-inferred cost estimate showed \"0 pt(s)\" for that step in the plain-text export instead of its \"~N\" estimate, even though the tree/side panel/Progression tab all showed the real guess.",
+      "Fixed: the Progression tab's own running point total froze in place through every purchased rank with an estimated cost, even as each of those steps visibly listed its own nonzero \"~N\" estimate right next to it. It now blends estimates into the running total the same way the topbar's headline already does (marked with the same ~ and color, breakdown on hover) - the plain-text export's running total matches it exactly. Affordability and every other point calculation in the app still only ever count a confirmed cost, same as before."
+    ]
+  },
+  {
     version: "1.6.2",
     date: "2026-07-19",
     items: [

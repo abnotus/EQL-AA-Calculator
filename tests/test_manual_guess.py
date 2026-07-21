@@ -58,12 +58,14 @@ with sync_playwright() as p:
     assert "is-estimate" in pip2.get_attribute("class") and "tier-very-low" in pip2.get_attribute("class")
     print("PASS: side panel next-rank box, confidence chip, and rank-costs pip all show very-low consistently")
 
-    # --- Buying the manually-guessed rank must cost costNum('?') == 0, not
-    # the guessed 4 - manual guesses must never leak into real point math,
-    # same structural guarantee as algorithmic guesses. The headline
-    # spentValue blends in the guess for display (test_estimated_total.py);
-    # Progression's own running total (built straight from costNum(), never
-    # a guess) is the number guaranteed to stay real - check that directly. ---
+    # --- Buying the manually-guessed rank must cost costNum('?') == 0 in
+    # spentPoints()/affordability terms, not the guessed 4 - manual guesses
+    # must never leak into real point math, same structural guarantee as
+    # algorithmic guesses. The headline spentValue blends in the guess for
+    # display (test_estimated_total.py); Progression's own running total
+    # blends the same way now (~7, matching the headline) instead of
+    # staying frozen at the real 3 - see test_estimated_total.py and
+    # logic.js's computeProgressionSteps (blendedCumulative) for why. ---
     page.click("#incBtn")  # buy rank2 (real cost "?", math treats as 0)
     page.wait_for_timeout(50)
     spent_after = page.locator("#spentValue").inner_text()
@@ -71,10 +73,12 @@ with sync_playwright() as p:
     assert spent_after == "~7", "FAIL: expected the headline to blend real 3 + guessed 4"
     page.click('button[data-tab="progression"]')
     page.wait_for_timeout(50)
-    real_total = page.locator(".progression-row .cost-total").last.inner_text()
-    print("Progression's real running total after buying the manually-guessed rank (must stay real 3, not 7):", real_total)
-    assert real_total == "3 total", f"FAIL: a manual guess leaked into real cost math, running total shows {real_total}"
-    print("PASS: the manual guess never affects spentPoints() anywhere in the app - real math still treats '?' as 0, only the topbar headline blends it")
+    total_el = page.locator(".progression-row .cost-total").last
+    blended_total = total_el.inner_text()
+    print("Progression's blended running total after buying the manually-guessed rank:", blended_total)
+    assert blended_total == "~7 total", f"FAIL: expected Progression's total to blend to ~7 like the topbar, got {blended_total}"
+    assert total_el.get_attribute("title") == "3 confirmed + 4 estimated.", f"FAIL: unexpected breakdown tooltip: {total_el.get_attribute('title')}"
+    print("PASS: Progression's running total blends the manual guess in too, same as the topbar - spentPoints() itself stays real (3 confirmed, tracked separately)")
     page.click('button[data-tab="general"]')
 
     # --- Innate Spell Resistance: costs = [2, ?, ?, ?, ?], only rank1 known

@@ -127,7 +127,9 @@ function formatGuessDisplay(rawCost, guess) {
 // catKey-based lookup - one of the 3 currently-active class slots (or
 // general/archetype/special). Used by the tree, side panel, and Progression
 // (whose steps are always for an active or formerly-active selection).
-function costDisplay(catKey, idx, rankIdx, rawCost) {
+// Exported for exportImport.js's plain-text export, so a guessed step cost
+// reads the same "~N" way there as it does in the Progression tab itself.
+export function costDisplay(catKey, idx, rankIdx, rawCost) {
   return formatGuessDisplay(rawCost, rawCost === "?" ? costGuess(catKey, idx, rankIdx) : null);
 }
 
@@ -696,6 +698,14 @@ export function renderProgression() {
     // inactive step's stepCost is already forced to 0 regardless of the
     // real cost - see computeProgressionSteps).
     const stepDisp = s.active && s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+    // The running total blends in estimates the same way the topbar's own
+    // headline does (~N, blue, tooltip breakdown) once any step up to this
+    // point has an unconfirmed cost with a guess - see computeProgressionSteps
+    // for blendedCumulative. Plain and identical to s.cumulative until that
+    // first guessed step, so nothing changes visually for a build with no
+    // guesses at all.
+    const totalIsEstimate = s.blendedCumulative !== s.cumulative;
+    const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCumulative - s.cumulative} estimated.` : "";
     const row = `<div class="progression-row${s.active ? "" : " inactive"}${s.prereqWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.index + 1}</span>
@@ -706,7 +716,7 @@ export function renderProgression() {
       ${s.prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
       <span class="step-cost">
         <span class="cost-this${stepDisp.isGuess ? ` is-estimate tier-${stepDisp.confidence}` : ""}"${stepDisp.isGuess ? ` title="${escapeHtml(stepDisp.title)}"` : ""}>+${stepDisp.isGuess ? stepDisp.text : s.stepCost} ${stepDisp.isGuess ? "pt(s)" : `pt${s.stepCost === 1 ? "" : "s"}`}</span>
-        <span class="cost-total">${s.cumulative} total</span>
+        <span class="cost-total${totalIsEstimate ? " is-estimate" : ""}"${totalIsEstimate ? ` title="${escapeHtml(totalTitle)}"` : ""}>${totalIsEstimate ? `~${s.blendedCumulative}` : s.cumulative} total</span>
       </span>
       <span class="step-controls" draggable="false">
         <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>

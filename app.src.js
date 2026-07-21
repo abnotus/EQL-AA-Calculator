@@ -484,6 +484,14 @@ function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
+    version: "1.6.3",
+    date: "2026-07-21",
+    items: [
+      "Fixed: a purchased rank with a pattern-inferred cost estimate showed \"0 pt(s)\" for that step in the plain-text export instead of its \"~N\" estimate, even though the tree/side panel/Progression tab all showed the real guess.",
+      "Fixed: the Progression tab's own running point total froze in place through every purchased rank with an estimated cost, even as each of those steps visibly listed its own nonzero \"~N\" estimate right next to it. It now blends estimates into the running total the same way the topbar's headline already does (marked with the same ~ and color, breakdown on hover) - the plain-text export's running total matches it exactly. Affordability and every other point calculation in the app still only ever count a confirmed cost, same as before."
+    ]
+  },
+  {
     version: "1.6.2",
     date: "2026-07-19",
     items: [
@@ -1954,6 +1962,7 @@ function computeProgressionSteps(order = state.purchaseOrder) {
 
   const counts = {};
   let cumulative = 0;
+  let blendedCumulative = 0;
   return order.map((entry, i) => {
     const key = entryKey(entry.scope, entry.className, entry.idx);
     const category = resolveEntryCategory(entry);
@@ -1998,6 +2007,23 @@ function computeProgressionSteps(order = state.purchaseOrder) {
     const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
     cumulative += stepCost;
 
+    // Running blend of the same kind estimatedExtraPoints() computes as one
+    // final figure for the topbar - here computed incrementally, since a
+    // per-row running total that stays frozen through a step whose own pill
+    // shows a nonzero ~N estimate reads as "the estimate isn't doing
+    // anything". Same guarantee as everywhere else a guess appears: never
+    // read by spentPoints()/getBlockReason/any affordability check - this
+    // is purely what .cost-total (Progression tab and the export text
+    // mirroring it) displays. An inactive step's blended contribution is
+    // forced to 0 too, matching stepCost's own inactive handling right
+    // above, since costGuess only resolves for one of the 3 active slots.
+    let blendedStepCost = stepCost;
+    if (active && aa && aa.costs[stepRank - 1] === "?") {
+      const guess = costGuess(category, entry.idx, stepRank - 1);
+      if (guess) blendedStepCost = guess.value;
+    }
+    blendedCumulative += blendedStepCost;
+
     const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
     const name = aa ? aa.name : "(unknown AA)";
     // Real-world progress, independent of active/prereqWarn - you can own a
@@ -2007,7 +2033,7 @@ function computeProgressionSteps(order = state.purchaseOrder) {
 
     return {
       index: i, aa, idx: entry.idx, scope: entry.scope, className: entry.className,
-      category, active, stepRank, stepCost, cumulative, prereqWarn, label, name, isLast, owned
+      category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, label, name, isLast, owned
     };
   });
 }
@@ -2661,6 +2687,8 @@ function formatGuessDisplay(rawCost, guess) {
 // catKey-based lookup - one of the 3 currently-active class slots (or
 // general/archetype/special). Used by the tree, side panel, and Progression
 // (whose steps are always for an active or formerly-active selection).
+// Exported for exportImport.js's plain-text export, so a guessed step cost
+// reads the same "~N" way there as it does in the Progression tab itself.
 function costDisplay(catKey, idx, rankIdx, rawCost) {
   return formatGuessDisplay(rawCost, rawCost === "?" ? costGuess(catKey, idx, rankIdx) : null);
 }
@@ -3230,6 +3258,14 @@ function renderProgression() {
     // inactive step's stepCost is already forced to 0 regardless of the
     // real cost - see computeProgressionSteps).
     const stepDisp = s.active && s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+    // The running total blends in estimates the same way the topbar's own
+    // headline does (~N, blue, tooltip breakdown) once any step up to this
+    // point has an unconfirmed cost with a guess - see computeProgressionSteps
+    // for blendedCumulative. Plain and identical to s.cumulative until that
+    // first guessed step, so nothing changes visually for a build with no
+    // guesses at all.
+    const totalIsEstimate = s.blendedCumulative !== s.cumulative;
+    const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCumulative - s.cumulative} estimated.` : "";
     const row = `<div class="progression-row${s.active ? "" : " inactive"}${s.prereqWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.index + 1}</span>
@@ -3240,7 +3276,7 @@ function renderProgression() {
       ${s.prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
       <span class="step-cost">
         <span class="cost-this${stepDisp.isGuess ? ` is-estimate tier-${stepDisp.confidence}` : ""}"${stepDisp.isGuess ? ` title="${escapeHtml(stepDisp.title)}"` : ""}>+${stepDisp.isGuess ? stepDisp.text : s.stepCost} ${stepDisp.isGuess ? "pt(s)" : `pt${s.stepCost === 1 ? "" : "s"}`}</span>
-        <span class="cost-total">${s.cumulative} total</span>
+        <span class="cost-total${totalIsEstimate ? " is-estimate" : ""}"${totalIsEstimate ? ` title="${escapeHtml(totalTitle)}"` : ""}>${totalIsEstimate ? `~${s.blendedCumulative}` : s.cumulative} total</span>
       </span>
       <span class="step-controls" draggable="false">
         <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
@@ -4016,7 +4052,17 @@ async function buildExportText(includeOwned) {
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
       const suffix = s.active ? "" : " (class not currently selected)";
       const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";
-      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${s.stepCost} pt(s), ${s.cumulative} total${suffix}${ownedSuffix}`);
+      // Mirrors the Progression tab's own row exactly, both pieces: a
+      // guessed step (real cost still "?", stepCost forced to 0) shows its
+      // "~N" estimate instead of a flat 0, and the running total blends the
+      // same way s.blendedCumulative does there (see computeProgressionSteps)
+      // instead of freezing through every guessed step. Only for an active
+      // step - an inactive one's pill stays plain in the UI too (see
+      // render.js), so costDisplay is skipped here the same way.
+      const stepDisp = s.active && s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+      const costText = stepDisp.isGuess ? stepDisp.text : s.stepCost;
+      const totalText = s.blendedCumulative !== s.cumulative ? `~${s.blendedCumulative}` : s.cumulative;
+      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costText} pt(s), ${totalText} total${suffix}${ownedSuffix}`);
     });
     lines.push("");
   }

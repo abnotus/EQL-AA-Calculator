@@ -982,6 +982,7 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
 
   const counts = {};
   let cumulative = 0;
+  let blendedCumulative = 0;
   return order.map((entry, i) => {
     const key = entryKey(entry.scope, entry.className, entry.idx);
     const category = resolveEntryCategory(entry);
@@ -1026,6 +1027,23 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
     const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
     cumulative += stepCost;
 
+    // Running blend of the same kind estimatedExtraPoints() computes as one
+    // final figure for the topbar - here computed incrementally, since a
+    // per-row running total that stays frozen through a step whose own pill
+    // shows a nonzero ~N estimate reads as "the estimate isn't doing
+    // anything". Same guarantee as everywhere else a guess appears: never
+    // read by spentPoints()/getBlockReason/any affordability check - this
+    // is purely what .cost-total (Progression tab and the export text
+    // mirroring it) displays. An inactive step's blended contribution is
+    // forced to 0 too, matching stepCost's own inactive handling right
+    // above, since costGuess only resolves for one of the 3 active slots.
+    let blendedStepCost = stepCost;
+    if (active && aa && aa.costs[stepRank - 1] === "?") {
+      const guess = costGuess(category, entry.idx, stepRank - 1);
+      if (guess) blendedStepCost = guess.value;
+    }
+    blendedCumulative += blendedStepCost;
+
     const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
     const name = aa ? aa.name : "(unknown AA)";
     // Real-world progress, independent of active/prereqWarn - you can own a
@@ -1035,7 +1053,7 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
 
     return {
       index: i, aa, idx: entry.idx, scope: entry.scope, className: entry.className,
-      category, active, stepRank, stepCost, cumulative, prereqWarn, label, name, isLast, owned
+      category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, label, name, isLast, owned
     };
   });
 }
