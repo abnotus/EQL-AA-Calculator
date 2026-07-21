@@ -15,7 +15,7 @@ const AA_DATA = {
     { name: "Brewing Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Brewing recipes by 10/?/?%." },
     { name: "Circular Breathing", ranks: 4, costs: ["2","3","4","5"], levelReq: "1", description: "Increases your endurance regeneration by 1/2/3/4 point(s)." },
     { name: "Combat Agility", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases your melee avoidance by 2%/5%/10%." },
-    { name: "Combat Fury", ranks: 4, costs: ["1","2","4","6"], levelReq: "1", description: "Increases your chance of performing a critical melee hit with all skills by 1/?/5/10%." },
+    { name: "Combat Fury", ranks: 4, costs: ["1","2","3","4"], levelReq: "1", description: "Increases your chance of performing a critical melee hit with all skills by 1/?/?/5%." },
     { name: "Combat Stability", ranks: 3, costs: ["2","4","?"], levelReq: "1", description: "Increases the armor class soft cap of your class by 2/5/?%." },
     { name: "Crafting Mastery", ranks: 6, costs: ["3","?","?","?","?","?"], levelReq: "1", description: "Allows raising 1-6 additional tradeskills from a 200 to 300 cap." },
     { name: "Fear Resistance", ranks: 4, costs: ["2","4","6","9"], levelReq: "1", description: "Grants you an additional 25/50/75/100% chance to resist most fear spells." },
@@ -52,7 +52,7 @@ const AA_DATA = {
     { name: "Exodus", ranks: 1, costs: ["6"], levelReq: "10", description: "Teleports group members within 100 feet to a safe zone location." },
     { name: "Finishing Blow", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Critical melee attacks deal 100/200/300% damage to level 50/53/55 or lower NPCs at 10/12/15% or less health." },
     { name: "Fury of Magic", ranks: 4, costs: ["1","2","3","4"], levelReq: "1", description: "Increases critical hit chance with direct damage spells by 2/4/7/10%." },
-    { name: "Healing Adept", ranks: 3, costs: ["2","2","2"], levelReq: "1", description: "Increases instant-duration healing spell effectiveness by 2% per rank." },
+    { name: "Healing Adept", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases instant-duration healing spell effectiveness by 2% per rank." },
     { name: "Healing Boon", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases HoT exceptional heal chance by 3/6/9%." },
     { name: "Healing Gift", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Grants instant healing spells 3%/6%/10% exceptional heal chance." },
     { name: "Improved Bash", ranks: 1, costs: ["6"], levelReq: "1", description: "Allows bash usage while wielding two-handed weapons." },
@@ -150,7 +150,7 @@ const AA_DATA = {
       { name: "Hunter's Attack Power", ranks: 26, costs: Array(26).fill("0"), levelReq: "8", auto: true, description: "Increases your attack power by 4 points per rank." },
       { name: "Innate Called Shot", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Ranger the ability to unleash a double bow shot on stationary targets." },
       { name: "Unbounded Strikethrough", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance you will strike through your opponent's active defenses (dodge, block, parry, riposte) by 10/20/30%." },
-      { name: "Weapon Mastery of the Scout", ranks: 3, costs: ["3","3","3"], levelReq: "1", description: "Increases the base damage of your archery attacks by 30/60/90%." }
+      { name: "Weapon Mastery of the Scout", ranks: 3, costs: ["3","6","?"], levelReq: "1", description: "Increases the base damage of your archery attacks by 30/60/90%." }
     ],
     "Rogue": [
       { name: "Chaotic Stab", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Allows your backstab attacks to deal minimal backstab damage if you are not behind your target." },

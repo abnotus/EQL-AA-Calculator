@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 159035,
+  "revid": 159326,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -72,10 +72,10 @@
       "costs": [
         "1",
         "2",
-        "4",
-        "6"
+        "3",
+        "4"
       ],
-      "description": "This passive ability increases your chance of performing a critical melee hit with all skills by 1/?/5/10%. Requirements: level 1."
+      "description": "This passive ability increases your chance of performing a critical melee hit with all skills by 1/?/?/5%. Requirements: level 1."
     },
     "general::Combat Stability::0": {
       "ranks": "3",
@@ -390,7 +390,9 @@
     "archetype::Healing Adept::0": {
       "ranks": "3",
       "costs": [
-        "2"
+        "2",
+        "4",
+        "6"
       ],
       "description": "This passive ability increases the effectiveness of your instant-duration healing spells by 2%. Requirements: level 1."
     },
@@ -947,7 +949,9 @@
     "class:Ranger::Weapon Mastery of the Scout::0": {
       "ranks": "3",
       "costs": [
-        "3"
+        "3",
+        "6",
+        "?"
       ],
       "description": "Increases the base damage of your archery attacks by 30/60/90%. Requirements: level 1."
     },

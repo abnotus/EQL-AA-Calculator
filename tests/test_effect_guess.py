@@ -8,9 +8,9 @@
 # which never looked at description text for spending purposes anyway).
 #
 # Combat Fury (general) is the one live example today: "Increases your
-# chance of performing a critical melee hit with all skills by 1/?/5/10%."
-# - rank 2 is boxed in between the known 1 and 5, so it gets a low-
-# confidence interpolated guess of 3 (floor(1 + (5-1)*0.5)).
+# chance of performing a critical melee hit with all skills by 1/?/?/5%."
+# - ranks 2 and 3 are boxed in between the known 1 and 5, so they each get a
+# low-confidence interpolated guess (2 and 3 respectively).
 import sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -33,20 +33,21 @@ with sync_playwright() as p:
     page.click("#incBtn")  # rank1, real value 1
     page.wait_for_timeout(30)
 
-    # --- Side panel: rank1 is real (bolded, no estimate); rank2's "?" shows
-    # the interpolated guess, styled and tooltipped, NOT bolded (it isn't
-    # the current rank yet). ---
+    # --- Side panel: rank1 is real (bolded, no estimate); ranks 2 and 3's
+    # "?"s each show their own interpolated guess, styled and tooltipped,
+    # NOT bolded (neither is the current rank yet); rank4 stays the real
+    # known 5, untouched. ---
     desc = page.locator("#sidePanel .desc").first
     html = desc.inner_html()
     print("side panel desc (rank1 current):", html)
     assert '<span class="rank-highlight">1</span>' in html, "FAIL: the real current-rank value should still be bolded"
-    assert 'class="is-estimate tier-low" title="Estimated (low confidence)' in html
-    assert "~3" in html
-    assert "/5/10%." in html, "FAIL: the other real known values must stay untouched"
-    print("PASS: side panel shows the real current rank bolded and the guessed rank estimate-styled, independently")
+    assert html.count('class="is-estimate tier-low" title="Estimated (low confidence)') == 2, "FAIL: expected two independently-styled guessed ranks"
+    assert "~2" in html and "~3" in html
+    assert html.rstrip().endswith("/5%."), "FAIL: the real known rank4 value must stay untouched"
+    print("PASS: side panel shows the real current rank bolded and both guessed ranks estimate-styled, independently")
 
-    # --- Progression tab: the next-rank preview (for rank2, the guessed
-    # one) shows the same estimate, with a confidence chip. ---
+    # --- Progression tab: the next-rank preview (for rank2, the first
+    # guessed one) shows the same estimate, with a confidence chip. ---
     page.click('button[data-tab="progression"]')
     page.wait_for_timeout(100)
     row = page.locator(".progression-row", has=page.locator(".step-name", has_text="Combat Fury"))
@@ -54,7 +55,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(100)
     prog_desc = page.locator(".progression-next-rank .desc").inner_html()
     print("Progression next-rank desc:", prog_desc)
-    assert "~3" in prog_desc and "is-estimate" in prog_desc and "tier-low" in prog_desc
+    assert "~2" in prog_desc and "is-estimate" in prog_desc and "tier-low" in prog_desc
     print("PASS: Progression's next-rank preview shows the same guess")
 
     # --- Buy rank2 - now the guessed slot IS the current rank too. Combined
@@ -85,7 +86,7 @@ with sync_playwright() as p:
     card = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Combat Fury"))
     browse_html = card.locator(".desc").inner_html()
     print("Browse desc html:", browse_html)
-    assert "~3" in browse_html and "is-estimate" in browse_html
+    assert "~2" in browse_html and "~3" in browse_html and "is-estimate" in browse_html
     assert "rank-highlight" not in browse_html, "FAIL: Browse has no current rank, nothing should be bolded"
     page.fill("#globalSearch", "")
     page.click("#browseToggle")
@@ -98,7 +99,7 @@ with sync_playwright() as p:
     summary_card = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Combat Fury"))
     summary_html = summary_card.locator(".desc").inner_html()
     print("Summary desc html:", summary_html)
-    assert "~3" in summary_html and "is-estimate" in summary_html and "rank-highlight" in summary_html
+    assert "~2" in summary_html and "is-estimate" in summary_html and "rank-highlight" in summary_html
     print("PASS: Summary shows the guess, bolded (it's the currently-held rank there)")
 
     # --- Packrat: MANUAL_EFFECT_GUESSES, very-low tier - 7 guessed slots in

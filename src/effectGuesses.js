@@ -24,7 +24,7 @@ export const EFFECT_GUESS_TABLE = {
   "general::baking-mastery": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 40, confidence: "very-low", basedOn: [], manual: true } } },
   "general::blacksmithing-mastery": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 40, confidence: "very-low", basedOn: [], manual: true } } },
   "general::brewing-mastery": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 40, confidence: "very-low", basedOn: [], manual: true } } },
-  "general::combat-fury": { "0": { "1": { value: 3, confidence: "low", basedOn: [], interpolated: true } } },
+  "general::combat-fury": { "0": { "1": { value: 2, confidence: "low", basedOn: [], interpolated: true }, "2": { value: 3, confidence: "low", basedOn: [], interpolated: true } } },
   "general::combat-stability": { "0": { "2": { value: 10, confidence: "very-low", basedOn: [], manual: true } } },
   "general::fletching-mastery": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 40, confidence: "very-low", basedOn: [], manual: true } } },
   "general::innate-eminence": { "0": { "3": { value: 8, confidence: "very-low", basedOn: [], manual: true }, "4": { value: 10, confidence: "very-low", basedOn: [], manual: true } } },
