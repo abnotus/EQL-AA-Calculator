@@ -76,5 +76,6 @@ that file's comments for how that played out).
 None of these are wired into CI; run them by hand after a change that
 touches either guessing feature (`wiki-sync/guess_costs.py` or
 `wiki-sync/guess_effects.py`, their consumers in `src/keys.js`/
-`src/logic.js`/`src/render.js`, the disclaimer banner, or the topbar) before
-rebuilding and committing.
+`src/logic.js`/`src/render.js`, the disclaimer banner, the topbar, or
+Progression's own blended running total / the plain-text export mirroring
+it) before rebuilding and committing.
