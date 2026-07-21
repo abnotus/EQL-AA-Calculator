@@ -5,7 +5,7 @@ const CLASS_LIST = [
 ];
 const AA_DATA = {
 general: [
-{ name: "Adamant Will", ranks: 4, costs: ["2","4","6","?"], levelReq: "1", description: "Grants you an additional 20/40/?/?% chance to resist charm, and 15/30/?/?% chance to resist mesmerization spells." },
+{ name: "Adamant Will", ranks: 4, costs: ["2","4","6","9"], levelReq: "1", description: "Grants you an additional 20/40/?/?% chance to resist charm, and 15/30/?/?% chance to resist mesmerization spells." },
 { name: "Alchemy Mastery", ranks: 3, costs: ["3","?","?"], levelReq: "1", description: "Reduces the chance of failing Alchemy recipes by 10/?/?%." },
 { name: "Baking Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Baking recipes by 10/?/?%." },
 { name: "Blacksmithing Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Blacksmithing recipes by 10/?/?%." },

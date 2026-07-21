@@ -20,38 +20,44 @@ with sync_playwright() as p:
     page.wait_for_selector("#treeWrap .node")
     page.click('button[data-tab="general"]')
 
-    # --- Adamant Will: medium-confidence guess (9) for rank 4 ---
-    aw = page.locator(".node", has=page.locator(".name", has_text="Adamant Will"))
-    aw.click()
-    for _ in range(3):
-        page.click("#incBtn")  # ranks 1,2,3 (costs 2,4,6 - all real)
+    # --- Combat Stability: high-confidence guess (6) for rank 3. (This used
+    # to be Adamant Will's rank 4, medium-confidence - a wiki scrape
+    # confirmed that one as a real 9 since this test was first written, the
+    # same "guess resolves away" story Combat Fury's own section below
+    # already tells. Swapped to a currently-live example rather than just
+    # updating the numbers, since Adamant Will has no "?" cost left at
+    # all.) ---
+    cs = page.locator(".node", has=page.locator(".name", has_text="Combat Stability"))
+    cs.click()
+    for _ in range(2):
+        page.click("#incBtn")  # ranks 1,2 (costs 2,4 - both real)
         page.wait_for_timeout(20)
 
     spent_before = page.locator("#spentValue").inner_text()
-    print("points spent after 3 real ranks (2+4+6=12):", spent_before)
-    assert spent_before == "12"
+    print("points spent after 2 real ranks (2+4=6):", spent_before)
+    assert spent_before == "6"
 
-    # Tree node badge shows the medium-tier guess.
-    tag = aw.locator(".costtag")
+    # Tree node badge shows the high-tier guess.
+    tag = cs.locator(".costtag")
     print("tree costtag text:", tag.inner_text(), "class:", tag.get_attribute("class"))
-    assert tag.inner_text() == "~9"
-    assert "is-estimate" in tag.get_attribute("class") and "tier-medium" in tag.get_attribute("class")
-    print("PASS: tree node shows the medium-confidence guess for Adamant Will's unknown rank 4")
+    assert tag.inner_text() == "~6"
+    assert "is-estimate" in tag.get_attribute("class") and "tier-high" in tag.get_attribute("class")
+    print("PASS: tree node shows the high-confidence guess for Combat Stability's unknown rank 3")
 
     # Side panel next-rank box + pip strip.
     next_cost_b = page.locator("#sidePanel .next-rank-title b")
     print("next-rank cost text:", next_cost_b.inner_text(), "class:", next_cost_b.get_attribute("class"))
-    assert next_cost_b.inner_text() == "~9"
+    assert next_cost_b.inner_text() == "~6"
     assert "is-estimate" in next_cost_b.get_attribute("class")
     chip = page.locator("#sidePanel .confidence-chip")
     print("confidence chip:", chip.inner_text(), chip.get_attribute("class"))
-    assert chip.inner_text().strip().lower() == "medium"
-    assert "tier-medium" in chip.get_attribute("class")
+    assert chip.inner_text().strip().lower() == "high"
+    assert "tier-high" in chip.get_attribute("class")
 
-    pip4 = page.locator("#sidePanel .rank-costs .pip").nth(3)
-    print("pip4:", pip4.inner_text(), pip4.get_attribute("class"))
-    assert pip4.inner_text() == "R4: ~9"
-    assert "is-estimate" in pip4.get_attribute("class") and "tier-medium" in pip4.get_attribute("class")
+    pip3 = page.locator("#sidePanel .rank-costs .pip").nth(2)
+    print("pip3:", pip3.inner_text(), pip3.get_attribute("class"))
+    assert pip3.inner_text() == "R3: ~6"
+    assert "is-estimate" in pip3.get_attribute("class") and "tier-high" in pip3.get_attribute("class")
     print("PASS: side panel next-rank box and rank-costs pip both show the guess consistently")
 
     # --- Real cost (rank 1, known = 2) must NEVER show an estimate treatment. ---
@@ -62,37 +68,37 @@ with sync_playwright() as p:
     print("PASS: a real known cost never gets estimate styling")
 
     # --- Buying the guessed rank must cost exactly costNum('?') == 0 in
-    # spentPoints()/affordability terms, not the guessed 9 - guesses must
+    # spentPoints()/affordability terms, not the guessed 6 - guesses must
     # never leak into real point math. The topbar's headline number blends
     # in the guess for display (see test_estimated_total.py); Progression's
-    # own per-step running total blends the same way (~21, matching the
-    # topbar) instead of freezing at the real 12 - the earlier design kept
+    # own per-step running total blends the same way (~12, matching the
+    # topbar) instead of freezing at the real 6 - the earlier design kept
     # it strictly real, but a cumulative that never moves through a step
-    # whose own pill shows a nonzero ~9 read as "the estimate isn't doing
+    # whose own pill shows a nonzero ~6 read as "the estimate isn't doing
     # anything", so it now blends everywhere the topbar already does. What's
     # still guaranteed or math-affecting: the real/estimated split stays
-    # separately tracked (the tooltip's "12 confirmed" - never silently
+    # separately tracked (the tooltip's "6 confirmed" - never silently
     # merged into one indistinguishable number), and spentPoints() itself
     # (which drives everything affordability-related) is untouched -
-    # verified by that same "12 confirmed" figure being exactly the real
+    # verified by that same "6 confirmed" figure being exactly the real
     # total from before this purchase's guess was added. ---
-    page.click("#incBtn")  # buy rank 4 (real cost "?", math treats as 0)
+    page.click("#incBtn")  # buy rank 3 (real cost "?", math treats as 0)
     page.wait_for_timeout(50)
     spent_after = page.locator("#spentValue").inner_text()
     print("spentValue after buying the guessed rank (blends in the guess for display):", spent_after)
-    assert spent_after == "~21", "FAIL: expected the headline to blend real 12 + guessed 9"
+    assert spent_after == "~12", "FAIL: expected the headline to blend real 6 + guessed 6"
     page.click('button[data-tab="progression"]')
     page.wait_for_timeout(50)
     total_el = page.locator(".progression-row .cost-total").last
     blended_total = total_el.inner_text()
     total_title = total_el.get_attribute("title")
     print("Progression's blended running total after buying the guessed rank:", blended_total, "|", total_title)
-    assert blended_total == "~21 total", f"FAIL: expected Progression's total to blend to ~21 like the topbar, got {blended_total}"
-    assert total_title == "12 confirmed + 9 estimated.", f"FAIL: unexpected breakdown tooltip: {total_title}"
+    assert blended_total == "~12 total", f"FAIL: expected Progression's total to blend to ~12 like the topbar, got {blended_total}"
+    assert total_title == "6 confirmed + 6 estimated.", f"FAIL: unexpected breakdown tooltip: {total_title}"
     print("PASS: Progression's running total now blends the guess in the same way the topbar does, with the real/estimated split still tracked separately (spentPoints() itself untouched)")
 
     # --- The plain-text export's "Progression (click order)" listing must
-    # show the same "~9" per-step estimate AND the same "~21" blended
+    # show the same "~6" per-step estimate AND the same "~12" blended
     # running total the Progression tab itself now shows - buildExportText
     # used to print the raw real stepCost/cumulative regardless of whether a
     # guess existed, a real bug reported directly against Packrat's flat
@@ -101,10 +107,10 @@ with sync_playwright() as p:
     page.click("#exportBtn")
     page.wait_for_timeout(300)
     export_text = page.locator("#exportText").input_value()
-    line = next(l for l in export_text.split("\n") if "Adamant Will rank 4" in l)
-    print("export text line for the guessed rank 4:", line)
-    assert "~9 pt(s)" in line, f"FAIL: expected the export to show the ~9 guess, got: {line}"
-    assert "~21 total" in line, f"FAIL: expected the export's running total to blend to ~21 like Progression's own, got: {line}"
+    line = next(l for l in export_text.split("\n") if "Combat Stability rank 3" in l)
+    print("export text line for the guessed rank 3:", line)
+    assert "~6 pt(s)" in line, f"FAIL: expected the export to show the ~6 guess, got: {line}"
+    assert "~12 total" in line, f"FAIL: expected the export's running total to blend to ~12 like Progression's own, got: {line}"
     page.click("#closeExportBtn")
     print("PASS: the plain-text export shows the same guessed per-step estimate and blended running total the Progression tab does")
 

@@ -26,18 +26,21 @@ with sync_playwright() as p:
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
 
-    # --- Browse view: Adamant Will's rank 4 (medium-confidence guess, value
-    # 9) should show as an estimate in the per-rank cost list, not a plain
-    # "?". Use the global search box to find it quickly. ---
+    # --- Browse view: Combat Stability's rank 3 (high-confidence guess,
+    # value 6) should show as an estimate in the per-rank cost list, not a
+    # plain "?". Use the global search box to find it quickly. (This used
+    # to be Adamant Will's rank 4 - a wiki scrape confirmed that one as a
+    # real 9 since this test was first written, so it no longer has a "?"
+    # cost at all; swapped to a currently-live example.) ---
     page.click("#browseToggle")
-    page.fill("#globalSearch", "Adamant Will")
+    page.fill("#globalSearch", "Combat Stability")
     page.wait_for_timeout(100)
-    card = page.locator(".browse-card", has=page.locator(".name", has_text="Adamant Will"))
+    card = page.locator(".browse-card", has=page.locator(".name", has_text="Combat Stability"))
     info_html = card.locator(".info").inner_html()
-    print("Adamant Will browse info html:", info_html)
-    assert "~9" in info_html
-    assert 'class="is-estimate tier-medium"' in info_html
-    print("PASS: Browse shows Adamant Will's rank-4 estimate, not a bare '?'")
+    print("Combat Stability browse info html:", info_html)
+    assert "~6" in info_html
+    assert 'class="is-estimate tier-high"' in info_html
+    print("PASS: Browse shows Combat Stability's rank-3 estimate, not a bare '?'")
 
     # --- Browse view: a class NOT currently selected must still show its
     # guesses (Browse lists every class, not just the active 3). Default
@@ -55,39 +58,39 @@ with sync_playwright() as p:
     page.fill("#globalSearch", "")
     page.click("#browseToggle")
 
-    # --- Progression tab: buy Adamant Will up through the guessed rank 4
-    # and confirm the per-step cost pill shows the estimate (not '0'), the
-    # running total stays real, and the next-rank preview also shows the
-    # estimate + confidence chip. ---
+    # --- Progression tab: buy Combat Stability up through the guessed rank
+    # 3 and confirm the per-step cost pill shows the estimate (not '0'), the
+    # running total blends it in like the topbar, and the next-rank preview
+    # also shows the estimate + confidence chip. ---
     page.click('button[data-tab="general"]')
-    aw = page.locator(".node", has=page.locator(".name", has_text="Adamant Will"))
-    aw.click()
-    for _ in range(4):
+    cs = page.locator(".node", has=page.locator(".name", has_text="Combat Stability"))
+    cs.click()
+    for _ in range(3):
         page.click("#incBtn")
         page.wait_for_timeout(20)
 
     page.click('button[data-tab="progression"]')
     page.wait_for_timeout(100)
-    row4 = page.locator(".progression-row").nth(3)
-    cost_this = row4.locator(".cost-this")
-    print("Progression row4 cost-this:", cost_this.inner_text(), cost_this.get_attribute("class"))
-    assert cost_this.inner_text().strip() == "+~9 pt(s)"
-    cls4 = cost_this.get_attribute("class")
-    assert "is-estimate" in cls4 and "tier-medium" in cls4
+    row3 = page.locator(".progression-row").nth(2)
+    cost_this = row3.locator(".cost-this")
+    print("Progression row3 cost-this:", cost_this.inner_text(), cost_this.get_attribute("class"))
+    assert cost_this.inner_text().strip() == "+~6 pt(s)"
+    cls3 = cost_this.get_attribute("class")
+    assert "is-estimate" in cls3 and "tier-high" in cls3
     # Class alone isn't proof of anything on screen - .step-cost .cost-this
     # and the generic .is-estimate.tier-* rule are equal CSS specificity, so
     # without an explicit compound override the red "spent" color silently
     # wins on source order even though the class list is completely correct.
     # Check the actually-rendered color, not just the class attribute.
-    color4 = cost_this.evaluate("el => getComputedStyle(el).color")
-    print("Progression row4 cost-this computed color:", color4)
-    assert color4 == "rgb(166, 124, 217)", f"FAIL: guessed step still rendering in the real 'spent' red, got {color4}"
+    color3 = cost_this.evaluate("el => getComputedStyle(el).color")
+    print("Progression row3 cost-this computed color:", color3)
+    assert color3 == "rgb(90, 169, 230)", f"FAIL: guessed step still rendering in the real 'spent' red, got {color3}"
     print("PASS: the guessed step's cost pill actually renders in its tier color, not red")
-    cost_total = row4.locator(".cost-total")
-    print("Progression row4 cost-total (blends the guess in, like the topbar):", cost_total.inner_text(), cost_total.get_attribute("title"))
-    assert cost_total.inner_text().strip() == "~21 total", "FAIL: expected the running total to blend real 12 + guessed 9"
+    cost_total = row3.locator(".cost-total")
+    print("Progression row3 cost-total (blends the guess in, like the topbar):", cost_total.inner_text(), cost_total.get_attribute("title"))
+    assert cost_total.inner_text().strip() == "~12 total", "FAIL: expected the running total to blend real 6 + guessed 6"
     assert "is-estimate" in cost_total.get_attribute("class")
-    assert cost_total.get_attribute("title") == "12 confirmed + 9 estimated."
+    assert cost_total.get_attribute("title") == "6 confirmed + 6 estimated."
     print("PASS: Progression's per-step pill shows the estimate, and the running total blends it in the same way the topbar does")
 
     # --- A real, fully-known step (rank 1, cost 2) must NOT get estimate
@@ -113,7 +116,7 @@ with sync_playwright() as p:
     # model, or one edited by hand. ---
     inactive_build = "H4sIAAAAAAAC_6tWKlOyUjDSUVBKBtLRBjoKhjoKRrFAfg6QbwrkK5UAGYYGBiBmEUhNtCVIVSxITQGIb2kQWwsAdrvsFEcAAAA"
     # Fresh page (no unsaved-build prompt to fight through) rather than
-    # reusing the one with Adamant Will already bought above.
+    # reusing the one with Combat Stability already bought above.
     inactive_page = browser.new_page(viewport={"width": 1400, "height": 900})
     inactive_page.on("dialog", lambda d: d.accept())
     inactive_page.goto(f"{BASE}?build={inactive_build}")

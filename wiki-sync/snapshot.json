@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 159326,
+  "revid": 159327,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -8,7 +8,7 @@
         "2",
         "4",
         "6",
-        "?"
+        "9"
       ],
       "description": "This passive ability grants you an additional 20/40/?/?% chance to resist charm, and 15/30/?/?% chance to resist mesmerization spells. Requirements: level 1."
     },
