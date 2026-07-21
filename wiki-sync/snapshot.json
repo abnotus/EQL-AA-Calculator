@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 159327,
+  "revid": 159668,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -271,7 +271,7 @@
         "6",
         "12"
       ],
-      "description": "This passive ability grants you a 15/30/50/60/70/80/90/100% chance to endure what would otherwise be a stunning melee attack, from any angle, without being stunned. Requirements: level 1."
+      "description": "This passive ability grants you a 15/30/50/60/70/80/90/100% chance to endure what would otherwise be a stunning melee attack, from any angle, without being stunned. Requirements: level 1. Only tanks (WAR/PAL/SHD) can train the full 8/8, Rangers can reach 7/8 and all other classes are capped at 6/8."
     },
     "general::Stoicism::0": {
       "ranks": "5",

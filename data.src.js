@@ -35,7 +35,7 @@ const AA_DATA = {
     { name: "Permanent Illusion", ranks: 1, costs: ["5"], levelReq: "1", description: "Extends the duration of your beneficial illusion spells to 16.6 hours and allows persistence when zoning." },
     { name: "Pottery Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Pottery recipes by 10/?/?%." },
     { name: "Quick Buff", ranks: 1, costs: ["5"], levelReq: "1", description: "Cast all currently memorized beneficial spells on all valid group and raid targets in range." },
-    { name: "Steadfast Will", ranks: 8, costs: ["2","2","3","3","3","3","6","12"], levelReq: "1", description: "Grants you a 15/30/50/60/70/80/90/100% chance to endure stunning melee attacks without being stunned." },
+    { name: "Steadfast Will", ranks: 8, costs: ["2","2","3","3","3","3","6","12"], levelReq: "1", description: "Grants you a 15/30/50/60/70/80/90/100% chance to endure stunning melee attacks without being stunned. Only Warrior, Paladin, and Shadow Knight can train the full rank 8; Ranger can reach rank 7; every other class is capped at rank 6." },
     { name: "Stoicism", ranks: 5, costs: ["2","?","?","?","?"], levelReq: "1", description: "Reduces how far incoming melee attacks push you backward by 10%." },
     { name: "Tailoring Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Tailoring recipes by 10/?/?%." }
   ],
