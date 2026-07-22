@@ -441,11 +441,20 @@ function renderSummary() {
     if (!picked.length) return;
     anyPicked = true;
     html += `<h3 class="summary-section-title">${escapeHtml(label)}</h3>`;
-    html += `<div class="browse-grid">` + picked.map(({ aa, idx, rank }) => `
+    html += `<div class="browse-grid">` + picked.map(({ aa, idx, rank }) => {
+      // Same check the tree/side panel already use (a stale prerequisite,
+      // or a held rank beyond a class-rank-cap after a class swap) - Summary
+      // shows the CURRENT overall picture rather than a click-ordered
+      // sequence, so heldRankInvalidReason's semantics (not Progression's
+      // sequence-aware prereqWarn) are the right fit here.
+      const invalidReason = heldRankInvalidReason(key, idx);
+      return `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, rank), rank, effectLookup(key, idx))}</div>
-      </div>`).join("") + `</div>`;
+        ${invalidReason ? `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>` : ""}
+      </div>`;
+    }).join("") + `</div>`;
   });
 
   el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
@@ -714,14 +723,26 @@ export function renderProgression() {
     // guesses at all.
     const totalIsEstimate = s.blendedCumulative !== s.cumulative;
     const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCumulative - s.cumulative} estimated.` : "";
-    const row = `<div class="progression-row${s.active ? "" : " inactive"}${s.prereqWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
+    // Two independent, unrelated reasons a step can warn - reuses the exact
+    // same visual language (the row tint, the warn badge) for both rather
+    // than inventing a second one, since to the user both mean the same
+    // thing: "this step needs attention". prereqWarn is sequence-aware
+    // (computed above, per this exact click order); classCapWarn isn't (a
+    // step's own stepRank against today's cap, independent of position -
+    // see computeProgressionSteps). Concatenated rather than picked-one
+    // when both happen to apply to the same step.
+    const warnTitles = [];
+    if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
+    if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
+    const rowWarn = warnTitles.length > 0;
+    const row = `<div class="progression-row${s.active ? "" : " inactive"}${rowWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.index + 1}</span>
       <span class="step-info">
         <span class="step-name${s.owned ? " owned" : ""}">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
         <span class="step-cat">${escapeHtml(s.label)}${s.active ? "" : " &middot; class not currently selected"}</span>
       </span>
-      ${s.prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
+      ${rowWarn ? `<span class="step-warn" title="${escapeHtml(warnTitles.join(" "))}">&#9888;</span>` : ""}
       <span class="step-cost">
         <span class="cost-this${stepDisp.isGuess ? ` is-estimate tier-${stepDisp.confidence}` : ""}"${stepDisp.isGuess ? ` title="${escapeHtml(stepDisp.title)}"` : ""}>+${stepDisp.isGuess ? stepDisp.text : s.stepCost} ${stepDisp.isGuess ? "pt(s)" : `pt${s.stepCost === 1 ? "" : "s"}`}</span>
         <span class="cost-total${totalIsEstimate ? " is-estimate" : ""}"${totalIsEstimate ? ` title="${escapeHtml(totalTitle)}"` : ""}>${totalIsEstimate ? `~${s.blendedCumulative}` : s.cumulative} total</span>

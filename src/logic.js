@@ -1057,6 +1057,15 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
       }
     }
 
+    // Unlike prereqWarn, this never depends on click order - a step's own
+    // stepRank against today's cap is all that matters, so reordering this
+    // AA's entries among themselves (or relative to anything else) can never
+    // introduce or clear it. Deliberately a separate flag from prereqWarn
+    // rather than folded into it: the two conditions are unrelated (a step
+    // can be class-capped without ever having a prereq at all), and keeping
+    // them distinct means each still means exactly one thing on its own.
+    const classCapWarn = active && aa && aa.classRankCap && stepRank > classRankCapFor(aa);
+
     counts[key] = purchaseCount;
     const isLast = purchaseCount === totalCounts[key];
 
@@ -1089,7 +1098,7 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
 
     return {
       index: i, aa, idx: entry.idx, scope: entry.scope, className: entry.className,
-      category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, label, name, isLast, owned
+      category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, classCapWarn, label, name, isLast, owned
     };
   });
 }

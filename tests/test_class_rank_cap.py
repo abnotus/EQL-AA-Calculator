@@ -89,6 +89,48 @@ with sync_playwright() as p:
     assert "width:25%" in style, f"FAIL: expected the capped segment to cover 2/8 = 25% of the bar, got {style}"
     print("PASS: rank 8 persists across the class swap, flagged invalidated with the exact prereq-style warning, and the bar shows the excess dimmed")
 
+    # --- Progression tab: unlike the tree's one warn badge per AA,
+    # Progression has one row per rank, so it can flag exactly the rows
+    # beyond the cap (7-8) and leave the ones within it (1-6) alone -
+    # reusing the identical prereq-warn-row/step-warn treatment a sequence-
+    # broken prerequisite already gets, per classCapWarn in
+    # computeProgressionSteps. ---
+    page.click('button[data-tab="progression"]')
+    page.wait_for_timeout(150)
+    prog_rows = page.locator(".progression-row", has=page.locator(".step-name", has_text="Steadfast Will"))
+    print("Steadfast Will Progression row count:", prog_rows.count())
+    assert prog_rows.count() == 8
+    for i in range(8):
+        row = prog_rows.nth(i)
+        warn = row.locator(".step-warn")
+        should_warn = i >= 6  # ranks 7-8 (0-indexed 6-7) exceed the cap of 6
+        print(f"  rank {i + 1}: prereq-warn-row class={'prereq-warn-row' in row.get_attribute('class')}, step-warn present={warn.count() > 0}")
+        assert ("prereq-warn-row" in row.get_attribute("class")) == should_warn, f"FAIL: rank {i + 1}'s row warn state is wrong"
+        assert (warn.count() > 0) == should_warn, f"FAIL: rank {i + 1}'s warn badge presence is wrong"
+        if should_warn:
+            assert warn.get_attribute("title") == "Exceeds the rank 6 cap for your currently selected classes."
+    print("PASS: Progression flags exactly the two rows (ranks 7-8) that exceed the cap, leaving ranks 1-6 untouched")
+
+    # --- Summary tab: previously showed zero warning treatment for
+    # anything at all - now reuses the exact same .req-line.warn the side
+    # panel uses (heldRankInvalidReason), since Summary shows the current
+    # overall picture rather than a click-ordered sequence. ---
+    page.click('button[data-tab="summary"]')
+    page.wait_for_timeout(150)
+    summary_card = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Steadfast Will"))
+    summary_warn = summary_card.locator(".req-line.warn")
+    print("Summary card warn line count:", summary_warn.count())
+    assert summary_warn.count() == 1
+    print("Summary warn text:", summary_warn.inner_text())
+    assert summary_warn.inner_text() == "⚠ No longer valid: exceeds the rank 6 cap for your currently selected classes."
+    print("PASS: Summary now shows the same invalidation warning the tree/side panel already do")
+
+    # --- Back to the general tab and reselect the node - switching tabs
+    # away and back drops the side panel's selection. ---
+    page.click('button[data-tab="general"]')
+    node.click()
+    page.wait_for_timeout(50)
+
     # --- Ranger gets its own distinct cap (7, not the tank classes' 8) -
     # confirms byClass isn't just a boolean tank/not-tank check. ---
     page.select_option("#classSelect2", "Ranger")

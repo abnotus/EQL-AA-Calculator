@@ -330,7 +330,7 @@ version: "1.6.4",
 date: "2026-07-22",
 items: [
 "New: class-based rank caps are now enforced — Steadfast Will is the current example, capped at rank 6 unless one of your 3 selected classes is Warrior, Paladin, or Shadow Knight (rank 8) or Ranger (rank 7). Tri-class combines rather than switches, so any of your 3 classes qualifying is enough.",
-"A rank you've already trained that a later class swap puts out of reach is never silently stripped — it stays exactly as trained, flagged with the same amber warning a stale prerequisite already gets (tooltip explains why), with the out-of-reach portion of its tree progress bar shown dimmed. Reselecting a qualifying class clears the warning automatically."
+"A rank you've already trained that a later class swap puts out of reach is never silently stripped — it stays exactly as trained, flagged the same way a stale prerequisite already is, everywhere that shows up (tree, side panel, Summary, and Progression, which flags exactly the ranks actually out of reach rather than the whole ability), with the out-of-reach portion of its tree progress bar shown dimmed. Reselecting a qualifying class clears the warning automatically."
 ]
 },
 {
@@ -1314,6 +1314,7 @@ const targetHeld = (counts[targetKey] || 0) + targetAutoFloor;
 if (targetHeld < attempt.resolved.forRank(stepRank)) prereqWarn = true;
 }
 }
+const classCapWarn = active && aa && aa.classRankCap && stepRank > classRankCapFor(aa);
 counts[key] = purchaseCount;
 const isLast = purchaseCount === totalCounts[key];
 const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
@@ -1329,7 +1330,7 @@ const name = aa ? aa.name : "(unknown AA)";
 const owned = stepRank <= ownedRank(entry.scope, entry.className, entry.idx);
 return {
 index: i, aa, idx: entry.idx, scope: entry.scope, className: entry.className,
-category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, label, name, isLast, owned
+category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, classCapWarn, label, name, isLast, owned
 };
 });
 }
@@ -1951,11 +1952,15 @@ const picked = list.map((aa, idx) => ({ aa, idx, rank: effectiveRank(key, idx) }
 if (!picked.length) return;
 anyPicked = true;
 html += `<h3 class="summary-section-title">${escapeHtml(label)}</h3>`;
-html += `<div class="browse-grid">` + picked.map(({ aa, idx, rank }) => `
+html += `<div class="browse-grid">` + picked.map(({ aa, idx, rank }) => {
+const invalidReason = heldRankInvalidReason(key, idx);
+return `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, rank), rank, effectLookup(key, idx))}</div>
-      </div>`).join("") + `</div>`;
+        ${invalidReason ? `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>` : ""}
+      </div>`;
+}).join("") + `</div>`;
 });
 el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
 }
@@ -2100,14 +2105,18 @@ const segClass = s.segmentColor ? ` segment-color-${s.segmentColor}` : "";
 const stepDisp = s.active && s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
 const totalIsEstimate = s.blendedCumulative !== s.cumulative;
 const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCumulative - s.cumulative} estimated.` : "";
-const row = `<div class="progression-row${s.active ? "" : " inactive"}${s.prereqWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
+const warnTitles = [];
+if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
+if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
+const rowWarn = warnTitles.length > 0;
+const row = `<div class="progression-row${s.active ? "" : " inactive"}${rowWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.index + 1}</span>
       <span class="step-info">
         <span class="step-name${s.owned ? " owned" : ""}">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
         <span class="step-cat">${escapeHtml(s.label)}${s.active ? "" : " &middot; class not currently selected"}</span>
       </span>
-      ${s.prereqWarn ? '<span class="step-warn" title="Prerequisite not yet trained at this point in the sequence">&#9888;</span>' : ""}
+      ${rowWarn ? `<span class="step-warn" title="${escapeHtml(warnTitles.join(" "))}">&#9888;</span>` : ""}
       <span class="step-cost">
         <span class="cost-this${stepDisp.isGuess ? ` is-estimate tier-${stepDisp.confidence}` : ""}"${stepDisp.isGuess ? ` title="${escapeHtml(stepDisp.title)}"` : ""}>+${stepDisp.isGuess ? stepDisp.text : s.stepCost} ${stepDisp.isGuess ? "pt(s)" : `pt${s.stepCost === 1 ? "" : "s"}`}</span>
         <span class="cost-total${totalIsEstimate ? " is-estimate" : ""}"${totalIsEstimate ? ` title="${escapeHtml(totalTitle)}"` : ""}>${totalIsEstimate ? `~${s.blendedCumulative}` : s.cumulative} total</span>

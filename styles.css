@@ -569,15 +569,18 @@ main {
 .rank-highlight.is-estimate.tier-low { background: rgba(147,135,122,0.12); }
 .rank-highlight.is-estimate.tier-very-low { background: rgba(107,100,89,0.12); }
 
-#sidePanel .req-line {
+#sidePanel .req-line, .browse-card .req-line {
   font-size: 12px;
   margin-bottom: 6px;
   color: var(--text-dim);
 }
 
-#sidePanel .req-line b { color: var(--text); }
+#sidePanel .req-line b, .browse-card .req-line b { color: var(--text); }
 
-#sidePanel .req-line.warn { color: #e08b78; }
+/* .browse-card .req-line.warn reused as-is by Summary's owned/held-rank
+   invalidation notice (heldRankInvalidReason) - same class, same meaning,
+   just a different container. */
+#sidePanel .req-line.warn, .browse-card .req-line.warn { color: #e08b78; }
 
 .rank-controls {
   display: flex;
