@@ -89,6 +89,18 @@ with sync_playwright() as p:
     assert "width:25%" in style, f"FAIL: expected the capped segment to cover 2/8 = 25% of the bar, got {style}"
     print("PASS: rank 8 persists across the class swap, flagged invalidated with the exact prereq-style warning, and the bar shows the excess dimmed")
 
+    # --- The description's highlighted "current effect" value must reflect
+    # what the character actually gets right now (rank 6's 80%), not what
+    # the held-but-out-of-reach rank 8 would give (100%) - the held rank
+    # itself (8/8) stays untouched, only which slot highlightRankValue picks
+    # changes (effectiveDisplayRank, logic.js). ---
+    desc = page.locator("#sidePanel .desc").first
+    desc_html = desc.inner_html()
+    print("side panel desc with rank 8 held, capped at 6:", desc_html)
+    assert '<span class="rank-highlight">80</span>' in desc_html, "FAIL: expected the capped rank's value (80%) to be highlighted"
+    assert '<span class="rank-highlight">100</span>' not in desc_html, "FAIL: the out-of-reach rank 8's value (100%) must not be highlighted"
+    print("PASS: side panel highlights the effective (capped) rank's value, not the held-but-unreachable one")
+
     # --- Progression tab: unlike the tree's one warn badge per AA,
     # Progression has one row per rank, so it can flag exactly the rows
     # beyond the cap (7-8) and leave the ones within it (1-6) alone -
@@ -124,6 +136,12 @@ with sync_playwright() as p:
     print("Summary warn text:", summary_warn.inner_text())
     assert summary_warn.inner_text() == "⚠ No longer valid: exceeds the rank 6 cap for your currently selected classes."
     print("PASS: Summary now shows the same invalidation warning the tree/side panel already do")
+
+    summary_desc_html = summary_card.locator(".desc").inner_html()
+    print("Summary desc with rank 8 held, capped at 6:", summary_desc_html)
+    assert '<span class="rank-highlight">80</span>' in summary_desc_html
+    assert '<span class="rank-highlight">100</span>' not in summary_desc_html
+    print("PASS: Summary also highlights the effective (capped) rank's value, same as the side panel")
 
     # --- Back to the general tab and reselect the node - switching tabs
     # away and back drops the side panel's selection. ---

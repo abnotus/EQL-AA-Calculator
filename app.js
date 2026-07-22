@@ -1020,6 +1020,9 @@ if (byClass[c] !== undefined && byClass[c] > cap) cap = byClass[c];
 });
 return cap;
 }
+function effectiveDisplayRank(aa, rank) {
+return aa.classRankCap ? Math.min(rank, classRankCapFor(aa)) : rank;
+}
 function structuralLockReason(catKey, idx) {
 const aa = getList(catKey)[idx];
 const levelReq = parseInt(aa.levelReq, 10) || 1;
@@ -1825,7 +1828,7 @@ const dependedOn = rank > 0 && isDependedOn(sel.category, sel.idx, rank);
 const invalidReason = rank > 0 ? heldRankInvalidReason(sel.category, sel.idx) : null;
 let html = `<h2>${escapeHtml(aa.name)}</h2>`;
 html += `<div class="meta">${escapeHtml(labelFor(sel.category))} &middot; Level ${escapeHtml(aa.levelReq)}+</div>`;
-html += `<div class="desc">${highlightRankValue(aa.description, rank, effectLookup(sel.category, sel.idx))}</div>`;
+html += `<div class="desc">${highlightRankValue(aa.description, effectiveDisplayRank(aa, rank), effectLookup(sel.category, sel.idx))}</div>`;
 if (invalidReason) {
 html += `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>`;
 }
@@ -1954,10 +1957,11 @@ anyPicked = true;
 html += `<h3 class="summary-section-title">${escapeHtml(label)}</h3>`;
 html += `<div class="browse-grid">` + picked.map(({ aa, idx, rank }) => {
 const invalidReason = heldRankInvalidReason(key, idx);
+const displayRank = effectiveDisplayRank(aa, rank);
 return `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
-        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, rank), rank, effectLookup(key, idx))}</div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, displayRank), displayRank, effectLookup(key, idx))}</div>
         ${invalidReason ? `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>` : ""}
       </div>`;
 }).join("") + `</div>`;

@@ -1582,6 +1582,18 @@ function classRankCapFor(aa) {
   return cap;
 }
 
+// The rank whose description slot should read as "your current effect" -
+// for most AAs that's simply the held rank, but a class-capped AA held
+// beyond today's cap (rank 8 of Steadfast Will with no qualifying class
+// selected) only actually grants the capped rank's effect in-game right
+// now. Highlighting rank 8's value there would show a number the character
+// isn't getting - the held rank itself is untouched (still shown as "8/8",
+// still what heldRankInvalidReason warns about), only which slot gets
+// highlighted as the description's "current" value changes.
+function effectiveDisplayRank(aa, rank) {
+  return aa.classRankCap ? Math.min(rank, classRankCapFor(aa)) : rank;
+}
+
 // Returns { kind: "level" | "classCap" | "prereq", text } rather than a bare string so callers
 // that render (not just report) a lock reason can tell a level-gate apart from a class-cap gate
 // apart from a prerequisite-gate - each needs different treatment in the tree, since "level too
@@ -2892,7 +2904,7 @@ function renderSidePanel() {
 
   let html = `<h2>${escapeHtml(aa.name)}</h2>`;
   html += `<div class="meta">${escapeHtml(labelFor(sel.category))} &middot; Level ${escapeHtml(aa.levelReq)}+</div>`;
-  html += `<div class="desc">${highlightRankValue(aa.description, rank, effectLookup(sel.category, sel.idx))}</div>`;
+  html += `<div class="desc">${highlightRankValue(aa.description, effectiveDisplayRank(aa, rank), effectLookup(sel.category, sel.idx))}</div>`;
   if (invalidReason) {
     html += `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>`;
   }
@@ -3054,10 +3066,14 @@ function renderSummary() {
       // sequence, so heldRankInvalidReason's semantics (not Progression's
       // sequence-aware prereqWarn) are the right fit here.
       const invalidReason = heldRankInvalidReason(key, idx);
+      // Displayed rank counter stays the real held rank (8/8 - that's what
+      // was actually trained); only which slot gets highlighted as the
+      // description's "current" effect drops to the capped one.
+      const displayRank = effectiveDisplayRank(aa, rank);
       return `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
-        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, rank), rank, effectLookup(key, idx))}</div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, displayRank), displayRank, effectLookup(key, idx))}</div>
         ${invalidReason ? `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>` : ""}
       </div>`;
     }).join("") + `</div>`;

@@ -10,7 +10,7 @@ import {
   costNum, spentPoints, undoLastMutation, canUndo, moveEntry, setOwnedRank, performReset,
   aaMatchesQuery, countMatches, heldRankInvalidReason, loadIssuesSuffix,
   hasAnyOwned, computeProgressionTimeline, addOrUpdateWaypoint, removeWaypoint, costGuess, costGuessScoped,
-  estimatedExtraPoints, effectGuess, effectGuessScoped, guessTitle, classRankCapFor
+  estimatedExtraPoints, effectGuess, effectGuessScoped, guessTitle, classRankCapFor, effectiveDisplayRank
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
@@ -286,7 +286,7 @@ function renderSidePanel() {
 
   let html = `<h2>${escapeHtml(aa.name)}</h2>`;
   html += `<div class="meta">${escapeHtml(labelFor(sel.category))} &middot; Level ${escapeHtml(aa.levelReq)}+</div>`;
-  html += `<div class="desc">${highlightRankValue(aa.description, rank, effectLookup(sel.category, sel.idx))}</div>`;
+  html += `<div class="desc">${highlightRankValue(aa.description, effectiveDisplayRank(aa, rank), effectLookup(sel.category, sel.idx))}</div>`;
   if (invalidReason) {
     html += `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>`;
   }
@@ -448,10 +448,14 @@ function renderSummary() {
       // sequence, so heldRankInvalidReason's semantics (not Progression's
       // sequence-aware prereqWarn) are the right fit here.
       const invalidReason = heldRankInvalidReason(key, idx);
+      // Displayed rank counter stays the real held rank (8/8 - that's what
+      // was actually trained); only which slot gets highlighted as the
+      // description's "current" effect drops to the capped one.
+      const displayRank = effectiveDisplayRank(aa, rank);
       return `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
-        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, rank), rank, effectLookup(key, idx))}</div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, displayRank), displayRank, effectLookup(key, idx))}</div>
         ${invalidReason ? `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>` : ""}
       </div>`;
     }).join("") + `</div>`;

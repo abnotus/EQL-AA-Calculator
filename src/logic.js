@@ -601,6 +601,18 @@ export function classRankCapFor(aa) {
   return cap;
 }
 
+// The rank whose description slot should read as "your current effect" -
+// for most AAs that's simply the held rank, but a class-capped AA held
+// beyond today's cap (rank 8 of Steadfast Will with no qualifying class
+// selected) only actually grants the capped rank's effect in-game right
+// now. Highlighting rank 8's value there would show a number the character
+// isn't getting - the held rank itself is untouched (still shown as "8/8",
+// still what heldRankInvalidReason warns about), only which slot gets
+// highlighted as the description's "current" value changes.
+export function effectiveDisplayRank(aa, rank) {
+  return aa.classRankCap ? Math.min(rank, classRankCapFor(aa)) : rank;
+}
+
 // Returns { kind: "level" | "classCap" | "prereq", text } rather than a bare string so callers
 // that render (not just report) a lock reason can tell a level-gate apart from a class-cap gate
 // apart from a prerequisite-gate - each needs different treatment in the tree, since "level too
