@@ -1629,6 +1629,14 @@ function heldRankInvalidReason(catKey, idx) {
   const purchased = getRanksStore(catKey)[idx] || 0;
   if (purchased <= 0) return null;
   if (aa.classRankCap) {
+    // Assumes classRankCap never coexists with autoRanks on the same AA -
+    // true of every AA today. `purchased` is the raw store value, which
+    // EXCLUDES an autoRanks AA's free floor (see changeRank/autoRanksOffset),
+    // so this comparison would undercount against a blended-effective rank
+    // if that combination ever showed up. Not worth generalizing for a
+    // hypothetical that doesn't exist yet - flagged here so whoever adds
+    // the first AA combining both hits a documented assumption instead of a
+    // silent miscount.
     const cap = classRankCapFor(aa);
     if (purchased > cap) return `exceeds the rank ${cap} cap for your currently selected classes.`;
   }
