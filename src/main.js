@@ -79,12 +79,13 @@ async function init() {
   // guarantee they will.
   if (!shared.applied && repaired > 0 && !localResult.droppedRanks) saveLocal();
   // Data can drift out from under a saved build (a resync renaming/reshaping a
-  // prereq target, say) — catch it once on load rather than leaving the user
-  // to discover a quietly-broken pick on their own.
+  // prereq target, or reselecting classes away from a class-rank-cap AA's
+  // qualifying class, say) — catch it once on load rather than leaving the
+  // user to discover a quietly-broken pick on their own.
   const invalidated = findInvalidatedPicks();
   if (invalidated.length) {
     const n = invalidated.length;
-    notices.push(`${n} pick${n === 1 ? "" : "s"} no longer meet${n === 1 ? "s" : ""} its prerequisite — check the highlighted AAs`);
+    notices.push(`${n} pick${n === 1 ? "" : "s"} no longer meet${n === 1 ? "s" : ""} its requirements — check the highlighted AAs`);
   }
   if (notices.length) {
     showToast(notices.join("; "));

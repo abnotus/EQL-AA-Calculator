@@ -10,7 +10,7 @@ import {
   costNum, spentPoints, undoLastMutation, canUndo, moveEntry, setOwnedRank, performReset,
   aaMatchesQuery, countMatches, heldRankInvalidReason, loadIssuesSuffix,
   hasAnyOwned, computeProgressionTimeline, addOrUpdateWaypoint, removeWaypoint, costGuess, costGuessScoped,
-  estimatedExtraPoints, effectGuess, effectGuessScoped, guessTitle
+  estimatedExtraPoints, effectGuess, effectGuessScoped, guessTitle, classRankCapFor
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
@@ -184,6 +184,14 @@ export function renderTree(catKey) {
     const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
     const locked = !!lockReason || autoBelowLevel;
     const invalidReason = rank > 0 ? heldRankInvalidReason(catKey, idx) : null;
+    // A held rank beyond the current class-cap (Steadfast Will owned at
+    // rank 8, then swapped away from a tank class) still counts fully
+    // toward the bar's own fill - the point is showing that the trained
+    // portion is no longer within reach at your CURRENT classes, not that
+    // it's been lost. Only the segment strictly beyond the cap gets the
+    // dimmed treatment; below the cap reads exactly like any other rank.
+    const classCap = aa.classRankCap ? classRankCapFor(aa) : aa.ranks;
+    const capExceeded = rank > classCap;
 
     const node = document.createElement("div");
     node.className = "node";
@@ -208,7 +216,7 @@ export function renderTree(catKey) {
     node.innerHTML = `
       <div class="icon">${escapeHtml(iconLetter(aa.name))}</div>
       <div class="name">${escapeHtml(aa.name)}</div>
-      <div class="rankbar"><div class="fill" style="width:${(rank / aa.ranks) * 100}%"></div></div>
+      <div class="rankbar"><div class="fill" style="width:${(Math.min(rank, classCap) / aa.ranks) * 100}%"></div>${capExceeded ? `<div class="fill-capped" style="width:${((rank - classCap) / aa.ranks) * 100}%"></div>` : ""}</div>
       <div class="ranktext">${rank} / ${aa.ranks}</div>
     `;
     if (aa.auto && !autoBelowLevel) {

@@ -582,14 +582,40 @@ function unresolvedPrereqMessage(text, attempt) {
 }
 
 // Structural reasons (level / prerequisite) that permanently block a rank regardless of points.
-// Returns { kind: "level" | "prereq", text } rather than a bare string so callers that render
-// (not just report) a lock reason can tell a level-gate apart from a prerequisite-gate - the two
-// need different treatment in the tree, since "level too low" is self-evidently solved by playing,
-// while "needs another AA" requires the user to notice and go buy something specific elsewhere.
+// Some AAs (Steadfast Will is the one live example) cap their max reachable
+// rank based on which of the 3 selected classes you have, rather than a flat
+// per-AA maximum - data.src.js's classRankCap: { default, byClass: { Name:
+// cap, ... } }. Tri-class COMBINES rather than switches - the character
+// genuinely has all 3 classes' benefits simultaneously, there's no notion of
+// one "active" class at a time - so ANY of the 3 selected classes granting a
+// higher cap applies. Absent classRankCap entirely, an AA's only cap is its
+// own aa.ranks, same as always - every existing caller of aa.ranks-as-a-
+// ceiling still works unchanged for the AAs that don't define this field.
+export function classRankCapFor(aa) {
+  if (!aa.classRankCap) return aa.ranks;
+  const { default: def, byClass } = aa.classRankCap;
+  let cap = def;
+  state.selectedClasses.forEach((c) => {
+    if (byClass[c] !== undefined && byClass[c] > cap) cap = byClass[c];
+  });
+  return cap;
+}
+
+// Returns { kind: "level" | "classCap" | "prereq", text } rather than a bare string so callers
+// that render (not just report) a lock reason can tell a level-gate apart from a class-cap gate
+// apart from a prerequisite-gate - each needs different treatment in the tree, since "level too
+// low" is self-evidently solved by playing, "capped for your classes" needs a specific class
+// swap, and "needs another AA" requires the user to notice and go buy something specific
+// elsewhere.
 export function structuralLockReason(catKey, idx) {
   const aa = getList(catKey)[idx];
   const levelReq = parseInt(aa.levelReq, 10) || 1;
   if (state.charLevel < levelReq) return { kind: "level", text: `Requires character level ${levelReq}.` };
+  if (aa.classRankCap) {
+    const cap = classRankCapFor(aa);
+    const nextRank = effectiveRank(catKey, idx) + 1;
+    if (nextRank > cap) return { kind: "classCap", text: `Capped at rank ${cap} for your currently selected classes.` };
+  }
   if (aa.prereq) {
     const attempt = tryResolvePrereq(aa.prereq, catKey);
     if (!attempt.ok) return { kind: "prereq", text: unresolvedPrereqMessage(aa.prereq, attempt) };
@@ -605,25 +631,27 @@ export function structuralLockReason(catKey, idx) {
   return null;
 }
 
-// Whether a rank the user already holds still satisfies its prerequisite
-// under today's AA_DATA. Unlike structuralLockReason (which checks whether
-// the NEXT rank is purchasable), this checks every rank already held — so it
-// catches drift where the prereq target itself changed shape (renamed,
-// resolved differently, had its own rank requirement adjusted) since the
-// pick was made, even though this AA's own prereq text never changed. No
-// saved history needed: it's purely a function of current state + current
-// data, so it naturally clears itself once the gap is closed.
+// Whether a rank the user already holds still satisfies its prerequisite OR
+// its class-rank-cap (if it has one) under today's AA_DATA + current class
+// selection. Unlike structuralLockReason (which checks whether the NEXT rank
+// is purchasable), this checks every rank already held — so it catches drift
+// where the prereq target changed shape, or the selected classes changed,
+// since the pick was made. No saved history needed: it's purely a function
+// of current state + current data, so it naturally clears itself once the
+// gap is closed (the prereq is met again, or a qualifying class is
+// reselected) - deliberately never strips the held rank itself, same as a
+// prereq going stale doesn't; a class-cap violation is just as recoverable
+// by reselecting a class as a prereq gap is by rebuying the target.
 export function heldRankInvalidReason(catKey, idx) {
   const aa = getList(catKey)[idx];
-  // Only ranks the user actually chose to buy are worth flagging. A fully
-  // auto-granted AA has no purchased ranks at all; an autoRanks AA's raw
-  // store value excludes its free floor (changeRank stores the blended
-  // effective rank only once the user buys beyond that floor — see
-  // changeRank), so an untouched free rank reads as 0 here, not >0. Flagging
-  // something the user has no way to remove isn't actionable.
-  if (!aa || !aa.prereq || aa.auto) return null;
+  if (!aa || aa.auto) return null;
   const purchased = getRanksStore(catKey)[idx] || 0;
   if (purchased <= 0) return null;
+  if (aa.classRankCap) {
+    const cap = classRankCapFor(aa);
+    if (purchased > cap) return `exceeds the rank ${cap} cap for your currently selected classes.`;
+  }
+  if (!aa.prereq) return null;
   const attempt = tryResolvePrereq(aa.prereq, catKey);
   if (!attempt.ok) return unresolvedPrereqMessage(aa.prereq, attempt);
   const resolved = attempt.resolved;

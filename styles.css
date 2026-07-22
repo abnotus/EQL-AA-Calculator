@@ -442,6 +442,7 @@ main {
   border-radius: 3px;
   overflow: hidden;
   border: 1px solid var(--border);
+  display: flex;
 }
 
 .node .rankbar .fill {
@@ -450,6 +451,16 @@ main {
 }
 
 .node.maxed .rankbar .fill { background: linear-gradient(90deg, #2e6a35, var(--green)); }
+
+/* The portion of a held rank beyond the AA's current class-rank-cap (see
+   classRankCapFor) - same warning color as .node.invalidated's border, at
+   reduced opacity plus a diagonal hatch so "trained but not currently
+   reachable" reads as a distinct texture, not just a dimmer version of the
+   normal fill. */
+.node .rankbar .fill-capped {
+  height: 100%;
+  background: repeating-linear-gradient(45deg, rgba(224,139,120,0.75), rgba(224,139,120,0.75) 3px, rgba(224,139,120,0.35) 3px, rgba(224,139,120,0.35) 6px);
+}
 
 .node .ranktext {
   font-size: 10px;

@@ -7,7 +7,7 @@ A talent-calculator-style planner for [EverQuest Legends](https://eqlwiki.com/Al
 ## Features
 
 - Pick up to 3 classes (EQL's tri-class combo system) and spend points across General, Archetype, Class, and Special AAs
-- Prerequisite (including rank-synced prereqs) and level checks before you can spend a point — no artificial total-points cap, since a build's real ceiling is whatever the player's own in-game level allows, not something this calculator needs to gatekeep
+- Prerequisite (including rank-synced prereqs), level, and class-based rank-cap checks before you can spend a point — no artificial total-points cap, since a build's real ceiling is whatever the player's own in-game level allows, not something this calculator needs to gatekeep. A rank you've already trained that a later class swap puts out of reach (Steadfast Will is the current example — capped at rank 6 unless one of your 3 classes is a tank or Ranger) is never silently stripped: it's flagged the same way a stale prerequisite is (amber warning, tooltip explaining why) with the out-of-reach portion of its progress bar dimmed, and comes right back into reach the moment a qualifying class is reselected
 - Locked AAs show *why* at a glance, not just that they're locked — a missing prerequisite gets a distinct amber marker from a plain level gate, in both the tree and Browse All AAs
 - Next-rank preview — see what the next rank upgrades to before you buy it, in the side panel and as an expandable row in Progression
 - Global search — highlights matches in the tab you're on and shows match-count badges on other tabs that have matches too

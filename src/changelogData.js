@@ -4,6 +4,14 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.6.4",
+    date: "2026-07-22",
+    items: [
+      "New: class-based rank caps are now enforced — Steadfast Will is the current example, capped at rank 6 unless one of your 3 selected classes is Warrior, Paladin, or Shadow Knight (rank 8) or Ranger (rank 7). Tri-class combines rather than switches, so any of your 3 classes qualifying is enough.",
+      "A rank you've already trained that a later class swap puts out of reach is never silently stripped — it stays exactly as trained, flagged with the same amber warning a stale prerequisite already gets (tooltip explains why), with the out-of-reach portion of its tree progress bar shown dimmed. Reselecting a qualifying class clears the warning automatically."
+    ]
+  },
+  {
     version: "1.6.3",
     date: "2026-07-21",
     items: [

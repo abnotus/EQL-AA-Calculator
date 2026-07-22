@@ -326,6 +326,14 @@ return prog ? (prog[rankIdx] || null) : null;
 }
 const USER_CHANGELOG = [
 {
+version: "1.6.4",
+date: "2026-07-22",
+items: [
+"New: class-based rank caps are now enforced — Steadfast Will is the current example, capped at rank 6 unless one of your 3 selected classes is Warrior, Paladin, or Shadow Knight (rank 8) or Ranger (rank 7). Tri-class combines rather than switches, so any of your 3 classes qualifying is enough.",
+"A rank you've already trained that a later class swap puts out of reach is never silently stripped — it stays exactly as trained, flagged with the same amber warning a stale prerequisite already gets (tooltip explains why), with the out-of-reach portion of its tree progress bar shown dimmed. Reselecting a qualifying class clears the warning automatically."
+]
+},
+{
 version: "1.6.3",
 date: "2026-07-21",
 items: [
@@ -1003,10 +1011,24 @@ return attempt.malformed
 ? `Prerequisite text "${text}" isn't in a recognized format — this needs fixing in the data, not the wiki.`
 : `Requires "${attempt.name}", which no longer resolves to an existing ability.`;
 }
+function classRankCapFor(aa) {
+if (!aa.classRankCap) return aa.ranks;
+const { default: def, byClass } = aa.classRankCap;
+let cap = def;
+state.selectedClasses.forEach((c) => {
+if (byClass[c] !== undefined && byClass[c] > cap) cap = byClass[c];
+});
+return cap;
+}
 function structuralLockReason(catKey, idx) {
 const aa = getList(catKey)[idx];
 const levelReq = parseInt(aa.levelReq, 10) || 1;
 if (state.charLevel < levelReq) return { kind: "level", text: `Requires character level ${levelReq}.` };
+if (aa.classRankCap) {
+const cap = classRankCapFor(aa);
+const nextRank = effectiveRank(catKey, idx) + 1;
+if (nextRank > cap) return { kind: "classCap", text: `Capped at rank ${cap} for your currently selected classes.` };
+}
 if (aa.prereq) {
 const attempt = tryResolvePrereq(aa.prereq, catKey);
 if (!attempt.ok) return { kind: "prereq", text: unresolvedPrereqMessage(aa.prereq, attempt) };
@@ -1023,9 +1045,14 @@ return null;
 }
 function heldRankInvalidReason(catKey, idx) {
 const aa = getList(catKey)[idx];
-if (!aa || !aa.prereq || aa.auto) return null;
+if (!aa || aa.auto) return null;
 const purchased = getRanksStore(catKey)[idx] || 0;
 if (purchased <= 0) return null;
+if (aa.classRankCap) {
+const cap = classRankCapFor(aa);
+if (purchased > cap) return `exceeds the rank ${cap} cap for your currently selected classes.`;
+}
+if (!aa.prereq) return null;
 const attempt = tryResolvePrereq(aa.prereq, catKey);
 if (!attempt.ok) return unresolvedPrereqMessage(aa.prereq, attempt);
 const resolved = attempt.resolved;
@@ -1707,6 +1734,8 @@ const autoBelowLevel = aa.auto && rank < aa.ranks;
 const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
 const locked = !!lockReason || autoBelowLevel;
 const invalidReason = rank > 0 ? heldRankInvalidReason(catKey, idx) : null;
+const classCap = aa.classRankCap ? classRankCapFor(aa) : aa.ranks;
+const capExceeded = rank > classCap;
 const node = document.createElement("div");
 node.className = "node";
 node.tabIndex = 0;
@@ -1729,7 +1758,7 @@ node.classList.add("selected");
 node.innerHTML = `
       <div class="icon">${escapeHtml(iconLetter(aa.name))}</div>
       <div class="name">${escapeHtml(aa.name)}</div>
-      <div class="rankbar"><div class="fill" style="width:${(rank / aa.ranks) * 100}%"></div></div>
+      <div class="rankbar"><div class="fill" style="width:${(Math.min(rank, classCap) / aa.ranks) * 100}%"></div>${capExceeded ? `<div class="fill-capped" style="width:${((rank - classCap) / aa.ranks) * 100}%"></div>` : ""}</div>
       <div class="ranktext">${rank} / ${aa.ranks}</div>
     `;
 if (aa.auto && !autoBelowLevel) {
@@ -2919,7 +2948,7 @@ if (!shared.applied && repaired > 0 && !localResult.droppedRanks) saveLocal();
 const invalidated = findInvalidatedPicks();
 if (invalidated.length) {
 const n = invalidated.length;
-notices.push(`${n} pick${n === 1 ? "" : "s"} no longer meet${n === 1 ? "s" : ""} its prerequisite — check the highlighted AAs`);
+notices.push(`${n} pick${n === 1 ? "" : "s"} no longer meet${n === 1 ? "s" : ""} its requirements — check the highlighted AAs`);
 }
 if (notices.length) {
 showToast(notices.join("; "));
