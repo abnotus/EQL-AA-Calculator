@@ -23,6 +23,11 @@
 # to rank 10, its last 6 ranks (5-10) all carrying the same flat "~1" manual
 # guess, mixed in with plenty of real, fully-confirmed ranks earlier in the
 # click order.
+#
+# A second, separate scenario near the end of this file re-tests the same
+# build with a stale "t" (totalPoints) field injected into its payload, to
+# keep the backward-compatibility regression coverage that was lost when an
+# older two-build version of this file was simplified down to one.
 import sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -98,5 +103,34 @@ with sync_playwright() as p:
 
     print("ERRORS:", errors)
     assert not errors
+
+    # --- Separate, independent scenario: the same build as above, but with
+    # a stale "t" (totalPoints) field re-injected into its decoded payload -
+    # simulating a share link generated before the point-cap removal.
+    # BUILD_STALE was derived by decoding BUILD above, adding "t": 1000, and
+    # re-encoding (gzip + base64url, matching encodeBuildCode exactly) - see
+    # this test's own git history for the one-off script that produced it,
+    # if it ever needs regenerating against a different build. Loading it
+    # must produce the exact same result as the clean BUILD - proving a
+    # stale field an old link might still carry is truly inert, not just
+    # "doesn't crash". Kept as its own page/scenario rather than folded into
+    # the one above, so a failure here reads unambiguously as a backward-
+    # compatibility regression, not a data-drift one. ---
+    page2 = browser.new_page(viewport={"width": 1400, "height": 900})
+    errors2 = []
+    page2.on("pageerror", lambda exc: errors2.append(str(exc)))
+    page2.on("dialog", lambda d: d.accept())
+    BUILD_STALE = "H4sIAAAAAAAC_3WPPQ7DMAiF78LMAMY_ia9iZcraoaqqLlXv3gdO2qUVn_yMBQ_8pAf1xLRTHys3VtuYLtSLMN3wNirjZTTOOJe4J40kGau4VlaXxgvENDLLUWplyjSxNSRL9JcUWTGuLtNF3XXDClfMRgWAP2q-oE0Z034ya9oRNWKJ8AEw9-EnvlaAH33wJSf5pByg_T_Y-U5dReT1Brpd-CRUAQAA"
+    page2.goto(f"{BASE}?build={BUILD_STALE}")
+    page2.wait_for_selector("#treeWrap .node")
+    page2.wait_for_timeout(200)
+    assert not errors2, f"FAIL: loading a build with a stale 't' field threw: {errors2}"
+    sv_stale = page2.locator("#spentValue")
+    print("stale-field build spentValue:", sv_stale.inner_text(), sv_stale.get_attribute("title"))
+    assert sv_stale.inner_text() == "~199"
+    assert sv_stale.get_attribute("title") == "193 confirmed + 6 estimated."
+    print("PASS: a share code carrying a stale 't' field loads without error and produces an identical result to the clean one")
+    page2.close()
+
     browser.close()
     print("ALL PASS")
