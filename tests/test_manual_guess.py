@@ -81,19 +81,26 @@ with sync_playwright() as p:
     print("PASS: Progression's running total blends the manual guess in too, same as the topbar - spentPoints() itself stays real (3 confirmed, tracked separately)")
     page.click('button[data-tab="general"]')
 
-    # --- Innate Spell Resistance: costs = [2, ?, ?, ?, ?], only rank1 known
-    # (less signal than any other manual AA) - MANUAL_GUESSES gives rank2
-    # (index 1) a flat +1/rank continuation, value 3, very-low/manual. ---
-    isr = page.locator(".node", has=page.locator(".name", has_text="Innate Spell Resistance"))
-    isr.click()
+    # --- Spell Casting Subtlety: costs = [2, ?, ?, ?, ?, ?], only rank1
+    # known - MANUAL_GUESSES gives rank2 (index 1) a flat +1/rank
+    # continuation, value 3, very-low/manual. (This used to be Innate Spell
+    # Resistance - a wiki scrape confirmed ranks 2-4 as real since this test
+    # was first written, and its one remaining guess (rank 5) upgraded from
+    # a manual very-low fallback to an algorithmic medium guess once
+    # Stoicism became fully known, so it no longer demonstrates
+    # MANUAL_GUESSES at all. Swapped to a currently-live example with the
+    # identical shape - same rank1 cost, same rank2 guess value.) ---
+    page.click('button[data-tab="archetype"]')
+    scs = page.locator(".node", has=page.locator(".name", has_text="Spell Casting Subtlety"))
+    scs.click()
     page.click("#incBtn")  # rank1, real cost 2
     page.wait_for_timeout(30)
-    isr_tag = isr.locator(".costtag")
-    print("Innate Spell Resistance rank2 tag:", isr_tag.inner_text(), isr_tag.get_attribute("class"))
-    assert isr_tag.inner_text() == "~3"
-    isr_cls = isr_tag.get_attribute("class")
-    assert "is-estimate" in isr_cls and "tier-very-low" in isr_cls
-    print("PASS: Innate Spell Resistance's manual guess renders as very-low, same as any other manual entry")
+    scs_tag = scs.locator(".costtag")
+    print("Spell Casting Subtlety rank2 tag:", scs_tag.inner_text(), scs_tag.get_attribute("class"))
+    assert scs_tag.inner_text() == "~3"
+    scs_cls = scs_tag.get_attribute("class")
+    assert "is-estimate" in scs_cls and "tier-very-low" in scs_cls
+    print("PASS: Spell Casting Subtlety's manual guess renders as very-low, same as any other manual entry")
 
     print("ERRORS:", errors)
     assert not errors

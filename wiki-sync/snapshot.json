@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 159668,
+  "revid": 159719,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -10,7 +10,7 @@
         "6",
         "9"
       ],
-      "description": "This passive ability grants you an additional 20/40/?/?% chance to resist charm, and 15/30/?/?% chance to resist mesmerization spells. Requirements: level 1."
+      "description": "This passive ability grants you an additional 20/40/60/?% chance to resist charm, and 15/30/45/?% chance to resist mesmerization spells. Requirements: level 1."
     },
     "general::Alchemy Mastery::0": {
       "ranks": "3",
@@ -75,16 +75,16 @@
         "3",
         "4"
       ],
-      "description": "This passive ability increases your chance of performing a critical melee hit with all skills by 1/?/?/5%. Requirements: level 1."
+      "description": "This passive ability increases your chance of performing a critical melee hit with all skills by 1/2/3/5%. Requirements: level 1."
     },
     "general::Combat Stability::0": {
       "ranks": "3",
       "costs": [
         "2",
         "4",
-        "?"
+        "6"
       ],
-      "description": "This passive ability increases the armor class soft cap of your class by 2/5/?%. The armor class soft cap is the amount of armor class that functions at 100% effectiveness. Armor class gains in excess of this cap are reduced in effectiveness by a percentage based on your class and level."
+      "description": "This passive ability increases the armor class soft cap of your class by 2/5/10%. The armor class soft cap is the amount of armor class that functions at 100% effectiveness. Armor class gains in excess of this cap are reduced in effectiveness by a percentage based on your class and level."
     },
     "general::Crafting Mastery::0": {
       "ranks": "6",
@@ -112,7 +112,7 @@
       "ranks": "6",
       "costs": [
         "1",
-        "?",
+        "1",
         "?",
         "?",
         "?",
@@ -157,9 +157,11 @@
     "general::Innate Lung Capacity::0": {
       "ranks": "3",
       "costs": [
-        "1"
+        "1",
+        "1",
+        "?"
       ],
-      "description": "This passive ability increases the amount of air you can hold in your lungs by 10/?/?%. Requirements: level 1."
+      "description": "This passive ability increases the amount of air you can hold in your lungs by 10/25/?%. Requirements: level 1."
     },
     "general::Innate Metabolism::0": {
       "ranks": "3",
@@ -187,21 +189,21 @@
       "ranks": "5",
       "costs": [
         "2",
-        "?",
-        "?",
-        "?",
+        "2",
+        "2",
+        "2",
         "?"
       ],
-      "description": "This passive ability improves your cold, disease, fire, magic, and poison resistances by 2/?/?/?/? points. Requirements: level 1."
+      "description": "This passive ability improves your cold, disease, fire, magic, and poison resistances by 2/4/6/8/? points. Requirements: level 1."
     },
     "general::Jewel Craft Mastery::0": {
       "ranks": "3",
       "costs": [
         "2",
-        "?",
-        "?"
+        "4",
+        "6"
       ],
-      "description": "This passive ability reduces the chance of failing Jewelcrafting recipes by 10/?/?%. Requirements: level 1."
+      "description": "This passive ability reduces the chance of failing Jewelcrafting recipes by 10/25/50%. Requirements: level 1."
     },
     "general::Natural Durability::0": {
       "ranks": "4",
@@ -277,10 +279,10 @@
       "ranks": "5",
       "costs": [
         "2",
-        "?",
-        "?",
-        "?",
-        "?"
+        "2",
+        "2",
+        "2",
+        "2"
       ],
       "description": "This passive ability reduces how far incoming melee attacks push you backward by 10%. Requirements: level 1."
     },
@@ -771,7 +773,7 @@
       "costs": [
         "0"
       ],
-      "description": "This passive increases your mana regeneration by 2 points. Requirements: level 12."
+      "description": "This passive increases your mana regeneration by 2 points per rank. Requirements: level 12. Rank 2 level 30 and rank 3 at level 50."
     },
     "class:Magician::Companion's Fury::0": {
       "ranks": "1",

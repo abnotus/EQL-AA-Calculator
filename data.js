@@ -5,27 +5,27 @@ const CLASS_LIST = [
 ];
 const AA_DATA = {
 general: [
-{ name: "Adamant Will", ranks: 4, costs: ["2","4","6","9"], levelReq: "1", description: "Grants you an additional 20/40/?/?% chance to resist charm, and 15/30/?/?% chance to resist mesmerization spells." },
+{ name: "Adamant Will", ranks: 4, costs: ["2","4","6","9"], levelReq: "1", description: "Grants you an additional 20/40/60/?% chance to resist charm, and 15/30/45/?% chance to resist mesmerization spells." },
 { name: "Alchemy Mastery", ranks: 3, costs: ["3","?","?"], levelReq: "1", description: "Reduces the chance of failing Alchemy recipes by 10/?/?%." },
 { name: "Baking Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Baking recipes by 10/?/?%." },
 { name: "Blacksmithing Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Blacksmithing recipes by 10/?/?%." },
 { name: "Brewing Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Brewing recipes by 10/?/?%." },
 { name: "Circular Breathing", ranks: 4, costs: ["2","3","4","5"], levelReq: "1", description: "Increases your endurance regeneration by 1/2/3/4 point(s)." },
 { name: "Combat Agility", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases your melee avoidance by 2%/5%/10%." },
-{ name: "Combat Fury", ranks: 4, costs: ["1","2","3","4"], levelReq: "1", description: "Increases your chance of performing a critical melee hit with all skills by 1/?/?/5%." },
-{ name: "Combat Stability", ranks: 3, costs: ["2","4","?"], levelReq: "1", description: "Increases the armor class soft cap of your class by 2/5/?%." },
+{ name: "Combat Fury", ranks: 4, costs: ["1","2","3","4"], levelReq: "1", description: "Increases your chance of performing a critical melee hit with all skills by 1/2/3/5%." },
+{ name: "Combat Stability", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases the armor class soft cap of your class by 2/5/10%." },
 { name: "Crafting Mastery", ranks: 6, costs: ["3","?","?","?","?","?"], levelReq: "1", description: "Allows raising 1-6 additional tradeskills from a 200 to 300 cap." },
 { name: "Fear Resistance", ranks: 4, costs: ["2","4","6","9"], levelReq: "1", description: "Grants you an additional 25/50/75/100% chance to resist most fear spells." },
-{ name: "First Aid", ranks: 6, costs: ["1","?","?","?","?","?"], levelReq: "1", description: "Increases the maximum health you can bind wound to 80/90/100/100/100/100%, and increases bandage healing by 0/0/0/10/25/50%." },
+{ name: "First Aid", ranks: 6, costs: ["1","1","?","?","?","?"], levelReq: "1", description: "Increases the maximum health you can bind wound to 80/90/100/100/100/100%, and increases bandage healing by 0/0/0/10/25/50%." },
 { name: "Fletching Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Fletching recipes by 10/?/?%." },
 { name: "Foraging", ranks: 1, costs: ["3"], levelReq: "1", description: "Increases your Forage skill cap by 50 points." },
 { name: "Gather Party", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Gives everyone in your party the option of teleporting directly to your location. Automatically granted to every character — per the wiki's own General AA intro text." },
 { name: "Innate Eminence", ranks: 5, costs: ["3","3","3","?","?"], levelReq: "1", description: "Increases your strength, stamina, agility, dexterity, wisdom, intelligence, and charisma by 2/4/6/?/? points." },
-{ name: "Innate Lung Capacity", ranks: 3, costs: ["1","1","1"], levelReq: "1", description: "Increases the amount of air you can hold in your lungs by 10/?/?%." },
+{ name: "Innate Lung Capacity", ranks: 3, costs: ["1","1","1"], levelReq: "1", description: "Increases the amount of air you can hold in your lungs by 10/25/?%." },
 { name: "Innate Metabolism", ranks: 3, costs: ["1","?","?"], levelReq: "1", description: "Reduces your food and drink consumption by 110/125/?%." },
 { name: "Innate Regeneration", ranks: 7, costs: ["1","1","1","2","3","?","?"], levelReq: "1", description: "Increases your health regeneration by 1/2/3/4/5/?/? point(s)." },
-{ name: "Innate Spell Resistance", ranks: 5, costs: ["2","?","?","?","?"], levelReq: "1", description: "Improves your cold, disease, fire, magic, and poison resistances by 2/?/?/?/? points." },
-{ name: "Jewel Craft Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Jewelcrafting recipes by 10/?/?%." },
+{ name: "Innate Spell Resistance", ranks: 5, costs: ["2","2","2","2","?"], levelReq: "1", description: "Improves your cold, disease, fire, magic, and poison resistances by 2/4/6/8/? points." },
+{ name: "Jewel Craft Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Jewelcrafting recipes by 10/25/50%." },
 { name: "Natural Durability", ranks: 4, costs: ["2","4","6","2"], levelReq: "1", description: "Increases your maximum base health (derived from your stamina) by 2/5/10/12%." },
 { name: "Origin", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Transports you back to your starting city. Check location with /charinfo. Automatically granted to every character — per the wiki's own General AA intro text." },
 { name: "Packrat", ranks: 10, costs: ["1","1","1","1","?","?","?","?","?","?"], levelReq: "1", description: "Reduces the weight of all equipped and carried items by 5/10/15/?/?/?/?/?/?/?%." },
@@ -33,7 +33,7 @@ general: [
 { name: "Pottery Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Pottery recipes by 10/?/?%." },
 { name: "Quick Buff", ranks: 1, costs: ["5"], levelReq: "1", description: "Cast all currently memorized beneficial spells on all valid group and raid targets in range." },
 { name: "Steadfast Will", ranks: 8, costs: ["2","2","3","3","3","3","6","12"], levelReq: "1", description: "Grants you a 15/30/50/60/70/80/90/100% chance to endure stunning melee attacks without being stunned. Only Warrior, Paladin, and Shadow Knight can train the full rank 8; Ranger can reach rank 7; every other class is capped at rank 6." },
-{ name: "Stoicism", ranks: 5, costs: ["2","?","?","?","?"], levelReq: "1", description: "Reduces how far incoming melee attacks push you backward by 10%." },
+{ name: "Stoicism", ranks: 5, costs: ["2","2","2","2","2"], levelReq: "1", description: "Reduces how far incoming melee attacks push you backward by 10%." },
 { name: "Tailoring Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Tailoring recipes by 10/?/?%." }
 ],
 archetype: [
@@ -110,7 +110,7 @@ classes: {
 { name: "Unbound Nature", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance that you will land a critical hit with a spell by 2/4/5%." }
 ],
 "Enchanter": [
-{ name: "Unbound Clarity", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your mana regeneration by 2 points per rank." }
+{ name: "Unbound Clarity", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your mana regeneration by 2 points per rank. Rank 2 requires level 30, rank 3 requires level 50." }
 ],
 "Magician": [
 { name: "Companion's Fury", ranks: 1, costs: ["6"], levelReq: "15", description: "Activated: increases your pet's combat prowess for 0:01:06 — armor class +75, overhaste +15%, strength +20, attack power +200, flurry chance on double attack +5%, accuracy +10%. (Refresh 0:01:30)" },
