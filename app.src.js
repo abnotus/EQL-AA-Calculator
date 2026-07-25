@@ -477,6 +477,13 @@ function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
+    version: "1.6.5",
+    date: "2026-07-25",
+    items: [
+      "Progression tab: dragging a row near the top or bottom edge of the list now auto-scrolls it, faster the closer you get to the edge — no more needing to pre-scroll to where you're dropping before you can start the drag.",
+    ]
+  },
+  {
     version: "1.6.4",
     date: "2026-07-22",
     items: [
@@ -3115,6 +3122,16 @@ let modalSelectedColor = null;
 // drag simply won't carry it, no matter what dragSrcIndex last happened to be.
 const PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
 let dragSrcIndex = null;
+// Native HTML5 drag doesn't auto-scroll an inner scrollable container (only
+// the whole page, inconsistently) - EXPERIMENTAL: dragging near #progressionWrap's
+// top/bottom edge scrolls it, faster the closer the cursor is to the edge,
+// so reordering a list too long to fit on screen doesn't require
+// pre-scrolling to the destination first. See updateAutoScroll/autoScrollStep.
+const AUTOSCROLL_EDGE_PX = 70;
+const AUTOSCROLL_MAX_SPEED = 18; // px/frame at the very edge
+let autoScrollDir = 0; // -1 up, 0 idle, 1 down
+let autoScrollSpeed = 0;
+let autoScrollRAF = null;
 // Total prereqWarn count in the real, un-dragged order, snapshotted at
 // dragstart - the baseline dragWouldIntroduceWarn diffs hypothetical
 // arrangements against. See that function for why a baseline is needed at all.
@@ -3124,6 +3141,42 @@ function clearDragOverMarks() {
   Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((r) => {
     r.classList.remove("drag-over-top", "drag-over-bottom", "drag-warn");
   });
+}
+
+function autoScrollStep() {
+  if (autoScrollDir === 0) { autoScrollRAF = null; return; }
+  el.progressionWrap.scrollTop += autoScrollDir * autoScrollSpeed;
+  autoScrollRAF = requestAnimationFrame(autoScrollStep);
+}
+
+// Recomputes scroll direction/speed from the cursor's current position on
+// every dragover (not just once on entering the edge zone), so speed keeps
+// ramping up the closer the cursor gets rather than snapping to one value.
+function updateAutoScroll(e) {
+  const rect = el.progressionWrap.getBoundingClientRect();
+  const distTop = e.clientY - rect.top;
+  const distBottom = rect.bottom - e.clientY;
+  let dir = 0;
+  let speed = 0;
+  if (distTop < AUTOSCROLL_EDGE_PX) {
+    dir = -1;
+    speed = AUTOSCROLL_MAX_SPEED * (1 - Math.max(distTop, 0) / AUTOSCROLL_EDGE_PX);
+  } else if (distBottom < AUTOSCROLL_EDGE_PX) {
+    dir = 1;
+    speed = AUTOSCROLL_MAX_SPEED * (1 - Math.max(distBottom, 0) / AUTOSCROLL_EDGE_PX);
+  }
+  autoScrollDir = dir;
+  autoScrollSpeed = speed;
+  if (dir !== 0 && autoScrollRAF === null) autoScrollRAF = requestAnimationFrame(autoScrollStep);
+}
+
+function stopAutoScroll() {
+  autoScrollDir = 0;
+  autoScrollSpeed = 0;
+  if (autoScrollRAF !== null) {
+    cancelAnimationFrame(autoScrollRAF);
+    autoScrollRAF = null;
+  }
 }
 
 // Walks back through preceding siblings to the nearest actual
@@ -3626,6 +3679,21 @@ function isBelowLastRow(e) {
 }
 
 function wireProgressionDropZone() {
+  // Fires on every dragover bubbling through the wrap regardless of which
+  // row/divider/box the row-level handlers above targeted - unlike those,
+  // this one doesn't gate on e.target since edge-proximity is a property of
+  // the wrap as a whole, not of whatever's directly under the cursor.
+  el.progressionWrap.addEventListener("dragover", (e) => {
+    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+    updateAutoScroll(e);
+  });
+  // dragend fires on the source row and bubbles to document even if the
+  // drag was cancelled (dropped outside a valid target, Esc, etc.), so this
+  // is the one place that reliably stops the loop no matter how the drag
+  // ended - wiring it per-row (like the "dragging" class cleanup) would
+  // miss the cancelled case for rows torn down mid-drag by a re-render.
+  document.addEventListener("dragend", stopAutoScroll);
+
   el.progressionWrap.addEventListener("dragover", (e) => {
     if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
     if (!isBelowLastRow(e)) { clearDragOverMarks(); return; }

@@ -326,6 +326,13 @@ return prog ? (prog[rankIdx] || null) : null;
 }
 const USER_CHANGELOG = [
 {
+version: "1.6.5",
+date: "2026-07-25",
+items: [
+"Progression tab: dragging a row near the top or bottom edge of the list now auto-scrolls it, faster the closer you get to the edge — no more needing to pre-scroll to where you're dropping before you can start the drag.",
+]
+},
+{
 version: "1.6.4",
 date: "2026-07-22",
 items: [
@@ -1975,11 +1982,46 @@ let editingWaypointPts = null;
 let modalSelectedColor = null;
 const PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
 let dragSrcIndex = null;
+const AUTOSCROLL_EDGE_PX = 70;
+const AUTOSCROLL_MAX_SPEED = 18;
+let autoScrollDir = 0;
+let autoScrollSpeed = 0;
+let autoScrollRAF = null;
 let dragBaselineWarnCount = 0;
 function clearDragOverMarks() {
 Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((r) => {
 r.classList.remove("drag-over-top", "drag-over-bottom", "drag-warn");
 });
+}
+function autoScrollStep() {
+if (autoScrollDir === 0) { autoScrollRAF = null; return; }
+el.progressionWrap.scrollTop += autoScrollDir * autoScrollSpeed;
+autoScrollRAF = requestAnimationFrame(autoScrollStep);
+}
+function updateAutoScroll(e) {
+const rect = el.progressionWrap.getBoundingClientRect();
+const distTop = e.clientY - rect.top;
+const distBottom = rect.bottom - e.clientY;
+let dir = 0;
+let speed = 0;
+if (distTop < AUTOSCROLL_EDGE_PX) {
+dir = -1;
+speed = AUTOSCROLL_MAX_SPEED * (1 - Math.max(distTop, 0) / AUTOSCROLL_EDGE_PX);
+} else if (distBottom < AUTOSCROLL_EDGE_PX) {
+dir = 1;
+speed = AUTOSCROLL_MAX_SPEED * (1 - Math.max(distBottom, 0) / AUTOSCROLL_EDGE_PX);
+}
+autoScrollDir = dir;
+autoScrollSpeed = speed;
+if (dir !== 0 && autoScrollRAF === null) autoScrollRAF = requestAnimationFrame(autoScrollStep);
+}
+function stopAutoScroll() {
+autoScrollDir = 0;
+autoScrollSpeed = 0;
+if (autoScrollRAF !== null) {
+cancelAnimationFrame(autoScrollRAF);
+autoScrollRAF = null;
+}
 }
 function findPrecedingRow(fromEl) {
 let sib = fromEl.previousElementSibling;
@@ -2315,6 +2357,11 @@ const last = lastProgressionRow();
 return !!last && e.clientY >= last.getBoundingClientRect().bottom;
 }
 function wireProgressionDropZone() {
+el.progressionWrap.addEventListener("dragover", (e) => {
+if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+updateAutoScroll(e);
+});
+document.addEventListener("dragend", stopAutoScroll);
 el.progressionWrap.addEventListener("dragover", (e) => {
 if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
 if (!isBelowLastRow(e)) { clearDragOverMarks(); return; }

@@ -4,6 +4,13 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.6.5",
+    date: "2026-07-25",
+    items: [
+      "Progression tab: dragging a row near the top or bottom edge of the list now auto-scrolls it, faster the closer you get to the edge — no more needing to pre-scroll to where you're dropping before you can start the drag.",
+    ]
+  },
+  {
     version: "1.6.4",
     date: "2026-07-22",
     items: [
