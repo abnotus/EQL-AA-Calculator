@@ -1,6 +1,6 @@
 // Entry point: wires everything together and boots the app on DOMContentLoaded.
 
-import { loadLocal, applyLoaded, saveLocal, loadAndApplyOwned, DISCLAIMER_DISMISSED_KEY, cleanupStaleStorageKeys } from "./state.js";
+import { loadLocal, applyLoaded, saveLocal, loadAndApplyOwned, loadAndApplyHidden, DISCLAIMER_DISMISSED_KEY, cleanupStaleStorageKeys } from "./state.js";
 import { cacheDom, el } from "./dom.js";
 import { populateStaticControls, renderAll, showToast } from "./render.js";
 import { findInvalidatedPicks, reconcilePurchaseOrderCounts } from "./logic.js";
@@ -28,6 +28,12 @@ async function init() {
   // account for it without any further plumbing.
   const ownedResult = loadAndApplyOwned(rawLocal);
   localResult.droppedRanks += ownedResult.droppedOwned;
+  // Hidden, like owned, is character-global and loaded from its own storage
+  // key independent of whichever build ends up active below - no dropped-
+  // count to fold in (an unresolvable saved key is just silently skipped,
+  // same as a stale field anywhere else - hiding a since-removed AA isn't
+  // something worth a load-time notice about).
+  loadAndApplyHidden();
   // If a share link applies, it replaces whatever localStorage just loaded -
   // so the local load's result no longer describes the build actually in
   // front of the user. Neither path toasts directly; this function is the

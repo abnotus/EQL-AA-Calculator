@@ -54,6 +54,7 @@ export function cacheDom() {
   el.sidePanel = document.getElementById("sidePanel");
   el.globalSearch = document.getElementById("globalSearch");
   el.clearSearchBtn = document.getElementById("clearSearchBtn");
+  el.showHiddenToggle = document.getElementById("showHiddenToggle");
   el.browseFilter = document.getElementById("browseFilter");
   el.browseGrid = document.getElementById("browseGrid");
   el.toast = document.getElementById("toast");

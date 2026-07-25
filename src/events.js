@@ -170,6 +170,11 @@ export function wireEvents() {
     renderBrowse();
   });
 
+  el.showHiddenToggle.addEventListener("click", () => {
+    state.showHidden = !state.showHidden;
+    renderAll();
+  });
+
   window.addEventListener("resize", () => {
     if (state.activeView === "calculator") renderTree(state.activeTab);
   });

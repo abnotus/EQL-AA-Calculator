@@ -22,6 +22,7 @@ A talent-calculator-style planner for [EverQuest Legends](https://eqlwiki.com/Al
 - Auto-granted AAs (free, level-gated abilities, including partially-free abilities) are applied automatically
 - Responsive layout, keyboard-accessible AA selection
 - Saved builds stay correct even when the underlying AA data changes (a wiki resync reordering/renaming things): a pick that no longer exists gets flagged in a load-time notice instead of silently vanishing, and an AA whose prerequisite no longer resolves is highlighted directly in the tree and side panel
+- **Hide** an AA you don't care about (a Hide/Unhide toggle in the side panel and on each Browse card) to declutter the tree and Browse All AAs — a "Show Hidden" toggle next to the global search reveals them again when you want to. Hiding never touches build state: an AA you've already spent points on always stays visible regardless, and hidden status is a personal, per-browser display preference, never part of Summary/Progression or an export/share link
 
 Player-facing version history is in the app itself — click the version tag in the bottom-right corner. For everything else, `git log` is the changelog.
 

@@ -4,7 +4,7 @@
 // render.js — so the dependency graph stays one-directional (render depends
 // on logic, not the other way around).
 
-import { state, CLASS_SLOT_KEYS, AA_CATEGORY_KEYS, saveLocal, saveOwned, sanitizeWaypoints } from "./state.js";
+import { state, CLASS_SLOT_KEYS, AA_CATEGORY_KEYS, saveLocal, saveOwned, saveHidden, sanitizeWaypoints } from "./state.js";
 import { costGuessFor, effectGuessFor } from "./keys.js";
 
 export function costNum(c) {
@@ -107,9 +107,19 @@ export function aaMatchesQuery(aa, query) {
 }
 
 // Count of AAs in a category matching the current search, for tab badges.
+// Must apply the exact same hidden-declutter exclusion renderTree/
+// renderBrowse do (isHidden(catKey, idx) forward-references it below - a
+// hoisted function declaration, safe to call from here) - otherwise a
+// hidden AA's match would inflate a tab's badge count while the tab itself
+// shows nothing for it, contradicting the decision that hiding suppresses
+// search everywhere, not just in the grid itself.
 export function countMatches(catKey, query) {
   if (!query || !query.trim()) return 0;
-  return getList(catKey).filter((aa) => aaMatchesQuery(aa, query)).length;
+  return getList(catKey).filter((aa, idx) => {
+    if (!aaMatchesQuery(aa, query)) return false;
+    if (isHidden(catKey, idx) && !state.showHidden && effectiveRank(catKey, idx) === 0) return false;
+    return true;
+  }).length;
 }
 
 function classSlotIndex(catKey) {
@@ -222,6 +232,52 @@ export function setOwnedRank(scope, className, idx, rank) {
   // payload saveLocal writes - nothing about ranks/purchaseOrder changed
   // here, so saveLocal itself has nothing new to persist.
   saveOwned();
+}
+
+// Same scope/className identity-keying as getOwnedStore, for the same
+// reason - hiding is about the AA's real identity, not which of the 3 slots
+// a class currently occupies.
+function getHiddenStore(scope, className) {
+  if (scope === "class") {
+    if (!state.hiddenAAs.classes[className]) state.hiddenAAs.classes[className] = {};
+    return state.hiddenAAs.classes[className];
+  }
+  return state.hiddenAAs[scope];
+}
+
+// Scope/className form, for callers (Browse) that need to check an AA
+// outside the 3 active class slots, where categoryToScopeClassName would
+// return null - same split as costGuess/costGuessScoped.
+export function isHiddenScoped(scope, className, idx) {
+  return !!getHiddenStore(scope, className)[idx];
+}
+
+export function isHidden(catKey, idx) {
+  const { scope, className } = categoryToScopeClassName(catKey);
+  return isHiddenScoped(scope, className, idx);
+}
+
+export function setHiddenScoped(scope, className, idx, hidden) {
+  const store = getHiddenStore(scope, className);
+  if (hidden) store[idx] = true; else delete store[idx];
+  // Display preference, not build state - its own storage key (state.js),
+  // never lastMutation/saveLocal, so hiding something is never part of
+  // Undo Last and never marks the build itself as changed.
+  saveHidden();
+}
+
+export function setHidden(catKey, idx, hidden) {
+  const { scope, className } = categoryToScopeClassName(catKey);
+  setHiddenScoped(scope, className, idx, hidden);
+}
+
+// Whether state.hiddenAAs holds anything at all, across every scope/class -
+// used to hide the "Show Hidden" toggle entirely when there's nothing for
+// it to reveal (same spirit as hasAnyOwned/canUndo).
+export function hasAnyHidden() {
+  const h = state.hiddenAAs;
+  if (Object.keys(h.general).length || Object.keys(h.archetype).length || Object.keys(h.special).length) return true;
+  return Object.keys(h.classes).some((className) => Object.keys(h.classes[className]).length > 0);
 }
 
 // Whether state.owned holds anything at all, across every scope/class - not

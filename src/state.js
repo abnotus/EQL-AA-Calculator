@@ -27,6 +27,13 @@ export const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
 // v2 added the pattern-inferred cost estimate mention. v5 dropped the
 // "during beta" framing now that the tool isn't in beta anymore.
 export const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v5";
+// Which AAs are hidden from the tree/Browse decluttering views - a personal
+// display preference, not build data, so it lives in its own key rather
+// than the build payload or an exported/shared field: opening someone
+// else's share link (or your own build on another browser) shows every AA,
+// same reasoning OWNED_STORAGE_KEY already established for a different kind
+// of "outside the plan" data. See isHidden/setHidden (logic.js).
+export const HIDDEN_STORAGE_KEY = "eql_aa_hidden_v1";
 // Every prior wording's dismiss flag, orphaned in a long-time user's
 // storage forever the moment a rewording bumps DISCLAIMER_DISMISSED_KEY -
 // nothing ever reads these again, they just sit there. Removed once on
@@ -71,6 +78,20 @@ export let state = {
   // share link must never overwrite or wipe it, since it isn't part of "the
   // build" at all. See loadAndApplyOwned/saveOwned.
   owned: { general: {}, archetype: {}, special: {}, classes: {} },
+  // Same shape/identity-keying as owned (scope/className, not a slot-
+  // relative catKey - see getHiddenStore in logic.js), but a display
+  // preference rather than real-world truth: which AAs to leave out of the
+  // tree/Browse grids to declutter them. Persisted under its own key
+  // (HIDDEN_STORAGE_KEY), never part of the build payload/exports/share
+  // links - see loadAndApplyHidden/saveHidden below. isHidden/setHidden
+  // (logic.js) never actually suppress an AA with rank > 0 no matter what
+  // this holds; hiding only ever affects what's shown to browse, not what's
+  // been picked.
+  hiddenAAs: { general: {}, archetype: {}, special: {}, classes: {} },
+  // Whether hidden AAs are shown anyway right now - a session-only view
+  // toggle (not persisted, same as browseSearch/browseFilter), not part of
+  // hiddenAAs itself.
+  showHidden: false,
   // Named point-total markers ({ pts, label, color }), sorted ascending by
   // pts and deduped by pts. Unlike owned, these describe the PLAN itself ("get these
   // by 75 pts" is a statement about this ordering), so they live inside the
@@ -159,6 +180,78 @@ function deserializeRanks(saved, resolveIdx) {
     if (Object.keys(outStore).length) out.classes[className] = outStore;
   });
   return { ranks: out, dropped };
+}
+
+// Same idx<->name-key indirection as serializeRanks/deserializeRanks, but
+// flags rather than magnitudes - a hidden AA either has an entry or it
+// doesn't, so there's no clampRankValue-style range to validate against.
+function serializeHidden(hidden) {
+  const out = { general: {}, archetype: {}, special: {}, classes: {} };
+  ["general", "archetype", "special"].forEach((scope) => {
+    const store = hidden[scope] || {};
+    Object.keys(store).forEach((idxStr) => {
+      const key = keyForIdx(scope, null, parseInt(idxStr, 10));
+      if (key) out[scope][key] = true;
+    });
+  });
+  const classes = hidden.classes || {};
+  Object.keys(classes).forEach((className) => {
+    const store = classes[className] || {};
+    const outStore = {};
+    Object.keys(store).forEach((idxStr) => {
+      const key = keyForIdx("class", className, parseInt(idxStr, 10));
+      if (key) outStore[key] = true;
+    });
+    if (Object.keys(outStore).length) out.classes[className] = outStore;
+  });
+  return out;
+}
+
+function deserializeHidden(saved) {
+  const out = { general: {}, archetype: {}, special: {}, classes: {} };
+  if (!saved || typeof saved !== "object") return out;
+  ["general", "archetype", "special"].forEach((scope) => {
+    const store = saved[scope] || {};
+    Object.keys(store).forEach((k) => {
+      const idx = idxForKey(scope, null, k);
+      if (idx >= 0) out[scope][idx] = true;
+    });
+  });
+  const classes = saved.classes || {};
+  Object.keys(classes).forEach((className) => {
+    const store = classes[className] || {};
+    const outStore = {};
+    Object.keys(store).forEach((k) => {
+      const idx = idxForKey("class", className, k);
+      if (idx >= 0) outStore[idx] = true;
+    });
+    if (Object.keys(outStore).length) out.classes[className] = outStore;
+  });
+  return out;
+}
+
+// Mirrors saveOwned/loadAndApplyOwned - called by setHidden (logic.js)
+// whenever state.hiddenAAs changes, and once at boot from main.js. No
+// migration-from-main-payload path to worry about (unlike owned's history):
+// this feature never stored hidden anywhere else.
+export function saveHidden() {
+  try {
+    localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify({ v: SAVE_FORMAT_VERSION, hidden: serializeHidden(state.hiddenAAs) }));
+  } catch (e) { /* storage unavailable, ignore */ }
+}
+
+export function loadAndApplyHidden() {
+  try {
+    const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.hidden && typeof parsed.hidden === "object") {
+        state.hiddenAAs = deserializeHidden(parsed.hidden);
+        return;
+      }
+    }
+  } catch (e) { /* storage unavailable or corrupt, ignore */ }
+  state.hiddenAAs = { general: {}, archetype: {}, special: {}, classes: {} };
 }
 
 export function serializePurchaseOrder(purchaseOrder) {

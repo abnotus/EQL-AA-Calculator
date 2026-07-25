@@ -326,6 +326,13 @@ return prog ? (prog[rankIdx] || null) : null;
 }
 const USER_CHANGELOG = [
 {
+version: "1.7.0",
+date: "2026-07-25",
+items: [
+"New: Hide an AA you don't care about — a Hide/Unhide toggle in the side panel and on each Browse card declutters it out of the tree, Browse All AAs, and search results. A \"Show Hidden\" toggle next to the global search brings hidden AAs back into view whenever you want them. Hiding never touches your build: an AA you've already spent points on always stays visible regardless, and it's shown normally in Summary and Progression no matter what — those are an accounting of what's actually picked, not something hiding filters. A personal, per-browser display preference, never part of an export or share link.",
+]
+},
+{
 version: "1.6.5",
 date: "2026-07-25",
 items: [
@@ -452,6 +459,7 @@ const SAVE_FORMAT_VERSION = 4;
 const STORAGE_KEY = "eql_aa_builder_v1";
 const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
 const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v5";
+const HIDDEN_STORAGE_KEY = "eql_aa_hidden_v1";
 const STALE_DISCLAIMER_KEYS = [
 "eql_aa_disclaimer_dismissed",
 "eql_aa_disclaimer_dismissed_v2",
@@ -473,6 +481,8 @@ charLevel: 50,
 ranks: { general: {}, archetype: {}, special: {}, classes: {} },
 purchaseOrder: [],
 owned: { general: {}, archetype: {}, special: {}, classes: {} },
+hiddenAAs: { general: {}, archetype: {}, special: {}, classes: {} },
+showHidden: false,
 waypoints: [],
 activeView: "calculator", // 'calculator' | 'browse' | 'summary' | 'progression'
 activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
@@ -532,6 +542,67 @@ else dropped++;
 if (Object.keys(outStore).length) out.classes[className] = outStore;
 });
 return { ranks: out, dropped };
+}
+function serializeHidden(hidden) {
+const out = { general: {}, archetype: {}, special: {}, classes: {} };
+["general", "archetype", "special"].forEach((scope) => {
+const store = hidden[scope] || {};
+Object.keys(store).forEach((idxStr) => {
+const key = keyForIdx(scope, null, parseInt(idxStr, 10));
+if (key) out[scope][key] = true;
+});
+});
+const classes = hidden.classes || {};
+Object.keys(classes).forEach((className) => {
+const store = classes[className] || {};
+const outStore = {};
+Object.keys(store).forEach((idxStr) => {
+const key = keyForIdx("class", className, parseInt(idxStr, 10));
+if (key) outStore[key] = true;
+});
+if (Object.keys(outStore).length) out.classes[className] = outStore;
+});
+return out;
+}
+function deserializeHidden(saved) {
+const out = { general: {}, archetype: {}, special: {}, classes: {} };
+if (!saved || typeof saved !== "object") return out;
+["general", "archetype", "special"].forEach((scope) => {
+const store = saved[scope] || {};
+Object.keys(store).forEach((k) => {
+const idx = idxForKey(scope, null, k);
+if (idx >= 0) out[scope][idx] = true;
+});
+});
+const classes = saved.classes || {};
+Object.keys(classes).forEach((className) => {
+const store = classes[className] || {};
+const outStore = {};
+Object.keys(store).forEach((k) => {
+const idx = idxForKey("class", className, k);
+if (idx >= 0) outStore[idx] = true;
+});
+if (Object.keys(outStore).length) out.classes[className] = outStore;
+});
+return out;
+}
+function saveHidden() {
+try {
+localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify({ v: SAVE_FORMAT_VERSION, hidden: serializeHidden(state.hiddenAAs) }));
+} catch (e) { /* storage unavailable, ignore */ }
+}
+function loadAndApplyHidden() {
+try {
+const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
+if (raw) {
+const parsed = JSON.parse(raw);
+if (parsed && parsed.hidden && typeof parsed.hidden === "object") {
+state.hiddenAAs = deserializeHidden(parsed.hidden);
+return;
+}
+}
+} catch (e) { /* storage unavailable or corrupt, ignore */ }
+state.hiddenAAs = { general: {}, archetype: {}, special: {}, classes: {} };
 }
 function serializePurchaseOrder(purchaseOrder) {
 return (purchaseOrder || []).map((e) => {
@@ -733,7 +804,11 @@ return aa.name.toLowerCase().includes(q) || aa.description.toLowerCase().include
 }
 function countMatches(catKey, query) {
 if (!query || !query.trim()) return 0;
-return getList(catKey).filter((aa) => aaMatchesQuery(aa, query)).length;
+return getList(catKey).filter((aa, idx) => {
+if (!aaMatchesQuery(aa, query)) return false;
+if (isHidden(catKey, idx) && !state.showHidden && effectiveRank(catKey, idx) === 0) return false;
+return true;
+}).length;
 }
 function classSlotIndex(catKey) {
 const i = CLASS_SLOT_KEYS.indexOf(catKey);
@@ -803,6 +878,34 @@ const from = store[idx] || 0;
 if (rank <= 0) delete store[idx]; else store[idx] = rank;
 lastMutation = { type: "own", scope, className, idx, from, to: rank };
 saveOwned();
+}
+function getHiddenStore(scope, className) {
+if (scope === "class") {
+if (!state.hiddenAAs.classes[className]) state.hiddenAAs.classes[className] = {};
+return state.hiddenAAs.classes[className];
+}
+return state.hiddenAAs[scope];
+}
+function isHiddenScoped(scope, className, idx) {
+return !!getHiddenStore(scope, className)[idx];
+}
+function isHidden(catKey, idx) {
+const { scope, className } = categoryToScopeClassName(catKey);
+return isHiddenScoped(scope, className, idx);
+}
+function setHiddenScoped(scope, className, idx, hidden) {
+const store = getHiddenStore(scope, className);
+if (hidden) store[idx] = true; else delete store[idx];
+saveHidden();
+}
+function setHidden(catKey, idx, hidden) {
+const { scope, className } = categoryToScopeClassName(catKey);
+setHiddenScoped(scope, className, idx, hidden);
+}
+function hasAnyHidden() {
+const h = state.hiddenAAs;
+if (Object.keys(h.general).length || Object.keys(h.archetype).length || Object.keys(h.special).length) return true;
+return Object.keys(h.classes).some((className) => Object.keys(h.classes[className]).length > 0);
 }
 function hasAnyOwned() {
 const o = state.owned;
@@ -1610,6 +1713,7 @@ el.treeWrap = document.getElementById("treeWrap");
 el.sidePanel = document.getElementById("sidePanel");
 el.globalSearch = document.getElementById("globalSearch");
 el.clearSearchBtn = document.getElementById("clearSearchBtn");
+el.showHiddenToggle = document.getElementById("showHiddenToggle");
 el.browseFilter = document.getElementById("browseFilter");
 el.browseGrid = document.getElementById("browseGrid");
 el.toast = document.getElementById("toast");
@@ -1634,6 +1738,7 @@ el.cancelResetBtn = document.getElementById("cancelResetBtn");
 function renderAll() {
 renderTopbar();
 renderTabs();
+updateShowHiddenToggle();
 el.calculatorView.classList.add("hidden");
 el.browseView.classList.add("hidden");
 el.summaryView.classList.add("hidden");
@@ -1652,6 +1757,13 @@ el.calculatorView.classList.remove("hidden");
 renderTree(state.activeTab);
 renderSidePanel();
 }
+}
+function updateShowHiddenToggle() {
+const any = hasAnyHidden();
+if (!any && state.showHidden) state.showHidden = false;
+el.showHiddenToggle.classList.toggle("hidden", !any);
+el.showHiddenToggle.classList.toggle("active", state.showHidden);
+el.showHiddenToggle.textContent = state.showHidden ? "Hide Hidden" : "Show Hidden";
 }
 function renderTopbar() {
 populateClassSelects();
@@ -1742,6 +1854,8 @@ const query = state.browseSearch;
 const searching = !!query.trim();
 list.forEach((aa, idx) => {
 const rank = effectiveRank(catKey, idx);
+const hidden = isHidden(catKey, idx);
+if (hidden && !state.showHidden && rank === 0) return;
 const autoBelowLevel = aa.auto && rank < aa.ranks;
 const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
 const locked = !!lockReason || autoBelowLevel;
@@ -1759,6 +1873,7 @@ else if (!aa.auto && rank >= aa.ranks) node.classList.add("maxed");
 if (locked) node.classList.add("locked");
 if (lockReason && lockReason.kind === "prereq") node.classList.add("locked-prereq");
 if (invalidReason) node.classList.add("invalidated");
+if (hidden) node.classList.add("hidden-aa");
 if (searching) node.classList.add(aaMatchesQuery(aa, query) ? "search-match" : "search-dim");
 if (invalidReason) node.title = invalidReason;
 else if (autoBelowLevel) node.title = `Automatically granted at level ${aa.levelReq} — no points needed.`;
@@ -1803,6 +1918,13 @@ warn.className = "costtag invalid-tag";
 warn.textContent = "⚠";
 node.appendChild(warn);
 }
+if (hidden) {
+const tag = document.createElement("div");
+tag.className = "costtag hidden-tag";
+tag.textContent = "HIDDEN";
+tag.title = "Hidden - showing anyway because you've spent points on it, or Show Hidden is on.";
+node.appendChild(tag);
+}
 node.addEventListener("click", () => selectNode(idx));
 node.addEventListener("keydown", (e) => {
 if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
@@ -1834,7 +1956,8 @@ const blockReason = atMax ? null : getBlockReason(sel.category, sel.idx);
 const nextCost = rank < aa.ranks ? costNum(aa.costs[rank]) : null;
 const dependedOn = rank > 0 && isDependedOn(sel.category, sel.idx, rank);
 const invalidReason = rank > 0 ? heldRankInvalidReason(sel.category, sel.idx) : null;
-let html = `<h2>${escapeHtml(aa.name)}</h2>`;
+const hidden = isHidden(sel.category, sel.idx);
+let html = `<div class="sidepanel-header"><h2>${escapeHtml(aa.name)}</h2><button id="hideToggleBtn" class="hide-toggle-btn${hidden ? " active" : ""}" title="${hidden ? "Unhide this AA" : "Hide this AA from the tree and Browse"}">${hidden ? "Unhide" : "Hide"}</button></div>`;
 html += `<div class="meta">${escapeHtml(labelFor(sel.category))} &middot; Level ${escapeHtml(aa.levelReq)}+</div>`;
 html += `<div class="desc">${highlightRankValue(aa.description, effectiveDisplayRank(aa, rank), effectLookup(sel.category, sel.idx))}</div>`;
 if (invalidReason) {
@@ -1890,8 +2013,13 @@ html += `<div class="req-line" style="margin-top:10px; color:#63636a;">Some per-
 el.sidePanel.innerHTML = html;
 const incBtn = document.getElementById("incBtn");
 const decBtn = document.getElementById("decBtn");
+const hideBtn = document.getElementById("hideToggleBtn");
 if (incBtn) incBtn.addEventListener("click", () => applyAttempt(attemptIncrement(sel.category, sel.idx)));
 if (decBtn) decBtn.addEventListener("click", () => applyAttempt(attemptDecrement(sel.category, sel.idx)));
+if (hideBtn) hideBtn.addEventListener("click", () => {
+setHidden(sel.category, sel.idx, !hidden);
+renderAll();
+});
 }
 function applyAttempt(result) {
 if (result.message) showToast(result.message);
@@ -1926,16 +2054,23 @@ CLASS_LIST.forEach((c) => pushList(c, AA_DATA.classes[c] || []));
 } else if (CLASS_LIST.includes(filter)) {
 pushList(filter, AA_DATA.classes[filter] || []);
 }
-const filtered = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
+const searched = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
+const filtered = searched.filter(({ cat, catKey, idx }) => {
+const { scope, className } = scopeForBrowseLabel(cat);
+if (!isHiddenScoped(scope, className, idx)) return true;
+if (state.showHidden) return true;
+return (catKey ? effectiveRank(catKey, idx) : 0) > 0;
+});
 el.browseGrid.innerHTML = filtered.length
 ? filtered.map(({ cat, aa, catKey, idx }) => {
+const { scope, className } = scopeForBrowseLabel(cat);
+const hidden = isHiddenScoped(scope, className, idx);
 let prereqInfo = "";
 if (aa.prereq) {
 const lockReason = catKey ? structuralLockReason(catKey, idx) : null;
 const warn = !!(lockReason && lockReason.kind === "prereq");
 prereqInfo = ` &middot; <span class="prereq-info${warn ? " warn" : ""}">Requires: ${escapeHtml(aa.prereq)}</span>`;
 }
-const { scope, className } = scopeForBrowseLabel(cat);
 const costList = aa.costs.map((c, i) => {
 const disp = costDisplayScoped(scope, className, idx, i, c);
 return disp.isGuess
@@ -1943,13 +2078,27 @@ return disp.isGuess
 : disp.text;
 }).join(" / ");
 return `
-      <div class="browse-card">
-        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">${escapeHtml(cat)}</span></div>
+      <div class="browse-card${hidden ? " hidden-aa" : ""}">
+        <div class="top">
+          <span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span>
+          <button class="hide-toggle-btn${hidden ? " active" : ""}" data-scope="${scope}" data-classname="${className || ""}" data-idx="${idx}" title="${hidden ? "Unhide this AA" : "Hide this AA from the tree and Browse"}">${hidden ? "Unhide" : "Hide"}</button>
+          <span class="cat">${escapeHtml(cat)}</span>
+        </div>
         <div class="desc">${highlightRankValue(aa.description, null, effectLookupScoped(scope, className, idx))}</div>
         <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${costList} &middot; Level ${escapeHtml(aa.levelReq)}+${prereqInfo}</div>
       </div>`;
 }).join("")
 : '<div class="empty">No AAs match your search.</div>';
+Array.from(el.browseGrid.querySelectorAll(".hide-toggle-btn")).forEach((btn) => {
+btn.addEventListener("click", () => {
+const scope = btn.getAttribute("data-scope");
+const className = btn.getAttribute("data-classname") || null;
+const idx = parseInt(btn.getAttribute("data-idx"), 10);
+setHiddenScoped(scope, className, idx, !isHiddenScoped(scope, className, idx));
+updateShowHiddenToggle();
+renderBrowse();
+});
+});
 }
 function renderSummary() {
 const spent = spentPoints();
@@ -2981,6 +3130,10 @@ el.browseFilter.addEventListener("change", () => {
 state.browseFilter = el.browseFilter.value;
 renderBrowse();
 });
+el.showHiddenToggle.addEventListener("click", () => {
+state.showHidden = !state.showHidden;
+renderAll();
+});
 window.addEventListener("resize", () => {
 if (state.activeView === "calculator") renderTree(state.activeTab);
 });
@@ -2993,6 +3146,7 @@ const rawLocal = loadLocal();
 const localResult = applyLoaded(rawLocal);
 const ownedResult = loadAndApplyOwned(rawLocal);
 localResult.droppedRanks += ownedResult.droppedOwned;
+loadAndApplyHidden();
 const shared = await applySharedBuildFromUrl(localResult);
 wireEvents();
 cleanupStaleStorageKeys();

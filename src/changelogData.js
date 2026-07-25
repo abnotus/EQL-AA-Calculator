@@ -4,6 +4,13 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.7.0",
+    date: "2026-07-25",
+    items: [
+      "New: Hide an AA you don't care about — a Hide/Unhide toggle in the side panel and on each Browse card declutters it out of the tree, Browse All AAs, and search results. A \"Show Hidden\" toggle next to the global search brings hidden AAs back into view whenever you want them. Hiding never touches your build: an AA you've already spent points on always stays visible regardless, and it's shown normally in Summary and Progression no matter what — those are an accounting of what's actually picked, not something hiding filters. A personal, per-browser display preference, never part of an export or share link.",
+    ]
+  },
+  {
     version: "1.6.5",
     date: "2026-07-25",
     items: [

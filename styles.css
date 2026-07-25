@@ -30,6 +30,14 @@
   --estimate-medium: #a67cd9;
   --estimate-low: #93877a;
   --estimate-very-low: #6b6459;
+
+  /* Hide/Show Hidden AAs (see .hide-toggle-btn, #showHiddenToggle) - a
+     saturated cyan-teal, deliberately not reused from anywhere else
+     (doesn't overlap red/green/amber/estimate/waypoint meanings), so it
+     reads as its own distinct category and actually stands out against the
+     red-dominant palette instead of blending into it. */
+  --hidden-accent: #146b64;
+  --hidden-accent-bright: #2fe0d0;
 }
 
 * { box-sizing: border-box; }
@@ -285,6 +293,41 @@ nav.tabs button .search-badge {
   max-width: 420px;
 }
 
+/* Hide/Show Hidden AAs - compact button reused in 3 spots (the tree/Browse
+   toggle here, the side panel header, each Browse card's corner) at 3
+   different sizes; #showHiddenToggle below restores normal .btn sizing for
+   its spot in this row, the other two stay at this compact default. */
+.hide-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-faint);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.hide-toggle-btn:hover { border-color: var(--hidden-accent-bright); color: var(--hidden-accent-bright); }
+
+.hide-toggle-btn.active {
+  background: var(--hidden-accent);
+  border-color: var(--hidden-accent-bright);
+  color: #d7fff9;
+  font-weight: 600;
+}
+
+#showHiddenToggle {
+  padding: 7px 12px;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 .search-bar #clearSearchBtn {
   padding: 6px 10px;
   line-height: 1;
@@ -394,6 +437,28 @@ main {
   border-color: #e08b78;
   color: #e08b78;
   font-weight: 700;
+}
+
+/* A hidden AA only ever renders at all when it's being shown as an
+   exception (Show Hidden is on, or you've spent points on it despite it
+   being hidden - see renderTree) - the dimming + corner tag mark that it's
+   an exception, not the normal state for this slot. Bottom-right, the one
+   corner none of the other tags (top-right cost/AUTO/Lv, bottom-left
+   REQ/invalid) already claim. */
+.node.hidden-aa { opacity: 0.55; }
+
+/* .costtag as a base is deliberate reuse, not a copy-paste starting point -
+   it earns its place here: the same absolute-positioned pill shape,
+   background-cuts-into-the-node-border look, and sizing every other corner
+   badge (AUTO/Lv/REQ/⚠) already shares. Only color/position actually change
+   below. */
+.node .costtag.hidden-tag {
+  top: auto;
+  bottom: -8px;
+  border-color: var(--hidden-accent-bright);
+  color: var(--hidden-accent-bright);
+  font-weight: 700;
+  font-size: 9px;
 }
 
 .node.search-match {
@@ -526,10 +591,18 @@ main {
   overflow-y: auto;
 }
 
+.sidepanel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
 #sidePanel h2 {
   color: var(--accent-bright);
   font-size: 17px;
-  margin: 0 0 4px;
+  margin: 0;
 }
 
 #sidePanel .meta {
@@ -739,6 +812,8 @@ main {
   padding: 12px 14px;
 }
 
+.browse-card.hidden-aa { opacity: 0.55; }
+
 .browse-card .top {
   display: flex;
   justify-content: space-between;
@@ -748,6 +823,7 @@ main {
 }
 
 .browse-card .top .name {
+  flex: 1;
   font-weight: 600;
   color: var(--accent-bright);
   font-size: 14px;

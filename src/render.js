@@ -10,7 +10,8 @@ import {
   costNum, spentPoints, undoLastMutation, canUndo, moveEntry, setOwnedRank, performReset,
   aaMatchesQuery, countMatches, heldRankInvalidReason, loadIssuesSuffix,
   hasAnyOwned, computeProgressionTimeline, addOrUpdateWaypoint, removeWaypoint, costGuess, costGuessScoped,
-  estimatedExtraPoints, effectGuess, effectGuessScoped, guessTitle, classRankCapFor, effectiveDisplayRank
+  estimatedExtraPoints, effectGuess, effectGuessScoped, guessTitle, classRankCapFor, effectiveDisplayRank,
+  isHidden, isHiddenScoped, setHidden, setHiddenScoped, hasAnyHidden
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
@@ -20,6 +21,7 @@ import {
 export function renderAll() {
   renderTopbar();
   renderTabs();
+  updateShowHiddenToggle();
   el.calculatorView.classList.add("hidden");
   el.browseView.classList.add("hidden");
   el.summaryView.classList.add("hidden");
@@ -38,6 +40,22 @@ export function renderAll() {
     renderTree(state.activeTab);
     renderSidePanel();
   }
+}
+
+// Shared by every tab (the search bar itself is shared too) - visible only
+// once there's actually something hidden to reveal, same spirit as the
+// standalone "Clear Owned" button disabling itself when there's nothing for
+// it to do.
+function updateShowHiddenToggle() {
+  const any = hasAnyHidden();
+  // Unhiding the last hidden AA while this is on would otherwise leave
+  // showHidden stuck true forever - invisible (nothing left to reveal) but
+  // still "on" in memory, so hiding something new later would silently
+  // start already-revealed instead of the normal default-off state.
+  if (!any && state.showHidden) state.showHidden = false;
+  el.showHiddenToggle.classList.toggle("hidden", !any);
+  el.showHiddenToggle.classList.toggle("active", state.showHidden);
+  el.showHiddenToggle.textContent = state.showHidden ? "Hide Hidden" : "Show Hidden";
 }
 
 function renderTopbar() {
@@ -180,6 +198,18 @@ export function renderTree(catKey) {
 
   list.forEach((aa, idx) => {
     const rank = effectiveRank(catKey, idx);
+    // A hidden AA is left out of the grid entirely unless Show Hidden is on
+    // - EXCEPT one you've actually spent points on, which always stays
+    // visible regardless: hiding only declutters what to look at, it never
+    // suppresses real build state (see isHidden/setHidden, logic.js). This
+    // runs before the search-match classing below on purpose: a hidden AA
+    // is unfindable via global search too, not just absent from plain
+    // browsing - deliberate, not an oversight. Show Hidden is meant to be
+    // the one override switch; letting search silently bypass hiding as a
+    // second one would repopulate a broad match's worth of AAs someone
+    // specifically decluttered away.
+    const hidden = isHidden(catKey, idx);
+    if (hidden && !state.showHidden && rank === 0) return;
     const autoBelowLevel = aa.auto && rank < aa.ranks;
     const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
     const locked = !!lockReason || autoBelowLevel;
@@ -204,6 +234,7 @@ export function renderTree(catKey) {
     if (locked) node.classList.add("locked");
     if (lockReason && lockReason.kind === "prereq") node.classList.add("locked-prereq");
     if (invalidReason) node.classList.add("invalidated");
+    if (hidden) node.classList.add("hidden-aa");
     if (searching) node.classList.add(aaMatchesQuery(aa, query) ? "search-match" : "search-dim");
     if (invalidReason) node.title = invalidReason;
     else if (autoBelowLevel) node.title = `Automatically granted at level ${aa.levelReq} — no points needed.`;
@@ -249,6 +280,13 @@ export function renderTree(catKey) {
       warn.textContent = "⚠";
       node.appendChild(warn);
     }
+    if (hidden) {
+      const tag = document.createElement("div");
+      tag.className = "costtag hidden-tag";
+      tag.textContent = "HIDDEN";
+      tag.title = "Hidden - showing anyway because you've spent points on it, or Show Hidden is on.";
+      node.appendChild(tag);
+    }
     node.addEventListener("click", () => selectNode(idx));
     node.addEventListener("keydown", (e) => {
       if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
@@ -283,8 +321,9 @@ function renderSidePanel() {
   const nextCost = rank < aa.ranks ? costNum(aa.costs[rank]) : null;
   const dependedOn = rank > 0 && isDependedOn(sel.category, sel.idx, rank);
   const invalidReason = rank > 0 ? heldRankInvalidReason(sel.category, sel.idx) : null;
+  const hidden = isHidden(sel.category, sel.idx);
 
-  let html = `<h2>${escapeHtml(aa.name)}</h2>`;
+  let html = `<div class="sidepanel-header"><h2>${escapeHtml(aa.name)}</h2><button id="hideToggleBtn" class="hide-toggle-btn${hidden ? " active" : ""}" title="${hidden ? "Unhide this AA" : "Hide this AA from the tree and Browse"}">${hidden ? "Unhide" : "Hide"}</button></div>`;
   html += `<div class="meta">${escapeHtml(labelFor(sel.category))} &middot; Level ${escapeHtml(aa.levelReq)}+</div>`;
   html += `<div class="desc">${highlightRankValue(aa.description, effectiveDisplayRank(aa, rank), effectLookup(sel.category, sel.idx))}</div>`;
   if (invalidReason) {
@@ -341,8 +380,13 @@ function renderSidePanel() {
   el.sidePanel.innerHTML = html;
   const incBtn = document.getElementById("incBtn");
   const decBtn = document.getElementById("decBtn");
+  const hideBtn = document.getElementById("hideToggleBtn");
   if (incBtn) incBtn.addEventListener("click", () => applyAttempt(attemptIncrement(sel.category, sel.idx)));
   if (decBtn) decBtn.addEventListener("click", () => applyAttempt(attemptDecrement(sel.category, sel.idx)));
+  if (hideBtn) hideBtn.addEventListener("click", () => {
+    setHidden(sel.category, sel.idx, !hidden);
+    renderAll();
+  });
 }
 
 // attemptIncrement/attemptDecrement just report what happened; this decides what
@@ -396,10 +440,26 @@ export function renderBrowse() {
     pushList(filter, AA_DATA.classes[filter] || []);
   }
 
-  const filtered = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
+  const searched = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
+  // Same hidden-declutter rule as the tree (see renderTree, including why a
+  // search match doesn't bypass hiding either - it's applied AFTER the
+  // query filter above, on purpose, not before): left out unless Show
+  // Hidden is on, except one you've actually spent points on. catKey is
+  // null for a class outside the 3 active slots - state.ranks only ever
+  // holds data for currently-selected classes (clearClassData wipes it the
+  // moment a class is swapped out), so rank is unconditionally 0 there and
+  // the exception never needs to consult it.
+  const filtered = searched.filter(({ cat, catKey, idx }) => {
+    const { scope, className } = scopeForBrowseLabel(cat);
+    if (!isHiddenScoped(scope, className, idx)) return true;
+    if (state.showHidden) return true;
+    return (catKey ? effectiveRank(catKey, idx) : 0) > 0;
+  });
 
   el.browseGrid.innerHTML = filtered.length
     ? filtered.map(({ cat, aa, catKey, idx }) => {
+        const { scope, className } = scopeForBrowseLabel(cat);
+        const hidden = isHiddenScoped(scope, className, idx);
         let prereqInfo = "";
         if (aa.prereq) {
           // Only "requires an AA you haven't reached yet" should read as a
@@ -410,7 +470,6 @@ export function renderBrowse() {
           const warn = !!(lockReason && lockReason.kind === "prereq");
           prereqInfo = ` &middot; <span class="prereq-info${warn ? " warn" : ""}">Requires: ${escapeHtml(aa.prereq)}</span>`;
         }
-        const { scope, className } = scopeForBrowseLabel(cat);
         const costList = aa.costs.map((c, i) => {
           const disp = costDisplayScoped(scope, className, idx, i, c);
           return disp.isGuess
@@ -418,13 +477,28 @@ export function renderBrowse() {
             : disp.text;
         }).join(" / ");
         return `
-      <div class="browse-card">
-        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">${escapeHtml(cat)}</span></div>
+      <div class="browse-card${hidden ? " hidden-aa" : ""}">
+        <div class="top">
+          <span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span>
+          <button class="hide-toggle-btn${hidden ? " active" : ""}" data-scope="${scope}" data-classname="${className || ""}" data-idx="${idx}" title="${hidden ? "Unhide this AA" : "Hide this AA from the tree and Browse"}">${hidden ? "Unhide" : "Hide"}</button>
+          <span class="cat">${escapeHtml(cat)}</span>
+        </div>
         <div class="desc">${highlightRankValue(aa.description, null, effectLookupScoped(scope, className, idx))}</div>
         <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${costList} &middot; Level ${escapeHtml(aa.levelReq)}+${prereqInfo}</div>
       </div>`;
       }).join("")
     : '<div class="empty">No AAs match your search.</div>';
+
+  Array.from(el.browseGrid.querySelectorAll(".hide-toggle-btn")).forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const scope = btn.getAttribute("data-scope");
+      const className = btn.getAttribute("data-classname") || null;
+      const idx = parseInt(btn.getAttribute("data-idx"), 10);
+      setHiddenScoped(scope, className, idx, !isHiddenScoped(scope, className, idx));
+      updateShowHiddenToggle();
+      renderBrowse();
+    });
+  });
 }
 
 function renderSummary() {
