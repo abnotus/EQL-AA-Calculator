@@ -1995,7 +1995,9 @@ r.classList.remove("drag-over-top", "drag-over-bottom", "drag-warn");
 }
 function autoScrollStep() {
 if (autoScrollDir === 0) { autoScrollRAF = null; return; }
-el.progressionWrap.scrollTop += autoScrollDir * autoScrollSpeed;
+const before = el.progressionWrap.scrollTop;
+el.progressionWrap.scrollTop = before + autoScrollDir * autoScrollSpeed;
+if (el.progressionWrap.scrollTop === before) { autoScrollRAF = null; return; }
 autoScrollRAF = requestAnimationFrame(autoScrollStep);
 }
 function updateAutoScroll(e) {
@@ -2274,6 +2276,7 @@ const before = e.clientY - rect.top < rect.height / 2;
 const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
 moveProgressionEntryTo(dragSrcIndex, before ? overIndex : overIndex + 1);
 dragSrcIndex = null;
+stopAutoScroll();
 });
 });
 Array.from(el.progressionContent.querySelectorAll(".progression-next-rank")).forEach((boxEl) => {
@@ -2295,6 +2298,7 @@ e.preventDefault();
 const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
 moveProgressionEntryTo(dragSrcIndex, overIndex + 1);
 dragSrcIndex = null;
+stopAutoScroll();
 });
 });
 Array.from(el.progressionContent.querySelectorAll(".progression-divider")).forEach((divEl) => {
@@ -2326,6 +2330,7 @@ e.preventDefault();
 const toIndex = ownerRow ? parseInt(ownerRow.getAttribute("data-index"), 10) + 1 : 0;
 moveProgressionEntryTo(dragSrcIndex, toIndex);
 dragSrcIndex = null;
+stopAutoScroll();
 });
 });
 }
@@ -2380,6 +2385,7 @@ if (!isBelowLastRow(e)) return;
 e.preventDefault();
 moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
 dragSrcIndex = null;
+stopAutoScroll();
 });
 el.progressionContent.addEventListener("dragover", (e) => {
 if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;

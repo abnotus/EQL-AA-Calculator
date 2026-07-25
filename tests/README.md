@@ -32,8 +32,8 @@ stay true regardless of what `data.src.js` says on any given day.
 `test_cost_guess.py`, `test_manual_guess.py`, `test_guess_all_tabs.py`,
 `test_disclaimer_banner.py`, `test_estimated_total.py`, `test_effect_guess.py`,
 `test_build_slot_migration.py`, `test_active_build_match.py`,
-`test_class_rank_cap.py` drive the actual app in a real Chrome instance via
-[Playwright](https://playwright.dev/python/).
+`test_class_rank_cap.py`, `test_progression_autoscroll.py` drive the actual
+app in a real Chrome instance via [Playwright](https://playwright.dev/python/).
 
 **Prerequisites:**
 - `pip install playwright`
@@ -58,6 +58,7 @@ python tests/test_effect_guess.py
 python tests/test_build_slot_migration.py
 python tests/test_active_build_match.py
 python tests/test_class_rank_cap.py
+python tests/test_progression_autoscroll.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -84,6 +85,9 @@ touches either guessing feature (`wiki-sync/guess_costs.py` or
 `wiki-sync/guess_effects.py`, their consumers in `src/keys.js`/
 `src/logic.js`/`src/render.js`, the disclaimer banner, the topbar, or
 Progression's own blended running total / the plain-text export mirroring
-it), or class-rank-cap logic (`classRankCapFor`, `structuralLockReason`,
+it), class-rank-cap logic (`classRankCapFor`, `structuralLockReason`,
 `heldRankInvalidReason`, `effectiveDisplayRank`, `computeProgressionSteps`'s
-`classCapWarn` - `test_class_rank_cap.py`) before rebuilding and committing.
+`classCapWarn` - `test_class_rank_cap.py`), or Progression's drag-to-reorder
+auto-scroll (`updateAutoScroll`, `autoScrollStep`, `stopAutoScroll`, or any
+of the drop handlers wired in `renderProgression`/`wireProgressionDropZone` -
+`test_progression_autoscroll.py`) before rebuilding and committing.

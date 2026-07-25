@@ -3123,10 +3123,16 @@ let modalSelectedColor = null;
 const PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
 let dragSrcIndex = null;
 // Native HTML5 drag doesn't auto-scroll an inner scrollable container (only
-// the whole page, inconsistently) - EXPERIMENTAL: dragging near #progressionWrap's
+// the whole page, inconsistently) - dragging near #progressionWrap's
 // top/bottom edge scrolls it, faster the closer the cursor is to the edge,
 // so reordering a list too long to fit on screen doesn't require
 // pre-scrolling to the destination first. See updateAutoScroll/autoScrollStep.
+// Both must be stopped from every drop handler, not just via the dragend
+// listener below - dragend is known not to fire on a source node that's
+// already detached by the time the drag would end (renderProgression
+// replaces progressionContent's innerHTML on every successful drop), and
+// the loop is self-sustaining (each frame reschedules itself), so a missed
+// stop would otherwise keep scrolling forever using stale direction/speed.
 const AUTOSCROLL_EDGE_PX = 70;
 const AUTOSCROLL_MAX_SPEED = 18; // px/frame at the very edge
 let autoScrollDir = 0; // -1 up, 0 idle, 1 down
@@ -3145,7 +3151,13 @@ function clearDragOverMarks() {
 
 function autoScrollStep() {
   if (autoScrollDir === 0) { autoScrollRAF = null; return; }
-  el.progressionWrap.scrollTop += autoScrollDir * autoScrollSpeed;
+  const before = el.progressionWrap.scrollTop;
+  el.progressionWrap.scrollTop = before + autoScrollDir * autoScrollSpeed;
+  // Already at the scroll limit in this direction - the write above was a
+  // no-op (the browser clamps it). Idle out instead of burning a 60fps loop
+  // for as long as the cursor sits at an already-maxed edge; the next
+  // dragover that reports edge proximity restarts it.
+  if (el.progressionWrap.scrollTop === before) { autoScrollRAF = null; return; }
   autoScrollRAF = requestAnimationFrame(autoScrollStep);
 }
 
@@ -3542,6 +3554,7 @@ function renderProgression() {
       const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
       moveProgressionEntryTo(dragSrcIndex, before ? overIndex : overIndex + 1);
       dragSrcIndex = null;
+      stopAutoScroll();
     });
   });
 
@@ -3570,6 +3583,7 @@ function renderProgression() {
       const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
       moveProgressionEntryTo(dragSrcIndex, overIndex + 1);
       dragSrcIndex = null;
+      stopAutoScroll();
     });
   });
 
@@ -3608,6 +3622,7 @@ function renderProgression() {
       const toIndex = ownerRow ? parseInt(ownerRow.getAttribute("data-index"), 10) + 1 : 0;
       moveProgressionEntryTo(dragSrcIndex, toIndex);
       dragSrcIndex = null;
+      stopAutoScroll();
     });
   });
 }
@@ -3714,6 +3729,7 @@ function wireProgressionDropZone() {
     e.preventDefault();
     moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
     dragSrcIndex = null;
+    stopAutoScroll();
   });
   // Inter-row gaps land here, not on progressionWrap (see above) - no row
   // claims them and dropping does nothing, so just keep a stale indicator
