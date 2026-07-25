@@ -31,7 +31,7 @@ export const USER_CHANGELOG = [
     date: "2026-07-22",
     items: [
       "New: class-based rank caps are now enforced. Steadfast Will is the current example — capped at rank 6 unless one of your 3 classes is Warrior, Paladin, Shadow Knight (rank 8), or Ranger (rank 7). Tri-class combines rather than switches, so any one of your 3 classes qualifying is enough.",
-      "A rank that a later class swap puts out of reach is never stripped — it stays exactly as trained, flagged the same way a stale prerequisite already is, with the out-of-reach portion of its progress bar shown dimmed. Swap back to a qualifying class and the warning clears automatically."
+      "A rank that a later class swap puts out of reach is never stripped — it stays exactly as trained, flagged the same way a stale prerequisite is, on the tree, side panel, Summary, and Progression, with the out-of-reach portion of its progress bar dimmed. Swap back to a qualifying class and the warning clears automatically."
     ]
   },
   {
