@@ -4,6 +4,15 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.8.0",
+    date: "2026-07-25",
+    items: [
+      "New: swapping a class slot no longer wipes that class's picks — they move to a new Other Classes tab instead of disappearing, grouped by class with its own subtotal, and still count toward the topbar's Points Spent (now a lifetime total across every class you've ever used). Swap the class back in and everything's exactly as left, rank and order alike. Progression's own running total stays scoped to your current 3 classes, with a note pointing at the Other Classes tab whenever the two totals diverge — same for the topbar's tooltip.",
+      "Reset Build and Clear Owned both now reach every class you've used, not just your current 3, matching how they already worked for the active ones — an inactive class's plan is trimmed to its owned watermark by default, same as an active class's.",
+      "Progression rows show a small colored badge for which of your 3 classes they belong to, at a glance."
+    ]
+  },
+  {
     version: "1.7.0",
     date: "2026-07-25",
     items: [

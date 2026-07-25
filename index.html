@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EverQuest Legends - AA Calculator</title>
-<link rel="stylesheet" href="styles.css?v=f973a36c" />
+<link rel="stylesheet" href="styles.css?v=f6023da3" />
 </head>
 <body>
 
@@ -82,10 +82,17 @@
     </div>
   </div>
 
+  <div id="otherClassesView" class="view-panel view-panel-col hidden">
+    <div id="otherClassesWrap">
+      <div class="other-classes-hint">AAs you've spent points on for a class that isn't one of your current 3 &mdash; still fully part of this build and still counted in Points Spent above, just not trainable (or shown in the tree/Progression) until you swap that class back in.</div>
+      <div id="otherClassesContent"></div>
+    </div>
+  </div>
+
   <div id="progressionView" class="view-panel view-panel-col hidden">
     <div id="progressionWrap">
       <div class="progression-toolbar">
-        <div class="progression-hint">The order you've spent points in, for planning a leveling path. Drag a row to reorder it (or use the arrows) &mdash; ranks of the same AA always stay in order, the drop line turns amber if that spot would leave the row's own prerequisite unmet, and a &#9888; means a step's prerequisite hasn't been reached yet at that point in the sequence.</div>
+        <div class="progression-hint">The order you've spent points in, for planning a leveling path. Drag a row to reorder it (or use the arrows) &mdash; ranks of the same AA always stay in order, the drop line turns amber if that spot would leave the row's own prerequisite unmet, and a &#9888; means a step's prerequisite hasn't been reached yet at that point in the sequence.<span id="otherClassesNote" class="other-classes-note hidden"></span></div>
         <span id="ownedSummary" class="owned-summary"></span>
         <button class="btn danger" id="clearOwnedBtn" title="Clear all owned progress without touching your planned picks">Clear Owned</button>
         <button class="btn" id="undoLastBtn">Undo Last</button>
@@ -171,7 +178,7 @@
 <div id="resetModal" class="modal-overlay hidden">
   <div class="modal">
     <h2>Reset Build</h2>
-    <p class="modal-hint">Clears every planned pick. AAs marked as owned are kept by default, since those aren't just plans anymore &mdash; check the box below to clear everything, owned included.</p>
+    <p class="modal-hint">Clears every planned pick across every class you've used, not just your current 3 (picks for a class you've swapped away from are trimmed the same way, in the Other Classes tab). AAs marked as owned are kept by default, since those aren't just plans anymore &mdash; check the box below to clear everything, owned included.</p>
     <label class="modal-checkbox-row">
       <input type="checkbox" id="resetClearOwnedCheckbox" />
       Also clear owned progress
@@ -209,7 +216,7 @@
   </div>
 </div>
 
-<script src="data.js?v=f973a36c"></script>
-<script src="app.js?v=f973a36c"></script>
+<script src="data.js?v=f6023da3"></script>
+<script src="app.js?v=f6023da3"></script>
 </body>
 </html>

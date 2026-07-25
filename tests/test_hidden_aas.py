@@ -7,9 +7,12 @@
 #   1. A hidden AA is left out of the tree/Browse grids unless Show Hidden
 #      is on - EXCEPT one you've actually spent points on, which always
 #      stays visible (hiding only declutters what to look at, never
-#      suppresses real build state). Summary/Progression never filter on
-#      hidden at all - they're an accounting of what's picked, not a
-#      browsing view.
+#      suppresses real build state) - including one on a class you've since
+#      swapped away from (a class swap no longer wipes ranks/purchaseOrder -
+#      see events.js), which is why Browse's ranked-exception check uses
+#      the scoped rank lookup (effectiveRankScoped), not a catKey-gated one.
+#      Summary/Progression never filter on hidden at all - they're an
+#      accounting of what's picked, not a browsing view.
 #   2. It's stored under its own localStorage key, independent of the
 #      build/share-link payload - never exported, never part of a share
 #      link, and survives a reload on its own.
@@ -160,6 +163,43 @@ with sync_playwright() as p:
     print("Alchemy Mastery still shown (ranked) and still flagged hidden after reload:", node2b.count(), "hidden-aa" in (node2b.get_attribute("class") or ""))
     assert node2b.count() == 1 and "hidden-aa" in node2b.get_attribute("class")
     print("PASS: hidden state persists across a reload on its own storage key, and never leaks into export text")
+
+    # --- Regression: a class swap no longer wipes ranks/purchaseOrder
+    # (events.js) - an inactive class's AA can now genuinely have rank > 0,
+    # where it used to be structurally impossible (guaranteed 0 by
+    # clearClassData). Browse's ranked-exception filter briefly regressed
+    # to a catKey-gated shortcut that assumed that old guarantee (rank
+    # unconditionally 0 for a class outside the 3 slots), wrongly
+    # suppressing a hidden-but-purchased AA on an inactive class - fixed to
+    # use effectiveRankScoped instead of catKey ? effectiveRank(...) : 0. ---
+    page.click('button[data-tab="classSlot0"]')
+    page.wait_for_timeout(100)
+    class0_node = page.locator(".node").first
+    class0_name = class0_node.locator(".name").inner_text()
+    class0_node.click()
+    page.click("#incBtn")
+    page.wait_for_timeout(80)
+    page.locator("#hideToggleBtn").click()
+    page.wait_for_timeout(80)
+
+    class0_select = page.locator("#classSelect0")
+    old_class = class0_select.input_value()
+    options = class0_select.locator("option").all_text_contents()
+    other_slots = [page.locator("#classSelect1").input_value(), page.locator("#classSelect2").input_value()]
+    new_class = next(o for o in options if o != old_class and o not in other_slots)
+    class0_select.select_option(new_class)
+    page.wait_for_timeout(150)
+
+    page.click("#browseToggle")
+    page.fill("#globalSearch", class0_name)
+    page.wait_for_timeout(150)
+    inactive_hidden_card = page.locator(".browse-card", has=page.locator(".name", has_text=class0_name))
+    print("hidden-but-ranked AA on an inactive class, visible in Browse with Show Hidden off:", inactive_hidden_card.count())
+    assert inactive_hidden_card.count() == 1, \
+        "FAIL: a hidden AA you've spent points on must stay visible even once its class is swapped away, not just while active"
+    print("PASS: hiding + an inactive class's ranked AA don't combine to wrongly suppress it")
+    page.fill("#globalSearch", "")
+    page.click("#browseToggle")
 
     print("ERRORS:", errors)
     assert not errors

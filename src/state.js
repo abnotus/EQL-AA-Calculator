@@ -47,6 +47,11 @@ const STALE_DISCLAIMER_KEYS = [
   "eql_aa_disclaimer_dismissed_v4",
 ];
 
+// Disclaimer-specific today (STALE_DISCLAIMER_KEYS is the only list swept
+// here) - OWNED_STORAGE_KEY/HIDDEN_STORAGE_KEY are both still on their
+// original _v1 suffix, nothing to clean up for them yet. If either ever
+// bumps to _v2 for a format change, extend this the same way: a flat
+// stale-keys list for that key, swept here alongside the disclaimer one.
 export function cleanupStaleStorageKeys() {
   try {
     STALE_DISCLAIMER_KEYS.forEach((k) => localStorage.removeItem(k));

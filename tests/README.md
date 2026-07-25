@@ -33,8 +33,9 @@ stay true regardless of what `data.src.js` says on any given day.
 `test_disclaimer_banner.py`, `test_estimated_total.py`, `test_effect_guess.py`,
 `test_build_slot_migration.py`, `test_active_build_match.py`,
 `test_class_rank_cap.py`, `test_progression_autoscroll.py`,
-`test_hidden_aas.py` drive the actual app in a real Chrome instance via
-[Playwright](https://playwright.dev/python/).
+`test_hidden_aas.py`, `test_other_classes.py`,
+`test_owned_inactive_classes.py` drive the actual app in a real Chrome
+instance via [Playwright](https://playwright.dev/python/).
 
 **Prerequisites:**
 - `pip install playwright`
@@ -61,6 +62,8 @@ python tests/test_active_build_match.py
 python tests/test_class_rank_cap.py
 python tests/test_progression_autoscroll.py
 python tests/test_hidden_aas.py
+python tests/test_other_classes.py
+python tests/test_owned_inactive_classes.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -92,7 +95,13 @@ it), class-rank-cap logic (`classRankCapFor`, `structuralLockReason`,
 `classCapWarn` - `test_class_rank_cap.py`), Progression's drag-to-reorder
 auto-scroll (`updateAutoScroll`, `autoScrollStep`, `stopAutoScroll`, or any
 of the drop handlers wired in `renderProgression`/`wireProgressionDropZone` -
-`test_progression_autoscroll.py`), or hiding AAs (`isHidden`/`isHiddenScoped`,
+`test_progression_autoscroll.py`), hiding AAs (`isHidden`/`isHiddenScoped`,
 `setHidden`/`setHiddenScoped`, `hasAnyHidden`, the filtering in
 `renderTree`/`renderBrowse`, or `HIDDEN_STORAGE_KEY`/`loadAndApplyHidden`/
-`saveHidden` - `test_hidden_aas.py`) before rebuilding and committing.
+`saveHidden` - `test_hidden_aas.py`), or a class swap's now-persistent data
+(`spentPoints`/`estimatedExtraPoints`/`ownedPoints`'s lifetime scope,
+`spentForClass`/`spentOnInactiveClasses`, `effectiveRankScoped`,
+`otherClassesWithPicks`/`countOtherClassesPicked`, `isEntryActive`, the
+active-only filter and up/down-arrow neighbor-skipping in
+`renderProgression`, or `renderOtherClasses` - `test_other_classes.py` and
+`test_owned_inactive_classes.py`) before rebuilding and committing.

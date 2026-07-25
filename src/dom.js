@@ -34,10 +34,13 @@ export function cacheDom() {
   el.summaryView = document.getElementById("summaryView");
   el.summaryHeader = document.getElementById("summaryHeader");
   el.summaryContent = document.getElementById("summaryContent");
+  el.otherClassesView = document.getElementById("otherClassesView");
+  el.otherClassesContent = document.getElementById("otherClassesContent");
   el.progressionView = document.getElementById("progressionView");
   el.progressionWrap = document.getElementById("progressionWrap");
   el.progressionContent = document.getElementById("progressionContent");
   el.undoLastBtn = document.getElementById("undoLastBtn");
+  el.otherClassesNote = document.getElementById("otherClassesNote");
   el.ownedSummary = document.getElementById("ownedSummary");
   el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
   el.addWaypointBtn = document.getElementById("addWaypointBtn");

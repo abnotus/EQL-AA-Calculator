@@ -161,16 +161,37 @@ export function getList(catKey) {
 // effectiveRank is the greater of the free baseline and whatever's been manually
 // purchased, so the free rank(s) never need a purchaseOrder entry of their own.
 export function effectiveRank(catKey, idx) {
-  const aa = getList(catKey)[idx];
+  const { scope, className } = categoryToScopeClassName(catKey);
+  return effectiveRankScoped(scope, className, idx);
+}
+
+// Same lookup as effectiveRank, by (scope, className) directly rather than
+// a slot-relative catKey - for the Other Classes tab, where an inactive
+// class has no catKey at all (classSlotIndex returns -1 for it). Same
+// split as costGuess/costGuessScoped.
+export function effectiveRankScoped(scope, className, idx) {
+  const list = scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
+  const aa = list[idx];
+  // An auto-granted (or partially-auto, autoRanks) AA's free portion only
+  // actually applies while its class is one of the 3 you're currently
+  // playing - it's a level-gated freebie tied to actively running that
+  // class, not a standing investment like a manually-trained rank (which
+  // DOES persist while inactive - see the Other Classes tab). Without this
+  // gate, effectiveRank's delegation below is unaffected (a catKey's class
+  // is always active by construction), but a direct scoped call for a
+  // genuinely inactive class would otherwise report an auto AA as "picked"
+  // despite it never having been purchased or actually granted while that
+  // class isn't the one being played.
+  const classActive = scope !== "class" || state.selectedClasses.includes(className);
   if (aa && aa.auto) {
     const levelReq = parseInt(aa.levelReq, 10) || 1;
-    return state.charLevel >= levelReq ? aa.ranks : 0;
+    return classActive && state.charLevel >= levelReq ? aa.ranks : 0;
   }
-  const store = getRanksStore(catKey);
+  const store = scope === "class" ? (state.ranks.classes[className] || {}) : (state.ranks[scope] || {});
   const purchased = store[idx] || 0;
   if (aa && aa.autoRanks) {
     const levelReq = parseInt(aa.levelReq, 10) || 1;
-    const freeRanks = state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+    const freeRanks = classActive && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
     return Math.max(freeRanks, purchased);
   }
   return purchased;
@@ -392,6 +413,15 @@ function resolveEntryCategory(entry) {
   return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
 }
 
+// Whether a purchaseOrder entry belongs to one of the 3 currently active
+// classes (general/archetype/special always are) - exported for
+// render.js's up/down arrow reordering, which needs to skip over an
+// inactive entry sitting between two visible rows rather than swap with it
+// and produce no visible change at all.
+export function isEntryActive(entry) {
+  return resolveEntryCategory(entry) !== null;
+}
+
 function pushPurchase(category, idx) {
   state.purchaseOrder.push({ scope: scopeForCategory(category), className: classNameForCategory(category), idx });
 }
@@ -409,12 +439,6 @@ function popLastPurchase(category, idx) {
     }
   }
   return null;
-}
-
-export function clearClassData(className) {
-  delete state.ranks.classes[className];
-  state.purchaseOrder = state.purchaseOrder.filter((e) => !(e.scope === "class" && e.className === className));
-  lastMutation = null;
 }
 
 // Reset Build, but selective: wipes every planned pick down to its owned
@@ -512,18 +536,93 @@ export function performReset(clearOwnedToo) {
   saveOwned();
 }
 
-export function spentPoints() {
+// Shared by spentPoints/spentForClass: walks one (list, store) pair -
+// general/archetype/special, or one class's ranks, active or not - summing
+// every non-auto AA's real cost up to its held rank.
+function sumRealCost(list, store) {
   let total = 0;
-  AA_CATEGORY_KEYS.forEach((catKey) => {
-    const list = getList(catKey);
-    const store = getRanksStore(catKey);
-    list.forEach((aa, idx) => {
-      if (aa.auto) return; // automatically granted, doesn't draw from the point pool
-      const r = store[idx] || 0;
-      for (let i = 0; i < r; i++) total += costNum(aa.costs[i]);
-    });
+  list.forEach((aa, idx) => {
+    if (aa.auto) return; // automatically granted, doesn't draw from the point pool
+    const r = store[idx] || 0;
+    for (let i = 0; i < r; i++) total += costNum(aa.costs[i]);
   });
   return total;
+}
+
+// A genuine lifetime total: every point ever spent, across every class
+// you've ever picked - not just the 3 currently active slots. A class
+// swap no longer wipes state.ranks.classes[className] (see events.js), so
+// this walks Object.keys(state.ranks.classes) directly rather than going
+// through AA_CATEGORY_KEYS/getList, the same scope/className-direct
+// pattern reconcilePurchaseOrderCounts already uses. Progression's own
+// running total deliberately does NOT do this (see computeProgressionSteps'
+// active-gated stepCost) - the two are allowed to diverge, same as this
+// number already diverges from itself when an estimate is blended in; see
+// renderTopbar's tooltip for how that split is surfaced.
+export function spentPoints() {
+  let total = sumRealCost(AA_DATA.general, state.ranks.general)
+    + sumRealCost(AA_DATA.archetype, state.ranks.archetype)
+    + sumRealCost(AA_DATA.special, state.ranks.special);
+  Object.keys(state.ranks.classes).forEach((className) => {
+    total += sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className]);
+  });
+  return total;
+}
+
+// Real points spent on one specific class alone, active or not - the Other
+// Classes tab's per-class subtotal. Not "spentPoints() minus the active
+// classes" since that would also need to subtract general/archetype/
+// special; simpler to just sum the one class directly with the same
+// sumRealCost helper spentPoints() itself uses.
+export function spentForClass(className) {
+  return sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className] || {});
+}
+
+// Sum of spentForClass across every class NOT currently active - the slice
+// of spentPoints()'s lifetime total that lives "elsewhere" right now.
+// Surfaced in the topbar's tooltip and Progression's toolbar note so the
+// gap between this number and Progression's own active-only running total
+// is legible in the moment it first applies, not left as a silent
+// divergence someone has to notice on their own.
+export function spentOnInactiveClasses() {
+  return Object.keys(state.ranks.classes)
+    .filter((className) => !state.selectedClasses.includes(className))
+    .reduce((sum, className) => sum + spentForClass(className), 0);
+}
+
+// Lifetime total of points marked owned, across every class ever picked -
+// mirrors spentPoints()'s own lifetime scope, for the exact reason that
+// matters: Progression's "owned / to go" split (renderProgression) is
+// spentPoints() minus this, and both sides of that subtraction need the
+// same scope or an AA owned on a class you've since swapped away from
+// would silently inflate "still to go" by its own cost, despite already
+// being trained. state.owned is the same shape as state.ranks (idx -> held
+// watermark), so sumRealCost works on it unchanged.
+export function ownedPoints() {
+  let total = sumRealCost(AA_DATA.general, state.owned.general)
+    + sumRealCost(AA_DATA.archetype, state.owned.archetype)
+    + sumRealCost(AA_DATA.special, state.owned.special);
+  Object.keys(state.owned.classes).forEach((className) => {
+    total += sumRealCost(AA_DATA.classes[className] || [], state.owned.classes[className]);
+  });
+  return total;
+}
+
+// Shared by estimatedExtraPoints, same reasoning as sumRealCost above:
+// scope/className identify the AA (needed for costGuessScoped's lookup),
+// list/store are what's actually being walked.
+function sumEstimatedExtra(scope, className, list, store) {
+  let extra = 0;
+  list.forEach((aa, idx) => {
+    if (aa.auto) return;
+    const r = store[idx] || 0;
+    for (let i = 0; i < r; i++) {
+      if (aa.costs[i] !== "?") continue;
+      const guess = costGuessScoped(scope, className, idx, i);
+      if (guess) extra += guess.value;
+    }
+  });
+  return extra;
 }
 
 // How much higher spentPoints() would probably be if every purchased rank
@@ -536,21 +635,14 @@ export function spentPoints() {
 // total. Exists because a real total that never moves regardless of
 // guesses (working exactly as designed) still reads as "the guesses aren't
 // doing anything" at a glance, unless there's somewhere that shows what
-// they'd add up to.
+// they'd add up to. Same lifetime-total scope as spentPoints() (every
+// class ever picked, not just the 3 active ones) for the same reason.
 export function estimatedExtraPoints() {
-  let extra = 0;
-  AA_CATEGORY_KEYS.forEach((catKey) => {
-    const list = getList(catKey);
-    const store = getRanksStore(catKey);
-    list.forEach((aa, idx) => {
-      if (aa.auto) return;
-      const r = store[idx] || 0;
-      for (let i = 0; i < r; i++) {
-        if (aa.costs[i] !== "?") continue;
-        const guess = costGuess(catKey, idx, i);
-        if (guess) extra += guess.value;
-      }
-    });
+  let extra = sumEstimatedExtra("general", null, AA_DATA.general, state.ranks.general)
+    + sumEstimatedExtra("archetype", null, AA_DATA.archetype, state.ranks.archetype)
+    + sumEstimatedExtra("special", null, AA_DATA.special, state.ranks.special);
+  Object.keys(state.ranks.classes).forEach((className) => {
+    extra += sumEstimatedExtra("class", className, AA_DATA.classes[className] || [], state.ranks.classes[className]);
   });
   return extra;
 }
@@ -647,6 +739,17 @@ function unresolvedPrereqMessage(text, attempt) {
 // higher cap applies. Absent classRankCap entirely, an AA's only cap is its
 // own aa.ranks, same as always - every existing caller of aa.ranks-as-a-
 // ceiling still works unchanged for the AAs that don't define this field.
+// Evaluates purely against state.selectedClasses (the 3 active classes) -
+// correct for Steadfast Will (a general AA, always in-context regardless of
+// which classes are active) but not meaningful for a hypothetical future
+// classRankCap AA that's class-specific: displaying such an AA's cap in the
+// Other Classes tab (an inactive class's picks - see renderOtherClasses,
+// render.js, which deliberately doesn't call this or heldRankInvalidReason
+// at all today, for exactly this reason) would evaluate the cap against
+// the wrong classes. Not a live bug - no class-specific AA defines
+// classRankCap yet - flagged here so whoever adds the first one sees the
+// assumption instead of a silent miscount, same spirit as the
+// autoRanks+classRankCap tripwire in heldRankInvalidReason.
 export function classRankCapFor(aa) {
   if (!aa.classRankCap) return aa.ranks;
   const { default: def, byClass } = aa.classRankCap;
@@ -1068,6 +1171,33 @@ export function countPicked() {
     getList(catKey).forEach((aa, idx) => { if (effectiveRank(catKey, idx) > 0) n++; });
   });
   return n;
+}
+
+// Same shape as countPicked, for the Other Classes tab's own badge - only
+// classes NOT one of the 3 active slots, since countPicked/Summary already
+// cover those.
+export function countOtherClassesPicked() {
+  let n = 0;
+  Object.keys(state.ranks.classes).forEach((className) => {
+    if (state.selectedClasses.includes(className)) return;
+    const list = AA_DATA.classes[className] || [];
+    list.forEach((aa, idx) => { if (effectiveRankScoped("class", className, idx) > 0) n++; });
+  });
+  return n;
+}
+
+// Every className outside the 3 active slots that currently has at least
+// one picked (rank > 0) AA - the Other Classes tab's own section list,
+// sorted for a stable render order (Object.keys' own order otherwise just
+// reflects insertion history, which is meaningless here).
+export function otherClassesWithPicks() {
+  return Object.keys(state.ranks.classes)
+    .filter((className) => !state.selectedClasses.includes(className))
+    .filter((className) => {
+      const list = AA_DATA.classes[className] || [];
+      return list.some((aa, idx) => effectiveRankScoped("class", className, idx) > 0);
+    })
+    .sort();
 }
 
 // Shared by the Progression tab and the export text, so both always agree on

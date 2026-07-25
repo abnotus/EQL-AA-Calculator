@@ -7,6 +7,7 @@ A talent-calculator-style planner for [EverQuest Legends](https://eqlwiki.com/Al
 ## Features
 
 - Pick up to 3 classes (EQL's tri-class combo system) and spend points across General, Archetype, Class, and Special AAs
+- Swapping a class slot no longer wipes that class's picks — they move to a new **Other Classes** tab instead of disappearing, grouped by class with its own subtotal, and still count toward the topbar's Points Spent (a lifetime total across every class you've ever used, with a tooltip/toolbar note wherever it diverges from Progression's own running total, which stays scoped to your current 3). Swap the class back in and everything's exactly as left — rank, order, and owned status alike; Reset Build and Clear Owned both still reach every class, not just the active 3
 - Prerequisite (including rank-synced prereqs), level, and class-based rank-cap checks before you can spend a point — no artificial total-points cap, since a build's real ceiling is whatever the player's own in-game level allows, not something this calculator needs to gatekeep. A rank you've already trained that a later class swap puts out of reach (Steadfast Will is the current example — capped at rank 6 unless one of your 3 classes is a tank or Ranger) is never silently stripped: it's flagged the same way a stale prerequisite is everywhere it shows up (tree, side panel, Summary, and Progression — which flags exactly the out-of-reach ranks, not the whole ability) with the out-of-reach portion of its tree progress bar dimmed, and comes right back into reach the moment a qualifying class is reselected
 - Locked AAs show *why* at a glance, not just that they're locked — a missing prerequisite gets a distinct amber marker from a plain level gate, in both the tree and Browse All AAs
 - Next-rank preview — see what the next rank upgrades to before you buy it, in the side panel and as an expandable row in Progression
@@ -102,7 +103,7 @@ To make a change:
 
 ## Testing
 
-`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic, plus a handful of Playwright browser tests that drive the actual app (cost- and effect-guess rendering across every tab, the topbar's blended estimate total, the disclaimer banner's dismiss-key versioning). See `tests/README.md` for prerequisites and how to run them — none are wired into CI, so run the relevant ones by hand after touching either guessing feature or anything it renders through.
+`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic, plus 13 Playwright browser tests that drive the actual app — cost/effect-guess rendering across every tab, the topbar's blended estimate total, the disclaimer banner's dismiss-key versioning, class-based rank caps, hiding AAs, Progression's drag-to-reorder auto-scroll, and a class swap's persisted picks (the Other Classes tab, owned progress and Reset Build reaching every class, not just the active 3) among them. See `tests/README.md` for the full list, prerequisites, and how to run them — none are wired into CI, so run the relevant ones by hand after touching whatever they cover.
 
 ## Deployment
 

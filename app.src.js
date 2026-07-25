@@ -477,6 +477,15 @@ function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
+    version: "1.8.0",
+    date: "2026-07-25",
+    items: [
+      "New: swapping a class slot no longer wipes that class's picks — they move to a new Other Classes tab instead of disappearing, grouped by class with its own subtotal, and still count toward the topbar's Points Spent (now a lifetime total across every class you've ever used). Swap the class back in and everything's exactly as left, rank and order alike. Progression's own running total stays scoped to your current 3 classes, with a note pointing at the Other Classes tab whenever the two totals diverge — same for the topbar's tooltip.",
+      "Reset Build and Clear Owned both now reach every class you've used, not just your current 3, matching how they already worked for the active ones — an inactive class's plan is trimmed to its owned watermark by default, same as an active class's.",
+      "Progression rows show a small colored badge for which of your 3 classes they belong to, at a glance."
+    ]
+  },
+  {
     version: "1.7.0",
     date: "2026-07-25",
     items: [
@@ -653,6 +662,11 @@ const STALE_DISCLAIMER_KEYS = [
   "eql_aa_disclaimer_dismissed_v4",
 ];
 
+// Disclaimer-specific today (STALE_DISCLAIMER_KEYS is the only list swept
+// here) - OWNED_STORAGE_KEY/HIDDEN_STORAGE_KEY are both still on their
+// original _v1 suffix, nothing to clean up for them yet. If either ever
+// bumps to _v2 for a format change, extend this the same way: a flat
+// stale-keys list for that key, swept here alongside the disclaimer one.
 function cleanupStaleStorageKeys() {
   try {
     STALE_DISCLAIMER_KEYS.forEach((k) => localStorage.removeItem(k));
@@ -1251,16 +1265,37 @@ function getList(catKey) {
 // effectiveRank is the greater of the free baseline and whatever's been manually
 // purchased, so the free rank(s) never need a purchaseOrder entry of their own.
 function effectiveRank(catKey, idx) {
-  const aa = getList(catKey)[idx];
+  const { scope, className } = categoryToScopeClassName(catKey);
+  return effectiveRankScoped(scope, className, idx);
+}
+
+// Same lookup as effectiveRank, by (scope, className) directly rather than
+// a slot-relative catKey - for the Other Classes tab, where an inactive
+// class has no catKey at all (classSlotIndex returns -1 for it). Same
+// split as costGuess/costGuessScoped.
+function effectiveRankScoped(scope, className, idx) {
+  const list = scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
+  const aa = list[idx];
+  // An auto-granted (or partially-auto, autoRanks) AA's free portion only
+  // actually applies while its class is one of the 3 you're currently
+  // playing - it's a level-gated freebie tied to actively running that
+  // class, not a standing investment like a manually-trained rank (which
+  // DOES persist while inactive - see the Other Classes tab). Without this
+  // gate, effectiveRank's delegation below is unaffected (a catKey's class
+  // is always active by construction), but a direct scoped call for a
+  // genuinely inactive class would otherwise report an auto AA as "picked"
+  // despite it never having been purchased or actually granted while that
+  // class isn't the one being played.
+  const classActive = scope !== "class" || state.selectedClasses.includes(className);
   if (aa && aa.auto) {
     const levelReq = parseInt(aa.levelReq, 10) || 1;
-    return state.charLevel >= levelReq ? aa.ranks : 0;
+    return classActive && state.charLevel >= levelReq ? aa.ranks : 0;
   }
-  const store = getRanksStore(catKey);
+  const store = scope === "class" ? (state.ranks.classes[className] || {}) : (state.ranks[scope] || {});
   const purchased = store[idx] || 0;
   if (aa && aa.autoRanks) {
     const levelReq = parseInt(aa.levelReq, 10) || 1;
-    const freeRanks = state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+    const freeRanks = classActive && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
     return Math.max(freeRanks, purchased);
   }
   return purchased;
@@ -1482,6 +1517,15 @@ function resolveEntryCategory(entry) {
   return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
 }
 
+// Whether a purchaseOrder entry belongs to one of the 3 currently active
+// classes (general/archetype/special always are) - exported for
+// render.js's up/down arrow reordering, which needs to skip over an
+// inactive entry sitting between two visible rows rather than swap with it
+// and produce no visible change at all.
+function isEntryActive(entry) {
+  return resolveEntryCategory(entry) !== null;
+}
+
 function pushPurchase(category, idx) {
   state.purchaseOrder.push({ scope: scopeForCategory(category), className: classNameForCategory(category), idx });
 }
@@ -1499,12 +1543,6 @@ function popLastPurchase(category, idx) {
     }
   }
   return null;
-}
-
-function clearClassData(className) {
-  delete state.ranks.classes[className];
-  state.purchaseOrder = state.purchaseOrder.filter((e) => !(e.scope === "class" && e.className === className));
-  lastMutation = null;
 }
 
 // Reset Build, but selective: wipes every planned pick down to its owned
@@ -1602,18 +1640,93 @@ function performReset(clearOwnedToo) {
   saveOwned();
 }
 
-function spentPoints() {
+// Shared by spentPoints/spentForClass: walks one (list, store) pair -
+// general/archetype/special, or one class's ranks, active or not - summing
+// every non-auto AA's real cost up to its held rank.
+function sumRealCost(list, store) {
   let total = 0;
-  AA_CATEGORY_KEYS.forEach((catKey) => {
-    const list = getList(catKey);
-    const store = getRanksStore(catKey);
-    list.forEach((aa, idx) => {
-      if (aa.auto) return; // automatically granted, doesn't draw from the point pool
-      const r = store[idx] || 0;
-      for (let i = 0; i < r; i++) total += costNum(aa.costs[i]);
-    });
+  list.forEach((aa, idx) => {
+    if (aa.auto) return; // automatically granted, doesn't draw from the point pool
+    const r = store[idx] || 0;
+    for (let i = 0; i < r; i++) total += costNum(aa.costs[i]);
   });
   return total;
+}
+
+// A genuine lifetime total: every point ever spent, across every class
+// you've ever picked - not just the 3 currently active slots. A class
+// swap no longer wipes state.ranks.classes[className] (see events.js), so
+// this walks Object.keys(state.ranks.classes) directly rather than going
+// through AA_CATEGORY_KEYS/getList, the same scope/className-direct
+// pattern reconcilePurchaseOrderCounts already uses. Progression's own
+// running total deliberately does NOT do this (see computeProgressionSteps'
+// active-gated stepCost) - the two are allowed to diverge, same as this
+// number already diverges from itself when an estimate is blended in; see
+// renderTopbar's tooltip for how that split is surfaced.
+function spentPoints() {
+  let total = sumRealCost(AA_DATA.general, state.ranks.general)
+    + sumRealCost(AA_DATA.archetype, state.ranks.archetype)
+    + sumRealCost(AA_DATA.special, state.ranks.special);
+  Object.keys(state.ranks.classes).forEach((className) => {
+    total += sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className]);
+  });
+  return total;
+}
+
+// Real points spent on one specific class alone, active or not - the Other
+// Classes tab's per-class subtotal. Not "spentPoints() minus the active
+// classes" since that would also need to subtract general/archetype/
+// special; simpler to just sum the one class directly with the same
+// sumRealCost helper spentPoints() itself uses.
+function spentForClass(className) {
+  return sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className] || {});
+}
+
+// Sum of spentForClass across every class NOT currently active - the slice
+// of spentPoints()'s lifetime total that lives "elsewhere" right now.
+// Surfaced in the topbar's tooltip and Progression's toolbar note so the
+// gap between this number and Progression's own active-only running total
+// is legible in the moment it first applies, not left as a silent
+// divergence someone has to notice on their own.
+function spentOnInactiveClasses() {
+  return Object.keys(state.ranks.classes)
+    .filter((className) => !state.selectedClasses.includes(className))
+    .reduce((sum, className) => sum + spentForClass(className), 0);
+}
+
+// Lifetime total of points marked owned, across every class ever picked -
+// mirrors spentPoints()'s own lifetime scope, for the exact reason that
+// matters: Progression's "owned / to go" split (renderProgression) is
+// spentPoints() minus this, and both sides of that subtraction need the
+// same scope or an AA owned on a class you've since swapped away from
+// would silently inflate "still to go" by its own cost, despite already
+// being trained. state.owned is the same shape as state.ranks (idx -> held
+// watermark), so sumRealCost works on it unchanged.
+function ownedPoints() {
+  let total = sumRealCost(AA_DATA.general, state.owned.general)
+    + sumRealCost(AA_DATA.archetype, state.owned.archetype)
+    + sumRealCost(AA_DATA.special, state.owned.special);
+  Object.keys(state.owned.classes).forEach((className) => {
+    total += sumRealCost(AA_DATA.classes[className] || [], state.owned.classes[className]);
+  });
+  return total;
+}
+
+// Shared by estimatedExtraPoints, same reasoning as sumRealCost above:
+// scope/className identify the AA (needed for costGuessScoped's lookup),
+// list/store are what's actually being walked.
+function sumEstimatedExtra(scope, className, list, store) {
+  let extra = 0;
+  list.forEach((aa, idx) => {
+    if (aa.auto) return;
+    const r = store[idx] || 0;
+    for (let i = 0; i < r; i++) {
+      if (aa.costs[i] !== "?") continue;
+      const guess = costGuessScoped(scope, className, idx, i);
+      if (guess) extra += guess.value;
+    }
+  });
+  return extra;
 }
 
 // How much higher spentPoints() would probably be if every purchased rank
@@ -1626,21 +1739,14 @@ function spentPoints() {
 // total. Exists because a real total that never moves regardless of
 // guesses (working exactly as designed) still reads as "the guesses aren't
 // doing anything" at a glance, unless there's somewhere that shows what
-// they'd add up to.
+// they'd add up to. Same lifetime-total scope as spentPoints() (every
+// class ever picked, not just the 3 active ones) for the same reason.
 function estimatedExtraPoints() {
-  let extra = 0;
-  AA_CATEGORY_KEYS.forEach((catKey) => {
-    const list = getList(catKey);
-    const store = getRanksStore(catKey);
-    list.forEach((aa, idx) => {
-      if (aa.auto) return;
-      const r = store[idx] || 0;
-      for (let i = 0; i < r; i++) {
-        if (aa.costs[i] !== "?") continue;
-        const guess = costGuess(catKey, idx, i);
-        if (guess) extra += guess.value;
-      }
-    });
+  let extra = sumEstimatedExtra("general", null, AA_DATA.general, state.ranks.general)
+    + sumEstimatedExtra("archetype", null, AA_DATA.archetype, state.ranks.archetype)
+    + sumEstimatedExtra("special", null, AA_DATA.special, state.ranks.special);
+  Object.keys(state.ranks.classes).forEach((className) => {
+    extra += sumEstimatedExtra("class", className, AA_DATA.classes[className] || [], state.ranks.classes[className]);
   });
   return extra;
 }
@@ -1737,6 +1843,17 @@ function unresolvedPrereqMessage(text, attempt) {
 // higher cap applies. Absent classRankCap entirely, an AA's only cap is its
 // own aa.ranks, same as always - every existing caller of aa.ranks-as-a-
 // ceiling still works unchanged for the AAs that don't define this field.
+// Evaluates purely against state.selectedClasses (the 3 active classes) -
+// correct for Steadfast Will (a general AA, always in-context regardless of
+// which classes are active) but not meaningful for a hypothetical future
+// classRankCap AA that's class-specific: displaying such an AA's cap in the
+// Other Classes tab (an inactive class's picks - see renderOtherClasses,
+// render.js, which deliberately doesn't call this or heldRankInvalidReason
+// at all today, for exactly this reason) would evaluate the cap against
+// the wrong classes. Not a live bug - no class-specific AA defines
+// classRankCap yet - flagged here so whoever adds the first one sees the
+// assumption instead of a silent miscount, same spirit as the
+// autoRanks+classRankCap tripwire in heldRankInvalidReason.
 function classRankCapFor(aa) {
   if (!aa.classRankCap) return aa.ranks;
   const { default: def, byClass } = aa.classRankCap;
@@ -2158,6 +2275,33 @@ function countPicked() {
     getList(catKey).forEach((aa, idx) => { if (effectiveRank(catKey, idx) > 0) n++; });
   });
   return n;
+}
+
+// Same shape as countPicked, for the Other Classes tab's own badge - only
+// classes NOT one of the 3 active slots, since countPicked/Summary already
+// cover those.
+function countOtherClassesPicked() {
+  let n = 0;
+  Object.keys(state.ranks.classes).forEach((className) => {
+    if (state.selectedClasses.includes(className)) return;
+    const list = AA_DATA.classes[className] || [];
+    list.forEach((aa, idx) => { if (effectiveRankScoped("class", className, idx) > 0) n++; });
+  });
+  return n;
+}
+
+// Every className outside the 3 active slots that currently has at least
+// one picked (rank > 0) AA - the Other Classes tab's own section list,
+// sorted for a stable render order (Object.keys' own order otherwise just
+// reflects insertion history, which is meaningless here).
+function otherClassesWithPicks() {
+  return Object.keys(state.ranks.classes)
+    .filter((className) => !state.selectedClasses.includes(className))
+    .filter((className) => {
+      const list = AA_DATA.classes[className] || [];
+      return list.some((aa, idx) => effectiveRankScoped("class", className, idx) > 0);
+    })
+    .sort();
 }
 
 // Shared by the Progression tab and the export text, so both always agree on
@@ -2756,10 +2900,13 @@ function cacheDom() {
   el.summaryView = document.getElementById("summaryView");
   el.summaryHeader = document.getElementById("summaryHeader");
   el.summaryContent = document.getElementById("summaryContent");
+  el.otherClassesView = document.getElementById("otherClassesView");
+  el.otherClassesContent = document.getElementById("otherClassesContent");
   el.progressionView = document.getElementById("progressionView");
   el.progressionWrap = document.getElementById("progressionWrap");
   el.progressionContent = document.getElementById("progressionContent");
   el.undoLastBtn = document.getElementById("undoLastBtn");
+  el.otherClassesNote = document.getElementById("otherClassesNote");
   el.ownedSummary = document.getElementById("ownedSummary");
   el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
   el.addWaypointBtn = document.getElementById("addWaypointBtn");
@@ -2809,6 +2956,7 @@ function renderAll() {
   el.browseView.classList.add("hidden");
   el.summaryView.classList.add("hidden");
   el.progressionView.classList.add("hidden");
+  el.otherClassesView.classList.add("hidden");
   if (state.activeView === "browse") {
     el.browseView.classList.remove("hidden");
     renderBrowse();
@@ -2818,6 +2966,9 @@ function renderAll() {
   } else if (state.activeView === "progression") {
     el.progressionView.classList.remove("hidden");
     renderProgression();
+  } else if (state.activeView === "otherClasses") {
+    el.otherClassesView.classList.remove("hidden");
+    renderOtherClasses();
   } else {
     el.calculatorView.classList.remove("hidden");
     renderTree(state.activeTab);
@@ -2847,25 +2998,35 @@ function renderTopbar() {
   const spent = spentPoints();
 
   const extra = estimatedExtraPoints();
+  // The headline number blends real + estimate for display - a guess is
+  // still never added to spentPoints() itself anywhere in real math
+  // (nothing gates a purchase on a point total anymore, but spentPoints()
+  // is still what the Progression tab's running totals and owned/to-go
+  // split are built from), this is purely how the topbar's own number
+  // reads. The ~ prefix alone signals "this includes an estimate" (same
+  // shorthand every per-rank guess in the app already uses); the
+  // breakdown lives in the tooltip rather than a second visible element,
+  // matching how every other estimate badge here discloses confidence
+  // detail on hover instead of inline.
   if (extra > 0) {
-    // The headline number blends real + estimate for display - a guess is
-    // still never added to spentPoints() itself anywhere in real math
-    // (nothing gates a purchase on a point total anymore, but spentPoints()
-    // is still what the Progression tab's running totals and owned/to-go
-    // split are built from), this is purely how the topbar's own number
-    // reads. The ~ prefix alone signals "this includes an estimate" (same
-    // shorthand every per-rank guess in the app already uses); the
-    // breakdown lives in the tooltip rather than a second visible element,
-    // matching how every other estimate badge here discloses confidence
-    // detail on hover instead of inline.
     el.spentValue.textContent = `~${spent + extra}`;
     el.spentValue.classList.add("is-estimate");
-    el.spentValue.title = `${spent} confirmed + ${extra} estimated.`;
   } else {
     el.spentValue.textContent = spent;
     el.spentValue.classList.remove("is-estimate");
-    el.spentValue.removeAttribute("title");
   }
+  // spentPoints() is a lifetime total (every class ever picked, not just
+  // the 3 active ones - see its own comment) - when any of it comes from a
+  // class that isn't currently selected, that's the other place this
+  // number can diverge from what Progression's own rows add up to, same
+  // spirit as the estimate breakdown already disclosed here. Both fold
+  // into one tooltip rather than competing mechanisms.
+  const inactive = spentOnInactiveClasses();
+  const titleParts = [];
+  if (extra > 0) titleParts.push(`${spent} confirmed + ${extra} estimated.`);
+  if (inactive > 0) titleParts.push(`${inactive} pt${inactive === 1 ? "" : "s"} from classes not currently selected (see the Other Classes tab).`);
+  if (titleParts.length) el.spentValue.title = titleParts.join(" ");
+  else el.spentValue.removeAttribute("title");
   el.browseToggle.classList.toggle("active", state.activeView === "browse");
   const activeId = getActiveBuildId();
   const activeBuild = activeId ? listBuilds().find((b) => b.id === activeId) : null;
@@ -2880,16 +3041,22 @@ function populateClassSelects() {
   });
 }
 
+const VIEW_TAB_KEYS = ["summary", "progression", "otherClasses"];
+
 function renderTabs() {
   const tabDefs = [
     ...AA_CATEGORY_KEYS.map((key) => ({ key, label: shortCategoryLabel(key) })),
+    { key: "otherClasses", label: "Other Classes" },
     { key: "summary", label: "Summary" },
     { key: "progression", label: "Progression" }
   ];
   const query = state.browseSearch;
   el.tabs.innerHTML = tabDefs.map((t) => {
-    const isView = t.key === "summary" || t.key === "progression";
-    const count = t.key === "summary" ? countPicked() : t.key === "progression" ? state.purchaseOrder.length : getList(t.key).length;
+    const isView = VIEW_TAB_KEYS.includes(t.key);
+    const count = t.key === "summary" ? countPicked()
+      : t.key === "progression" ? state.purchaseOrder.length
+      : t.key === "otherClasses" ? countOtherClassesPicked()
+      : getList(t.key).length;
     const isActive = isView ? state.activeView === t.key : (state.activeView === "calculator" && state.activeTab === t.key);
     const matchCount = isView ? 0 : countMatches(t.key, query);
     const badge = matchCount > 0 ? `<span class="search-badge" title="${matchCount} match${matchCount === 1 ? "" : "es"} for &quot;${escapeHtml(query.trim())}&quot;">${matchCount}</span>` : "";
@@ -2898,7 +3065,7 @@ function renderTabs() {
   Array.from(el.tabs.querySelectorAll("button")).forEach((btn) => {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-tab");
-      if (key === "summary" || key === "progression") {
+      if (VIEW_TAB_KEYS.includes(key)) {
         state.activeView = key;
       } else {
         state.activeView = "calculator";
@@ -3227,16 +3394,16 @@ function renderBrowse() {
   // Same hidden-declutter rule as the tree (see renderTree, including why a
   // search match doesn't bypass hiding either - it's applied AFTER the
   // query filter above, on purpose, not before): left out unless Show
-  // Hidden is on, except one you've actually spent points on. catKey is
-  // null for a class outside the 3 active slots - state.ranks only ever
-  // holds data for currently-selected classes (clearClassData wipes it the
-  // moment a class is swapped out), so rank is unconditionally 0 there and
-  // the exception never needs to consult it.
-  const filtered = searched.filter(({ cat, catKey, idx }) => {
+  // Hidden is on, except one you've actually spent points on. Uses the
+  // scoped rank lookup (not catKey-gated) since a class swap no longer
+  // wipes ranks/purchaseOrder (events.js) - an inactive class can have a
+  // real nonzero rank here, and a hidden AA you've spent points on there
+  // must still stay visible, same as an active class's.
+  const filtered = searched.filter(({ cat, idx }) => {
     const { scope, className } = scopeForBrowseLabel(cat);
     if (!isHiddenScoped(scope, className, idx)) return true;
     if (state.showHidden) return true;
-    return (catKey ? effectiveRank(catKey, idx) : 0) > 0;
+    return effectiveRankScoped(scope, className, idx) > 0;
   });
 
   el.browseGrid.innerHTML = filtered.length
@@ -3319,6 +3486,50 @@ function renderSummary() {
   });
 
   el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
+}
+
+// Picks for a class that isn't currently one of your 3 selected slots -
+// left fully intact by a class swap (see events.js) rather than wiped, so
+// this is where they live instead of the tree/Progression/Summary. Modeled
+// directly on renderSummary above (grouped, with each AA shown the same
+// browse-card way), but grouped by className via otherClassesWithPicks
+// rather than by AA_CATEGORY_KEYS, and using the *Scoped lookups
+// (effectiveRankScoped/effectLookupScoped) since an inactive class has no
+// catKey at all - classSlotIndex returns -1 for it, so none of the
+// catKey-addressed helpers (effectiveRank, heldRankInvalidReason,
+// structuralLockReason) apply here. No invalidReason line either: that
+// machinery answers "is this AA, which the tree can currently show, in a
+// bad state" - an inactive-class pick isn't reachable in the tree at all,
+// so it's simply not the kind of fact heldRankInvalidReason is about.
+function renderOtherClasses() {
+  const classNames = otherClassesWithPicks();
+
+  if (!classNames.length) {
+    el.otherClassesContent.innerHTML = '<div class="empty">Nothing here yet &mdash; swap a class out after spending points on it, and its picks show up here instead of disappearing.</div>';
+    return;
+  }
+
+  const html = classNames.map((className) => {
+    const list = AA_DATA.classes[className] || [];
+    const picked = list
+      .map((aa, idx) => ({ aa, idx, rank: effectiveRankScoped("class", className, idx) }))
+      .filter((x) => x.rank > 0);
+    const subtotal = spentForClass(className);
+    const cards = picked.map(({ aa, idx, rank }) => {
+      const displayRank = effectiveDisplayRank(aa, rank);
+      return `
+      <div class="browse-card">
+        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, displayRank), displayRank, effectLookupScoped("class", className, idx))}</div>
+      </div>`;
+    }).join("");
+    return `
+      <h3 class="summary-section-title">${escapeHtml(className)}</h3>
+      <div class="other-classes-subtotal">Not one of your current 3 classes &mdash; ${subtotal} point${subtotal === 1 ? "" : "s"} spent here still count${subtotal === 1 ? "s" : ""} toward Points Spent above.</div>
+      <div class="browse-grid">${cards}</div>`;
+  }).join("");
+
+  el.otherClassesContent.innerHTML = html;
 }
 
 // Which progression rows have their next-rank preview open, keyed by AA
@@ -3584,6 +3795,17 @@ function handleDeleteWaypoint() {
   renderProgression();
 }
 
+// Which of the 3 active class slots a step's AA belongs to, as a CSS
+// modifier class for .step-cat - "" (no modifier, plain text) for
+// general/archetype/special, one of 3 fixed slot colors for a class AA.
+// See the .step-cat-slot* rules in styles.css for why slot index rather
+// than the class's own identity.
+function classBadgeClass(s) {
+  if (s.scope !== "class") return "";
+  const slot = state.selectedClasses.indexOf(s.className);
+  return slot >= 0 ? ` step-cat-slot${slot}` : "";
+}
+
 function renderProgression() {
   el.undoLastBtn.disabled = !canUndo();
   // hasAnyOwned checks state.owned globally, not just the current
@@ -3591,6 +3813,28 @@ function renderProgression() {
   // active slots, so this has to be set before (and independent of) the
   // empty-purchaseOrder early return below.
   el.clearOwnedBtn.disabled = !hasAnyOwned();
+  // Same reasoning as the topbar's own tooltip (renderTopbar) - set ahead
+  // of every early return below so it stays accurate regardless of which
+  // branch this call takes, since inactive spending is independent of
+  // whether there's anything active to show right now.
+  const inactiveSpent = spentOnInactiveClasses();
+  el.otherClassesNote.classList.toggle("hidden", inactiveSpent === 0);
+  el.otherClassesNote.textContent = inactiveSpent > 0
+    ? ` ${inactiveSpent} more point${inactiveSpent === 1 ? "" : "s"} spent on other classes — see the Other Classes tab.`
+    : "";
+  // The number this feature exists to answer: of what's actually been
+  // trained in-game vs. still to go. Lifetime-scoped (ownedPoints(), not a
+  // sum over just the active rows rendered below) to match spentPoints()'s
+  // own lifetime scope - an AA owned on a class you've since swapped away
+  // from is still real progress, and togoPts needs both sides of its
+  // subtraction on the same footing or it double-counts that AA as "still
+  // to go" despite already being trained. Set ahead of both early returns
+  // below (like clearOwnedBtn/otherClassesNote above), same reasoning:
+  // owned/to-go is a lifetime figure, independent of whether there's
+  // anything active to actually render as rows right now.
+  const ownedPts = ownedPoints();
+  const togoPts = spentPoints() - ownedPts;
+  el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
   // Waypoints can reasonably be set up before any picks exist (an
   // aspirational "by 50 pts, get X"), so the chip bar renders unconditionally
   // too, ahead of the empty-progression early return below.
@@ -3598,16 +3842,20 @@ function renderProgression() {
 
   if (!state.purchaseOrder.length) {
     el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
-    el.ownedSummary.textContent = "";
     return;
   }
 
-  const steps = computeProgressionSteps();
-  // The number this feature exists to answer: of what's currently planned,
-  // how much have you actually trained in-game vs. still have to grind out.
-  const ownedPts = steps.reduce((sum, s) => sum + (s.owned ? s.stepCost : 0), 0);
-  const togoPts = spentPoints() - ownedPts;
-  el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
+  // Only your current 3 classes' click history shows up here - a pick for
+  // a class you've since swapped away from (still fully intact, still
+  // counted in spentPoints()'s lifetime total) lives in the Other Classes
+  // tab instead, not mixed inline. Every step below this line is
+  // guaranteed active, so nothing downstream needs to branch on s.active
+  // anymore - it's always true.
+  const steps = computeProgressionSteps().filter((s) => s.active);
+  if (!steps.length) {
+    el.progressionContent.innerHTML = '<div class="empty">Nothing picked for your current 3 classes yet &mdash; your training order will appear here as you spend points. (Picks for other classes you\'ve used are in the Other Classes tab.)</div>';
+    return;
+  }
 
   // computeProgressionTimeline tags each step with segmentColor (the color
   // of the waypoint whose range it falls under, if any) - every colored
@@ -3630,10 +3878,7 @@ function renderProgression() {
     const key = expandKey(s);
     const expanded = canExpand && expandedSteps.has(key);
     const segClass = s.segmentColor ? ` segment-color-${s.segmentColor}` : "";
-    // Only meaningful while active (s.category is null otherwise, and an
-    // inactive step's stepCost is already forced to 0 regardless of the
-    // real cost - see computeProgressionSteps).
-    const stepDisp = s.active && s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+    const stepDisp = s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
     // The running total blends in estimates the same way the topbar's own
     // headline does (~N, blue, tooltip breakdown) once any step up to this
     // point has an unconfirmed cost with a guess - see computeProgressionSteps
@@ -3654,12 +3899,12 @@ function renderProgression() {
     if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
     if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
     const rowWarn = warnTitles.length > 0;
-    const row = `<div class="progression-row${s.active ? "" : " inactive"}${rowWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
+    const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.index + 1}</span>
       <span class="step-info">
         <span class="step-name${s.owned ? " owned" : ""}">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
-        <span class="step-cat">${escapeHtml(s.label)}${s.active ? "" : " &middot; class not currently selected"}</span>
+        <span class="step-cat${classBadgeClass(s)}">${escapeHtml(s.label)}</span>
       </span>
       ${rowWarn ? `<span class="step-warn" title="${escapeHtml(warnTitles.join(" "))}">&#9888;</span>` : ""}
       <span class="step-cost">
@@ -3668,11 +3913,11 @@ function renderProgression() {
       </span>
       <span class="step-controls" draggable="false">
         <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
-        <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
-        <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
+        <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === steps[0].index ? "disabled" : ""}>&uarr;</button>
+        <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps[steps.length - 1].index ? "disabled" : ""}>&darr;</button>
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
-        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.active && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
-        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.active ? "" : "disabled"} title="${!s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
+        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
+        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast ? "" : "disabled"} title="${!s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
       </span>
     </div>`;
     if (!expanded) return row;
@@ -3864,8 +4109,22 @@ function undoLast() {
   applyAttempt(undoLastMutation());
 }
 
+// An up/down arrow swaps a visible row with its next VISIBLE neighbor, not
+// literally the next array slot - since a class swap no longer wipes an
+// inactive class's entries (events.js), one can now sit between two active
+// rows in state.purchaseOrder with nothing rendered for it. A plain
+// index+dir adjacent swap would swap past it invisibly (moveEntry still
+// runs, but nothing about the visible list changes - a dead-feeling click).
+// Skipping to the next entry isEntryActive still counts, then reinserting
+// at THAT entry's own pre-removal index reproduces a plain adjacent swap
+// when there's nothing to skip, and correctly "jumps over" any inactive
+// run otherwise, leaving those entries' relative order among themselves
+// undisturbed - see moveEntry's own splice-out/splice-in semantics.
 function moveProgressionEntry(index, dir) {
-  const target = index + dir;
+  let target = index + dir;
+  while (target >= 0 && target < state.purchaseOrder.length && !isEntryActive(state.purchaseOrder[target])) {
+    target += dir;
+  }
   if (target < 0 || target >= state.purchaseOrder.length) return;
   const a = state.purchaseOrder[index];
   const b = state.purchaseOrder[target];
@@ -4653,27 +4912,12 @@ function wireEvents() {
       if (newValue === oldValue) return;
       const dupSlot = state.selectedClasses.findIndex((c, j) => j !== i && c === newValue);
 
-      if (dupSlot < 0) {
-        // Genuine replacement (not a swap) — oldValue is leaving the 3-class combo, so its
-        // picks become invisible. Warn if it actually has anything spent, then wipe it clean
-        // rather than leaving orphaned data sitting around indefinitely.
-        const oldStore = state.ranks.classes[oldValue];
-        const oldList = AA_DATA.classes[oldValue] || [];
-        let oldSpent = 0;
-        if (oldStore) {
-          Object.keys(oldStore).forEach((key) => {
-            const aa = oldList[key];
-            if (!aa) return;
-            const r = oldStore[key] || 0;
-            for (let k = 0; k < r; k++) oldSpent += costNum(aa.costs[k]);
-          });
-        }
-        if (oldSpent > 0) {
-          const ok = confirm(`Switching Class ${i + 1} from ${oldValue} to ${newValue} will remove ${oldValue}'s AA picks (${oldSpent} point${oldSpent === 1 ? "" : "s"} spent) from this build. Continue?`);
-          if (!ok) { populateClassSelects(); return; }
-        }
-        clearClassData(oldValue);
-      }
+      // A genuine replacement (not a swap) - oldValue is leaving the 3-class
+      // combo - no longer wipes its picks. They simply stop being "active"
+      // (resolveEntryCategory, logic.js): invisible in the tree/Progression,
+      // but still fully intact and visible in the Other Classes tab, still
+      // counted in spentPoints()'s lifetime total, still part of the build
+      // payload. Swapping back in restores them exactly as left.
 
       state.selectedClasses[i] = newValue;
       if (dupSlot >= 0) {

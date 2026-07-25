@@ -326,6 +326,15 @@ return prog ? (prog[rankIdx] || null) : null;
 }
 const USER_CHANGELOG = [
 {
+version: "1.8.0",
+date: "2026-07-25",
+items: [
+"New: swapping a class slot no longer wipes that class's picks — they move to a new Other Classes tab instead of disappearing, grouped by class with its own subtotal, and still count toward the topbar's Points Spent (now a lifetime total across every class you've ever used). Swap the class back in and everything's exactly as left, rank and order alike. Progression's own running total stays scoped to your current 3 classes, with a note pointing at the Other Classes tab whenever the two totals diverge — same for the topbar's tooltip.",
+"Reset Build and Clear Owned both now reach every class you've used, not just your current 3, matching how they already worked for the active ones — an inactive class's plan is trimmed to its owned watermark by default, same as an active class's.",
+"Progression rows show a small colored badge for which of your 3 classes they belong to, at a glance."
+]
+},
+{
 version: "1.7.0",
 date: "2026-07-25",
 items: [
@@ -836,16 +845,22 @@ if (slot >= 0) return AA_DATA.classes[state.selectedClasses[slot]] || [];
 return AA_DATA[catKey] || [];
 }
 function effectiveRank(catKey, idx) {
-const aa = getList(catKey)[idx];
+const { scope, className } = categoryToScopeClassName(catKey);
+return effectiveRankScoped(scope, className, idx);
+}
+function effectiveRankScoped(scope, className, idx) {
+const list = scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
+const aa = list[idx];
+const classActive = scope !== "class" || state.selectedClasses.includes(className);
 if (aa && aa.auto) {
 const levelReq = parseInt(aa.levelReq, 10) || 1;
-return state.charLevel >= levelReq ? aa.ranks : 0;
+return classActive && state.charLevel >= levelReq ? aa.ranks : 0;
 }
-const store = getRanksStore(catKey);
+const store = scope === "class" ? (state.ranks.classes[className] || {}) : (state.ranks[scope] || {});
 const purchased = store[idx] || 0;
 if (aa && aa.autoRanks) {
 const levelReq = parseInt(aa.levelReq, 10) || 1;
-const freeRanks = state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+const freeRanks = classActive && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
 return Math.max(freeRanks, purchased);
 }
 return purchased;
@@ -964,6 +979,9 @@ if (entry.scope !== "class") return entry.scope;
 const slot = state.selectedClasses.indexOf(entry.className);
 return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
 }
+function isEntryActive(entry) {
+return resolveEntryCategory(entry) !== null;
+}
 function pushPurchase(category, idx) {
 state.purchaseOrder.push({ scope: scopeForCategory(category), className: classNameForCategory(category), idx });
 }
@@ -978,11 +996,6 @@ return { entry, position: i };
 }
 }
 return null;
-}
-function clearClassData(className) {
-delete state.ranks.classes[className];
-state.purchaseOrder = state.purchaseOrder.filter((e) => !(e.scope === "class" && e.className === className));
-lastMutation = null;
 }
 function performReset(clearOwnedToo) {
 function trimmedRanks(ranksStore, ownedStore, list) {
@@ -1041,33 +1054,60 @@ reconcilePurchaseOrderCounts();
 saveLocal();
 saveOwned();
 }
-function spentPoints() {
+function sumRealCost(list, store) {
 let total = 0;
-AA_CATEGORY_KEYS.forEach((catKey) => {
-const list = getList(catKey);
-const store = getRanksStore(catKey);
 list.forEach((aa, idx) => {
 if (aa.auto) return;
 const r = store[idx] || 0;
 for (let i = 0; i < r; i++) total += costNum(aa.costs[i]);
 });
+return total;
+}
+function spentPoints() {
+let total = sumRealCost(AA_DATA.general, state.ranks.general)
++ sumRealCost(AA_DATA.archetype, state.ranks.archetype)
++ sumRealCost(AA_DATA.special, state.ranks.special);
+Object.keys(state.ranks.classes).forEach((className) => {
+total += sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className]);
 });
 return total;
 }
-function estimatedExtraPoints() {
+function spentForClass(className) {
+return sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className] || {});
+}
+function spentOnInactiveClasses() {
+return Object.keys(state.ranks.classes)
+.filter((className) => !state.selectedClasses.includes(className))
+.reduce((sum, className) => sum + spentForClass(className), 0);
+}
+function ownedPoints() {
+let total = sumRealCost(AA_DATA.general, state.owned.general)
++ sumRealCost(AA_DATA.archetype, state.owned.archetype)
++ sumRealCost(AA_DATA.special, state.owned.special);
+Object.keys(state.owned.classes).forEach((className) => {
+total += sumRealCost(AA_DATA.classes[className] || [], state.owned.classes[className]);
+});
+return total;
+}
+function sumEstimatedExtra(scope, className, list, store) {
 let extra = 0;
-AA_CATEGORY_KEYS.forEach((catKey) => {
-const list = getList(catKey);
-const store = getRanksStore(catKey);
 list.forEach((aa, idx) => {
 if (aa.auto) return;
 const r = store[idx] || 0;
 for (let i = 0; i < r; i++) {
 if (aa.costs[i] !== "?") continue;
-const guess = costGuess(catKey, idx, i);
+const guess = costGuessScoped(scope, className, idx, i);
 if (guess) extra += guess.value;
 }
 });
+return extra;
+}
+function estimatedExtraPoints() {
+let extra = sumEstimatedExtra("general", null, AA_DATA.general, state.ranks.general)
++ sumEstimatedExtra("archetype", null, AA_DATA.archetype, state.ranks.archetype)
++ sumEstimatedExtra("special", null, AA_DATA.special, state.ranks.special);
+Object.keys(state.ranks.classes).forEach((className) => {
+extra += sumEstimatedExtra("class", className, AA_DATA.classes[className] || [], state.ranks.classes[className]);
 });
 return extra;
 }
@@ -1395,6 +1435,24 @@ getList(catKey).forEach((aa, idx) => { if (effectiveRank(catKey, idx) > 0) n++; 
 });
 return n;
 }
+function countOtherClassesPicked() {
+let n = 0;
+Object.keys(state.ranks.classes).forEach((className) => {
+if (state.selectedClasses.includes(className)) return;
+const list = AA_DATA.classes[className] || [];
+list.forEach((aa, idx) => { if (effectiveRankScoped("class", className, idx) > 0) n++; });
+});
+return n;
+}
+function otherClassesWithPicks() {
+return Object.keys(state.ranks.classes)
+.filter((className) => !state.selectedClasses.includes(className))
+.filter((className) => {
+const list = AA_DATA.classes[className] || [];
+return list.some((aa, idx) => effectiveRankScoped("class", className, idx) > 0);
+})
+.sort();
+}
 function computeProgressionSteps(order = state.purchaseOrder) {
 const totalCounts = {};
 order.forEach((entry) => {
@@ -1693,10 +1751,13 @@ el.browseView = document.getElementById("browseView");
 el.summaryView = document.getElementById("summaryView");
 el.summaryHeader = document.getElementById("summaryHeader");
 el.summaryContent = document.getElementById("summaryContent");
+el.otherClassesView = document.getElementById("otherClassesView");
+el.otherClassesContent = document.getElementById("otherClassesContent");
 el.progressionView = document.getElementById("progressionView");
 el.progressionWrap = document.getElementById("progressionWrap");
 el.progressionContent = document.getElementById("progressionContent");
 el.undoLastBtn = document.getElementById("undoLastBtn");
+el.otherClassesNote = document.getElementById("otherClassesNote");
 el.ownedSummary = document.getElementById("ownedSummary");
 el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
 el.addWaypointBtn = document.getElementById("addWaypointBtn");
@@ -1743,6 +1804,7 @@ el.calculatorView.classList.add("hidden");
 el.browseView.classList.add("hidden");
 el.summaryView.classList.add("hidden");
 el.progressionView.classList.add("hidden");
+el.otherClassesView.classList.add("hidden");
 if (state.activeView === "browse") {
 el.browseView.classList.remove("hidden");
 renderBrowse();
@@ -1752,6 +1814,9 @@ renderSummary();
 } else if (state.activeView === "progression") {
 el.progressionView.classList.remove("hidden");
 renderProgression();
+} else if (state.activeView === "otherClasses") {
+el.otherClassesView.classList.remove("hidden");
+renderOtherClasses();
 } else {
 el.calculatorView.classList.remove("hidden");
 renderTree(state.activeTab);
@@ -1773,12 +1838,16 @@ const extra = estimatedExtraPoints();
 if (extra > 0) {
 el.spentValue.textContent = `~${spent + extra}`;
 el.spentValue.classList.add("is-estimate");
-el.spentValue.title = `${spent} confirmed + ${extra} estimated.`;
 } else {
 el.spentValue.textContent = spent;
 el.spentValue.classList.remove("is-estimate");
-el.spentValue.removeAttribute("title");
 }
+const inactive = spentOnInactiveClasses();
+const titleParts = [];
+if (extra > 0) titleParts.push(`${spent} confirmed + ${extra} estimated.`);
+if (inactive > 0) titleParts.push(`${inactive} pt${inactive === 1 ? "" : "s"} from classes not currently selected (see the Other Classes tab).`);
+if (titleParts.length) el.spentValue.title = titleParts.join(" ");
+else el.spentValue.removeAttribute("title");
 el.browseToggle.classList.toggle("active", state.activeView === "browse");
 const activeId = getActiveBuildId();
 const activeBuild = activeId ? listBuilds().find((b) => b.id === activeId) : null;
@@ -1791,16 +1860,21 @@ if (sel.innerHTML !== html) sel.innerHTML = html;
 sel.value = state.selectedClasses[i];
 });
 }
+const VIEW_TAB_KEYS = ["summary", "progression", "otherClasses"];
 function renderTabs() {
 const tabDefs = [
 ...AA_CATEGORY_KEYS.map((key) => ({ key, label: shortCategoryLabel(key) })),
+{ key: "otherClasses", label: "Other Classes" },
 { key: "summary", label: "Summary" },
 { key: "progression", label: "Progression" }
 ];
 const query = state.browseSearch;
 el.tabs.innerHTML = tabDefs.map((t) => {
-const isView = t.key === "summary" || t.key === "progression";
-const count = t.key === "summary" ? countPicked() : t.key === "progression" ? state.purchaseOrder.length : getList(t.key).length;
+const isView = VIEW_TAB_KEYS.includes(t.key);
+const count = t.key === "summary" ? countPicked()
+: t.key === "progression" ? state.purchaseOrder.length
+: t.key === "otherClasses" ? countOtherClassesPicked()
+: getList(t.key).length;
 const isActive = isView ? state.activeView === t.key : (state.activeView === "calculator" && state.activeTab === t.key);
 const matchCount = isView ? 0 : countMatches(t.key, query);
 const badge = matchCount > 0 ? `<span class="search-badge" title="${matchCount} match${matchCount === 1 ? "" : "es"} for &quot;${escapeHtml(query.trim())}&quot;">${matchCount}</span>` : "";
@@ -1809,7 +1883,7 @@ return `<button data-tab="${t.key}" class="${isActive ? "active" : ""}${isView ?
 Array.from(el.tabs.querySelectorAll("button")).forEach((btn) => {
 btn.addEventListener("click", () => {
 const key = btn.getAttribute("data-tab");
-if (key === "summary" || key === "progression") {
+if (VIEW_TAB_KEYS.includes(key)) {
 state.activeView = key;
 } else {
 state.activeView = "calculator";
@@ -2055,11 +2129,11 @@ CLASS_LIST.forEach((c) => pushList(c, AA_DATA.classes[c] || []));
 pushList(filter, AA_DATA.classes[filter] || []);
 }
 const searched = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
-const filtered = searched.filter(({ cat, catKey, idx }) => {
+const filtered = searched.filter(({ cat, idx }) => {
 const { scope, className } = scopeForBrowseLabel(cat);
 if (!isHiddenScoped(scope, className, idx)) return true;
 if (state.showHidden) return true;
-return (catKey ? effectiveRank(catKey, idx) : 0) > 0;
+return effectiveRankScoped(scope, className, idx) > 0;
 });
 el.browseGrid.innerHTML = filtered.length
 ? filtered.map(({ cat, aa, catKey, idx }) => {
@@ -2124,6 +2198,33 @@ return `
 }).join("") + `</div>`;
 });
 el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
+}
+function renderOtherClasses() {
+const classNames = otherClassesWithPicks();
+if (!classNames.length) {
+el.otherClassesContent.innerHTML = '<div class="empty">Nothing here yet &mdash; swap a class out after spending points on it, and its picks show up here instead of disappearing.</div>';
+return;
+}
+const html = classNames.map((className) => {
+const list = AA_DATA.classes[className] || [];
+const picked = list
+.map((aa, idx) => ({ aa, idx, rank: effectiveRankScoped("class", className, idx) }))
+.filter((x) => x.rank > 0);
+const subtotal = spentForClass(className);
+const cards = picked.map(({ aa, idx, rank }) => {
+const displayRank = effectiveDisplayRank(aa, rank);
+return `
+      <div class="browse-card">
+        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, displayRank), displayRank, effectLookupScoped("class", className, idx))}</div>
+      </div>`;
+}).join("");
+return `
+      <h3 class="summary-section-title">${escapeHtml(className)}</h3>
+      <div class="other-classes-subtotal">Not one of your current 3 classes &mdash; ${subtotal} point${subtotal === 1 ? "" : "s"} spent here still count${subtotal === 1 ? "s" : ""} toward Points Spent above.</div>
+      <div class="browse-grid">${cards}</div>`;
+}).join("");
+el.otherClassesContent.innerHTML = html;
 }
 const expandedSteps = new Set();
 function expandKey(s) { return `${s.category || ""}:${s.idx}:${s.stepRank}`; }
@@ -2271,19 +2372,32 @@ if (editingWaypointPts !== null) removeWaypoint(editingWaypointPts);
 closeWaypointModal();
 renderProgression();
 }
+function classBadgeClass(s) {
+if (s.scope !== "class") return "";
+const slot = state.selectedClasses.indexOf(s.className);
+return slot >= 0 ? ` step-cat-slot${slot}` : "";
+}
 function renderProgression() {
 el.undoLastBtn.disabled = !canUndo();
 el.clearOwnedBtn.disabled = !hasAnyOwned();
+const inactiveSpent = spentOnInactiveClasses();
+el.otherClassesNote.classList.toggle("hidden", inactiveSpent === 0);
+el.otherClassesNote.textContent = inactiveSpent > 0
+? ` ${inactiveSpent} more point${inactiveSpent === 1 ? "" : "s"} spent on other classes — see the Other Classes tab.`
+: "";
+const ownedPts = ownedPoints();
+const togoPts = spentPoints() - ownedPts;
+el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
 renderWaypointChips();
 if (!state.purchaseOrder.length) {
 el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
-el.ownedSummary.textContent = "";
 return;
 }
-const steps = computeProgressionSteps();
-const ownedPts = steps.reduce((sum, s) => sum + (s.owned ? s.stepCost : 0), 0);
-const togoPts = spentPoints() - ownedPts;
-el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
+const steps = computeProgressionSteps().filter((s) => s.active);
+if (!steps.length) {
+el.progressionContent.innerHTML = '<div class="empty">Nothing picked for your current 3 classes yet &mdash; your training order will appear here as you spend points. (Picks for other classes you\'ve used are in the Other Classes tab.)</div>';
+return;
+}
 const timeline = computeProgressionTimeline(steps);
 const htmlParts = timeline.map((entry) => {
 if (entry.type === "divider") {
@@ -2300,19 +2414,19 @@ const canExpand = !!(s.aa && s.stepRank < s.aa.ranks);
 const key = expandKey(s);
 const expanded = canExpand && expandedSteps.has(key);
 const segClass = s.segmentColor ? ` segment-color-${s.segmentColor}` : "";
-const stepDisp = s.active && s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+const stepDisp = s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
 const totalIsEstimate = s.blendedCumulative !== s.cumulative;
 const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCumulative - s.cumulative} estimated.` : "";
 const warnTitles = [];
 if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
 if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
 const rowWarn = warnTitles.length > 0;
-const row = `<div class="progression-row${s.active ? "" : " inactive"}${rowWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
+const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.index + 1}</span>
       <span class="step-info">
         <span class="step-name${s.owned ? " owned" : ""}">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
-        <span class="step-cat">${escapeHtml(s.label)}${s.active ? "" : " &middot; class not currently selected"}</span>
+        <span class="step-cat${classBadgeClass(s)}">${escapeHtml(s.label)}</span>
       </span>
       ${rowWarn ? `<span class="step-warn" title="${escapeHtml(warnTitles.join(" "))}">&#9888;</span>` : ""}
       <span class="step-cost">
@@ -2321,11 +2435,11 @@ const row = `<div class="progression-row${s.active ? "" : " inactive"}${rowWarn 
       </span>
       <span class="step-controls" draggable="false">
         <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
-        <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === 0 ? "disabled" : ""}>&uarr;</button>
-        <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps.length - 1 ? "disabled" : ""}>&darr;</button>
+        <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === steps[0].index ? "disabled" : ""}>&uarr;</button>
+        <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps[steps.length - 1].index ? "disabled" : ""}>&darr;</button>
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
-        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.active && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
-        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.active ? "" : "disabled"} title="${!s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
+        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
+        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast ? "" : "disabled"} title="${!s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
       </span>
     </div>`;
 if (!expanded) return row;
@@ -2487,7 +2601,10 @@ function undoLast() {
 applyAttempt(undoLastMutation());
 }
 function moveProgressionEntry(index, dir) {
-const target = index + dir;
+let target = index + dir;
+while (target >= 0 && target < state.purchaseOrder.length && !isEntryActive(state.purchaseOrder[target])) {
+target += dir;
+}
 if (target < 0 || target >= state.purchaseOrder.length) return;
 const a = state.purchaseOrder[index];
 const b = state.purchaseOrder[target];
@@ -3007,24 +3124,6 @@ const newValue = sel.value;
 const oldValue = state.selectedClasses[i];
 if (newValue === oldValue) return;
 const dupSlot = state.selectedClasses.findIndex((c, j) => j !== i && c === newValue);
-if (dupSlot < 0) {
-const oldStore = state.ranks.classes[oldValue];
-const oldList = AA_DATA.classes[oldValue] || [];
-let oldSpent = 0;
-if (oldStore) {
-Object.keys(oldStore).forEach((key) => {
-const aa = oldList[key];
-if (!aa) return;
-const r = oldStore[key] || 0;
-for (let k = 0; k < r; k++) oldSpent += costNum(aa.costs[k]);
-});
-}
-if (oldSpent > 0) {
-const ok = confirm(`Switching Class ${i + 1} from ${oldValue} to ${newValue} will remove ${oldValue}'s AA picks (${oldSpent} point${oldSpent === 1 ? "" : "s"} spent) from this build. Continue?`);
-if (!ok) { populateClassSelects(); return; }
-}
-clearClassData(oldValue);
-}
 state.selectedClasses[i] = newValue;
 if (dupSlot >= 0) {
 state.selectedClasses[dupSlot] = oldValue;

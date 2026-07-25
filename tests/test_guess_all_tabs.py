@@ -7,9 +7,16 @@
 # *display* for an unpurchased/purchased step, which reads as "this costs
 # nothing" rather than "this is unknown"). This test covers those two
 # previously-missed spots so a guess shows up consistently everywhere a
-# real cost would - plus an inactive-class Progression step, which needed
-# its own fix (costDisplayScoped, not the catKey-based costDisplay) to get
-# parity with Browse.
+# real cost would.
+#
+# The final scenario used to also cover an inactive-class Progression step's
+# next-rank preview (costDisplayScoped, not the catKey-based costDisplay,
+# for parity with Browse) - Progression no longer renders an inactive-class
+# step at all (it moved to its own Other Classes tab - see
+# test_other_classes.py), so that scenario now checks the row is genuinely
+# absent from Progression and shows up in Other Classes instead. The
+# underlying costGuessScoped/effectGuessScoped correctness for a class
+# outside the active 3 stays covered by the Browse scenario above.
 import sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -106,15 +113,15 @@ with sync_playwright() as p:
     assert color1 == "rgb(217, 76, 76)"
     print("PASS: a real known per-step cost never gets estimate styling")
 
-    # --- An inactive-class Progression step (its class isn't in the
-    # current 3 slots, e.g. from an imported build) should still show an
-    # estimate in its next-rank preview, same as Browse does - costDisplay's
-    # catKey lookup returns null off-slot, but costDisplayScoped (scope/
-    # className directly) doesn't have that limitation. Hand-crafted build
-    # code: selectedClasses = [Bard, Beastlord, Berserker] (the defaults),
-    # but purchaseOrder references Magician's Conjurer's Efficiency (id 90)
-    # anyway - simulates a build from before this app enforced the 3-slot
-    # model, or one edited by hand. ---
+    # --- An inactive-class purchaseOrder entry (its class isn't in the
+    # current 3 slots, e.g. from an imported build) no longer renders as a
+    # Progression row at all - it shows up in the Other Classes tab instead
+    # (test_other_classes.py covers that tab's own content in depth; this
+    # just confirms Progression genuinely has nothing for it). Hand-crafted
+    # build code: selectedClasses = [Bard, Beastlord, Berserker] (the
+    # defaults), but purchaseOrder references Magician's Conjurer's
+    # Efficiency (id 90) anyway - simulates a build from before this app
+    # enforced the 3-slot model, or one edited by hand. ---
     inactive_build = "H4sIAAAAAAAC_6tWKlOyUjDSUVBKBtLRBjoKhjoKRrFAfg6QbwrkK5UAGYYGBiBmEUhNtCVIVSxITQGIb2kQWwsAdrvsFEcAAAA"
     # Fresh page (no unsaved-build prompt to fight through) rather than
     # reusing the one with Alchemy Mastery already bought above.
@@ -126,15 +133,15 @@ with sync_playwright() as p:
     inactive_page.click('button[data-tab="progression"]')
     inactive_page.wait_for_timeout(150)
     inactive_row = inactive_page.locator(".progression-row", has=inactive_page.locator(".step-name", has_text="Conjurer's Efficiency"))
-    print("inactive row class:", inactive_row.get_attribute("class"))
-    assert "inactive" in inactive_row.get_attribute("class")
-    inactive_row.locator(".step-expand").click()
-    inactive_page.wait_for_timeout(100)
-    inactive_next = inactive_page.locator(".progression-next-rank .next-rank-title b")
-    print("inactive step next-rank text/class:", inactive_next.inner_text(), inactive_next.get_attribute("class"))
-    assert inactive_next.inner_text().strip() == "~4"
-    assert "is-estimate" in inactive_next.get_attribute("class")
-    print("PASS: an inactive-class step's next-rank preview still shows its estimate, matching Browse")
+    print("Progression row count for the inactive-class pick (should be 0):", inactive_row.count())
+    assert inactive_row.count() == 0, "FAIL: an inactive-class pick should no longer render inline in Progression at all"
+
+    inactive_page.click('button[data-tab="otherClasses"]')
+    inactive_page.wait_for_timeout(150)
+    other_classes_html = inactive_page.locator("#otherClassesContent").inner_html()
+    print("Other Classes tab shows Conjurer's Efficiency:", "Conjurer&#39;s Efficiency" in other_classes_html or "Conjurer's Efficiency" in other_classes_html)
+    assert "Conjurer" in other_classes_html
+    print("PASS: an inactive-class pick is absent from Progression and shows up in Other Classes instead")
     inactive_page.close()
 
     print("ERRORS:", errors)
