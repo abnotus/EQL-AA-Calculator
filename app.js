@@ -326,6 +326,13 @@ return prog ? (prog[rankIdx] || null) : null;
 }
 const USER_CHANGELOG = [
 {
+version: "1.8.1",
+date: "2026-07-28",
+items: [
+"New: a \"Move To\" button on each Progression row opens a quick-jump menu — top or bottom of the list, top or bottom of any waypoint section, or a specific position — for reordering a long build without dragging it row by row. If a step's own cost would push it past the section you're moving it into, it lands as close as it can while still staying inside that section instead of silently landing further along, and grays out if it can't fit there at all."
+]
+},
+{
 version: "1.8.0",
 date: "2026-07-25",
 items: [
@@ -2228,6 +2235,7 @@ el.otherClassesContent.innerHTML = html;
 }
 const expandedSteps = new Set();
 function expandKey(s) { return `${s.category || ""}:${s.idx}:${s.stepRank}`; }
+let openMoveMenuKey = null;
 let editingWaypointPts = null;
 let modalSelectedColor = null;
 const PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
@@ -2377,6 +2385,70 @@ if (s.scope !== "class") return "";
 const slot = state.selectedClasses.indexOf(s.className);
 return slot >= 0 ? ` step-cat-slot${slot}` : "";
 }
+function waypointSections(timeline, totalVisible, movingStepCost) {
+const sections = [];
+for (let i = 0; i < timeline.length; i++) {
+const entry = timeline[i];
+if (entry.type !== "divider") continue;
+const sectionSteps = [];
+for (let j = i + 1; j < timeline.length && timeline[j].type !== "divider"; j++) {
+sectionSteps.push(timeline[j]);
+}
+let baselineBeforeSection = 0;
+for (let j = i - 1; j >= 0; j--) {
+if (timeline[j].type === "step") { baselineBeforeSection = timeline[j].cumulative; break; }
+}
+let highPts = Infinity;
+for (let j = i + 1; j < timeline.length; j++) {
+if (timeline[j].type === "divider") { highPts = timeline[j].pts; break; }
+}
+const slotBaselines = [baselineBeforeSection, ...sectionSteps.map((st) => st.cumulative)];
+const fits = slotBaselines.map((b) => b + movingStepCost <= highPts);
+const topFits = fits[0];
+let bottomSlot = 0;
+for (let k = 0; k < fits.length; k++) { if (fits[k]) bottomSlot = k; else break; }
+function slotToVisiblePos(slot) {
+if (slot < sectionSteps.length) return sectionSteps[slot].visiblePos;
+for (let j = i + 1; j < timeline.length; j++) {
+if (timeline[j].type === "step") return timeline[j].visiblePos;
+}
+return totalVisible + 1;
+}
+const notFitTitle = topFits ? "" : "This step's own cost is more than this section's remaining range allows.";
+sections.push({
+label: entry.label || `${entry.pts} pts`,
+topFits,
+topVisiblePos: topFits ? slotToVisiblePos(0) : null,
+bottomFits: topFits,
+bottomVisiblePos: topFits ? slotToVisiblePos(bottomSlot) : null,
+notFitTitle
+});
+}
+return sections;
+}
+function moveMenuHtml(s, timeline, totalVisible) {
+const sections = waypointSections(timeline, totalVisible, s.stepCost);
+const items = [
+{ label: "Top of list", pos: 1, fits: true },
+{ label: "Bottom of list", pos: totalVisible, fits: true }
+];
+sections.forEach((sec) => {
+items.push({ label: `${sec.label} — top`, pos: sec.topVisiblePos, fits: sec.topFits, title: sec.notFitTitle });
+items.push({ label: `${sec.label} — bottom`, pos: sec.bottomVisiblePos, fits: sec.bottomFits, title: sec.notFitTitle });
+});
+const itemsHtml = items.map((item) =>
+`<button type="button" class="move-menu-item" data-from-index="${s.index}" data-target-pos="${item.fits ? item.pos : ""}" ${item.fits ? "" : "disabled"} title="${escapeHtml(item.title || "")}">${escapeHtml(item.label)}</button>`
+).join("");
+return `<div class="move-menu" data-key="${expandKey(s)}">
+      ${itemsHtml}
+      <div class="move-menu-position-row">
+        <label class="move-menu-position-label">Position
+          <input type="number" class="move-menu-position-input" min="1" max="${totalVisible}" value="${s.visiblePos}" />
+        </label>
+        <button type="button" class="btn move-menu-go" data-from-index="${s.index}">Go</button>
+      </div>
+    </div>`;
+}
 function renderProgression() {
 el.undoLastBtn.disabled = !canUndo();
 el.clearOwnedBtn.disabled = !hasAnyOwned();
@@ -2398,6 +2470,7 @@ if (!steps.length) {
 el.progressionContent.innerHTML = '<div class="empty">Nothing picked for your current 3 classes yet &mdash; your training order will appear here as you spend points. (Picks for other classes you\'ve used are in the Other Classes tab.)</div>';
 return;
 }
+steps.forEach((s, i) => { s.visiblePos = i + 1; });
 const timeline = computeProgressionTimeline(steps);
 const htmlParts = timeline.map((entry) => {
 if (entry.type === "divider") {
@@ -2423,7 +2496,7 @@ if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} c
 const rowWarn = warnTitles.length > 0;
 const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
-      <span class="step-num">${s.index + 1}</span>
+      <span class="step-num">${s.visiblePos}</span>
       <span class="step-info">
         <span class="step-name${s.owned ? " owned" : ""}">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
         <span class="step-cat${classBadgeClass(s)}">${escapeHtml(s.label)}</span>
@@ -2440,6 +2513,10 @@ const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${se
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
         <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
         <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast ? "" : "disabled"} title="${!s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
+        <span class="move-menu-wrap">
+          <button class="step-btn step-move${openMoveMenuKey === key ? " active" : ""}" data-key="${key}" title="Move to...">&#8943;</button>
+          ${openMoveMenuKey === key ? moveMenuHtml(s, timeline, steps.length) : ""}
+        </span>
       </span>
     </div>`;
 if (!expanded) return row;
@@ -2475,6 +2552,35 @@ const key = btn.getAttribute("data-key");
 if (expandedSteps.has(key)) expandedSteps.delete(key);
 else expandedSteps.add(key);
 renderProgression();
+});
+});
+Array.from(el.progressionContent.querySelectorAll(".step-move")).forEach((btn) => {
+btn.addEventListener("click", (e) => {
+e.stopPropagation();
+const key = btn.getAttribute("data-key");
+openMoveMenuKey = openMoveMenuKey === key ? null : key;
+renderProgression();
+});
+});
+Array.from(el.progressionContent.querySelectorAll(".move-menu-item")).forEach((btn) => {
+if (btn.disabled) return;
+btn.addEventListener("click", (e) => {
+e.stopPropagation();
+const fromIndex = parseInt(btn.getAttribute("data-from-index"), 10);
+const targetPos = parseInt(btn.getAttribute("data-target-pos"), 10);
+openMoveMenuKey = null;
+moveToVisiblePosition(fromIndex, targetPos);
+});
+});
+Array.from(el.progressionContent.querySelectorAll(".move-menu-go")).forEach((btn) => {
+btn.addEventListener("click", (e) => {
+e.stopPropagation();
+const fromIndex = parseInt(btn.getAttribute("data-from-index"), 10);
+const input = btn.parentElement.querySelector(".move-menu-position-input");
+const raw = parseInt(input.value, 10);
+const clamped = Math.max(1, Math.min(steps.length, Number.isFinite(raw) ? raw : 1));
+openMoveMenuKey = null;
+moveToVisiblePosition(fromIndex, clamped);
 });
 });
 Array.from(el.progressionContent.querySelectorAll(".step-add")).forEach((btn) => {
@@ -2619,6 +2725,23 @@ if (fromIndex === toIndex) return;
 moveEntry(fromIndex, toIndex);
 renderProgression();
 }
+function absoluteIndexForVisiblePosition(fromIndex, targetVisiblePos) {
+if (targetVisiblePos <= 1) return 0;
+const withoutMoved = state.purchaseOrder.filter((_, i) => i !== fromIndex);
+let activeSeen = 0;
+for (let i = 0; i < withoutMoved.length; i++) {
+if (!isEntryActive(withoutMoved[i])) continue;
+activeSeen++;
+if (activeSeen === targetVisiblePos - 1) return i + 1;
+}
+return withoutMoved.length;
+}
+function moveToVisiblePosition(fromIndex, targetVisiblePos) {
+const toIdx = absoluteIndexForVisiblePosition(fromIndex, targetVisiblePos);
+if (toIdx === fromIndex) return;
+moveEntry(fromIndex, toIdx);
+renderProgression();
+}
 function lastProgressionRow() {
 const rows = el.progressionContent.querySelectorAll(".progression-row");
 return rows.length ? rows[rows.length - 1] : null;
@@ -2627,7 +2750,17 @@ function isBelowLastRow(e) {
 const last = lastProgressionRow();
 return !!last && e.clientY >= last.getBoundingClientRect().bottom;
 }
+function closeMoveMenu() {
+if (openMoveMenuKey === null) return;
+openMoveMenuKey = null;
+renderProgression();
+}
 function wireProgressionDropZone() {
+document.addEventListener("click", (e) => {
+if (openMoveMenuKey === null) return;
+if (e.target.closest(".move-menu-wrap")) return;
+closeMoveMenu();
+});
 el.progressionWrap.addEventListener("dragover", (e) => {
 if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
 updateAutoScroll(e);
@@ -3159,6 +3292,7 @@ if (!el.changelogModal.classList.contains("hidden")) closeChangelogModal();
 if (!el.buildsModal.classList.contains("hidden")) closeBuildsModal();
 if (!el.resetModal.classList.contains("hidden")) closeResetModal();
 if (!el.waypointModal.classList.contains("hidden")) closeWaypointModal();
+closeMoveMenu();
 });
 el.versionTag.addEventListener("click", openChangelogModal);
 el.closeChangelogBtn.addEventListener("click", closeChangelogModal);

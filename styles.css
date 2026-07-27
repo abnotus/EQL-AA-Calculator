@@ -1134,8 +1134,6 @@ main {
   cursor: grab;
 }
 
-.progression-row.inactive { opacity: 0.45; }
-
 /* Currently out of order relative to its own prerequisite (the ⚠ case) - a
    lighter dim than .inactive's, since this is a fixable ordering issue, not
    "the class isn't even in your build". Applied per-child rather than to the
@@ -1317,6 +1315,83 @@ main {
 .step-remove:not(:disabled) { color: #e08b78; }
 
 .step-remove:hover:not(:disabled) { border-color: #e08b78; color: #e08b78; background: rgba(224,139,120,0.1); }
+
+.step-move.active { border-color: var(--accent-bright); color: var(--accent-bright); }
+
+/* Move To popover - anchored under its trigger button (.step-move) rather
+   than a full modal overlay, the first lightweight popover in the app
+   (see moveMenuHtml/wireProgressionDropZone's outside-click listener,
+   render.js). .move-menu-wrap gives it a positioning context scoped to
+   just this one row's button, not the whole .progression-row - a wider
+   anchor would let the menu jump around if the row's own layout ever
+   reflows (a warn badge appearing/disappearing, say). */
+.move-menu-wrap { position: relative; display: inline-flex; }
+
+.move-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 30;
+  min-width: 180px;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+  padding: 4px;
+}
+
+.move-menu-item {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.move-menu-item:hover:not(:disabled) { background: var(--bg-panel); color: var(--accent-bright); }
+
+.move-menu-item:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.move-menu-position-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 2px;
+  margin-top: 2px;
+  border-top: 1px solid var(--border);
+}
+
+.move-menu-position-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+  flex: 1;
+}
+
+.move-menu-position-input {
+  width: 52px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 3px 5px;
+}
+
+.move-menu-go {
+  padding: 4px 10px;
+  font-size: 11px;
+}
 
 .step-expand.active { border-color: var(--accent-bright); color: var(--accent-bright); }
 

@@ -611,6 +611,11 @@ function renderOtherClasses() {
 const expandedSteps = new Set();
 function expandKey(s) { return `${s.category || ""}:${s.idx}:${s.stepRank}`; }
 
+// Which row's Move To popover is open (expandKey-identified, same as
+// expandedSteps above) - a single nullable value, not a Set, since only
+// one row's menu makes sense open at a time. Purely transient UI state.
+let openMoveMenuKey = null;
+
 // Waypoint add/edit modal state - which waypoint (by pts, unique per
 // sanitizeWaypoints' dedup) is being edited, or null when the modal is
 // adding a new one. modalSelectedColor tracks the in-progress swatch pick
@@ -878,6 +883,115 @@ function classBadgeClass(s) {
   return slot >= 0 ? ` step-cat-slot${slot}` : "";
 }
 
+// One entry per waypoint (not just the row's own current one - the whole
+// point of a checkpoint like "Level 20" is being able to move something
+// INTO that phase of the plan, not just shuffle within whichever phase it
+// already happens to sit in), for the Move To popover's "[Section] -
+// top/bottom" options. Derived from computeProgressionTimeline's existing
+// divider/step interleaving (logic.js) rather than re-deriving section
+// boundaries from state.waypoints directly - timeline already has exactly
+// this grouping for the divider rendering above.
+//
+// Waypoints are anchored to cumulative points crossed, not list position
+// (see Waypoints' own design) - so a step's OWN cost, added on top of
+// whatever's already accumulated at wherever it lands, can push its
+// resulting cumulative past the very section boundary it's being placed
+// into, regardless of where in click-order it's inserted. movingStepCost
+// (the row's own s.stepCost) lets this actually account for that instead
+// of just placing it at a fixed boundary and hoping: for each section,
+// every possible insertion slot's baseline cumulative (the cumulative of
+// whatever currently sits immediately before that slot) is checked
+// against the section's own pts range, and "top"/"bottom" each resolve to
+// the best-fitting slot for that preference - "bottom" degrades toward
+// "as late as possible while still fitting" rather than the section's
+// literal last slot if that slot would overflow into the next section.
+// Slot baselines are monotonically non-decreasing deeper into a section
+// (costs are never negative), so if the very top slot doesn't fit, no
+// slot does - topFits/bottomFits are therefore always equal, and doubles
+// as "does this step fit in this section at all".
+function waypointSections(timeline, totalVisible, movingStepCost) {
+  const sections = [];
+  for (let i = 0; i < timeline.length; i++) {
+    const entry = timeline[i];
+    if (entry.type !== "divider") continue;
+    const sectionSteps = [];
+    for (let j = i + 1; j < timeline.length && timeline[j].type !== "divider"; j++) {
+      sectionSteps.push(timeline[j]);
+    }
+    let baselineBeforeSection = 0;
+    for (let j = i - 1; j >= 0; j--) {
+      if (timeline[j].type === "step") { baselineBeforeSection = timeline[j].cumulative; break; }
+    }
+    let highPts = Infinity;
+    for (let j = i + 1; j < timeline.length; j++) {
+      if (timeline[j].type === "divider") { highPts = timeline[j].pts; break; }
+    }
+    // slotBaselines[k] = cumulative baseline for inserting at slot k
+    // (before sectionSteps[k]); the last entry is "after the section's
+    // last step" - one baseline per possible insertion point, top to
+    // bottom, monotonically non-decreasing.
+    const slotBaselines = [baselineBeforeSection, ...sectionSteps.map((st) => st.cumulative)];
+    const fits = slotBaselines.map((b) => b + movingStepCost <= highPts);
+    const topFits = fits[0];
+    let bottomSlot = 0;
+    for (let k = 0; k < fits.length; k++) { if (fits[k]) bottomSlot = k; else break; }
+
+    function slotToVisiblePos(slot) {
+      if (slot < sectionSteps.length) return sectionSteps[slot].visiblePos;
+      // Past this section's last step - land wherever the next real step
+      // (anywhere later in the timeline) sits, or past the end of the
+      // whole list if nothing follows at all.
+      for (let j = i + 1; j < timeline.length; j++) {
+        if (timeline[j].type === "step") return timeline[j].visiblePos;
+      }
+      return totalVisible + 1;
+    }
+
+    const notFitTitle = topFits ? "" : "This step's own cost is more than this section's remaining range allows.";
+    sections.push({
+      label: entry.label || `${entry.pts} pts`,
+      topFits,
+      topVisiblePos: topFits ? slotToVisiblePos(0) : null,
+      bottomFits: topFits,
+      bottomVisiblePos: topFits ? slotToVisiblePos(bottomSlot) : null,
+      notFitTitle
+    });
+  }
+  return sections;
+}
+
+// The Move To popover's content for one row - every option (top/bottom of
+// list, each waypoint section's top/bottom, the position field) is
+// pre-resolved here into a concrete targetVisiblePos, so the click
+// handlers wired below need only one generic case (read data-target-pos,
+// call moveToVisiblePosition) rather than a type switch per option.
+// Section options are computed fresh per row (not shared across rows the
+// way the timeline itself is) since fit depends on THIS row's own
+// s.stepCost - see waypointSections.
+function moveMenuHtml(s, timeline, totalVisible) {
+  const sections = waypointSections(timeline, totalVisible, s.stepCost);
+  const items = [
+    { label: "Top of list", pos: 1, fits: true },
+    { label: "Bottom of list", pos: totalVisible, fits: true }
+  ];
+  sections.forEach((sec) => {
+    items.push({ label: `${sec.label} — top`, pos: sec.topVisiblePos, fits: sec.topFits, title: sec.notFitTitle });
+    items.push({ label: `${sec.label} — bottom`, pos: sec.bottomVisiblePos, fits: sec.bottomFits, title: sec.notFitTitle });
+  });
+  const itemsHtml = items.map((item) =>
+    `<button type="button" class="move-menu-item" data-from-index="${s.index}" data-target-pos="${item.fits ? item.pos : ""}" ${item.fits ? "" : "disabled"} title="${escapeHtml(item.title || "")}">${escapeHtml(item.label)}</button>`
+  ).join("");
+  return `<div class="move-menu" data-key="${expandKey(s)}">
+      ${itemsHtml}
+      <div class="move-menu-position-row">
+        <label class="move-menu-position-label">Position
+          <input type="number" class="move-menu-position-input" min="1" max="${totalVisible}" value="${s.visiblePos}" />
+        </label>
+        <button type="button" class="btn move-menu-go" data-from-index="${s.index}">Go</button>
+      </div>
+    </div>`;
+}
+
 export function renderProgression() {
   el.undoLastBtn.disabled = !canUndo();
   // hasAnyOwned checks state.owned globally, not just the current
@@ -928,6 +1042,15 @@ export function renderProgression() {
     el.progressionContent.innerHTML = '<div class="empty">Nothing picked for your current 3 classes yet &mdash; your training order will appear here as you spend points. (Picks for other classes you\'ve used are in the Other Classes tab.)</div>';
     return;
   }
+  // 1-indexed position among the rows actually rendered, distinct from
+  // s.index (the absolute state.purchaseOrder position, used everywhere
+  // reordering happens - drag, up/down arrows, Move To). An inactive
+  // entry still occupies a real purchaseOrder slot even though it's
+  // filtered out above, so s.index alone can show gaps in the visible
+  // step numbering (a 2-active/1-inactive sequence rendering "1, 3" with
+  // no visible "2") - visiblePos is what the step-num display and Move
+  // To's "position" field are actually counting.
+  steps.forEach((s, i) => { s.visiblePos = i + 1; });
 
   // computeProgressionTimeline tags each step with segmentColor (the color
   // of the waypoint whose range it falls under, if any) - every colored
@@ -973,7 +1096,7 @@ export function renderProgression() {
     const rowWarn = warnTitles.length > 0;
     const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
-      <span class="step-num">${s.index + 1}</span>
+      <span class="step-num">${s.visiblePos}</span>
       <span class="step-info">
         <span class="step-name${s.owned ? " owned" : ""}">${escapeHtml(s.name)} <span class="step-rank">rank ${s.stepRank}</span></span>
         <span class="step-cat${classBadgeClass(s)}">${escapeHtml(s.label)}</span>
@@ -990,6 +1113,10 @@ export function renderProgression() {
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
         <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
         <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast ? "" : "disabled"} title="${!s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
+        <span class="move-menu-wrap">
+          <button class="step-btn step-move${openMoveMenuKey === key ? " active" : ""}" data-key="${key}" title="Move to...">&#8943;</button>
+          ${openMoveMenuKey === key ? moveMenuHtml(s, timeline, steps.length) : ""}
+        </span>
       </span>
     </div>`;
     if (!expanded) return row;
@@ -1031,6 +1158,41 @@ export function renderProgression() {
       if (expandedSteps.has(key)) expandedSteps.delete(key);
       else expandedSteps.add(key);
       renderProgression();
+    });
+  });
+  Array.from(el.progressionContent.querySelectorAll(".step-move")).forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      // Without this, the click bubbles to the document-level outside-click
+      // listener (wireProgressionDropZone) AFTER renderProgression() below
+      // has already replaced this button with a fresh one - e.target is a
+      // detached node with no parent left to walk up from, so .closest()
+      // finds nothing and the listener would treat the very click that
+      // opened the menu as a click outside it, closing it immediately.
+      e.stopPropagation();
+      const key = btn.getAttribute("data-key");
+      openMoveMenuKey = openMoveMenuKey === key ? null : key;
+      renderProgression();
+    });
+  });
+  Array.from(el.progressionContent.querySelectorAll(".move-menu-item")).forEach((btn) => {
+    if (btn.disabled) return;
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const fromIndex = parseInt(btn.getAttribute("data-from-index"), 10);
+      const targetPos = parseInt(btn.getAttribute("data-target-pos"), 10);
+      openMoveMenuKey = null;
+      moveToVisiblePosition(fromIndex, targetPos);
+    });
+  });
+  Array.from(el.progressionContent.querySelectorAll(".move-menu-go")).forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const fromIndex = parseInt(btn.getAttribute("data-from-index"), 10);
+      const input = btn.parentElement.querySelector(".move-menu-position-input");
+      const raw = parseInt(input.value, 10);
+      const clamped = Math.max(1, Math.min(steps.length, Number.isFinite(raw) ? raw : 1));
+      openMoveMenuKey = null;
+      moveToVisiblePosition(fromIndex, clamped);
     });
   });
   Array.from(el.progressionContent.querySelectorAll(".step-add")).forEach((btn) => {
@@ -1226,6 +1388,47 @@ function moveProgressionEntryTo(fromIndex, toIndex) {
   renderProgression();
 }
 
+// Move To (the "⋯" popover menu): the shared destination math for every
+// action in it (top/bottom of list, a waypoint section's top/bottom, the
+// position field) - each just computes a different targetVisiblePos
+// (1-indexed among active rows, matching s.visiblePos - see renderProgression)
+// and hands it here.
+//
+// Unlike moveProgressionEntryTo's pre-removal "insert before this absolute
+// index" convention, this returns a POST-removal absolute index, directly
+// usable as moveEntry's own toIdx with no further adjustment - simpler to
+// reason about correctly here since the target is expressed as "how many
+// OTHER active rows precede it" rather than "which row currently occupies
+// that slot" (the latter reads intuitively but is actually wrong for a
+// forward move: inserting before today's occupant of position P lands one
+// slot too early once the removal above it shifts things - the direction-
+// dependent bug this filter+count approach sidesteps entirely).
+//
+// Walks purchaseOrder with fromIndex conceptually removed, counting only
+// active entries (isEntryActive) exactly like the up/down-arrow neighbor
+// skip - an inactive entry between two active ones must never count
+// toward "position" or interrupt the count, and its own relative position
+// among whatever's left is otherwise undisturbed by this, same guarantee
+// moveEntry's plain splice-out/splice-in already gives everywhere else.
+function absoluteIndexForVisiblePosition(fromIndex, targetVisiblePos) {
+  if (targetVisiblePos <= 1) return 0;
+  const withoutMoved = state.purchaseOrder.filter((_, i) => i !== fromIndex);
+  let activeSeen = 0;
+  for (let i = 0; i < withoutMoved.length; i++) {
+    if (!isEntryActive(withoutMoved[i])) continue;
+    activeSeen++;
+    if (activeSeen === targetVisiblePos - 1) return i + 1; // insert right after this active entry
+  }
+  return withoutMoved.length; // fewer active entries exist than targetVisiblePos implies - append at the end
+}
+
+function moveToVisiblePosition(fromIndex, targetVisiblePos) {
+  const toIdx = absoluteIndexForVisiblePosition(fromIndex, targetVisiblePos);
+  if (toIdx === fromIndex) return;
+  moveEntry(fromIndex, toIdx);
+  renderProgression();
+}
+
 // One-time wiring (called from wireEvents) so dropping below the last row still
 // moves the dragged step to the end, instead of doing nothing. Lives here rather
 // than inside renderProgression because these elements persist across renders
@@ -1254,7 +1457,31 @@ function isBelowLastRow(e) {
   return !!last && e.clientY >= last.getBoundingClientRect().bottom;
 }
 
+// Closes the Move To popover without moving anything - the Escape-key case
+// (events.js's centralized modal Escape handling calls this alongside its
+// other close* calls) and the no-op branch the outside-click listener
+// below takes when nothing's actually open.
+export function closeMoveMenu() {
+  if (openMoveMenuKey === null) return;
+  openMoveMenuKey = null;
+  renderProgression();
+}
+
 export function wireProgressionDropZone() {
+  // Closes the Move To popover on a click anywhere outside it - .move-menu
+  // is a DOM descendant of .move-menu-wrap (see moveMenuHtml/the row
+  // template), so a click anywhere on the trigger button or inside the
+  // open menu itself (including the position input) is already "inside"
+  // by plain containment, no separate stopPropagation needed for those.
+  // Only the trigger button's own handler needs stopPropagation (see its
+  // own comment) - it re-renders synchronously, which would otherwise
+  // leave this listener chasing a detached e.target from the same click.
+  document.addEventListener("click", (e) => {
+    if (openMoveMenuKey === null) return;
+    if (e.target.closest(".move-menu-wrap")) return;
+    closeMoveMenu();
+  });
+
   // Fires on every dragover bubbling through the wrap regardless of which
   // row/divider/box the row-level handlers above targeted - unlike those,
   // this one doesn't gate on e.target since edge-proximity is a property of

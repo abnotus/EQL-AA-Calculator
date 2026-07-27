@@ -34,8 +34,9 @@ stay true regardless of what `data.src.js` says on any given day.
 `test_build_slot_migration.py`, `test_active_build_match.py`,
 `test_class_rank_cap.py`, `test_progression_autoscroll.py`,
 `test_hidden_aas.py`, `test_other_classes.py`,
-`test_owned_inactive_classes.py` drive the actual app in a real Chrome
-instance via [Playwright](https://playwright.dev/python/).
+`test_owned_inactive_classes.py`, `test_progression_move_to.py` drive the
+actual app in a real Chrome instance via
+[Playwright](https://playwright.dev/python/).
 
 **Prerequisites:**
 - `pip install playwright`
@@ -64,6 +65,7 @@ python tests/test_progression_autoscroll.py
 python tests/test_hidden_aas.py
 python tests/test_other_classes.py
 python tests/test_owned_inactive_classes.py
+python tests/test_progression_move_to.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -104,4 +106,8 @@ of the drop handlers wired in `renderProgression`/`wireProgressionDropZone` -
 `otherClassesWithPicks`/`countOtherClassesPicked`, `isEntryActive`, the
 active-only filter and up/down-arrow neighbor-skipping in
 `renderProgression`, or `renderOtherClasses` - `test_other_classes.py` and
-`test_owned_inactive_classes.py`) before rebuilding and committing.
+`test_owned_inactive_classes.py`), or the Move To popover
+(`absoluteIndexForVisiblePosition`, `moveToVisiblePosition`,
+`waypointSections`'s fit-aware section-boundary math, `moveMenuHtml`, or
+`s.visiblePos`'s role in `computeProgressionSteps`/step-num display -
+`test_progression_move_to.py`) before rebuilding and committing.

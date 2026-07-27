@@ -8,7 +8,8 @@ import {
   openChangelogModal, closeChangelogModal, wireProgressionDropZone,
   openBuildsModal, closeBuildsModal, handleBuildSave,
   openResetModal, closeResetModal, handleConfirmReset, renderProgression,
-  openWaypointModal, closeWaypointModal, handleSaveWaypoint, handleDeleteWaypoint
+  openWaypointModal, closeWaypointModal, handleSaveWaypoint, handleDeleteWaypoint,
+  closeMoveMenu
 } from "./render.js";
 import {
   openExportModal, copyExportText, copyShareLink, saveExportAsTxt, closeExportModal,
@@ -68,6 +69,7 @@ export function wireEvents() {
     if (!el.buildsModal.classList.contains("hidden")) closeBuildsModal();
     if (!el.resetModal.classList.contains("hidden")) closeResetModal();
     if (!el.waypointModal.classList.contains("hidden")) closeWaypointModal();
+    closeMoveMenu();
   });
 
   el.versionTag.addEventListener("click", openChangelogModal);
