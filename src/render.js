@@ -70,16 +70,10 @@ function renderTopbar() {
   const spent = spentPoints();
 
   const extra = estimatedExtraPoints();
-  // The headline number blends real + estimate for display - a guess is
-  // still never added to spentPoints() itself anywhere in real math
-  // (nothing gates a purchase on a point total anymore, but spentPoints()
-  // is still what the Progression tab's running totals and owned/to-go
-  // split are built from), this is purely how the topbar's own number
-  // reads. The ~ prefix alone signals "this includes an estimate" (same
-  // shorthand every per-rank guess in the app already uses); the
-  // breakdown lives in the tooltip rather than a second visible element,
-  // matching how every other estimate badge here discloses confidence
-  // detail on hover instead of inline.
+  // The headline number blends real + estimate for display only - a guess
+  // is never added to spentPoints() itself (see estimatedExtraPoints).
+  // The ~ prefix signals "includes an estimate", same shorthand as every
+  // per-rank guess; the breakdown lives in the tooltip, not inline.
   if (extra > 0) {
     el.spentValue.textContent = `~${spent + extra}`;
     el.spentValue.classList.add("is-estimate");
@@ -87,12 +81,10 @@ function renderTopbar() {
     el.spentValue.textContent = spent;
     el.spentValue.classList.remove("is-estimate");
   }
-  // spentPoints() is a lifetime total (every class ever picked, not just
-  // the 3 active ones - see its own comment) - when any of it comes from a
-  // class that isn't currently selected, that's the other place this
-  // number can diverge from what Progression's own rows add up to, same
-  // spirit as the estimate breakdown already disclosed here. Both fold
-  // into one tooltip rather than competing mechanisms.
+  // spentPoints() is a lifetime total (see its own comment in logic.js) -
+  // when some of it comes from a class that isn't currently selected,
+  // that's another way this number can diverge from Progression's own
+  // rows. Both disclosures fold into the same tooltip.
   const inactive = spentOnInactiveClasses();
   const titleParts = [];
   if (extra > 0) titleParts.push(`${spent} confirmed + ${extra} estimated.`);
@@ -149,15 +141,11 @@ function renderTabs() {
   });
 }
 
-// Shared by every place that shows a per-rank cost - the tree node's cost
-// badge, the side panel's next-rank box and rank-costs pip strip, Browse's
-// per-rank cost list, and the Progression tab's per-step cost pill and its
-// own next-rank preview - so they all resolve the same "is this rank's real
-// cost known, or are we showing a pattern-inferred estimate" decision one
-// way, instead of each reimplementing it (and drifting) slightly
-// differently. A guess is display-only: nothing here ever feeds
-// costNum()/spentPoints() - those keep treating "?" as 0 exactly like
-// before, regardless of whether a guess exists for display.
+// Shared by every place that shows a per-rank cost - the tree, side panel,
+// Browse, and Progression - so they all resolve "is this rank's real cost
+// known, or is this a pattern-inferred estimate" the same way instead of
+// each reimplementing it. Display-only: nothing here feeds
+// costNum()/spentPoints(), which keep treating "?" as 0 regardless.
 function formatGuessDisplay(rawCost, guess) {
   if (rawCost !== "?") return { text: escapeHtml(rawCost), isGuess: false };
   if (!guess) return { text: "?", isGuess: false };
@@ -220,16 +208,12 @@ export function renderTree(catKey) {
 
   list.forEach((aa, idx) => {
     const rank = effectiveRank(catKey, idx);
-    // A hidden AA is left out of the grid entirely unless Show Hidden is on
-    // - EXCEPT one you've actually spent points on, which always stays
-    // visible regardless: hiding only declutters what to look at, it never
-    // suppresses real build state (see isHidden/setHidden, logic.js). This
-    // runs before the search-match classing below on purpose: a hidden AA
-    // is unfindable via global search too, not just absent from plain
-    // browsing - deliberate, not an oversight. Show Hidden is meant to be
-    // the one override switch; letting search silently bypass hiding as a
-    // second one would repopulate a broad match's worth of AAs someone
-    // specifically decluttered away.
+    // A hidden AA is left out of the grid entirely unless Show Hidden is on,
+    // except one you've actually spent points on - hiding declutters what
+    // to look at, it never suppresses real build state. Runs before the
+    // search-match classing below on purpose: a hidden AA is unfindable via
+    // search too, not just absent from plain browsing - Show Hidden is
+    // meant to be the one override switch, not something search bypasses.
     const hidden = isHidden(catKey, idx);
     if (hidden && !state.showHidden && rank === 0) return;
     const autoBelowLevel = aa.auto && rank < aa.ranks;
@@ -237,11 +221,9 @@ export function renderTree(catKey) {
     const locked = !!lockReason || autoBelowLevel;
     const invalidReason = rank > 0 ? heldRankInvalidReason(catKey, idx) : null;
     // A held rank beyond the current class-cap (Steadfast Will owned at
-    // rank 8, then swapped away from a tank class) still counts fully
-    // toward the bar's own fill - the point is showing that the trained
-    // portion is no longer within reach at your CURRENT classes, not that
-    // it's been lost. Only the segment strictly beyond the cap gets the
-    // dimmed treatment; below the cap reads exactly like any other rank.
+    // rank 8, then swapped away from a qualifying class) still counts
+    // fully toward the bar's fill - only the segment strictly beyond the
+    // cap gets the dimmed treatment, showing it's out of reach, not lost.
     const classCap = aa.classRankCap ? classRankCapFor(aa) : aa.ranks;
     const capExceeded = rank > classCap;
 
@@ -419,11 +401,10 @@ function applyAttempt(result) {
 }
 
 // Browse lists every class regardless of which 3 are currently selected, but
-// structuralLockReason (and everything under it) only knows how to answer
-// "is this prereq met" for a category with a real catKey - general/archetype/
-// special always have one, but a class only does while it's actually sitting
-// in one of the 3 slots. For any other class, catKey is null and the prereq
-// line falls back to the old plain-text rendering rather than guessing.
+// structuralLockReason only knows how to answer "is this prereq met" for a
+// category with a real catKey - a class only has one while it's actually in
+// one of the 3 slots. For any other class, catKey is null and the prereq
+// line falls back to plain-text rendering instead.
 function catKeyForBrowseLabel(catLabel) {
   if (catLabel === "General") return "general";
   if (catLabel === "Archetype") return "archetype";
@@ -433,9 +414,8 @@ function catKeyForBrowseLabel(catLabel) {
 }
 
 // Cost guesses don't have that same "only while it's in an active slot"
-// limitation (costDisplayScoped looks up by scope/className directly), so
-// every Browse card can show its per-rank estimates regardless of whether
-// its class is currently selected.
+// limitation - costDisplayScoped looks up by scope/className directly, so
+// every Browse card can show its estimates regardless of class selection.
 function scopeForBrowseLabel(catLabel) {
   if (catLabel === "General") return { scope: "general", className: null };
   if (catLabel === "Archetype") return { scope: "archetype", className: null };
@@ -463,14 +443,10 @@ export function renderBrowse() {
   }
 
   const searched = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
-  // Same hidden-declutter rule as the tree (see renderTree, including why a
-  // search match doesn't bypass hiding either - it's applied AFTER the
-  // query filter above, on purpose, not before): left out unless Show
-  // Hidden is on, except one you've actually spent points on. Uses the
-  // scoped rank lookup (not catKey-gated) since a class swap no longer
-  // wipes ranks/purchaseOrder (events.js) - an inactive class can have a
-  // real nonzero rank here, and a hidden AA you've spent points on there
-  // must still stay visible, same as an active class's.
+  // Same hidden-declutter rule as the tree (see renderTree): left out
+  // unless Show Hidden is on, except one you've actually spent points on.
+  // Uses the scoped rank lookup, not catKey-gated, since an inactive
+  // class can still have a real nonzero rank here.
   const filtered = searched.filter(({ cat, idx }) => {
     const { scope, className } = scopeForBrowseLabel(cat);
     if (!isHiddenScoped(scope, className, idx)) return true;
@@ -561,18 +537,12 @@ function renderSummary() {
 }
 
 // Picks for a class that isn't currently one of your 3 selected slots -
-// left fully intact by a class swap (see events.js) rather than wiped, so
-// this is where they live instead of the tree/Progression/Summary. Modeled
-// directly on renderSummary above (grouped, with each AA shown the same
-// browse-card way), but grouped by className via otherClassesWithPicks
-// rather than by AA_CATEGORY_KEYS, and using the *Scoped lookups
-// (effectiveRankScoped/effectLookupScoped) since an inactive class has no
-// catKey at all - classSlotIndex returns -1 for it, so none of the
-// catKey-addressed helpers (effectiveRank, heldRankInvalidReason,
-// structuralLockReason) apply here. No invalidReason line either: that
-// machinery answers "is this AA, which the tree can currently show, in a
-// bad state" - an inactive-class pick isn't reachable in the tree at all,
-// so it's simply not the kind of fact heldRankInvalidReason is about.
+// left intact by a class swap (see events.js) rather than wiped, so this
+// is where they live instead of the tree/Progression/Summary. Modeled on
+// renderSummary above but grouped by className via otherClassesWithPicks,
+// and using the *Scoped lookups since an inactive class has no catKey at
+// all. No invalidReason line either - that machinery is about an AA the
+// tree can currently show, which an inactive-class pick isn't.
 function renderOtherClasses() {
   const classNames = otherClassesWithPicks();
 
@@ -629,28 +599,20 @@ let modalSelectedColor = null;
 // when no drag is in progress. Module-level since dragstart/dragover/drop fire
 // on different row elements that get torn down and rebuilt on every render.
 //
-// dragSrcIndex alone isn't a safe gate for "is a progression-step drag actually
-// in flight": if dragend never fires (detaching the source node mid-drag, e.g.
-// via renderProgression, is known to make some browsers skip it), it stays
-// non-null after the drag that set it has already ended. A later, unrelated
-// drag (a text selection, a file from the OS) over the list would then read as
-// a stale reorder instead of being ignored. PROGRESSION_DRAG_TYPE is a custom
-// dataTransfer MIME type set only in this module's dragstart, so dragover/drop
-// gate on e.dataTransfer.types instead of trusting dragSrcIndex - a foreign
-// drag simply won't carry it, no matter what dragSrcIndex last happened to be.
+// dragSrcIndex alone isn't a safe gate for "is a drag actually in flight": if
+// dragend never fires (detaching the source node mid-drag makes some browsers
+// skip it), it stays non-null after the drag has already ended, so a later,
+// unrelated drag over the list would read as a stale reorder. PROGRESSION_DRAG_TYPE
+// is a custom dataTransfer MIME type set only in this module's dragstart, so
+// dragover/drop gate on e.dataTransfer.types instead of trusting dragSrcIndex.
 const PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
 let dragSrcIndex = null;
-// Native HTML5 drag doesn't auto-scroll an inner scrollable container (only
-// the whole page, inconsistently) - dragging near #progressionWrap's
-// top/bottom edge scrolls it, faster the closer the cursor is to the edge,
-// so reordering a list too long to fit on screen doesn't require
-// pre-scrolling to the destination first. See updateAutoScroll/autoScrollStep.
-// Both must be stopped from every drop handler, not just via the dragend
-// listener below - dragend is known not to fire on a source node that's
-// already detached by the time the drag would end (renderProgression
-// replaces progressionContent's innerHTML on every successful drop), and
-// the loop is self-sustaining (each frame reschedules itself), so a missed
-// stop would otherwise keep scrolling forever using stale direction/speed.
+// Native HTML5 drag doesn't auto-scroll an inner scrollable container, so
+// dragging near #progressionWrap's top/bottom edge scrolls it manually,
+// faster the closer to the edge (see updateAutoScroll/autoScrollStep). Must
+// be stopped from every drop handler, not just dragend - dragend can miss a
+// source node already detached by a re-render, and the loop is
+// self-sustaining, so a missed stop would keep scrolling forever.
 const AUTOSCROLL_EDGE_PX = 70;
 const AUTOSCROLL_MAX_SPEED = 18; // px/frame at the very edge
 let autoScrollDir = 0; // -1 up, 0 idle, 1 down
@@ -727,30 +689,19 @@ function countPrereqWarns(steps) {
   return steps.reduce((n, s) => n + (s.prereqWarn ? 1 : 0), 0);
 }
 
-// Whether dropping the step currently being dragged at `toIndex` (an
-// insertion point, same convention as moveProgressionEntryTo) would introduce
-// a prereq warning that doesn't already exist - a pure look-ahead for the
-// drag indicator, computed against a throwaway copy so it never touches real
-// state.
+// Whether dropping the dragged step at `toIndex` (an insertion point, same
+// convention as moveProgressionEntryTo) would introduce a prereq warning
+// that doesn't already exist - a look-ahead for the drag indicator,
+// computed against a throwaway copy so it never touches real state.
 //
-// This checks two things, not just the dragged step's own prereq: dragging X
-// out from directly above its own dependent Y (order [X, Y] -> drag X below
-// Y) leaves X's own prereq perfectly satisfied wherever it lands, so a check
-// scoped to X alone reports "fine" right up until the drop, at which point Y
-// lights up amber - the indicator would have promised something the drop
-// didn't deliver, in the reassuring direction rather than the alarming one.
-// Comparing the hypothetical arrangement's total warn count against the real
-// order's count (dragBaselineWarnCount) catches that for roughly free, since
-// computeProgressionSteps(hypothetical) is already being computed anyway.
-//
-// A pure count comparison alone would miss a swap that trades one warn for a
-// different one (count unchanged, problem moved) - so this keeps the direct
-// "does the dragged step's own slot warn" check too, rather than replacing
-// it. Between the two, every count-changing case and every own-prereq case
-// is covered; only a same-count swap of *which other* step warns (not
-// involving the dragged step's own prereq at all) could still slip through,
-// and that's an existing-warn-swapping-to-a-different-existing-warn edge
-// case rare enough not to be worth a full "diff which steps changed" pass.
+// Checks two things: the dragged step's own slot, and whether the
+// hypothetical arrangement's total warn count exceeds the real order's
+// (dragBaselineWarnCount). The count check catches a case the direct check
+// alone would miss - dragging X out from above its dependent Y leaves X's
+// own prereq satisfied wherever it lands, but Y now warns instead. A rare
+// edge case (a same-count swap of *which other* step warns, not involving
+// the dragged step at all) can still slip through both checks; not worth a
+// full diff pass for that.
 function dragWouldIntroduceWarn(toIndex) {
   if (dragSrcIndex === null) return false;
   let insertAt = toIndex > dragSrcIndex ? toIndex - 1 : toIndex;
@@ -883,32 +834,24 @@ function classBadgeClass(s) {
   return slot >= 0 ? ` step-cat-slot${slot}` : "";
 }
 
-// One entry per waypoint (not just the row's own current one - the whole
-// point of a checkpoint like "Level 20" is being able to move something
-// INTO that phase of the plan, not just shuffle within whichever phase it
-// already happens to sit in), for the Move To popover's "[Section] -
-// top/bottom" options. Derived from computeProgressionTimeline's existing
-// divider/step interleaving (logic.js) rather than re-deriving section
-// boundaries from state.waypoints directly - timeline already has exactly
-// this grouping for the divider rendering above.
+// One entry per waypoint (not just the row's current section - moving
+// something INTO a different phase of the plan is the point), for the Move
+// To popover's "[Section] - top/bottom" options. Derived from
+// computeProgressionTimeline's divider/step interleaving rather than
+// re-deriving section boundaries from state.waypoints directly.
 //
-// Waypoints are anchored to cumulative points crossed, not list position
-// (see Waypoints' own design) - so a step's OWN cost, added on top of
-// whatever's already accumulated at wherever it lands, can push its
-// resulting cumulative past the very section boundary it's being placed
-// into, regardless of where in click-order it's inserted. movingStepCost
-// (the row's own s.stepCost) lets this actually account for that instead
-// of just placing it at a fixed boundary and hoping: for each section,
-// every possible insertion slot's baseline cumulative (the cumulative of
-// whatever currently sits immediately before that slot) is checked
-// against the section's own pts range, and "top"/"bottom" each resolve to
-// the best-fitting slot for that preference - "bottom" degrades toward
-// "as late as possible while still fitting" rather than the section's
-// literal last slot if that slot would overflow into the next section.
-// Slot baselines are monotonically non-decreasing deeper into a section
-// (costs are never negative), so if the very top slot doesn't fit, no
-// slot does - topFits/bottomFits are therefore always equal, and doubles
-// as "does this step fit in this section at all".
+// Waypoints are anchored to cumulative points, not list position, so a
+// step's own cost can push it past the section boundary it's being placed
+// into depending on where it lands. movingStepCost (s.stepCost) accounts
+// for that: for each section, every insertion slot's baseline cumulative
+// is checked against the section's pts range, and "top"/"bottom" resolve
+// to the best-fitting slot rather than the literal boundary - "bottom"
+// degrades to "as late as possible while still fitting" if the section's
+// last slot would overflow into the next one. Slot baselines are
+// monotonically non-decreasing deeper into a section (costs are never
+// negative), so if the top slot doesn't fit, none do - topFits and
+// bottomFits are therefore always equal, doubling as "does this step fit
+// in this section at all".
 function waypointSections(timeline, totalVisible, movingStepCost) {
   const sections = [];
   for (let i = 0; i < timeline.length; i++) {
@@ -962,12 +905,10 @@ function waypointSections(timeline, totalVisible, movingStepCost) {
 
 // The Move To popover's content for one row - every option (top/bottom of
 // list, each waypoint section's top/bottom, the position field) is
-// pre-resolved here into a concrete targetVisiblePos, so the click
-// handlers wired below need only one generic case (read data-target-pos,
-// call moveToVisiblePosition) rather than a type switch per option.
-// Section options are computed fresh per row (not shared across rows the
-// way the timeline itself is) since fit depends on THIS row's own
-// s.stepCost - see waypointSections.
+// pre-resolved into a concrete targetVisiblePos, so the click handlers
+// wired below need only one generic case rather than a type switch.
+// Section options are computed fresh per row since fit depends on this
+// row's own s.stepCost - see waypointSections.
 function moveMenuHtml(s, timeline, totalVisible) {
   const sections = waypointSections(timeline, totalVisible, s.stepCost);
   const items = [
@@ -995,29 +936,22 @@ function moveMenuHtml(s, timeline, totalVisible) {
 export function renderProgression() {
   el.undoLastBtn.disabled = !canUndo();
   // hasAnyOwned checks state.owned globally, not just the current
-  // progression list - owned can hold marks for classes outside the 3
-  // active slots, so this has to be set before (and independent of) the
+  // progression list, so this is set before (and independent of) the
   // empty-purchaseOrder early return below.
   el.clearOwnedBtn.disabled = !hasAnyOwned();
   // Same reasoning as the topbar's own tooltip (renderTopbar) - set ahead
-  // of every early return below so it stays accurate regardless of which
-  // branch this call takes, since inactive spending is independent of
+  // of every early return below, since inactive spending doesn't depend on
   // whether there's anything active to show right now.
   const inactiveSpent = spentOnInactiveClasses();
   el.otherClassesNote.classList.toggle("hidden", inactiveSpent === 0);
   el.otherClassesNote.textContent = inactiveSpent > 0
     ? ` ${inactiveSpent} more point${inactiveSpent === 1 ? "" : "s"} spent on other classes — see the Other Classes tab.`
     : "";
-  // The number this feature exists to answer: of what's actually been
-  // trained in-game vs. still to go. Lifetime-scoped (ownedPoints(), not a
-  // sum over just the active rows rendered below) to match spentPoints()'s
-  // own lifetime scope - an AA owned on a class you've since swapped away
-  // from is still real progress, and togoPts needs both sides of its
-  // subtraction on the same footing or it double-counts that AA as "still
-  // to go" despite already being trained. Set ahead of both early returns
-  // below (like clearOwnedBtn/otherClassesNote above), same reasoning:
-  // owned/to-go is a lifetime figure, independent of whether there's
-  // anything active to actually render as rows right now.
+  // Lifetime-scoped (ownedPoints(), not a sum over just the rows rendered
+  // below) to match spentPoints()'s own lifetime scope - an AA owned on a
+  // swapped-away class is still real progress, and togoPts needs both
+  // sides on the same footing or it double-counts that AA as "still to
+  // go". Set ahead of both early returns below, same reasoning as above.
   const ownedPts = ownedPoints();
   const togoPts = spentPoints() - ownedPts;
   el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
@@ -1032,11 +966,10 @@ export function renderProgression() {
   }
 
   // Only your current 3 classes' click history shows up here - a pick for
-  // a class you've since swapped away from (still fully intact, still
-  // counted in spentPoints()'s lifetime total) lives in the Other Classes
-  // tab instead, not mixed inline. Every step below this line is
-  // guaranteed active, so nothing downstream needs to branch on s.active
-  // anymore - it's always true.
+  // a swapped-away class (still fully intact, still counted in
+  // spentPoints()'s lifetime total) lives in the Other Classes tab
+  // instead. Every step below this line is guaranteed active, so nothing
+  // downstream needs to branch on s.active.
   const steps = computeProgressionSteps().filter((s) => s.active);
   if (!steps.length) {
     el.progressionContent.innerHTML = '<div class="empty">Nothing picked for your current 3 classes yet &mdash; your training order will appear here as you spend points. (Picks for other classes you\'ve used are in the Other Classes tab.)</div>';
@@ -1044,19 +977,16 @@ export function renderProgression() {
   }
   // 1-indexed position among the rows actually rendered, distinct from
   // s.index (the absolute state.purchaseOrder position, used everywhere
-  // reordering happens - drag, up/down arrows, Move To). An inactive
-  // entry still occupies a real purchaseOrder slot even though it's
-  // filtered out above, so s.index alone can show gaps in the visible
-  // step numbering (a 2-active/1-inactive sequence rendering "1, 3" with
-  // no visible "2") - visiblePos is what the step-num display and Move
-  // To's "position" field are actually counting.
+  // reordering happens). An inactive entry still occupies a real
+  // purchaseOrder slot even though it's filtered out above, so s.index
+  // alone can show gaps in the visible step numbering (a 2-active/1-inactive
+  // sequence rendering "1, 3" with no visible "2") - visiblePos is what
+  // step-num and Move To's "position" field actually count.
   steps.forEach((s, i) => { s.visiblePos = i + 1; });
 
   // computeProgressionTimeline tags each step with segmentColor (the color
-  // of the waypoint whose range it falls under, if any) - every colored
-  // waypoint's segment renders simultaneously, not just one selected at a
-  // time, since the point of color-coding is seeing the whole plan's zones
-  // at a glance.
+  // of the waypoint whose range it falls under) - every colored segment
+  // renders simultaneously, so the whole plan's zones show at a glance.
   const timeline = computeProgressionTimeline(steps);
   const htmlParts = timeline.map((entry) => {
     if (entry.type === "divider") {
@@ -1075,21 +1005,15 @@ export function renderProgression() {
     const segClass = s.segmentColor ? ` segment-color-${s.segmentColor}` : "";
     const stepDisp = s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
     // The running total blends in estimates the same way the topbar's own
-    // headline does (~N, blue, tooltip breakdown) once any step up to this
-    // point has an unconfirmed cost with a guess - see computeProgressionSteps
-    // for blendedCumulative. Plain and identical to s.cumulative until that
-    // first guessed step, so nothing changes visually for a build with no
-    // guesses at all.
+    // headline does, once any step up to this point has an unconfirmed
+    // cost with a guess (see computeProgressionSteps' blendedCumulative).
+    // Identical to s.cumulative until the first guessed step.
     const totalIsEstimate = s.blendedCumulative !== s.cumulative;
     const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCumulative - s.cumulative} estimated.` : "";
-    // Two independent, unrelated reasons a step can warn - reuses the exact
-    // same visual language (the row tint, the warn badge) for both rather
-    // than inventing a second one, since to the user both mean the same
-    // thing: "this step needs attention". prereqWarn is sequence-aware
-    // (computed above, per this exact click order); classCapWarn isn't (a
-    // step's own stepRank against today's cap, independent of position -
-    // see computeProgressionSteps). Concatenated rather than picked-one
-    // when both happen to apply to the same step.
+    // Two independent reasons a step can warn, sharing the same visual
+    // language since both mean "this step needs attention" to the user.
+    // prereqWarn is sequence-aware; classCapWarn isn't (stepRank vs.
+    // today's cap, independent of position). Concatenated when both apply.
     const warnTitles = [];
     if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
     if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
@@ -1122,20 +1046,14 @@ export function renderProgression() {
     if (!expanded) return row;
     const nextRank = s.stepRank + 1;
     const nextRawCost = s.aa.costs[s.stepRank];
-    // costDisplayScoped doesn't need an active slot the way costDisplay's
-    // catKey does (same reasoning as Browse - see scopeForBrowseLabel), so
-    // an inactive-class step still gets its estimate shown here even
-    // though its cost pill above stays plain (that one mirrors stepCost,
-    // which is real math forced to 0 for an inactive step regardless).
-    const nextDisp = s.category
-      ? costDisplay(s.category, s.idx, s.stepRank, nextRawCost)
-      : costDisplayScoped(s.scope, s.className, s.idx, s.stepRank, nextRawCost);
+    // steps is already filtered to active entries (see above), so
+    // s.category is always set here - no need for costDisplayScoped's
+    // fallback the way Browse/Other Classes need it.
+    const nextDisp = costDisplay(s.category, s.idx, s.stepRank, nextRawCost);
     const nextChip = nextDisp.isGuess
       ? ` <span class="confidence-chip tier-${nextDisp.confidence}" title="${escapeHtml(nextDisp.title)}">${nextDisp.confidence}</span>`
       : "";
-    const nextDescLookup = s.category
-      ? effectLookup(s.category, s.idx)
-      : effectLookupScoped(s.scope, s.className, s.idx);
+    const nextDescLookup = effectLookup(s.category, s.idx);
     return row + `<div class="next-rank-box progression-next-rank${nextDisp.isGuess ? " is-estimate" : ""}">
         <div class="next-rank-title">Next Rank (${nextRank}/${s.aa.ranks}) &middot; costs <b class="${nextDisp.isGuess ? "is-estimate" : ""}" title="${nextDisp.isGuess ? escapeHtml(nextDisp.title) : ""}">${nextDisp.text}</b> pt(s)${nextChip}</div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(s.aa.description, nextRank), nextRank, nextDescLookup)}</div>
@@ -1211,10 +1129,9 @@ export function renderProgression() {
       applyAttempt(attemptDecrement(category, idx));
     });
   });
-  // Toggles the owned watermark's boundary at this exact step: marking an
-  // unowned step owns it and everything below (you can't have actually
-  // trained rank 3 without ranks 1-2), unmarking an owned one drops the
-  // watermark to just below it, leaving anything still lower alone.
+  // Toggles the owned watermark at this step: marking an unowned step owns
+  // it and everything below it (you can't have rank 3 without ranks 1-2);
+  // unmarking an owned one drops the watermark to just below it.
   Array.from(el.progressionContent.querySelectorAll(".step-own")).forEach((btn) => {
     btn.addEventListener("click", () => {
       const scope = btn.getAttribute("data-scope");
@@ -1344,16 +1261,12 @@ export function undoLast() {
 }
 
 // An up/down arrow swaps a visible row with its next VISIBLE neighbor, not
-// literally the next array slot - since a class swap no longer wipes an
-// inactive class's entries (events.js), one can now sit between two active
-// rows in state.purchaseOrder with nothing rendered for it. A plain
-// index+dir adjacent swap would swap past it invisibly (moveEntry still
-// runs, but nothing about the visible list changes - a dead-feeling click).
-// Skipping to the next entry isEntryActive still counts, then reinserting
-// at THAT entry's own pre-removal index reproduces a plain adjacent swap
-// when there's nothing to skip, and correctly "jumps over" any inactive
-// run otherwise, leaving those entries' relative order among themselves
-// undisturbed - see moveEntry's own splice-out/splice-in semantics.
+// literally the next array slot - an inactive entry can sit between two
+// active rows in state.purchaseOrder with nothing rendered for it, and a
+// plain index+dir swap would swap past it invisibly (a dead-feeling click).
+// Skips to the next entry isEntryActive still counts, then reinserts at
+// that entry's pre-removal index - a plain adjacent swap when there's
+// nothing to skip, and a clean jump over any inactive run otherwise.
 function moveProgressionEntry(index, dir) {
   let target = index + dir;
   while (target >= 0 && target < state.purchaseOrder.length && !isEntryActive(state.purchaseOrder[target])) {
@@ -1369,18 +1282,14 @@ function moveProgressionEntry(index, dir) {
 }
 
 // Drag-and-drop reorder: pulls the entry at fromIndex out and reinserts it at
-// toIndex (an insertion point, i.e. state.purchaseOrder.length is valid and
-// means "at the end"). Unlike moveProgressionEntry's adjacent swap, this never
-// needs a same-AA guard, including for dragging one rank of an AA past its
-// own other rank (which the arrows explicitly block with a toast instead).
-// purchaseOrder entries only ever hold {scope, className, idx} - never a rank
-// number - so two occurrences of the same AA are structurally identical
-// objects, and computeProgressionSteps derives stepRank purely from an
-// entry's position among same-key entries. Dragging "rank 2" above "rank 1"
-// is therefore indistinguishable from having dragged "rank 1" instead: the
-// row you drop simply renders as rank 1 afterward. No corruption either way -
-// but this stops being true the moment an entry starts carrying its own rank,
-// so revisit this if that ever changes.
+// toIndex (an insertion point; state.purchaseOrder.length means "at the
+// end"). Unlike moveProgressionEntry's adjacent swap, this never needs a
+// same-AA guard, including for dragging one rank of an AA past its own
+// other rank. purchaseOrder entries hold {scope, className, idx}, never a
+// rank number, so two occurrences of the same AA are structurally
+// identical - dragging "rank 2" above "rank 1" just renders as rank 1
+// afterward, no corruption. Revisit this if an entry ever starts carrying
+// its own rank.
 function moveProgressionEntryTo(fromIndex, toIndex) {
   if (toIndex > fromIndex) toIndex -= 1; // account for the shift left after removal
   if (fromIndex === toIndex) return;
@@ -1391,25 +1300,19 @@ function moveProgressionEntryTo(fromIndex, toIndex) {
 // Move To (the "⋯" popover menu): the shared destination math for every
 // action in it (top/bottom of list, a waypoint section's top/bottom, the
 // position field) - each just computes a different targetVisiblePos
-// (1-indexed among active rows, matching s.visiblePos - see renderProgression)
-// and hands it here.
+// (1-indexed among active rows, matching s.visiblePos) and hands it here.
 //
 // Unlike moveProgressionEntryTo's pre-removal "insert before this absolute
 // index" convention, this returns a POST-removal absolute index, directly
-// usable as moveEntry's own toIdx with no further adjustment - simpler to
-// reason about correctly here since the target is expressed as "how many
-// OTHER active rows precede it" rather than "which row currently occupies
-// that slot" (the latter reads intuitively but is actually wrong for a
-// forward move: inserting before today's occupant of position P lands one
-// slot too early once the removal above it shifts things - the direction-
-// dependent bug this filter+count approach sidesteps entirely).
+// usable as moveEntry's toIdx - simpler to reason about since the target
+// is "how many other active rows precede it" rather than "which row
+// currently occupies that slot" (which is actually wrong for a forward
+// move, landing one slot too early once the removal shifts things).
 //
 // Walks purchaseOrder with fromIndex conceptually removed, counting only
-// active entries (isEntryActive) exactly like the up/down-arrow neighbor
-// skip - an inactive entry between two active ones must never count
-// toward "position" or interrupt the count, and its own relative position
-// among whatever's left is otherwise undisturbed by this, same guarantee
-// moveEntry's plain splice-out/splice-in already gives everywhere else.
+// active entries (isEntryActive), same as the up/down-arrow neighbor skip
+// - an inactive entry between two active ones never counts toward
+// "position" or interrupts the count.
 function absoluteIndexForVisiblePosition(fromIndex, targetVisiblePos) {
   if (targetVisiblePos <= 1) return 0;
   const withoutMoved = state.purchaseOrder.filter((_, i) => i !== fromIndex);
@@ -1435,18 +1338,12 @@ function moveToVisiblePosition(fromIndex, targetVisiblePos) {
 // (only progressionContent's innerHTML is replaced), so binding it there would
 // stack up a fresh listener on every render.
 //
-// Bound to progressionWrap, not progressionContent: progressionContent has no
-// padding/border/overflow of its own, so only the *last* row's bottom margin
-// collapses through it - its box ends exactly at the last row's bottom edge,
-// and everything below genuinely belongs to the scrollable progressionWrap
-// around it. Binding this to progressionContent instead would make the
-// fallback unreachable except in the ~8px margin strip right under the last
-// row - a strip that doesn't even exist post-collapse. isBelowLastRow's
-// remaining job here is filtering progressionWrap's own side padding and the
-// toolbar area above the rows, not inter-row gaps: a *middle* row's margin
-// does NOT collapse out, so the pointer over one of those still lands on
-// progressionContent (see the dedicated listener below), never reaching this
-// wrap-level handler at all.
+// Bound to progressionWrap, not progressionContent: progressionContent has
+// no padding/border/overflow of its own, so only the last row's bottom
+// margin collapses through it, and everything below genuinely belongs to
+// the scrollable wrap around it. A middle row's margin does NOT collapse
+// out, so the pointer over an inter-row gap lands on progressionContent
+// instead (see the dedicated listener below), never reaching this handler.
 function lastProgressionRow() {
   const rows = el.progressionContent.querySelectorAll(".progression-row");
   return rows.length ? rows[rows.length - 1] : null;
@@ -1569,17 +1466,11 @@ export function showToast(msg) {
   showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
 }
 
-// The list has grown enough (several versions, some with multi-paragraph
-// entries) that it routinely needs scrolling to read in full, and this
-// app's custom scrollbar (see the ::-webkit-scrollbar rules) is thin enough
-// - and, on some platforms/browsers, invisible until actively scrolling -
-// that a first-time viewer can miss it's there at all and mistake a
-// mid-sentence cutoff for the end of the list. updateChangelogFade adds a
-// bottom fade while there's more to scroll to, matching the "more content
-// below" convention, and removes it once actually scrolled to the end (or
-// if everything already fits with no scrolling needed at all - same check
-// covers both, since scrollTop+clientHeight >= scrollHeight is true either
-// way).
+// The changelog list routinely needs scrolling to read in full, and this
+// app's thin custom scrollbar can be easy to miss - a bottom fade signals
+// there's more below, and clears once actually scrolled to the end (or if
+// everything already fits with no scrolling needed - the same
+// scrollTop+clientHeight >= scrollHeight check covers both).
 function updateChangelogFade() {
   const el2 = el.changelogContent;
   const atBottom = el2.scrollTop + el2.clientHeight >= el2.scrollHeight - 1;

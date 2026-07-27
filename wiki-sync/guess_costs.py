@@ -223,7 +223,7 @@ def guess_for_entry(entry, reference_pool):
     return result
 
 
-def write_output(table, stats):
+def write_output(table):
     lines = []
     for idk in sorted(table.keys()):
         guesses = table[idk]
@@ -303,7 +303,7 @@ def main():
         for g in guesses.values():
             tier_counts[g["confidence"]] += 1
 
-    write_output(table, tier_counts)
+    write_output(table)
 
     print(f"Parsed {len(entries)} AA entries, {targets} have at least one undocumented cost")
     print(f"Reference pool: {len(reference_pool)} fully-known AAs "

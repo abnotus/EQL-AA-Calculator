@@ -329,7 +329,7 @@ const USER_CHANGELOG = [
 version: "1.8.1",
 date: "2026-07-28",
 items: [
-"New: a \"Move To\" button on each Progression row opens a quick-jump menu — top or bottom of the list, top or bottom of any waypoint section, or a specific position — for reordering a long build without dragging it row by row. If a step's own cost would push it past the section you're moving it into, it lands as close as it can while still staying inside that section instead of silently landing further along, and grays out if it can't fit there at all."
+"New: a \"Move To\" button on each Progression row opens a quick-jump menu — top or bottom of the list, top or bottom of any waypoint, or a specific position — for reordering a long build without dragging it row by row. If a step's own cost would push it past the waypoint you're aiming for, it lands as close as it can instead of overshooting, and grays out if it truly can't fit."
 ]
 },
 {
@@ -2522,15 +2522,11 @@ const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${se
 if (!expanded) return row;
 const nextRank = s.stepRank + 1;
 const nextRawCost = s.aa.costs[s.stepRank];
-const nextDisp = s.category
-? costDisplay(s.category, s.idx, s.stepRank, nextRawCost)
-: costDisplayScoped(s.scope, s.className, s.idx, s.stepRank, nextRawCost);
+const nextDisp = costDisplay(s.category, s.idx, s.stepRank, nextRawCost);
 const nextChip = nextDisp.isGuess
 ? ` <span class="confidence-chip tier-${nextDisp.confidence}" title="${escapeHtml(nextDisp.title)}">${nextDisp.confidence}</span>`
 : "";
-const nextDescLookup = s.category
-? effectLookup(s.category, s.idx)
-: effectLookupScoped(s.scope, s.className, s.idx);
+const nextDescLookup = effectLookup(s.category, s.idx);
 return row + `<div class="next-rank-box progression-next-rank${nextDisp.isGuess ? " is-estimate" : ""}">
         <div class="next-rank-title">Next Rank (${nextRank}/${s.aa.ranks}) &middot; costs <b class="${nextDisp.isGuess ? "is-estimate" : ""}" title="${nextDisp.isGuess ? escapeHtml(nextDisp.title) : ""}">${nextDisp.text}</b> pt(s)${nextChip}</div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(s.aa.description, nextRank), nextRank, nextDescLookup)}</div>
@@ -3135,9 +3131,12 @@ el.includeOwnedCheckbox.checked = false;
 el.exportModal.classList.remove("hidden");
 await regenerateExportContent();
 }
+let exportGeneration = 0;
 async function regenerateExportContent(focusText = true) {
+const generation = ++exportGeneration;
 const includeOwned = el.includeOwnedCheckbox.checked;
 const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
+if (generation !== exportGeneration) return;
 el.exportText.value = text;
 el.shareLinkInput.value = url;
 if (focusText) {

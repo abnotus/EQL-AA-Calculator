@@ -1,41 +1,22 @@
 // Stable per-AA keys, derived from name (not array position), used at the
 // state-persistence boundary: localStorage, exported build text, and share
-// links. Runtime code everywhere else still addresses AAs by their index into
-// AA_DATA — only saving/loading goes through here.
+// links. Runtime code elsewhere still addresses AAs by index into AA_DATA;
+// only saving/loading goes through here, since AA_DATA gets regenerated
+// from eqlwiki periodically and reordering would silently repoint an
+// index-based save at the wrong AA. Name keys survive reordering and
+// degrade gracefully (an unknown key is dropped) instead of resolving wrong.
 //
-// Why this exists: state.ranks and purchaseOrder used to store raw array
-// indexes directly. That's fine in memory, but AA_DATA gets regenerated from
-// eqlwiki periodically (see wiki-sync/), and a fresh scrape can reorder or
-// insert entries. An index saved against yesterday's ordering silently means
-// a different ability today — not an error, a wrong-but-plausible build. Name
-// keys survive reordering/insertion, and degrade gracefully (an unknown key
-// is just dropped) instead of resolving to the wrong AA.
+// aaIds.js is a separate, smaller append-only numeric id table used only
+// for the compact share/export format, where URL length matters;
+// localStorage keeps using name keys directly.
 //
-// One dependency: aaIds.js, the append-only numeric id table used only by
-// the compact share/export format (idForKey/entryForId below) — a smaller
-// alternative to the name keys for that one serialization target, where
-// URL length actually matters. localStorage keeps using name keys directly;
-// they don't need the extra translation layer since size isn't a concern
-// there.
-//
-// Otherwise no internal deps: reads the global AA_DATA (from data.js, loaded
-// before this runs) plus the frozen LEGACY_AA_ORDER snapshot below, which captures
-// AA_DATA's exact ordering (and, where needed to disambiguate a duplicate
-// name, its `auto` flag) as of 2026-07-09 — the last point before any AA
-// data was index-addressed. It exists only to translate old index-based
-// saves (from before this file existed) into name keys on load, and must
-// never be regenerated/updated after the fact, or it stops describing what
-// those old saves actually meant.
-//
-// Must also never be deleted, even once it feels obsolete. A legacy save
-// that migrates cleanly (nothing dropped, nothing to repair) is only
-// rewritten to v4 form on the user's next actual mutation (changeRank calls
-// saveLocal unconditionally) — state.js deliberately stopped persisting a
-// load-only migration by itself, so a quiet v3 save can sit in someone's
-// localStorage indefinitely without ever being upgraded on disk. This table
-// doesn't decay away as users' saves age out; assume it's load-bearing for
-// as long as this app has users with old saves, not just for a transition
-// period.
+// LEGACY_AA_ORDER is a frozen snapshot of AA_DATA's ordering as of
+// 2026-07-09, the last point before AA data was index-addressed. It exists
+// only to translate old index-based saves into name keys on load, must
+// never be regenerated, and must never be deleted even once it feels
+// obsolete — a legacy save that migrates cleanly isn't rewritten to v4
+// form until the user's next actual mutation, so an untouched old save can
+// sit in localStorage indefinitely without this table's help.
 
 import { AA_ID_TABLE } from "./aaIds.js";
 import { COST_GUESS_TABLE } from "./costGuesses.js";
@@ -102,14 +83,12 @@ function normalizeEntry(e) {
 
 // Stable key for position `idx` within `rawEntries` (name strings, or
 // {name, auto} objects where auto-ness needs to be explicit). A name that
-// doesn't repeat just gets its slug. A name that repeats is disambiguated by
-// auto-ness, not position: build_minify.py's invariant check guarantees
-// exactly one non-auto occurrence per repeated name within a category, so
-// that one gets the bare slug (nothing else can mean it), and any auto
-// occurrence(s) get -auto / -auto-2 / ... among themselves. This is the same
-// discriminator resolvePrereqTarget's duplicate-name tie-break uses (see
-// logic.js) — deriving from *content*, not array position, means reordering
-// the source data can't silently repoint an old save at the wrong AA.
+// doesn't repeat just gets its slug. A repeated name is disambiguated by
+// auto-ness, not position: build_minify.py's invariant guarantees exactly
+// one non-auto occurrence per repeated name, so that one gets the bare
+// slug, and any auto occurrence(s) get -auto / -auto-2 / ... among
+// themselves - the same discriminator resolvePrereqTarget's duplicate-name
+// tie-break uses (logic.js).
 function keyForEntryIdx(rawEntries, idx) {
   const entries = rawEntries.map(normalizeEntry);
   const entry = entries[idx];
@@ -210,13 +189,11 @@ export function entryForId(id) {
 }
 
 // (scope, className, aaIdx, rankIdx) -> a pattern-inferred cost estimate
-// for that one rank, or null. aaIdx picks WHICH AA (resolved through
-// keyForIdx, same identity keying as everything else here); rankIdx is the
-// position within THAT AA's own costs array (0-based) - a different axis
-// entirely, not an AA identity. Callers are expected to only ask this when
-// the real costs[rankIdx] is already known to be "?" (see logic.js's
-// costGuess) - this function itself doesn't check, it just answers "what
-// does costGuesses.js say about this exact slot, if anything".
+// for that one rank, or null. aaIdx picks the AA (via keyForIdx); rankIdx
+// is the position within that AA's own costs array - a different axis, not
+// identity. Callers are expected to only ask this when costs[rankIdx] is
+// already "?" (see logic.js's costGuess); this function doesn't check that
+// itself.
 export function costGuessFor(scope, className, aaIdx, rankIdx) {
   const key = keyForIdx(scope, className, aaIdx);
   if (!key) return null;

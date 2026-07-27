@@ -20,12 +20,10 @@ export const STORAGE_KEY = "eql_aa_builder_v1";
 // one plan, so it must survive switching between builds/slots/share links
 // untouched by any of that (see loadAndApplyOwned/saveOwned below).
 export const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
-// Bumped (v1 -> v2) when the banner's content changed enough to be worth
-// re-showing even to someone who already dismissed the old wording - a
-// flat "dismissed" flag has no notion of *which* text was dismissed, so
-// the only way to force a re-acknowledgment is a new key nobody's set yet.
-// v2 added the pattern-inferred cost estimate mention. v5 dropped the
-// "during beta" framing now that the tool isn't in beta anymore.
+// Bumped whenever the banner's content changes enough to be worth
+// re-showing to someone who already dismissed the old wording - a flat
+// "dismissed" flag has no notion of *which* text was dismissed, so a new
+// key is the only way to force a re-acknowledgment.
 export const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v5";
 // Which AAs are hidden from the tree/Browse decluttering views - a personal
 // display preference, not build data, so it lives in its own key rather
@@ -34,12 +32,11 @@ export const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v5";
 // same reasoning OWNED_STORAGE_KEY already established for a different kind
 // of "outside the plan" data. See isHidden/setHidden (logic.js).
 export const HIDDEN_STORAGE_KEY = "eql_aa_hidden_v1";
-// Every prior wording's dismiss flag, orphaned in a long-time user's
-// storage forever the moment a rewording bumps DISCLAIMER_DISMISSED_KEY -
-// nothing ever reads these again, they just sit there. Removed once on
-// boot (see cleanupStaleStorageKeys). A flat list, not derived from the
-// current version number: if a future v5 bump forgets to add v4 here, the
-// cost is a few stray bytes staying in storage, not a functional bug.
+// Every prior wording's dismiss flag, orphaned in storage forever the
+// moment a rewording bumps DISCLAIMER_DISMISSED_KEY. Removed once on boot
+// (see cleanupStaleStorageKeys). A flat list rather than derived from the
+// version number - if a bump forgets to add an entry here, the cost is a
+// few stray bytes, not a functional bug.
 const STALE_DISCLAIMER_KEYS = [
   "eql_aa_disclaimer_dismissed",
   "eql_aa_disclaimer_dismissed_v2",
@@ -72,40 +69,29 @@ export let state = {
   ranks: { general: {}, archetype: {}, special: {}, classes: {} },
   purchaseOrder: [], // [{ scope: 'general'|'archetype'|'special'|'class', className?: string, idx: number }, ...] in click order
   // Real-world "I've actually trained this" watermark, same shape as ranks
-  // (idx -> highest owned rank) and deliberately identity-keyed by
-  // scope/className rather than anything slot-relative, same reasoning as
-  // purchaseOrder entries - it shouldn't matter which of the 3 class slots
-  // a class currently occupies. Independent of ranks/purchaseOrder (the
-  // *plan*): owned tracks what's actually true in-game, which is why Reset
-  // Build keeps it by default instead of wiping it along with the plan, and
-  // why it's persisted under its own storage key (OWNED_STORAGE_KEY) rather
-  // than inside any one build's payload - loading a different build/slot/
-  // share link must never overwrite or wipe it, since it isn't part of "the
-  // build" at all. See loadAndApplyOwned/saveOwned.
+  // (idx -> highest owned rank), identity-keyed by scope/className rather
+  // than anything slot-relative, same reasoning as purchaseOrder. Independent
+  // of ranks/purchaseOrder (the plan): owned tracks what's actually true
+  // in-game, so Reset Build keeps it by default and it's persisted under
+  // its own key (OWNED_STORAGE_KEY) instead of any build's payload - see
+  // loadAndApplyOwned/saveOwned.
   owned: { general: {}, archetype: {}, special: {}, classes: {} },
-  // Same shape/identity-keying as owned (scope/className, not a slot-
-  // relative catKey - see getHiddenStore in logic.js), but a display
-  // preference rather than real-world truth: which AAs to leave out of the
-  // tree/Browse grids to declutter them. Persisted under its own key
-  // (HIDDEN_STORAGE_KEY), never part of the build payload/exports/share
-  // links - see loadAndApplyHidden/saveHidden below. isHidden/setHidden
-  // (logic.js) never actually suppress an AA with rank > 0 no matter what
-  // this holds; hiding only ever affects what's shown to browse, not what's
-  // been picked.
+  // Same shape/identity-keying as owned, but a display preference rather
+  // than real-world truth: which AAs to leave out of the tree/Browse grids.
+  // Persisted under its own key (HIDDEN_STORAGE_KEY), never part of the
+  // build payload/exports/share links - see loadAndApplyHidden/saveHidden.
+  // Never suppresses an AA with rank > 0, no matter what this holds.
   hiddenAAs: { general: {}, archetype: {}, special: {}, classes: {} },
   // Whether hidden AAs are shown anyway right now - a session-only view
   // toggle (not persisted, same as browseSearch/browseFilter), not part of
   // hiddenAAs itself.
   showHidden: false,
-  // Named point-total markers ({ pts, label, color }), sorted ascending by
-  // pts and deduped by pts. Unlike owned, these describe the PLAN itself ("get these
-  // by 75 pts" is a statement about this ordering), so they live inside the
-  // build payload/slots/share codes, not a separate global key. Anchored to
-  // a point total rather than a list position or step reference on purpose -
-  // a position would break under reorder/undo/reset the same way an
-  // AA-identity reference would; a point total just gets re-derived against
-  // whatever the current order happens to be, with zero interaction with
-  // moveEntry or any of its invariants.
+  // Named point-total markers ({ pts, label, color }), sorted ascending and
+  // deduped by pts. Unlike owned, these describe the PLAN itself, so they
+  // live inside the build payload/slots/share codes, not a separate key.
+  // Anchored to a point total rather than a list position or step reference
+  // - a position would break under reorder/undo/reset; a point total just
+  // gets re-derived against whatever the current order happens to be.
   waypoints: [],
   activeView: "calculator", // 'calculator' | 'browse' | 'summary' | 'progression'
   activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
@@ -305,18 +291,13 @@ export const WAYPOINT_COLORS = [
 ];
 const WAYPOINT_COLOR_KEYS = new Set(WAYPOINT_COLORS.map((c) => c.key));
 
-// Waypoints don't reference any AA identity (unlike ranks/purchaseOrder), so
-// there's no name-key resolution here - just validating/clamping untrusted
-// input from localStorage, a pasted build code, or a share link into the
-// { pts, label, color } shape state.waypoints actually uses. Accepts either
-// that verbose shape or the compact [pts, label, color] triple
-// exportImport.js's `w` field uses, so this one function can sanitize both
-// sources. Duplicate pts values collapse to the last one seen (an explicit
-// re-set should win over an earlier stale entry, not silently create two
-// markers at the same total). An unrecognized color (a stale/hand-edited
-// value, or a future palette entry an older client doesn't know) degrades
-// to no color rather than being kept as an opaque string render.js would
-// have no matching CSS class for.
+// Waypoints don't reference any AA identity, so there's no name-key
+// resolution here - just validating/clamping untrusted input (localStorage,
+// a pasted build code, or a share link) into the { pts, label, color }
+// shape state.waypoints uses. Accepts either that shape or the compact
+// [pts, label, color] triple exportImport.js's `w` field uses. Duplicate
+// pts values collapse to the last one seen; an unrecognized color (stale,
+// or a palette entry an older client doesn't know) degrades to no color.
 export function sanitizeWaypoints(list) {
   if (!Array.isArray(list)) return [];
   const byPts = new Map();
@@ -418,21 +399,16 @@ export function applyLoaded(loaded) {
       : deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.key === "string" ? e.key : null), (scope, cls, key) => idxForKey(scope, cls, key));
   }
   // owned is deliberately NOT handled here - it lives outside the build
-  // payload entirely now (see OWNED_STORAGE_KEY/loadAndApplyOwned) and must
-  // survive loading any build/slot/share link untouched, so applyLoaded
-  // never reads or writes state.owned regardless of whether `loaded` has an
-  // owned field (an old payload saved during this feature's brief window of
-  // embedding it there, or a share code that once carried it, both just get
-  // ignored here as an unrecognized extra field).
+  // payload entirely (see OWNED_STORAGE_KEY/loadAndApplyOwned) and must
+  // survive loading any build/slot/share link untouched. If `loaded` has
+  // an owned field anyway (an old payload, or a share code that once
+  // carried it), it's just ignored here as an unrecognized extra field.
   //
-  // Unlike ranks/purchaseOrder (left as-is if the field is simply missing -
-  // a malformed-partial-payload tolerance, not a deliberate merge), waypoints
-  // always get reset here, present or not - they ARE part of "the build"
-  // being loaded, same reasoning owned used to need before it moved to its
-  // own key: a build saved/shared before this feature has no waypoints
-  // field at all, and loading it must actually clear whatever waypoints the
-  // *previous* build in memory had, not silently carry them over onto an
-  // unrelated build that never had them.
+  // Unlike ranks/purchaseOrder (left as-is if the field is simply missing),
+  // waypoints always get reset here, present or not - they ARE part of
+  // "the build" being loaded. A build saved before this feature has no
+  // waypoints field at all, and loading it must actually clear whatever
+  // waypoints the previous build in memory had, not silently carry them over.
   state.waypoints = sanitizeWaypoints(loaded.waypoints);
   return { droppedRanks };
 }

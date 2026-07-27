@@ -234,42 +234,23 @@ const EFFECT_GUESS_TABLE = {
 
 // Stable per-AA keys, derived from name (not array position), used at the
 // state-persistence boundary: localStorage, exported build text, and share
-// links. Runtime code everywhere else still addresses AAs by their index into
-// AA_DATA — only saving/loading goes through here.
+// links. Runtime code elsewhere still addresses AAs by index into AA_DATA;
+// only saving/loading goes through here, since AA_DATA gets regenerated
+// from eqlwiki periodically and reordering would silently repoint an
+// index-based save at the wrong AA. Name keys survive reordering and
+// degrade gracefully (an unknown key is dropped) instead of resolving wrong.
 //
-// Why this exists: state.ranks and purchaseOrder used to store raw array
-// indexes directly. That's fine in memory, but AA_DATA gets regenerated from
-// eqlwiki periodically (see wiki-sync/), and a fresh scrape can reorder or
-// insert entries. An index saved against yesterday's ordering silently means
-// a different ability today — not an error, a wrong-but-plausible build. Name
-// keys survive reordering/insertion, and degrade gracefully (an unknown key
-// is just dropped) instead of resolving to the wrong AA.
+// aaIds.js is a separate, smaller append-only numeric id table used only
+// for the compact share/export format, where URL length matters;
+// localStorage keeps using name keys directly.
 //
-// One dependency: aaIds.js, the append-only numeric id table used only by
-// the compact share/export format (idForKey/entryForId below) — a smaller
-// alternative to the name keys for that one serialization target, where
-// URL length actually matters. localStorage keeps using name keys directly;
-// they don't need the extra translation layer since size isn't a concern
-// there.
-//
-// Otherwise no internal deps: reads the global AA_DATA (from data.js, loaded
-// before this runs) plus the frozen LEGACY_AA_ORDER snapshot below, which captures
-// AA_DATA's exact ordering (and, where needed to disambiguate a duplicate
-// name, its `auto` flag) as of 2026-07-09 — the last point before any AA
-// data was index-addressed. It exists only to translate old index-based
-// saves (from before this file existed) into name keys on load, and must
-// never be regenerated/updated after the fact, or it stops describing what
-// those old saves actually meant.
-//
-// Must also never be deleted, even once it feels obsolete. A legacy save
-// that migrates cleanly (nothing dropped, nothing to repair) is only
-// rewritten to v4 form on the user's next actual mutation (changeRank calls
-// saveLocal unconditionally) — state.js deliberately stopped persisting a
-// load-only migration by itself, so a quiet v3 save can sit in someone's
-// localStorage indefinitely without ever being upgraded on disk. This table
-// doesn't decay away as users' saves age out; assume it's load-bearing for
-// as long as this app has users with old saves, not just for a transition
-// period.
+// LEGACY_AA_ORDER is a frozen snapshot of AA_DATA's ordering as of
+// 2026-07-09, the last point before AA data was index-addressed. It exists
+// only to translate old index-based saves into name keys on load, must
+// never be regenerated, and must never be deleted even once it feels
+// obsolete — a legacy save that migrates cleanly isn't rewritten to v4
+// form until the user's next actual mutation, so an untouched old save can
+// sit in localStorage indefinitely without this table's help.
 
 const LEGACY_AA_ORDER = {
   "general": [
@@ -332,14 +313,12 @@ function normalizeEntry(e) {
 
 // Stable key for position `idx` within `rawEntries` (name strings, or
 // {name, auto} objects where auto-ness needs to be explicit). A name that
-// doesn't repeat just gets its slug. A name that repeats is disambiguated by
-// auto-ness, not position: build_minify.py's invariant check guarantees
-// exactly one non-auto occurrence per repeated name within a category, so
-// that one gets the bare slug (nothing else can mean it), and any auto
-// occurrence(s) get -auto / -auto-2 / ... among themselves. This is the same
-// discriminator resolvePrereqTarget's duplicate-name tie-break uses (see
-// logic.js) — deriving from *content*, not array position, means reordering
-// the source data can't silently repoint an old save at the wrong AA.
+// doesn't repeat just gets its slug. A repeated name is disambiguated by
+// auto-ness, not position: build_minify.py's invariant guarantees exactly
+// one non-auto occurrence per repeated name, so that one gets the bare
+// slug, and any auto occurrence(s) get -auto / -auto-2 / ... among
+// themselves - the same discriminator resolvePrereqTarget's duplicate-name
+// tie-break uses (logic.js).
 function keyForEntryIdx(rawEntries, idx) {
   const entries = rawEntries.map(normalizeEntry);
   const entry = entries[idx];
@@ -440,13 +419,11 @@ function entryForId(id) {
 }
 
 // (scope, className, aaIdx, rankIdx) -> a pattern-inferred cost estimate
-// for that one rank, or null. aaIdx picks WHICH AA (resolved through
-// keyForIdx, same identity keying as everything else here); rankIdx is the
-// position within THAT AA's own costs array (0-based) - a different axis
-// entirely, not an AA identity. Callers are expected to only ask this when
-// the real costs[rankIdx] is already known to be "?" (see logic.js's
-// costGuess) - this function itself doesn't check, it just answers "what
-// does costGuesses.js say about this exact slot, if anything".
+// for that one rank, or null. aaIdx picks the AA (via keyForIdx); rankIdx
+// is the position within that AA's own costs array - a different axis, not
+// identity. Callers are expected to only ask this when costs[rankIdx] is
+// already "?" (see logic.js's costGuess); this function doesn't check that
+// itself.
 function costGuessFor(scope, className, aaIdx, rankIdx) {
   const key = keyForIdx(scope, className, aaIdx);
   if (!key) return null;
@@ -480,7 +457,7 @@ const USER_CHANGELOG = [
     version: "1.8.1",
     date: "2026-07-28",
     items: [
-      "New: a \"Move To\" button on each Progression row opens a quick-jump menu — top or bottom of the list, top or bottom of any waypoint section, or a specific position — for reordering a long build without dragging it row by row. If a step's own cost would push it past the section you're moving it into, it lands as close as it can while still staying inside that section instead of silently landing further along, and grays out if it can't fit there at all."
+      "New: a \"Move To\" button on each Progression row opens a quick-jump menu — top or bottom of the list, top or bottom of any waypoint, or a specific position — for reordering a long build without dragging it row by row. If a step's own cost would push it past the waypoint you're aiming for, it lands as close as it can instead of overshooting, and grays out if it truly can't fit."
     ]
   },
   {
@@ -642,12 +619,10 @@ const STORAGE_KEY = "eql_aa_builder_v1";
 // one plan, so it must survive switching between builds/slots/share links
 // untouched by any of that (see loadAndApplyOwned/saveOwned below).
 const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
-// Bumped (v1 -> v2) when the banner's content changed enough to be worth
-// re-showing even to someone who already dismissed the old wording - a
-// flat "dismissed" flag has no notion of *which* text was dismissed, so
-// the only way to force a re-acknowledgment is a new key nobody's set yet.
-// v2 added the pattern-inferred cost estimate mention. v5 dropped the
-// "during beta" framing now that the tool isn't in beta anymore.
+// Bumped whenever the banner's content changes enough to be worth
+// re-showing to someone who already dismissed the old wording - a flat
+// "dismissed" flag has no notion of *which* text was dismissed, so a new
+// key is the only way to force a re-acknowledgment.
 const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v5";
 // Which AAs are hidden from the tree/Browse decluttering views - a personal
 // display preference, not build data, so it lives in its own key rather
@@ -656,12 +631,11 @@ const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v5";
 // same reasoning OWNED_STORAGE_KEY already established for a different kind
 // of "outside the plan" data. See isHidden/setHidden (logic.js).
 const HIDDEN_STORAGE_KEY = "eql_aa_hidden_v1";
-// Every prior wording's dismiss flag, orphaned in a long-time user's
-// storage forever the moment a rewording bumps DISCLAIMER_DISMISSED_KEY -
-// nothing ever reads these again, they just sit there. Removed once on
-// boot (see cleanupStaleStorageKeys). A flat list, not derived from the
-// current version number: if a future v5 bump forgets to add v4 here, the
-// cost is a few stray bytes staying in storage, not a functional bug.
+// Every prior wording's dismiss flag, orphaned in storage forever the
+// moment a rewording bumps DISCLAIMER_DISMISSED_KEY. Removed once on boot
+// (see cleanupStaleStorageKeys). A flat list rather than derived from the
+// version number - if a bump forgets to add an entry here, the cost is a
+// few stray bytes, not a functional bug.
 const STALE_DISCLAIMER_KEYS = [
   "eql_aa_disclaimer_dismissed",
   "eql_aa_disclaimer_dismissed_v2",
@@ -694,40 +668,29 @@ let state = {
   ranks: { general: {}, archetype: {}, special: {}, classes: {} },
   purchaseOrder: [], // [{ scope: 'general'|'archetype'|'special'|'class', className?: string, idx: number }, ...] in click order
   // Real-world "I've actually trained this" watermark, same shape as ranks
-  // (idx -> highest owned rank) and deliberately identity-keyed by
-  // scope/className rather than anything slot-relative, same reasoning as
-  // purchaseOrder entries - it shouldn't matter which of the 3 class slots
-  // a class currently occupies. Independent of ranks/purchaseOrder (the
-  // *plan*): owned tracks what's actually true in-game, which is why Reset
-  // Build keeps it by default instead of wiping it along with the plan, and
-  // why it's persisted under its own storage key (OWNED_STORAGE_KEY) rather
-  // than inside any one build's payload - loading a different build/slot/
-  // share link must never overwrite or wipe it, since it isn't part of "the
-  // build" at all. See loadAndApplyOwned/saveOwned.
+  // (idx -> highest owned rank), identity-keyed by scope/className rather
+  // than anything slot-relative, same reasoning as purchaseOrder. Independent
+  // of ranks/purchaseOrder (the plan): owned tracks what's actually true
+  // in-game, so Reset Build keeps it by default and it's persisted under
+  // its own key (OWNED_STORAGE_KEY) instead of any build's payload - see
+  // loadAndApplyOwned/saveOwned.
   owned: { general: {}, archetype: {}, special: {}, classes: {} },
-  // Same shape/identity-keying as owned (scope/className, not a slot-
-  // relative catKey - see getHiddenStore in logic.js), but a display
-  // preference rather than real-world truth: which AAs to leave out of the
-  // tree/Browse grids to declutter them. Persisted under its own key
-  // (HIDDEN_STORAGE_KEY), never part of the build payload/exports/share
-  // links - see loadAndApplyHidden/saveHidden below. isHidden/setHidden
-  // (logic.js) never actually suppress an AA with rank > 0 no matter what
-  // this holds; hiding only ever affects what's shown to browse, not what's
-  // been picked.
+  // Same shape/identity-keying as owned, but a display preference rather
+  // than real-world truth: which AAs to leave out of the tree/Browse grids.
+  // Persisted under its own key (HIDDEN_STORAGE_KEY), never part of the
+  // build payload/exports/share links - see loadAndApplyHidden/saveHidden.
+  // Never suppresses an AA with rank > 0, no matter what this holds.
   hiddenAAs: { general: {}, archetype: {}, special: {}, classes: {} },
   // Whether hidden AAs are shown anyway right now - a session-only view
   // toggle (not persisted, same as browseSearch/browseFilter), not part of
   // hiddenAAs itself.
   showHidden: false,
-  // Named point-total markers ({ pts, label, color }), sorted ascending by
-  // pts and deduped by pts. Unlike owned, these describe the PLAN itself ("get these
-  // by 75 pts" is a statement about this ordering), so they live inside the
-  // build payload/slots/share codes, not a separate global key. Anchored to
-  // a point total rather than a list position or step reference on purpose -
-  // a position would break under reorder/undo/reset the same way an
-  // AA-identity reference would; a point total just gets re-derived against
-  // whatever the current order happens to be, with zero interaction with
-  // moveEntry or any of its invariants.
+  // Named point-total markers ({ pts, label, color }), sorted ascending and
+  // deduped by pts. Unlike owned, these describe the PLAN itself, so they
+  // live inside the build payload/slots/share codes, not a separate key.
+  // Anchored to a point total rather than a list position or step reference
+  // - a position would break under reorder/undo/reset; a point total just
+  // gets re-derived against whatever the current order happens to be.
   waypoints: [],
   activeView: "calculator", // 'calculator' | 'browse' | 'summary' | 'progression'
   activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
@@ -927,18 +890,13 @@ const WAYPOINT_COLORS = [
 ];
 const WAYPOINT_COLOR_KEYS = new Set(WAYPOINT_COLORS.map((c) => c.key));
 
-// Waypoints don't reference any AA identity (unlike ranks/purchaseOrder), so
-// there's no name-key resolution here - just validating/clamping untrusted
-// input from localStorage, a pasted build code, or a share link into the
-// { pts, label, color } shape state.waypoints actually uses. Accepts either
-// that verbose shape or the compact [pts, label, color] triple
-// exportImport.js's `w` field uses, so this one function can sanitize both
-// sources. Duplicate pts values collapse to the last one seen (an explicit
-// re-set should win over an earlier stale entry, not silently create two
-// markers at the same total). An unrecognized color (a stale/hand-edited
-// value, or a future palette entry an older client doesn't know) degrades
-// to no color rather than being kept as an opaque string render.js would
-// have no matching CSS class for.
+// Waypoints don't reference any AA identity, so there's no name-key
+// resolution here - just validating/clamping untrusted input (localStorage,
+// a pasted build code, or a share link) into the { pts, label, color }
+// shape state.waypoints uses. Accepts either that shape or the compact
+// [pts, label, color] triple exportImport.js's `w` field uses. Duplicate
+// pts values collapse to the last one seen; an unrecognized color (stale,
+// or a palette entry an older client doesn't know) degrades to no color.
 function sanitizeWaypoints(list) {
   if (!Array.isArray(list)) return [];
   const byPts = new Map();
@@ -1040,21 +998,16 @@ function applyLoaded(loaded) {
       : deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.key === "string" ? e.key : null), (scope, cls, key) => idxForKey(scope, cls, key));
   }
   // owned is deliberately NOT handled here - it lives outside the build
-  // payload entirely now (see OWNED_STORAGE_KEY/loadAndApplyOwned) and must
-  // survive loading any build/slot/share link untouched, so applyLoaded
-  // never reads or writes state.owned regardless of whether `loaded` has an
-  // owned field (an old payload saved during this feature's brief window of
-  // embedding it there, or a share code that once carried it, both just get
-  // ignored here as an unrecognized extra field).
+  // payload entirely (see OWNED_STORAGE_KEY/loadAndApplyOwned) and must
+  // survive loading any build/slot/share link untouched. If `loaded` has
+  // an owned field anyway (an old payload, or a share code that once
+  // carried it), it's just ignored here as an unrecognized extra field.
   //
-  // Unlike ranks/purchaseOrder (left as-is if the field is simply missing -
-  // a malformed-partial-payload tolerance, not a deliberate merge), waypoints
-  // always get reset here, present or not - they ARE part of "the build"
-  // being loaded, same reasoning owned used to need before it moved to its
-  // own key: a build saved/shared before this feature has no waypoints
-  // field at all, and loading it must actually clear whatever waypoints the
-  // *previous* build in memory had, not silently carry them over onto an
-  // unrelated build that never had them.
+  // Unlike ranks/purchaseOrder (left as-is if the field is simply missing),
+  // waypoints always get reset here, present or not - they ARE part of
+  // "the build" being loaded. A build saved before this feature has no
+  // waypoints field at all, and loading it must actually clear whatever
+  // waypoints the previous build in memory had, not silently carry them over.
   state.waypoints = sanitizeWaypoints(loaded.waypoints);
   return { droppedRanks };
 }
@@ -1124,15 +1077,9 @@ function costNum(c) {
 }
 
 function escapeHtml(str) {
-  // '&apos;' (not the numeric '&#39;') deliberately - highlightRankValue
-  // below re-parses THIS function's own output for slash-separated
-  // progressions, and '&#39;' contains a digit pair ("39") that a
-  // progression regex immediately abutting an apostrophe could pull in as
-  // a phantom leading slot, misaligning every rank index by one. No
-  // current description has that exact adjacency, but '&apos;' is
-  // digit-free and just as valid in HTML5, so the entire divergence class
-  // is closed rather than guarded against for the one input that's been
-  // checked.
+  // '&apos;' not '&#39;' — highlightRankValue re-parses this output for
+  // slash-separated progressions, and '&#39;' embeds a digit pair ("39")
+  // that could be misread as a phantom rank slot next to an apostrophe.
   return String(str == null ? "" : str)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
@@ -1143,11 +1090,8 @@ function iconLetter(name) {
 }
 
 // Builds the tooltip text for a guess object ({value, confidence, basedOn,
-// interpolated, manual}) - identical phrasing regardless of which domain
-// the guess came from (a cost or an effect magnitude both read fine with
-// this wording), so both formatGuessDisplay (render.js, per-rank costs) and
-// highlightRankValue (below, effect values embedded in description text)
-// share this one implementation instead of drifting apart.
+// interpolated, manual}). Shared by formatGuessDisplay (render.js, costs)
+// and highlightRankValue (below, effect values) so both read the same.
 function guessTitle(guess) {
   if (guess.manual) return `Estimated (very low confidence) — hand-picked pending wiki confirmation, not derived from other AAs. Not confirmed on the wiki.`;
   if (guess.interpolated) return `Estimated (${guess.confidence} confidence) — no comparable AA found, interpolated between this AA's own known ranks. Not confirmed on the wiki.`;
@@ -1155,17 +1099,12 @@ function guessTitle(guess) {
 }
 
 // Highlights the value matching the current rank inside slash-separated
-// progressions in a description, e.g. "20/40/60%" at rank 2 ->
-// "20/<mark>40</mark>/60%" - and, if guessLookup is given, substitutes a
-// pattern-inferred estimate for any "?" slot it has a guess for (styled
-// like every other guess in the app: is-estimate + tier-X, with a
-// tooltip), whether or not that slot happens to also be the current rank.
-// guessLookup(progIdx, rankIdx) -> guess object or null; progIdx counts
-// which progression this is within the description, in order of
-// appearance (a description can hold more than one - see effectGuesses.js).
-// rank may be falsy/0 (no current-rank bolding at all, e.g. Browse's
-// rank-agnostic reference view) while guessLookup still runs - the two are
-// independent, unlike the old version where no rank meant no work at all.
+// progressions, e.g. "20/40/60%" at rank 2 -> "20/<mark>40</mark>/60%".
+// If guessLookup is given, also substitutes a pattern-inferred estimate
+// for any "?" slot — independent of rank, so it still runs when rank is
+// falsy/0 (Browse's rank-agnostic view). guessLookup(progIdx, rankIdx) ->
+// guess or null; progIdx counts progressions in order of appearance (a
+// description can hold more than one — see effectGuesses.js).
 function highlightRankValue(text, rank, guessLookup) {
   const escaped = escapeHtml(text);
   if (!guessLookup && (!rank || rank < 1)) return escaped;
@@ -1218,12 +1157,9 @@ function aaMatchesQuery(aa, query) {
 }
 
 // Count of AAs in a category matching the current search, for tab badges.
-// Must apply the exact same hidden-declutter exclusion renderTree/
-// renderBrowse do (isHidden(catKey, idx) forward-references it below - a
-// hoisted function declaration, safe to call from here) - otherwise a
-// hidden AA's match would inflate a tab's badge count while the tab itself
-// shows nothing for it, contradicting the decision that hiding suppresses
-// search everywhere, not just in the grid itself.
+// Must exclude hidden AAs the same way renderTree/renderBrowse do, or a
+// hidden match would inflate a badge while the tab itself shows nothing
+// for it.
 function countMatches(catKey, query) {
   if (!query || !query.trim()) return 0;
   return getList(catKey).filter((aa, idx) => {
@@ -1263,14 +1199,15 @@ function getList(catKey) {
   return AA_DATA[catKey] || [];
 }
 
-// Auto-granted AAs (0-cost on the wiki) are trained automatically as the character levels, no points spent.
-// The wiki documents a single unlock level per ability, not per-rank breakpoints, so once unlocked these
-// sit at max rank rather than trickling in one rank at a time.
+// Auto-granted AAs (0-cost on the wiki) are trained automatically as the
+// character levels — the wiki documents one unlock level, not per-rank
+// breakpoints, so these sit at max rank once unlocked rather than
+// trickling in.
 //
-// A separate, rarer pattern is `autoRanks: N` — only the first N ranks are free
-// (e.g. Symphonic Aura: rank 1 is granted for free, rank 2+ cost real points).
-// effectiveRank is the greater of the free baseline and whatever's been manually
-// purchased, so the free rank(s) never need a purchaseOrder entry of their own.
+// `autoRanks: N` is rarer: only the first N ranks are free (e.g. Symphonic
+// Aura's rank 1 is free, rank 2+ cost points). effectiveRank returns the
+// greater of the free baseline and whatever's been purchased, so the free
+// ranks never need their own purchaseOrder entry.
 function effectiveRank(catKey, idx) {
   const { scope, className } = categoryToScopeClassName(catKey);
   return effectiveRankScoped(scope, className, idx);
@@ -1283,16 +1220,11 @@ function effectiveRank(catKey, idx) {
 function effectiveRankScoped(scope, className, idx) {
   const list = scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
   const aa = list[idx];
-  // An auto-granted (or partially-auto, autoRanks) AA's free portion only
-  // actually applies while its class is one of the 3 you're currently
-  // playing - it's a level-gated freebie tied to actively running that
-  // class, not a standing investment like a manually-trained rank (which
-  // DOES persist while inactive - see the Other Classes tab). Without this
-  // gate, effectiveRank's delegation below is unaffected (a catKey's class
-  // is always active by construction), but a direct scoped call for a
-  // genuinely inactive class would otherwise report an auto AA as "picked"
-  // despite it never having been purchased or actually granted while that
-  // class isn't the one being played.
+  // An auto-granted AA's free portion only applies while its class is
+  // active — it's a level-gated freebie, not a standing investment like a
+  // manually-trained rank (which persists while inactive; see Other
+  // Classes). Without this gate, a scoped call for an inactive class would
+  // report the AA as "picked" despite never being granted.
   const classActive = scope !== "class" || state.selectedClasses.includes(className);
   if (aa && aa.auto) {
     const levelReq = parseInt(aa.levelReq, 10) || 1;
@@ -1309,13 +1241,10 @@ function effectiveRankScoped(scope, className, idx) {
 }
 
 // The static, level-independent count of an autoRanks AA's free ranks -
-// unlike autoFloor below, this doesn't check state.charLevel, because it's
-// used to reconcile purchaseOrder entry counts against a held rank
-// (reconcilePurchaseOrderCounts, computeProgressionSteps, performReset),
-// where the question is "how many of these ranks never went through
-// purchaseOrder at all" rather than "what can currently be bought/refunded
-// down to" - those two questions coincide most of the time but diverge if
-// charLevel changes after the free ranks were already granted.
+// unlike autoFloor below, this ignores state.charLevel. Used to reconcile
+// purchaseOrder counts against a held rank (how many ranks never went
+// through purchaseOrder), which can diverge from "what's currently
+// buyable" if charLevel changes after the free ranks were granted.
 function autoRanksOffset(aa) {
   return aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
 }
@@ -1331,12 +1260,10 @@ function getRanksStore(catKey) {
 }
 
 // Unlike getRanksStore, keyed by scope/className directly rather than a
-// slot-relative catKey - owned status is about the AA's real identity, not
-// which of the 3 slots a class currently occupies (same reasoning
-// purchaseOrder entries already use, and the same bug class the undo-after-
-// class-swap fix closed for "add" records: a slot key means "whatever's in
-// this slot right now", which stops meaning the class it meant when this was
-// set the moment slots get rearranged).
+// slot-relative catKey — owned status is about the AA's real identity, not
+// which slot a class currently occupies (same reasoning purchaseOrder
+// entries use; a slot key stops meaning the same class once slots are
+// rearranged).
 function getOwnedStore(scope, className) {
   if (scope === "class") {
     if (!state.owned.classes[className]) state.owned.classes[className] = {};
@@ -1350,19 +1277,16 @@ function ownedRank(scope, className, idx) {
 }
 
 // Pure state mutation, same spirit as changeRank/moveEntry: sets the owned
-// watermark for one AA and records enough to undo it. Like changeRank, the
-// caller is responsible for the rank actually making sense (Progression's
-// toggle only ever asks for "this step's rank" or "one below it" - see
-// render.js - so this doesn't independently re-derive or clamp against the
-// AA's own rank count the way changeRank does for a purchase).
+// watermark for one AA and records enough to undo it. Unlike changeRank,
+// doesn't clamp against the AA's rank count — the caller (Progression's
+// toggle) is responsible for passing a sane value.
 function setOwnedRank(scope, className, idx, rank) {
   const store = getOwnedStore(scope, className);
   const from = store[idx] || 0;
   if (rank <= 0) delete store[idx]; else store[idx] = rank;
   lastMutation = { type: "own", scope, className, idx, from, to: rank };
-  // Owned persists to its own storage key (see state.js), not the build
-  // payload saveLocal writes - nothing about ranks/purchaseOrder changed
-  // here, so saveLocal itself has nothing new to persist.
+  // Owned persists to its own storage key (state.js), not the build
+  // payload saveLocal writes — nothing here touches ranks/purchaseOrder.
   saveOwned();
 }
 
@@ -1403,45 +1327,38 @@ function setHidden(catKey, idx, hidden) {
   setHiddenScoped(scope, className, idx, hidden);
 }
 
-// Whether state.hiddenAAs holds anything at all, across every scope/class -
-// used to hide the "Show Hidden" toggle entirely when there's nothing for
-// it to reveal (same spirit as hasAnyOwned/canUndo).
+// Whether state.hiddenAAs holds anything at all, across every scope/class —
+// hides the "Show Hidden" toggle entirely when there's nothing to reveal.
 function hasAnyHidden() {
   const h = state.hiddenAAs;
   if (Object.keys(h.general).length || Object.keys(h.archetype).length || Object.keys(h.special).length) return true;
   return Object.keys(h.classes).some((className) => Object.keys(h.classes[className]).length > 0);
 }
 
-// Whether state.owned holds anything at all, across every scope/class - not
-// just what's visible in the current 3 class slots or current progression,
-// since owned is global. Used to disable the standalone "Clear Owned"
-// control when there's nothing for it to do (same spirit as canUndo below).
+// Whether state.owned holds anything at all, across every scope/class —
+// owned is global, not scoped to the current 3 slots. Disables the
+// standalone "Clear Owned" control when there's nothing to do.
 function hasAnyOwned() {
   const o = state.owned;
   if (Object.keys(o.general).length || Object.keys(o.archetype).length || Object.keys(o.special).length) return true;
   return Object.keys(o.classes).some((className) => Object.keys(o.classes[className]).length > 0);
 }
 
-// Wipes owned entirely - the standalone counterpart to performReset's
+// Wipes owned entirely — the standalone counterpart to performReset's
 // clearOwnedToo option, for clearing real-world progress without touching
-// the plan at all (the reverse of what Reset Build's checkbox can express,
-// which only ever clears owned alongside the plan). A bulk wipe like this
-// isn't something the single-level own-mutation undo can represent (it only
-// ever records one AA's watermark), so this is deliberately not undoable -
-// the confirm before calling this is the only safety net, same as Reset
-// Build's own destructive actions.
+// the plan. Not undoable (the single-level undo only records one AA's
+// watermark at a time); the confirm before calling this is the safety net.
 function clearAllOwned() {
   state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
   lastMutation = null;
   saveOwned();
 }
 
-// Sets (or replaces, if one already exists at this exact total) a named
-// point-total marker. Plan annotation, not a plan mutation - like
-// expandedSteps in render.js, this deliberately doesn't touch lastMutation,
-// so adding/removing a waypoint never clobbers (or gets clobbered by) an
-// unrelated pending Undo Last. Returns false without changing anything if
-// pts isn't a valid non-negative number.
+// Sets (or replaces, if one exists at this exact total) a named point-total
+// marker. Plan annotation, not a plan mutation — deliberately doesn't touch
+// lastMutation, so it never clobbers (or is clobbered by) a pending Undo
+// Last. Returns false without changing anything if pts isn't a valid
+// non-negative number.
 function addOrUpdateWaypoint(pts, label, color) {
   const n = parseInt(pts, 10);
   if (!Number.isFinite(n) || n < 0) return false;
@@ -1479,13 +1396,10 @@ function categoryToScopeClassName(category) {
 }
 
 // A pattern-inferred cost estimate for rank rankIdx of the AA at
-// (catKey, idx), or null. Only ever meaningful to call when the AA's real
-// costs[rankIdx] is "?" — callers check that themselves (render.js does,
-// right where it already has both the AA and the rank in hand), since this
-// function has no way to know which string produced the miss and
-// shouldn't guess about that either. See costGuesses.js for the guarantee
-// that a real confirmed value always wins: nothing here or upstream ever
-// substitutes a guess into costNum()/spentPoints() — purely a display hint.
+// (catKey, idx), or null. Only meaningful when the AA's real
+// costs[rankIdx] is "?" — callers check that themselves. Purely a display
+// hint: nothing here or upstream ever substitutes a guess into
+// costNum()/spentPoints().
 function costGuess(catKey, idx, rankIdx) {
   const { scope, className } = categoryToScopeClassName(catKey);
   return costGuessFor(scope, className, idx, rankIdx);
@@ -1553,28 +1467,21 @@ function popLastPurchase(category, idx) {
 }
 
 // Reset Build, but selective: wipes every planned pick down to its owned
-// watermark instead of to zero, unless clearOwnedToo also wipes owned itself.
-// Auto-granted AAs need no special handling either way - they never have a
-// ranks/purchaseOrder entry in the first place (attemptIncrement refuses to
-// touch one), so there's nothing here to trim for them.
+// watermark instead of to zero, unless clearOwnedToo also wipes owned.
+// Auto-granted AAs need no handling here — they never get a
+// ranks/purchaseOrder entry in the first place.
 function performReset(clearOwnedToo) {
-  // Trims each currently-planned rank down to the min of its owned watermark
-  // and what's actually planned - never up. Owned can legitimately exceed
-  // the current plan (mark rank 2 owned, then refund the plan back to rank
-  // 1 - replanning below something you've already trained in-game is fine,
-  // and nothing about that touches owned), so capping against the AA's max
-  // rank instead of its current planned rank would let Reset re-inflate a
-  // plan the user deliberately lowered. An AA with no ranks entry at all
-  // (owned but not currently planned) is simply never visited here, so
-  // Reset never adds a pick that isn't already part of the plan either.
+  // Trims each planned rank down to min(owned, planned), never up. Owned
+  // can legitimately exceed the plan (e.g. refund below an already-trained
+  // rank), so capping against owned rather than the AA's max rank stops
+  // Reset from re-inflating a plan the user deliberately lowered. An AA
+  // with no ranks entry (owned but not planned) is never visited, so
+  // Reset never adds a pick that wasn't already part of the plan.
   //
   // A kept rank at or below the AA's free autoRanks floor is dropped
-  // entirely rather than kept at that value - changeRank's own convention
-  // (see its floor-clearing comment) is that a ranks-store entry only
-  // exists for ranks actually purchased beyond the free floor, and
-  // reconcilePurchaseOrderCounts' expected-entry-count check assumes the
-  // same. Keeping a phantom floor-value entry here would violate that
-  // invariant the moment reconcilePurchaseOrderCounts next runs.
+  // entirely rather than stored at that value, matching changeRank's own
+  // convention that a ranks-store entry only exists for ranks purchased
+  // beyond the free floor — reconcilePurchaseOrderCounts assumes the same.
   function trimmedRanks(ranksStore, ownedStore, list) {
     const kept = {};
     Object.keys(ranksStore).forEach((idxStr) => {
@@ -1602,12 +1509,10 @@ function performReset(clearOwnedToo) {
   });
 
   // Rebuild purchaseOrder to match: keep only the first N entries per AA
-  // (N = the rank just kept above, minus its free autoRanks floor - entries
-  // represent purchases beyond that floor, same accounting
-  // reconcilePurchaseOrderCounts uses), in their original relative order -
-  // the owned portion's progression history survives intact this way,
-  // rather than being wiped and silently re-synthesized in some arbitrary
-  // order.
+  // (N = the kept rank minus its free autoRanks floor, same accounting
+  // reconcilePurchaseOrderCounts uses), in original relative order — so the
+  // owned portion's purchase history survives intact instead of being
+  // wiped and re-synthesized in arbitrary order.
   const remaining = {};
   ["general", "archetype", "special"].forEach((scope) => {
     const list = AA_DATA[scope] || [];
@@ -1638,12 +1543,11 @@ function performReset(clearOwnedToo) {
   state.selectedNode = null;
   lastMutation = null;
   // Belt-and-suspenders: the trimming above should already leave
-  // ranks/purchaseOrder in sync, but this is the invariant's real enforcer
-  // (see its own comment) and cheap enough to just always run here too.
+  // ranks/purchaseOrder in sync, but this is cheap enough to just always run.
   reconcilePurchaseOrderCounts();
   saveLocal();
-  // Only clearOwnedToo actually mutates state.owned - saveOwned unconditionally
-  // anyway rather than adding a branch that could drift from what's above.
+  // Only clearOwnedToo actually mutates state.owned - saveOwned runs
+  // unconditionally anyway, rather than adding a branch that could drift.
   saveOwned();
 }
 
@@ -1661,15 +1565,12 @@ function sumRealCost(list, store) {
 }
 
 // A genuine lifetime total: every point ever spent, across every class
-// you've ever picked - not just the 3 currently active slots. A class
-// swap no longer wipes state.ranks.classes[className] (see events.js), so
-// this walks Object.keys(state.ranks.classes) directly rather than going
-// through AA_CATEGORY_KEYS/getList, the same scope/className-direct
-// pattern reconcilePurchaseOrderCounts already uses. Progression's own
-// running total deliberately does NOT do this (see computeProgressionSteps'
-// active-gated stepCost) - the two are allowed to diverge, same as this
-// number already diverges from itself when an estimate is blended in; see
-// renderTopbar's tooltip for how that split is surfaced.
+// you've ever picked, not just the 3 active slots. Walks
+// Object.keys(state.ranks.classes) directly rather than AA_CATEGORY_KEYS/
+// getList, since a class swap no longer wipes an inactive class's ranks.
+// Progression's own running total deliberately stays active-only (see
+// computeProgressionSteps' stepCost) — the two numbers are allowed to
+// diverge; renderTopbar's tooltip surfaces the split.
 function spentPoints() {
   let total = sumRealCost(AA_DATA.general, state.ranks.general)
     + sumRealCost(AA_DATA.archetype, state.ranks.archetype)
@@ -1680,35 +1581,28 @@ function spentPoints() {
   return total;
 }
 
-// Real points spent on one specific class alone, active or not - the Other
-// Classes tab's per-class subtotal. Not "spentPoints() minus the active
-// classes" since that would also need to subtract general/archetype/
-// special; simpler to just sum the one class directly with the same
-// sumRealCost helper spentPoints() itself uses.
+// Real points spent on one specific class alone, active or not — the
+// Other Classes tab's per-class subtotal. Sums the one class directly
+// with sumRealCost rather than deriving it from spentPoints().
 function spentForClass(className) {
   return sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className] || {});
 }
 
-// Sum of spentForClass across every class NOT currently active - the slice
-// of spentPoints()'s lifetime total that lives "elsewhere" right now.
-// Surfaced in the topbar's tooltip and Progression's toolbar note so the
-// gap between this number and Progression's own active-only running total
-// is legible in the moment it first applies, not left as a silent
-// divergence someone has to notice on their own.
+// Sum of spentForClass across every class NOT currently active — the
+// slice of spentPoints()'s lifetime total that lives "elsewhere" right
+// now. Surfaced in the topbar tooltip and Progression's toolbar note so
+// the gap vs. Progression's active-only total is legible, not silent.
 function spentOnInactiveClasses() {
   return Object.keys(state.ranks.classes)
     .filter((className) => !state.selectedClasses.includes(className))
     .reduce((sum, className) => sum + spentForClass(className), 0);
 }
 
-// Lifetime total of points marked owned, across every class ever picked -
-// mirrors spentPoints()'s own lifetime scope, for the exact reason that
-// matters: Progression's "owned / to go" split (renderProgression) is
-// spentPoints() minus this, and both sides of that subtraction need the
-// same scope or an AA owned on a class you've since swapped away from
-// would silently inflate "still to go" by its own cost, despite already
-// being trained. state.owned is the same shape as state.ranks (idx -> held
-// watermark), so sumRealCost works on it unchanged.
+// Lifetime total of points marked owned, across every class ever picked —
+// mirrors spentPoints()'s own lifetime scope. Progression's "owned / to
+// go" split is spentPoints() minus this; both sides need the same scope
+// or an AA owned on a swapped-away class would inflate "still to go"
+// despite already being trained.
 function ownedPoints() {
   let total = sumRealCost(AA_DATA.general, state.owned.general)
     + sumRealCost(AA_DATA.archetype, state.owned.archetype)
@@ -1737,17 +1631,11 @@ function sumEstimatedExtra(scope, className, list, store) {
 }
 
 // How much higher spentPoints() would probably be if every purchased rank
-// with an unconfirmed real cost ("?") actually cost what its pattern-
-// inferred guess says, instead of the 0 costNum() gives it. Purely
-// informational, same guarantee as costGuess/costDisplay everywhere else:
-// this number is never added into spentPoints() itself, never used for an
-// afford check, never persisted - the topbar shows it as a separate
-// "~N incl. estimates" note precisely so it can't be mistaken for the real
-// total. Exists because a real total that never moves regardless of
-// guesses (working exactly as designed) still reads as "the guesses aren't
-// doing anything" at a glance, unless there's somewhere that shows what
-// they'd add up to. Same lifetime-total scope as spentPoints() (every
-// class ever picked, not just the 3 active ones) for the same reason.
+// with an unconfirmed cost ("?") cost what its pattern-inferred guess
+// says, instead of the 0 costNum() gives it. Purely informational — never
+// added into spentPoints(), never used for an afford check, never
+// persisted; the topbar shows it as a separate "~N incl. estimates" note.
+// Same lifetime-total scope as spentPoints() (every class ever picked).
 function estimatedExtraPoints() {
   let extra = sumEstimatedExtra("general", null, AA_DATA.general, state.ranks.general)
     + sumEstimatedExtra("archetype", null, AA_DATA.archetype, state.ranks.archetype)
@@ -1776,11 +1664,9 @@ function resolvePrereqTarget(text, sourceCategory) {
   const parsed = parsePrereqText(text);
   if (!parsed) return null;
   // Only the source's own category plus the shared trees — a class AA's
-  // prereq should never resolve against whichever *other* class happens to
-  // be sitting in another slot right now. Every prereq in the data today
-  // already points within its own class or at general/archetype/special;
-  // widening this to the other class slots would make resolution depend on
-  // which classes are currently selected, not just on the AA itself.
+  // prereq should never resolve against whichever *other* class happens
+  // to occupy another slot right now. Widening this would make resolution
+  // depend on which classes are currently selected, not just the AA.
   const order = [];
   const seen = new Set();
   [sourceCategory, "general", "archetype", "special"].forEach((k) => {
@@ -1793,11 +1679,10 @@ function resolvePrereqTarget(text, sourceCategory) {
       if (aa.name.toLowerCase() !== parsed.name.toLowerCase()) return;
       if (foundIdx < 0) { foundIdx = i; return; }
       // Duplicate name in this category (e.g. Cleric's two "Divine Aura"
-      // rows) — prefer whichever one actually costs points over an
-      // auto-granted one, since gating something behind an ability you get
-      // for free regardless isn't a meaningful prerequisite. Otherwise keep
-      // the first match, so resolution doesn't quietly flip if the data gets
-      // reordered by a resync.
+      // rows) — prefer whichever costs points over an auto-granted one,
+      // since gating behind a free ability isn't a meaningful prereq.
+      // Otherwise keep the first match, so resolution doesn't flip if the
+      // data gets reordered by a resync.
       if (list[foundIdx].auto && !aa.auto) foundIdx = i;
     });
     if (foundIdx >= 0) {
@@ -1818,14 +1703,11 @@ function resolvePrereqTarget(text, sourceCategory) {
   return null;
 }
 
-// Resolves a prereq, distinguishing *why* it failed: text that doesn't match
-// the expected "Requires X rank/level N" shape at all (a bug in our own
-// data.src.js entry, since we write every prereq string ourselves) from text
-// that parses fine but names a target that no longer exists under this
-// category (the target was renamed/removed, e.g. by a resync). Both must
-// block — an unverifiable prereq isn't the same as no prereq — but callers
-// want different wording, since one is "fix the data" and the other is
-// "the wiki/data changed."
+// Resolves a prereq, distinguishing *why* it failed: malformed text (a bug
+// in our own data.src.js, since we write every prereq string ourselves)
+// vs. text that parses fine but names a target that no longer exists
+// (renamed/removed by a resync). Both must block, but callers want
+// different wording — one says "fix the data", the other "the data changed."
 function tryResolvePrereq(text, sourceCategory) {
   const parsed = parsePrereqText(text);
   if (!parsed) return { ok: false, malformed: true };
@@ -1840,27 +1722,18 @@ function unresolvedPrereqMessage(text, attempt) {
     : `Requires "${attempt.name}", which no longer resolves to an existing ability.`;
 }
 
-// Structural reasons (level / prerequisite) that permanently block a rank regardless of points.
 // Some AAs (Steadfast Will is the one live example) cap their max reachable
-// rank based on which of the 3 selected classes you have, rather than a flat
-// per-AA maximum - data.src.js's classRankCap: { default, byClass: { Name:
-// cap, ... } }. Tri-class COMBINES rather than switches - the character
-// genuinely has all 3 classes' benefits simultaneously, there's no notion of
-// one "active" class at a time - so ANY of the 3 selected classes granting a
-// higher cap applies. Absent classRankCap entirely, an AA's only cap is its
-// own aa.ranks, same as always - every existing caller of aa.ranks-as-a-
-// ceiling still works unchanged for the AAs that don't define this field.
-// Evaluates purely against state.selectedClasses (the 3 active classes) -
-// correct for Steadfast Will (a general AA, always in-context regardless of
-// which classes are active) but not meaningful for a hypothetical future
-// classRankCap AA that's class-specific: displaying such an AA's cap in the
-// Other Classes tab (an inactive class's picks - see renderOtherClasses,
-// render.js, which deliberately doesn't call this or heldRankInvalidReason
-// at all today, for exactly this reason) would evaluate the cap against
-// the wrong classes. Not a live bug - no class-specific AA defines
-// classRankCap yet - flagged here so whoever adds the first one sees the
-// assumption instead of a silent miscount, same spirit as the
-// autoRanks+classRankCap tripwire in heldRankInvalidReason.
+// rank based on which of the 3 selected classes you have, rather than a
+// flat per-AA maximum — data.src.js's classRankCap: { default, byClass:
+// { Name: cap, ... } }. Tri-class COMBINES rather than switches, so ANY of
+// the 3 selected classes granting a higher cap applies. Absent
+// classRankCap, an AA's only cap is its own aa.ranks, as always.
+//
+// Evaluates against state.selectedClasses — correct for Steadfast Will (a
+// general AA, always in-context) but not meaningful for a hypothetical
+// class-specific classRankCap AA shown in the Other Classes tab, which
+// would evaluate against the wrong classes. Not a live bug today; flagged
+// for whoever adds the first one.
 function classRankCapFor(aa) {
   if (!aa.classRankCap) return aa.ranks;
   const { default: def, byClass } = aa.classRankCap;
@@ -1871,14 +1744,11 @@ function classRankCapFor(aa) {
   return cap;
 }
 
-// The rank whose description slot should read as "your current effect" -
-// for most AAs that's simply the held rank, but a class-capped AA held
-// beyond today's cap (rank 8 of Steadfast Will with no qualifying class
-// selected) only actually grants the capped rank's effect in-game right
-// now. Highlighting rank 8's value there would show a number the character
-// isn't getting - the held rank itself is untouched (still shown as "8/8",
-// still what heldRankInvalidReason warns about), only which slot gets
-// highlighted as the description's "current" value changes.
+// The rank whose description slot should read as "your current effect" —
+// usually the held rank, but a class-capped AA held beyond today's cap
+// (Steadfast Will at rank 8 with no qualifying class) only actually grants
+// the capped rank's effect in-game. The held rank itself stays untouched
+// (still shown as "8/8"); only which slot gets highlighted changes.
 function effectiveDisplayRank(aa, rank) {
   return aa.classRankCap ? Math.min(rank, classRankCapFor(aa)) : rank;
 }
@@ -1913,31 +1783,23 @@ function structuralLockReason(catKey, idx) {
   return null;
 }
 
-// Whether a rank the user already holds still satisfies its prerequisite OR
-// its class-rank-cap (if it has one) under today's AA_DATA + current class
-// selection. Unlike structuralLockReason (which checks whether the NEXT rank
-// is purchasable), this checks every rank already held — so it catches drift
-// where the prereq target changed shape, or the selected classes changed,
-// since the pick was made. No saved history needed: it's purely a function
-// of current state + current data, so it naturally clears itself once the
-// gap is closed (the prereq is met again, or a qualifying class is
-// reselected) - deliberately never strips the held rank itself, same as a
-// prereq going stale doesn't; a class-cap violation is just as recoverable
-// by reselecting a class as a prereq gap is by rebuying the target.
+// Whether a rank the user already holds still satisfies its prerequisite
+// or class-rank-cap under today's AA_DATA + current class selection.
+// Unlike structuralLockReason (checks whether the NEXT rank is
+// purchasable), this checks every rank already held, catching drift from a
+// changed prereq target or class selection. Purely a function of current
+// state + data, so it clears itself once the gap closes — never strips
+// the held rank itself.
 function heldRankInvalidReason(catKey, idx) {
   const aa = getList(catKey)[idx];
   if (!aa || aa.auto) return null;
   const purchased = getRanksStore(catKey)[idx] || 0;
   if (purchased <= 0) return null;
   if (aa.classRankCap) {
-    // Assumes classRankCap never coexists with autoRanks on the same AA -
-    // true of every AA today. `purchased` is the raw store value, which
-    // EXCLUDES an autoRanks AA's free floor (see changeRank/autoRanksOffset),
-    // so this comparison would undercount against a blended-effective rank
-    // if that combination ever showed up. Not worth generalizing for a
-    // hypothetical that doesn't exist yet - flagged here so whoever adds
-    // the first AA combining both hits a documented assumption instead of a
-    // silent miscount.
+    // Assumes classRankCap never coexists with autoRanks — true of every
+    // AA today. `purchased` excludes an autoRanks AA's free floor, so this
+    // would undercount if that combination ever showed up; flagged for
+    // whoever adds the first one.
     const cap = classRankCapFor(aa);
     if (purchased > cap) return `exceeds the rank ${cap} cap for your currently selected classes.`;
   }
@@ -1969,26 +1831,19 @@ function findInvalidatedPicks() {
   return results;
 }
 
-// For every AA the user holds a rank in, purchaseOrder should contain exactly
-// (held rank - any free autoRanks floor, which never goes through
-// purchaseOrder) entries for it, and *no* entries for an AA that isn't held
-// at all (rank 0, or auto-granted). computeProgressionSteps walks
-// state.purchaseOrder directly — resolving each entry's AA from AA_DATA and
-// costing it — without ever consulting effectiveRank or the rank store, so
-// either direction of mismatch renders wrong: a held AA with too few/many
-// entries shows the wrong rank number in the Progression tab and export
-// text; an orphan entry (no matching held rank at all) renders as a
-// completely fabricated step, with its cost added to the running total, even
-// though nothing was ever actually bought. Reachable from a crafted
-// ?build= link, same threat model clampRankValue exists for.
+// For every AA the user holds a rank in, purchaseOrder should contain
+// exactly (held rank - any free autoRanks floor) entries for it, and none
+// for an AA that isn't held at all. computeProgressionSteps walks
+// purchaseOrder directly without consulting effectiveRank, so a mismatch
+// renders wrong either way: too few/many entries show the wrong rank
+// number, and an orphan entry renders as a fabricated step with its cost
+// added to the running total. Reachable from a crafted ?build= link, same
+// threat model clampRankValue exists for.
 //
-// Checked directly rather than inferred from a drop count, since this can
-// arise from more than just deserialization dropping something. Repairs by
-// adding/removing entries for a held AA until its count matches (added at
-// the end / removed from the end, so earlier purchases keep their relative
-// order), and by dropping every entry for an AA that isn't held at all.
-// state.ranks — the actual points spent — is never touched here; only which
-// rank number a step displays and its position in the sequence can change.
+// Repairs by adding/removing entries until each count matches (at the
+// end, so earlier purchases keep their order) and dropping orphans.
+// state.ranks itself is never touched — only a step's displayed rank and
+// position can change.
 function reconcilePurchaseOrderCounts() {
   function countFor(scope, className, idx) {
     let n = 0;
@@ -2005,9 +1860,8 @@ function reconcilePurchaseOrderCounts() {
   }
 
   // aa.auto entries are excluded from targets: nothing ever legitimately
-  // writes a purchaseOrder entry for one (attemptIncrement refuses them
-  // before changeRank runs), so they fall into the "not held" case below
-  // rather than getting a count to satisfy.
+  // writes a purchaseOrder entry for one, so they fall into the "not
+  // held" case below rather than getting a count to satisfy.
   const targets = [];
   const targetKeys = new Set();
   ["general", "archetype", "special"].forEach((scope) => {
@@ -2070,12 +1924,10 @@ function reconcilePurchaseOrderCounts() {
 
 // Builds a " (...)" suffix summarizing anything applyLoaded dropped and/or
 // reconcilePurchaseOrderCounts repaired — "" if neither applies. Shared
-// wording for the single-action load paths (share link, text import, loading
-// a named build slot); the startup path in main.js assembles its own
-// multi-item notice instead, since it can also be reporting on invalidated
-// picks at the same time. Lives here rather than in exportImport.js (which
-// first needed this) so builds.js can use it too without exportImport.js and
-// builds.js importing each other.
+// wording for the single-action load paths (share link, text import,
+// loading a build slot); main.js's startup path assembles its own
+// multi-item notice instead. Lives here (not exportImport.js) so builds.js
+// can use it too without the two importing each other.
 function loadIssuesSuffix(result, repaired) {
   const parts = [];
   if (result.droppedRanks) {
@@ -2112,15 +1964,12 @@ function isDependedOn(category, idx, currentRank) {
   return false;
 }
 
-// Single-level undo: remembers only the most recent changeRank, moveEntry, or
-// setOwnedRank call, in enough detail to reverse it exactly (including
-// restoring a removed entry to its original position). Overwritten by every
-// subsequent call to any of the three - including the reversal itself, so
-// undoing twice in a row toggles back and forth between the two most recent
-// states rather than walking further back; there's no deeper history than
-// that. Explicitly cleared by anything that mutates ranks/purchaseOrder/owned
-// without going through one of the three (class swap wipe, Reset Build,
-// Import, clearAllOwned).
+// Single-level undo: remembers only the most recent changeRank, moveEntry,
+// or setOwnedRank call, in enough detail to reverse it exactly. Overwritten
+// by every subsequent call, including the reversal itself, so undoing
+// twice toggles between the two most recent states rather than walking
+// back further. Explicitly cleared by anything that mutates
+// ranks/purchaseOrder/owned without going through one of the three.
 let lastMutation = null;
 
 function clearLastMutation() {
@@ -2131,12 +1980,11 @@ function canUndo() {
   return !!lastMutation;
 }
 
-// Pure state mutation, same spirit as changeRank: moves the entry at fromIdx to
-// array position toIdx (both real positions, already resolved - not a drag's
-// "insertion point"; render.js's callers translate drag/arrow intent into
-// these first). Reversing this exact move is just calling it again with the
-// two positions swapped, which is also how undoLastMutation's "reorder" case
-// restores the original arrangement.
+// Pure state mutation, same spirit as changeRank: moves the entry at
+// fromIdx to array position toIdx (both real positions, already resolved —
+// render.js's callers translate drag/arrow intent into these first).
+// Reversing it is just calling it again with the positions swapped, which
+// is how undoLastMutation's "reorder" case restores the original order.
 function moveEntry(fromIdx, toIdx) {
   const [entry] = state.purchaseOrder.splice(fromIdx, 1);
   state.purchaseOrder.splice(toIdx, 0, entry);
@@ -2144,13 +1992,10 @@ function moveEntry(fromIdx, toIdx) {
   saveLocal();
 }
 
-// The level-gated floor for an autoRanks AA: the free ranks it grants once the
-// character has actually reached the level that grants them (matching
-// effectiveRank's own gating), 0 below that since nothing is free yet. Shared by
-// changeRank (what a refund can't go below) and attemptDecrement (the UI-facing
-// gate in front of it) so the two can't drift apart the way they did before -
-// changeRank alone being level-gated is invisible if the layer above it still
-// blocks the refund unconditionally.
+// The level-gated floor for an autoRanks AA: the free ranks once the
+// character reaches the level that grants them, 0 below that. Shared by
+// changeRank (what a refund can't go below) and attemptDecrement (the
+// UI-facing gate in front of it), so the two can't drift apart.
 function autoFloor(aa) {
   if (!aa.autoRanks) return 0;
   const levelReq = parseInt(aa.levelReq, 10) || 1;
@@ -2169,21 +2014,16 @@ function changeRank(category, idx, delta) {
   const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[idx] || 0);
   const next = cur + delta;
   if (next < floor || next > aa.ranks) return false;
-  // At or below the floor there's nothing left that counts as an actual purchase (the
-  // floor===0 case, i.e. every non-autoRanks AA, already worked this way at next===0) -
-  // without this, refunding an autoRanks AA back down to exactly its floor left a
-  // phantom store entry sitting at the floor's own value forever, e.g. buying and then
-  // refunding Symphonic Aura's rank 2 left store=1 persisted instead of cleared.
+  // At or below the floor, nothing counts as an actual purchase (floor===0
+  // already worked this way at next===0). Without this, refunding an
+  // autoRanks AA back to its floor left a phantom store entry forever.
   if (next <= floor) delete store[idx]; else store[idx] = next;
   if (delta > 0) {
     pushPurchase(category, idx);
-    // Stored as {scope, className, idx} - the same shape as a "remove" record's
-    // entry - rather than the raw category (slot key). A slot key means
-    // "whatever class currently occupies this slot", which stops meaning the
-    // class that was actually here at purchase time the moment slots 0-2 get
-    // swapped around; resolveEntryCategory below re-resolves through the
-    // *current* slot assignment by className, same as undo already does for
-    // "remove" records.
+    // Stored as {scope, className, idx}, not the raw category (slot key) -
+    // a slot key means "whatever class occupies this slot now", which
+    // stops meaning the class that was here at purchase time once slots
+    // get swapped. resolveEntryCategory re-resolves via className instead.
     const { scope, className } = categoryToScopeClassName(category);
     lastMutation = { type: "add", entry: { scope, className, idx } };
   } else {
@@ -2347,15 +2187,13 @@ function computeProgressionSteps(order = state.purchaseOrder) {
         prereqWarn = true; // malformed or unresolvable - same "unmet" signal as elsewhere
       } else {
         const targetAA = getList(attempt.resolved.category)[attempt.resolved.idx];
-        // A fully-auto target never goes through purchaseOrder at all (attemptIncrement
-        // refuses to touch one), and an autoRanks target's free floor doesn't either
-        // (see pushPurchase/changeRank) - counts[targetKey] alone would under- or
-        // never-count it, unlike effectiveRank elsewhere in the app
-        // (structuralLockReason, heldRankInvalidReason), which both fold the free
-        // floor in. Mirrors the source step's own autoOffset a few lines up rather
-        // than reusing effectiveRank directly, since effectiveRank reports the
-        // CURRENT total rank, not "how much had been trained at this point in the
-        // sequence" - purchases still need the sequence-aware count.
+        // A fully-auto target never goes through purchaseOrder, and an
+        // autoRanks target's free floor doesn't either — counts[targetKey]
+        // alone would under-count it, unlike effectiveRank elsewhere
+        // (which folds the free floor in). Mirrors the source step's own
+        // autoOffset rather than reusing effectiveRank directly, since
+        // effectiveRank reports the CURRENT total rank, not how much had
+        // been trained at this point in the sequence.
         const targetAutoFloor = targetAA && targetAA.auto ? targetAA.ranks
           : targetAA && targetAA.autoRanks ? Math.min(targetAA.autoRanks, targetAA.ranks)
           : 0;
@@ -2366,13 +2204,11 @@ function computeProgressionSteps(order = state.purchaseOrder) {
       }
     }
 
-    // Unlike prereqWarn, this never depends on click order - a step's own
-    // stepRank against today's cap is all that matters, so reordering this
-    // AA's entries among themselves (or relative to anything else) can never
-    // introduce or clear it. Deliberately a separate flag from prereqWarn
-    // rather than folded into it: the two conditions are unrelated (a step
-    // can be class-capped without ever having a prereq at all), and keeping
-    // them distinct means each still means exactly one thing on its own.
+    // Unlike prereqWarn, this never depends on click order — a step's own
+    // stepRank against today's cap is all that matters, so reordering can
+    // never introduce or clear it. Deliberately separate from prereqWarn:
+    // the two conditions are unrelated (a step can be class-capped without
+    // a prereq at all).
     const classCapWarn = active && aa && aa.classRankCap && stepRank > classRankCapFor(aa);
 
     counts[key] = purchaseCount;
@@ -2381,16 +2217,13 @@ function computeProgressionSteps(order = state.purchaseOrder) {
     const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
     cumulative += stepCost;
 
-    // Running blend of the same kind estimatedExtraPoints() computes as one
-    // final figure for the topbar - here computed incrementally, since a
-    // per-row running total that stays frozen through a step whose own pill
-    // shows a nonzero ~N estimate reads as "the estimate isn't doing
-    // anything". Same guarantee as everywhere else a guess appears: never
-    // read by spentPoints()/getBlockReason/any affordability check - this
-    // is purely what .cost-total (Progression tab and the export text
-    // mirroring it) displays. An inactive step's blended contribution is
-    // forced to 0 too, matching stepCost's own inactive handling right
-    // above, since costGuess only resolves for one of the 3 active slots.
+    // Running blend of the same kind estimatedExtraPoints() computes as
+    // one final topbar figure, computed incrementally here so a per-row
+    // running total doesn't stay frozen through a step whose own pill
+    // shows a nonzero estimate. Same guarantee as every guess: never read
+    // by spentPoints()/getBlockReason/any affordability check — purely
+    // what .cost-total displays. Forced to 0 for an inactive step, same as
+    // stepCost above.
     let blendedStepCost = stepCost;
     if (active && aa && aa.costs[stepRank - 1] === "?") {
       const guess = costGuess(category, entry.idx, stepRank - 1);
@@ -2412,41 +2245,27 @@ function computeProgressionSteps(order = state.purchaseOrder) {
   });
 }
 
-// Interleaves computeProgressionSteps' output with divider markers for each
-// waypoint, in cumulative order: { type: "step", ...s, segmentColor } for a
-// real step, { type: "divider", pts, label, color, unreached } where a
-// waypoint's threshold falls. A divider for waypoint W goes right after the
-// last step whose cumulative is <= W.pts and right before the first step
-// whose cumulative exceeds it (inclusive boundary - a step landing exactly
-// on the threshold counts as reaching it, not past it). state.waypoints is
-// already sorted ascending by pts, so this is a single merge pass, no
-// re-sorting needed.
+// Interleaves computeProgressionSteps' output with divider markers for
+// each waypoint, in cumulative order: { type: "step", ...s, segmentColor }
+// or { type: "divider", pts, label, color, unreached }. A divider for
+// waypoint W goes right after the last step whose cumulative is <= W.pts
+// (inclusive boundary). state.waypoints is already sorted ascending, so
+// this is a single merge pass.
 //
-// segmentColor is the color of the waypoint a step falls under - the
-// smallest not-yet-flushed threshold that still contains it, which is
-// exactly wps[wi] at the point each step gets pushed (everything strictly
-// below the step's own cumulative was already flushed by the while loop
-// above it). null if there's no such waypoint (past every threshold, or
-// that waypoint has no color assigned) - the color-coding this enables is
-// simultaneous across every colored waypoint's segment, not a single
-// selected one, since the point is seeing the whole plan's zones at a
-// glance.
+// segmentColor is the color of the smallest not-yet-flushed waypoint that
+// still contains the step — null past every threshold or if that waypoint
+// has no color. Lets every colored segment show at once, not just one
+// selected zone.
 //
-// A waypoint whose pts is never reached (every step's cumulative stays
-// below it - an aspirational marker, or simply an empty/small plan) gets
-// flushed after the last step instead, with unreached:true so the UI can
-// say so rather than rendering it identically to one actually hit. That
-// tail flush also catches the boundary case where a waypoint's pts exactly
-// equals the LAST step's cumulative - nothing after it to trigger the
-// in-loop flush above, so it falls through to here too, but it WAS reached
-// (inclusive boundary): compared against lastCumulative rather than
-// unconditionally marked unreached, so an exact hit on the final step still
-// reads as reached, not as "never got there".
+// A waypoint whose pts is never reached gets flushed after the last step
+// with unreached:true. That same tail flush also catches a waypoint whose
+// pts exactly equals the final step's cumulative (nothing after it to
+// trigger the in-loop flush) — compared against lastCumulative so an exact
+// hit still reads as reached, not unreached.
 //
-// Cumulative treats an undocumented "?" cost as 0 (see costNum) - a
-// waypoint boundary can land slightly off when unknowns are involved. That
-// mirrors the existing "?" disclosure everywhere else costs are shown
-// rather than trying to special-case it here.
+// Cumulative treats an undocumented "?" cost as 0, so a boundary can land
+// slightly off when unknowns are involved — same disclosure as everywhere
+// else costs are shown.
 function computeProgressionTimeline(steps) {
   const wps = state.waypoints;
   const timeline = [];
@@ -2468,13 +2287,10 @@ function computeProgressionTimeline(steps) {
   return timeline;
 }
 
-// Named build slots: save/load/rename/delete snapshots of the current build in
-// localStorage, independent of state.js's own always-autosaving STORAGE_KEY —
-// that key keeps holding "whatever you're currently editing", exactly as it
-// did before this existed. A named slot is an explicit snapshot you take of
-// that; loading one just overwrites the current working state with it, which
-// then goes on autosaving under STORAGE_KEY as normal. No migration needed:
-// an existing single-build save is untouched and simply has no active slot.
+// Named build slots: save/load/rename/delete snapshots of the current build
+// in localStorage, independent of state.js's always-autosaving STORAGE_KEY
+// (which keeps holding whatever you're currently editing). Loading a slot
+// just overwrites the current working state, which then autosaves as normal.
 
 const BUILDS_INDEX_KEY = "eql_aa_builds_index_v1";
 const BUILD_KEY_PREFIX = "eql_aa_build_";
@@ -2537,29 +2353,11 @@ function clearActiveBuild() {
   setActiveBuildId(null);
 }
 
-// One-time migration: strip the dead `totalPoints` field from every saved
-// slot's stored payload. buildPayload stopped emitting it when the total-
-// points cap was removed (see MAX_WAYPOINT_PTS's own history), but every
-// slot saved before that upgrade still has it baked into the stored JSON
-// string. Left in place, that mismatch makes activeBuildMatchesCurrent()'s
-// string comparison report "unsaved changes" for a slot the user hasn't
-// actually touched, the first time it's compared post-upgrade - self-
-// healing (a real save clears it) but a false "unsaved" reading is exactly
-// the wrong thing to get wrong in the one subsystem whose entire job is
-// telling the user whether their work is backed up, nine days before
-// launch, with slots up to three versions old. Parse -> delete -> re-
-// stringify preserves the remaining keys' insertion order (the string came
-// from that same object-literal shape originally), so a healed slot
-// compares byte-identical to what today's buildPayload produces for the
-// same content - the fix works entirely through the same string-equality
-// activeBuildMatchesCurrent already relies on, no structural comparison
-// needed. Strips only the one field buildPayload genuinely stopped
-// emitting - no opportunistic normalizing of anything else in the stored
-// payload. An unparseable slot is left alone, same tolerance
-// listBuilds/loadBuild already have for one. Runs once at boot (see
-// main.js), before anything could compare against a slot; every slot that
-// doesn't need touching is left byte-identical, so this is a no-op after
-// the first run per slot.
+// One-time migration: strips the dead `totalPoints` field (gone once the
+// point cap was removed) from every saved slot's stored JSON. Purely
+// cosmetic now that activeBuildMatchesCurrent ignores extra keys anyway -
+// kept so old slots don't carry stale data forever. Runs once at boot; a
+// no-op after the first pass per slot.
 function migrateStaleBuildSlots() {
   loadIndex().forEach(({ id }) => {
     const key = BUILD_KEY_PREFIX + id;
@@ -2601,11 +2399,8 @@ function buildPayload() {
   };
 }
 
-// Order-independent (for object keys; array order still matters, since it's
-// semantically meaningful for purchaseOrder/waypoints/selectedClasses)
-// equality check. Deliberately not a generic "are these two values equal"
-// utility - see deepEqualIgnoringExtraKeys below for the one-directional
-// twist activeBuildMatchesCurrent actually needs.
+// Object-key order doesn't matter here; array order still does, since it's
+// meaningful for purchaseOrder/waypoints/selectedClasses.
 function deepEqual(a, b) {
   if (a === b) return true;
   if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
@@ -2622,31 +2417,15 @@ function isEmptyComposite(v) {
   return typeof v === "object" && v !== null && Object.keys(v).length === 0;
 }
 
-// Whether every field current buildPayload() defines matches the
-// corresponding field in a stored slot - deliberately checking only
-// `current`'s own keys, not requiring the two objects to have the *same*
-// key set, in EITHER direction:
-//
-// - stored has a key current doesn't (extra): a field that's since been
-//   retired (owned briefly living in the main payload; totalPoints before
-//   the point-cap removal). Simply never looked at, via Object.keys(current).
-// - current has a key stored doesn't (missing): a field that didn't exist
-//   *yet* when the slot was saved - waypoints shipped in 1.5.0, so any slot
-//   saved in 1.3.x-1.4.x has no waypoints key in its stored payload at all.
-//   applyLoaded itself proves the equivalence: loading that exact slot
-//   produces state.waypoints = [] (sanitizeWaypoints(undefined) -> []),
-//   the same empty default current buildPayload() would emit right now -
-//   so a missing key is only safely treated as a match when today's value
-//   for that key is an empty composite ([] or {}). Anything else (a
-//   non-empty array/object, a primitive) is a real difference and must
-//   still fail. Top-level only: nested shapes (ranks' four scope buckets,
-//   say) have been stable since slots first shipped, so a missing NESTED
-//   key can't legitimately occur this way and correctly still fails via
-//   plain deepEqual below.
-//
-// Both directions share the same justification - a key one side lacks
-// entirely is an artifact of history, not a real difference in plan
-// content - and must never make an untouched slot register as "changed".
+// Whether every field current buildPayload() defines matches a stored
+// slot - checking only `current`'s own keys, tolerant of key-set
+// mismatches in both directions: a key stored has but current doesn't is a
+// retired field (e.g. totalPoints) and is simply ignored; a key current
+// has but stored doesn't is one that didn't exist yet when the slot was
+// saved (e.g. waypoints, added in 1.5.0) and only counts as a match if
+// today's value for it is an empty array/object - anything else is a real
+// difference. Either way, a key one side lacks entirely is an artifact of
+// the payload's shape changing over time, not a real change to the plan.
 function deepEqualIgnoringExtraKeys(stored, current) {
   if (typeof stored !== "object" || stored === null) return false;
   return Object.keys(current).every((k) => {
@@ -2655,26 +2434,16 @@ function deepEqualIgnoringExtraKeys(stored, current) {
   });
 }
 
-// Whether the current working state matches what's actually stored under
-// the active slot — not just "there is an active slot", since further
-// changes since the last save/load would leave the two diverged even with
-// an id still set. Lets a caller about to replace the current build (the
-// Builds menu's own Load button, a share link, a text import - every
-// caller of confirmReplaceCurrentBuild, see that function) skip warning
-// about losing something that's already safely backed up, without needing
-// a separate "dirty" flag threaded through every mutation path - this just
-// compares on demand instead.
+// Whether the current working state matches what's stored under the active
+// slot - not just "there is an active slot", since changes since the last
+// save/load would leave the two diverged. Lets a caller about to replace
+// the build (Load, a share link, a text import - every caller of
+// confirmReplaceCurrentBuild) skip warning about losing something already
+// backed up, without threading a "dirty" flag through every mutation path.
 //
-// Structural, not a raw string/JSON.stringify comparison - the string
-// version broke the instant a field ever got added or removed from
-// buildPayload's shape (that happened for real: totalPoints's removal made
-// every pre-existing slot read as "unsaved" the first time this ran
-// against it, healed only by an extra one-time migration sweep). A
-// structural, current-keys-only comparison is immune to that entire class
-// of bug permanently - past or future field removals, additions, or a
-// slot whose stored JSON simply serialized its keys in a different order
-// than today's buildPayload happens to - none of it can ever cause a false
-// "unsaved" reading again, in any of the menus that ask this question.
+// Structural, not a string/JSON comparison - immune to buildPayload's
+// shape changing over time (a field added or removed) or the stored JSON's
+// keys simply serializing in a different order.
 function activeBuildMatchesCurrent() {
   const id = getActiveBuildId();
   if (!id) return false;
@@ -2713,41 +2482,28 @@ function saveBuildAs(name, id = null) {
 }
 
 // Saves under `name`, confirming first if it would silently duplicate an
-// existing slot's name — the interactive-save entry point (handleBuildSave
-// in render.js, confirmReplaceCurrentBuild's own save-first offer below)
-// both fork through here, so "does saving a duplicate name overwrite or
-// duplicate" can't drift between the two paths the way it did before this
-// existed. Returns the slot's id, false if the user declined the overwrite,
-// or null on a storage failure - three outcomes a caller needs to tell apart
-// (a decline isn't an error worth a "couldn't save" toast).
+// existing slot's name. Both interactive-save entry points (handleBuildSave
+// in render.js, and confirmReplaceCurrentBuild's save-first offer below)
+// go through here. Returns the slot's id, false if the user declined the
+// overwrite, or null on a storage failure - a decline isn't an error worth
+// a "couldn't save" toast, so callers need to tell the two apart.
 function saveWithNameCheck(name) {
   const existing = listBuilds().find((b) => b.name === name);
   if (existing && !confirm(`A build named "${name}" already exists. Overwrite it?`)) return false;
   return saveBuildAs(name, existing ? existing.id : null);
 }
 
-// Gate in front of anything that's about to fully replace the current working
-// state (a share link, a text import, loading a different saved slot) with
-// something else. Three outcomes:
-//   - nothing at risk, or the current build already matches a saved slot
-//     exactly (activeBuildMatchesCurrent) -> proceed silently. This is what
-//     makes flipping between two already-saved builds nag-free in either
-//     direction, which is the whole point of the feature.
-//   - there's real content and it isn't backed up anywhere -> offer to save
-//     it under a name before proceeding, rather than just warning it'll be
-//     lost. Declining the name prompt (or the overwrite confirm inside
-//     saveWithNameCheck) backs out of the whole operation entirely rather
-//     than guessing whether that meant "save it anyway" or "never mind".
-//   - offered but explicitly declined saving -> fall back to the plain
-//     "this will replace your build" confirmation, so declining to save
-//     isn't itself a dead end.
-// extraRisk covers a risk source that doesn't fit "spentPoints() > 0" -
-// applySharedBuildFromUrl's caller-supplied droppedRanks check. trustMatch
-// lets a caller say the active-slot match itself isn't trustworthy: opening
-// a share link when the active slot is the reused "imported" one is about to
-// overwrite that exact slot via saveImportedBuild, so treating the match as
-// "safely backed up" would be trusting the very copy the operation is
-// seconds from destroying.
+// Gate in front of anything about to fully replace the current working
+// state (a share link, a text import, loading a different slot). Proceeds
+// silently if there's nothing at risk or the build already matches a saved
+// slot; otherwise offers to save it under a name first, falling back to a
+// plain replace-confirmation if that's declined.
+//
+// extraRisk covers a risk source that doesn't fit "spentPoints() > 0"
+// (applySharedBuildFromUrl's droppedRanks check). trustMatch lets a caller
+// say the active-slot match itself isn't trustworthy - opening a share
+// link while the active slot is the reused "Imported Build" one is about
+// to overwrite that very slot, so its match shouldn't count as backed up.
 function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, trustMatch = true } = {}) {
   const isBackedUp = trustMatch && activeBuildMatchesCurrent();
   if ((spentPoints() <= 0 && !extraRisk) || isBackedUp) return true;
@@ -2756,14 +2512,10 @@ function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, trustMatc
     const name = prompt("Name this build:", "");
     if (!name || !name.trim()) return false;
     const result = saveWithNameCheck(name.trim());
-    // saveWithNameCheck's three outcomes need telling apart here, not
-    // collapsing to a truthy check: false (declined the overwrite) backs out
-    // the same as declining to name it at all - nothing was asked to be
-    // saved, so proceeding would silently replace a build the user never
-    // agreed to lose. null (storage full/unavailable) is the one case that
-    // must NOT proceed either, despite being the exact moment the user
-    // affirmatively asked for protection - proceeding anyway on a failed
-    // save is data loss precisely when the user did everything right.
+    // false (declined the overwrite) backs out the same as declining to
+    // name it - nothing was saved, so proceeding would replace a build the
+    // user never agreed to lose. null (storage full) must also not
+    // proceed, even though the user did everything right.
     if (result === false) return false;
     if (result === null) {
       alert('Couldn\'t save — local storage may be full or unavailable. Nothing was changed.');
@@ -2774,51 +2526,35 @@ function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, trustMatc
   return confirm(`${verb.charAt(0).toUpperCase()}${verb.slice(1)} ${target}? This will replace your current build and can't be undone.`);
 }
 
-// The slot saveImportedBuild would target on its next call - whichever entry
-// is *currently* named "Imported Build", if any, regardless of id. Naming is
-// the reuse key, not id: a rename only ever changes an entry's name, so
-// whatever id that entry has belongs to the (now renamed/adopted) entry
-// forever. A lookup keyed on id - as this used to be, back when a fixed
-// "imported" id existed for a first import to claim - would keep finding
-// that same permanently-adopted entry after every future rename and
-// concluding "adopted" each time, allocating a fresh id per import forever
-// after the first adoption: the exact unbounded pile of same-named slots the
-// fixed id existed to prevent. A user who saved before that changed may
-// still have a slot with the literal id "imported" sitting at the default
-// name - this lookup finds and reuses it exactly like any other, since it's
-// resolving by name, not by that now-meaningless id.
-// isActiveBuildTheImportedSlot and saveImportedBuild both need this exact
-// same answer (one to know what it's about to overwrite, one to know what to
-// distrust), so it's one predicate rather than two independent lookups that
-// could drift the way autoFloor's split into changeRank/attemptDecrement did.
+// The slot saveImportedBuild would target next - whichever entry is
+// currently named "Imported Build", regardless of id. Looked up by name,
+// not id: a rename only changes an entry's name, so the id it already has
+// stays attached to it - looking up by a fixed id would keep finding the
+// old (now-renamed) entry and allocate a fresh slot on every future import
+// instead of reusing the current one.
 //
-// One accepted consequence: naming your own build "Imported Build" opts it
-// into being the reuse target - already true before this fix (the id lookup
-// couldn't tell a user's own entry from an actually-imported one either), so
-// not a regression.
+// isActiveBuildTheImportedSlot and saveImportedBuild share this lookup so
+// they can't drift apart on what counts as "the" imported slot. Naming
+// your own build "Imported Build" opts it into being the reuse target - a
+// known tradeoff, not a bug.
 function findImportedSlot() {
   return loadIndex().find((b) => b.name === IMPORTED_BUILD_NAME) || null;
 }
 
 // True only while the active slot is the one the next saveImportedBuild()
-// call would actually overwrite. Once that slot's been renamed away from the
-// default name, findImportedSlot() no longer finds it, so there's nothing
-// left to distrust - confirmReplaceCurrentBuild's caller would otherwise
-// distrust an activeBuildMatchesCurrent() match that's actually accurate,
-// prompting to save content that's already safely sitting under its adopted
-// name.
+// call would overwrite. Once renamed away from the default name,
+// findImportedSlot() no longer finds it, so there's nothing left to
+// distrust in confirmReplaceCurrentBuild's trustMatch check.
 function isActiveBuildTheImportedSlot() {
   const slot = findImportedSlot();
   return !!slot && slot.id === getActiveBuildId();
 }
 
-// A share link is often opened passively (a link in chat), not a deliberate
-// "load a build" action the way pasting import text or using the Builds
-// modal is - easy to lose track of afterward once it's not the active
-// working state anymore. Auto-saves it under one reused slot (found by name,
-// see findImportedSlot - not genId()'d fresh every time) so it stays one
-// click away in the Builds list even after you've moved on to something
-// else, without piling up a fresh "Imported Build" entry per link opened.
+// A share link is often opened passively (a link in chat) rather than a
+// deliberate "load a build" action - easy to lose track of once it's not
+// the active working state anymore. Auto-saves it under one reused slot
+// (see findImportedSlot) so it stays one click away in the Builds list
+// without piling up a fresh entry per link opened.
 function saveImportedBuild() {
   const existing = findImportedSlot();
   return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null);
@@ -2848,11 +2584,9 @@ function loadBuild(id) {
 }
 
 // False on a name collision with a *different* slot, not just "not found" -
-// renameBuild doesn't merge or overwrite the other entry (unlike saving,
-// where "overwrite it?" has an obvious meaning, two same-named slots would
-// leave save-by-name's find() picking one arbitrarily) - the caller is
-// expected to tell the two apart and report a clash rather than silently
-// treating it as "nothing happened".
+// renameBuild doesn't merge/overwrite the other entry, so the caller needs
+// to tell the two apart and report a clash rather than treating it as
+// nothing happened.
 function renameBuild(id, name) {
   const index = loadIndex();
   const entry = index.find((b) => b.id === id);
@@ -3005,16 +2739,10 @@ function renderTopbar() {
   const spent = spentPoints();
 
   const extra = estimatedExtraPoints();
-  // The headline number blends real + estimate for display - a guess is
-  // still never added to spentPoints() itself anywhere in real math
-  // (nothing gates a purchase on a point total anymore, but spentPoints()
-  // is still what the Progression tab's running totals and owned/to-go
-  // split are built from), this is purely how the topbar's own number
-  // reads. The ~ prefix alone signals "this includes an estimate" (same
-  // shorthand every per-rank guess in the app already uses); the
-  // breakdown lives in the tooltip rather than a second visible element,
-  // matching how every other estimate badge here discloses confidence
-  // detail on hover instead of inline.
+  // The headline number blends real + estimate for display only - a guess
+  // is never added to spentPoints() itself (see estimatedExtraPoints).
+  // The ~ prefix signals "includes an estimate", same shorthand as every
+  // per-rank guess; the breakdown lives in the tooltip, not inline.
   if (extra > 0) {
     el.spentValue.textContent = `~${spent + extra}`;
     el.spentValue.classList.add("is-estimate");
@@ -3022,12 +2750,10 @@ function renderTopbar() {
     el.spentValue.textContent = spent;
     el.spentValue.classList.remove("is-estimate");
   }
-  // spentPoints() is a lifetime total (every class ever picked, not just
-  // the 3 active ones - see its own comment) - when any of it comes from a
-  // class that isn't currently selected, that's the other place this
-  // number can diverge from what Progression's own rows add up to, same
-  // spirit as the estimate breakdown already disclosed here. Both fold
-  // into one tooltip rather than competing mechanisms.
+  // spentPoints() is a lifetime total (see its own comment in logic.js) -
+  // when some of it comes from a class that isn't currently selected,
+  // that's another way this number can diverge from Progression's own
+  // rows. Both disclosures fold into the same tooltip.
   const inactive = spentOnInactiveClasses();
   const titleParts = [];
   if (extra > 0) titleParts.push(`${spent} confirmed + ${extra} estimated.`);
@@ -3084,15 +2810,11 @@ function renderTabs() {
   });
 }
 
-// Shared by every place that shows a per-rank cost - the tree node's cost
-// badge, the side panel's next-rank box and rank-costs pip strip, Browse's
-// per-rank cost list, and the Progression tab's per-step cost pill and its
-// own next-rank preview - so they all resolve the same "is this rank's real
-// cost known, or are we showing a pattern-inferred estimate" decision one
-// way, instead of each reimplementing it (and drifting) slightly
-// differently. A guess is display-only: nothing here ever feeds
-// costNum()/spentPoints() - those keep treating "?" as 0 exactly like
-// before, regardless of whether a guess exists for display.
+// Shared by every place that shows a per-rank cost - the tree, side panel,
+// Browse, and Progression - so they all resolve "is this rank's real cost
+// known, or is this a pattern-inferred estimate" the same way instead of
+// each reimplementing it. Display-only: nothing here feeds
+// costNum()/spentPoints(), which keep treating "?" as 0 regardless.
 function formatGuessDisplay(rawCost, guess) {
   if (rawCost !== "?") return { text: escapeHtml(rawCost), isGuess: false };
   if (!guess) return { text: "?", isGuess: false };
@@ -3155,16 +2877,12 @@ function renderTree(catKey) {
 
   list.forEach((aa, idx) => {
     const rank = effectiveRank(catKey, idx);
-    // A hidden AA is left out of the grid entirely unless Show Hidden is on
-    // - EXCEPT one you've actually spent points on, which always stays
-    // visible regardless: hiding only declutters what to look at, it never
-    // suppresses real build state (see isHidden/setHidden, logic.js). This
-    // runs before the search-match classing below on purpose: a hidden AA
-    // is unfindable via global search too, not just absent from plain
-    // browsing - deliberate, not an oversight. Show Hidden is meant to be
-    // the one override switch; letting search silently bypass hiding as a
-    // second one would repopulate a broad match's worth of AAs someone
-    // specifically decluttered away.
+    // A hidden AA is left out of the grid entirely unless Show Hidden is on,
+    // except one you've actually spent points on - hiding declutters what
+    // to look at, it never suppresses real build state. Runs before the
+    // search-match classing below on purpose: a hidden AA is unfindable via
+    // search too, not just absent from plain browsing - Show Hidden is
+    // meant to be the one override switch, not something search bypasses.
     const hidden = isHidden(catKey, idx);
     if (hidden && !state.showHidden && rank === 0) return;
     const autoBelowLevel = aa.auto && rank < aa.ranks;
@@ -3172,11 +2890,9 @@ function renderTree(catKey) {
     const locked = !!lockReason || autoBelowLevel;
     const invalidReason = rank > 0 ? heldRankInvalidReason(catKey, idx) : null;
     // A held rank beyond the current class-cap (Steadfast Will owned at
-    // rank 8, then swapped away from a tank class) still counts fully
-    // toward the bar's own fill - the point is showing that the trained
-    // portion is no longer within reach at your CURRENT classes, not that
-    // it's been lost. Only the segment strictly beyond the cap gets the
-    // dimmed treatment; below the cap reads exactly like any other rank.
+    // rank 8, then swapped away from a qualifying class) still counts
+    // fully toward the bar's fill - only the segment strictly beyond the
+    // cap gets the dimmed treatment, showing it's out of reach, not lost.
     const classCap = aa.classRankCap ? classRankCapFor(aa) : aa.ranks;
     const capExceeded = rank > classCap;
 
@@ -3354,11 +3070,10 @@ function applyAttempt(result) {
 }
 
 // Browse lists every class regardless of which 3 are currently selected, but
-// structuralLockReason (and everything under it) only knows how to answer
-// "is this prereq met" for a category with a real catKey - general/archetype/
-// special always have one, but a class only does while it's actually sitting
-// in one of the 3 slots. For any other class, catKey is null and the prereq
-// line falls back to the old plain-text rendering rather than guessing.
+// structuralLockReason only knows how to answer "is this prereq met" for a
+// category with a real catKey - a class only has one while it's actually in
+// one of the 3 slots. For any other class, catKey is null and the prereq
+// line falls back to plain-text rendering instead.
 function catKeyForBrowseLabel(catLabel) {
   if (catLabel === "General") return "general";
   if (catLabel === "Archetype") return "archetype";
@@ -3368,9 +3083,8 @@ function catKeyForBrowseLabel(catLabel) {
 }
 
 // Cost guesses don't have that same "only while it's in an active slot"
-// limitation (costDisplayScoped looks up by scope/className directly), so
-// every Browse card can show its per-rank estimates regardless of whether
-// its class is currently selected.
+// limitation - costDisplayScoped looks up by scope/className directly, so
+// every Browse card can show its estimates regardless of class selection.
 function scopeForBrowseLabel(catLabel) {
   if (catLabel === "General") return { scope: "general", className: null };
   if (catLabel === "Archetype") return { scope: "archetype", className: null };
@@ -3398,14 +3112,10 @@ function renderBrowse() {
   }
 
   const searched = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
-  // Same hidden-declutter rule as the tree (see renderTree, including why a
-  // search match doesn't bypass hiding either - it's applied AFTER the
-  // query filter above, on purpose, not before): left out unless Show
-  // Hidden is on, except one you've actually spent points on. Uses the
-  // scoped rank lookup (not catKey-gated) since a class swap no longer
-  // wipes ranks/purchaseOrder (events.js) - an inactive class can have a
-  // real nonzero rank here, and a hidden AA you've spent points on there
-  // must still stay visible, same as an active class's.
+  // Same hidden-declutter rule as the tree (see renderTree): left out
+  // unless Show Hidden is on, except one you've actually spent points on.
+  // Uses the scoped rank lookup, not catKey-gated, since an inactive
+  // class can still have a real nonzero rank here.
   const filtered = searched.filter(({ cat, idx }) => {
     const { scope, className } = scopeForBrowseLabel(cat);
     if (!isHiddenScoped(scope, className, idx)) return true;
@@ -3496,18 +3206,12 @@ function renderSummary() {
 }
 
 // Picks for a class that isn't currently one of your 3 selected slots -
-// left fully intact by a class swap (see events.js) rather than wiped, so
-// this is where they live instead of the tree/Progression/Summary. Modeled
-// directly on renderSummary above (grouped, with each AA shown the same
-// browse-card way), but grouped by className via otherClassesWithPicks
-// rather than by AA_CATEGORY_KEYS, and using the *Scoped lookups
-// (effectiveRankScoped/effectLookupScoped) since an inactive class has no
-// catKey at all - classSlotIndex returns -1 for it, so none of the
-// catKey-addressed helpers (effectiveRank, heldRankInvalidReason,
-// structuralLockReason) apply here. No invalidReason line either: that
-// machinery answers "is this AA, which the tree can currently show, in a
-// bad state" - an inactive-class pick isn't reachable in the tree at all,
-// so it's simply not the kind of fact heldRankInvalidReason is about.
+// left intact by a class swap (see events.js) rather than wiped, so this
+// is where they live instead of the tree/Progression/Summary. Modeled on
+// renderSummary above but grouped by className via otherClassesWithPicks,
+// and using the *Scoped lookups since an inactive class has no catKey at
+// all. No invalidReason line either - that machinery is about an AA the
+// tree can currently show, which an inactive-class pick isn't.
 function renderOtherClasses() {
   const classNames = otherClassesWithPicks();
 
@@ -3564,28 +3268,20 @@ let modalSelectedColor = null;
 // when no drag is in progress. Module-level since dragstart/dragover/drop fire
 // on different row elements that get torn down and rebuilt on every render.
 //
-// dragSrcIndex alone isn't a safe gate for "is a progression-step drag actually
-// in flight": if dragend never fires (detaching the source node mid-drag, e.g.
-// via renderProgression, is known to make some browsers skip it), it stays
-// non-null after the drag that set it has already ended. A later, unrelated
-// drag (a text selection, a file from the OS) over the list would then read as
-// a stale reorder instead of being ignored. PROGRESSION_DRAG_TYPE is a custom
-// dataTransfer MIME type set only in this module's dragstart, so dragover/drop
-// gate on e.dataTransfer.types instead of trusting dragSrcIndex - a foreign
-// drag simply won't carry it, no matter what dragSrcIndex last happened to be.
+// dragSrcIndex alone isn't a safe gate for "is a drag actually in flight": if
+// dragend never fires (detaching the source node mid-drag makes some browsers
+// skip it), it stays non-null after the drag has already ended, so a later,
+// unrelated drag over the list would read as a stale reorder. PROGRESSION_DRAG_TYPE
+// is a custom dataTransfer MIME type set only in this module's dragstart, so
+// dragover/drop gate on e.dataTransfer.types instead of trusting dragSrcIndex.
 const PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
 let dragSrcIndex = null;
-// Native HTML5 drag doesn't auto-scroll an inner scrollable container (only
-// the whole page, inconsistently) - dragging near #progressionWrap's
-// top/bottom edge scrolls it, faster the closer the cursor is to the edge,
-// so reordering a list too long to fit on screen doesn't require
-// pre-scrolling to the destination first. See updateAutoScroll/autoScrollStep.
-// Both must be stopped from every drop handler, not just via the dragend
-// listener below - dragend is known not to fire on a source node that's
-// already detached by the time the drag would end (renderProgression
-// replaces progressionContent's innerHTML on every successful drop), and
-// the loop is self-sustaining (each frame reschedules itself), so a missed
-// stop would otherwise keep scrolling forever using stale direction/speed.
+// Native HTML5 drag doesn't auto-scroll an inner scrollable container, so
+// dragging near #progressionWrap's top/bottom edge scrolls it manually,
+// faster the closer to the edge (see updateAutoScroll/autoScrollStep). Must
+// be stopped from every drop handler, not just dragend - dragend can miss a
+// source node already detached by a re-render, and the loop is
+// self-sustaining, so a missed stop would keep scrolling forever.
 const AUTOSCROLL_EDGE_PX = 70;
 const AUTOSCROLL_MAX_SPEED = 18; // px/frame at the very edge
 let autoScrollDir = 0; // -1 up, 0 idle, 1 down
@@ -3662,30 +3358,19 @@ function countPrereqWarns(steps) {
   return steps.reduce((n, s) => n + (s.prereqWarn ? 1 : 0), 0);
 }
 
-// Whether dropping the step currently being dragged at `toIndex` (an
-// insertion point, same convention as moveProgressionEntryTo) would introduce
-// a prereq warning that doesn't already exist - a pure look-ahead for the
-// drag indicator, computed against a throwaway copy so it never touches real
-// state.
+// Whether dropping the dragged step at `toIndex` (an insertion point, same
+// convention as moveProgressionEntryTo) would introduce a prereq warning
+// that doesn't already exist - a look-ahead for the drag indicator,
+// computed against a throwaway copy so it never touches real state.
 //
-// This checks two things, not just the dragged step's own prereq: dragging X
-// out from directly above its own dependent Y (order [X, Y] -> drag X below
-// Y) leaves X's own prereq perfectly satisfied wherever it lands, so a check
-// scoped to X alone reports "fine" right up until the drop, at which point Y
-// lights up amber - the indicator would have promised something the drop
-// didn't deliver, in the reassuring direction rather than the alarming one.
-// Comparing the hypothetical arrangement's total warn count against the real
-// order's count (dragBaselineWarnCount) catches that for roughly free, since
-// computeProgressionSteps(hypothetical) is already being computed anyway.
-//
-// A pure count comparison alone would miss a swap that trades one warn for a
-// different one (count unchanged, problem moved) - so this keeps the direct
-// "does the dragged step's own slot warn" check too, rather than replacing
-// it. Between the two, every count-changing case and every own-prereq case
-// is covered; only a same-count swap of *which other* step warns (not
-// involving the dragged step's own prereq at all) could still slip through,
-// and that's an existing-warn-swapping-to-a-different-existing-warn edge
-// case rare enough not to be worth a full "diff which steps changed" pass.
+// Checks two things: the dragged step's own slot, and whether the
+// hypothetical arrangement's total warn count exceeds the real order's
+// (dragBaselineWarnCount). The count check catches a case the direct check
+// alone would miss - dragging X out from above its dependent Y leaves X's
+// own prereq satisfied wherever it lands, but Y now warns instead. A rare
+// edge case (a same-count swap of *which other* step warns, not involving
+// the dragged step at all) can still slip through both checks; not worth a
+// full diff pass for that.
 function dragWouldIntroduceWarn(toIndex) {
   if (dragSrcIndex === null) return false;
   let insertAt = toIndex > dragSrcIndex ? toIndex - 1 : toIndex;
@@ -3818,32 +3503,24 @@ function classBadgeClass(s) {
   return slot >= 0 ? ` step-cat-slot${slot}` : "";
 }
 
-// One entry per waypoint (not just the row's own current one - the whole
-// point of a checkpoint like "Level 20" is being able to move something
-// INTO that phase of the plan, not just shuffle within whichever phase it
-// already happens to sit in), for the Move To popover's "[Section] -
-// top/bottom" options. Derived from computeProgressionTimeline's existing
-// divider/step interleaving (logic.js) rather than re-deriving section
-// boundaries from state.waypoints directly - timeline already has exactly
-// this grouping for the divider rendering above.
+// One entry per waypoint (not just the row's current section - moving
+// something INTO a different phase of the plan is the point), for the Move
+// To popover's "[Section] - top/bottom" options. Derived from
+// computeProgressionTimeline's divider/step interleaving rather than
+// re-deriving section boundaries from state.waypoints directly.
 //
-// Waypoints are anchored to cumulative points crossed, not list position
-// (see Waypoints' own design) - so a step's OWN cost, added on top of
-// whatever's already accumulated at wherever it lands, can push its
-// resulting cumulative past the very section boundary it's being placed
-// into, regardless of where in click-order it's inserted. movingStepCost
-// (the row's own s.stepCost) lets this actually account for that instead
-// of just placing it at a fixed boundary and hoping: for each section,
-// every possible insertion slot's baseline cumulative (the cumulative of
-// whatever currently sits immediately before that slot) is checked
-// against the section's own pts range, and "top"/"bottom" each resolve to
-// the best-fitting slot for that preference - "bottom" degrades toward
-// "as late as possible while still fitting" rather than the section's
-// literal last slot if that slot would overflow into the next section.
-// Slot baselines are monotonically non-decreasing deeper into a section
-// (costs are never negative), so if the very top slot doesn't fit, no
-// slot does - topFits/bottomFits are therefore always equal, and doubles
-// as "does this step fit in this section at all".
+// Waypoints are anchored to cumulative points, not list position, so a
+// step's own cost can push it past the section boundary it's being placed
+// into depending on where it lands. movingStepCost (s.stepCost) accounts
+// for that: for each section, every insertion slot's baseline cumulative
+// is checked against the section's pts range, and "top"/"bottom" resolve
+// to the best-fitting slot rather than the literal boundary - "bottom"
+// degrades to "as late as possible while still fitting" if the section's
+// last slot would overflow into the next one. Slot baselines are
+// monotonically non-decreasing deeper into a section (costs are never
+// negative), so if the top slot doesn't fit, none do - topFits and
+// bottomFits are therefore always equal, doubling as "does this step fit
+// in this section at all".
 function waypointSections(timeline, totalVisible, movingStepCost) {
   const sections = [];
   for (let i = 0; i < timeline.length; i++) {
@@ -3897,12 +3574,10 @@ function waypointSections(timeline, totalVisible, movingStepCost) {
 
 // The Move To popover's content for one row - every option (top/bottom of
 // list, each waypoint section's top/bottom, the position field) is
-// pre-resolved here into a concrete targetVisiblePos, so the click
-// handlers wired below need only one generic case (read data-target-pos,
-// call moveToVisiblePosition) rather than a type switch per option.
-// Section options are computed fresh per row (not shared across rows the
-// way the timeline itself is) since fit depends on THIS row's own
-// s.stepCost - see waypointSections.
+// pre-resolved into a concrete targetVisiblePos, so the click handlers
+// wired below need only one generic case rather than a type switch.
+// Section options are computed fresh per row since fit depends on this
+// row's own s.stepCost - see waypointSections.
 function moveMenuHtml(s, timeline, totalVisible) {
   const sections = waypointSections(timeline, totalVisible, s.stepCost);
   const items = [
@@ -3930,29 +3605,22 @@ function moveMenuHtml(s, timeline, totalVisible) {
 function renderProgression() {
   el.undoLastBtn.disabled = !canUndo();
   // hasAnyOwned checks state.owned globally, not just the current
-  // progression list - owned can hold marks for classes outside the 3
-  // active slots, so this has to be set before (and independent of) the
+  // progression list, so this is set before (and independent of) the
   // empty-purchaseOrder early return below.
   el.clearOwnedBtn.disabled = !hasAnyOwned();
   // Same reasoning as the topbar's own tooltip (renderTopbar) - set ahead
-  // of every early return below so it stays accurate regardless of which
-  // branch this call takes, since inactive spending is independent of
+  // of every early return below, since inactive spending doesn't depend on
   // whether there's anything active to show right now.
   const inactiveSpent = spentOnInactiveClasses();
   el.otherClassesNote.classList.toggle("hidden", inactiveSpent === 0);
   el.otherClassesNote.textContent = inactiveSpent > 0
     ? ` ${inactiveSpent} more point${inactiveSpent === 1 ? "" : "s"} spent on other classes — see the Other Classes tab.`
     : "";
-  // The number this feature exists to answer: of what's actually been
-  // trained in-game vs. still to go. Lifetime-scoped (ownedPoints(), not a
-  // sum over just the active rows rendered below) to match spentPoints()'s
-  // own lifetime scope - an AA owned on a class you've since swapped away
-  // from is still real progress, and togoPts needs both sides of its
-  // subtraction on the same footing or it double-counts that AA as "still
-  // to go" despite already being trained. Set ahead of both early returns
-  // below (like clearOwnedBtn/otherClassesNote above), same reasoning:
-  // owned/to-go is a lifetime figure, independent of whether there's
-  // anything active to actually render as rows right now.
+  // Lifetime-scoped (ownedPoints(), not a sum over just the rows rendered
+  // below) to match spentPoints()'s own lifetime scope - an AA owned on a
+  // swapped-away class is still real progress, and togoPts needs both
+  // sides on the same footing or it double-counts that AA as "still to
+  // go". Set ahead of both early returns below, same reasoning as above.
   const ownedPts = ownedPoints();
   const togoPts = spentPoints() - ownedPts;
   el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
@@ -3967,11 +3635,10 @@ function renderProgression() {
   }
 
   // Only your current 3 classes' click history shows up here - a pick for
-  // a class you've since swapped away from (still fully intact, still
-  // counted in spentPoints()'s lifetime total) lives in the Other Classes
-  // tab instead, not mixed inline. Every step below this line is
-  // guaranteed active, so nothing downstream needs to branch on s.active
-  // anymore - it's always true.
+  // a swapped-away class (still fully intact, still counted in
+  // spentPoints()'s lifetime total) lives in the Other Classes tab
+  // instead. Every step below this line is guaranteed active, so nothing
+  // downstream needs to branch on s.active.
   const steps = computeProgressionSteps().filter((s) => s.active);
   if (!steps.length) {
     el.progressionContent.innerHTML = '<div class="empty">Nothing picked for your current 3 classes yet &mdash; your training order will appear here as you spend points. (Picks for other classes you\'ve used are in the Other Classes tab.)</div>';
@@ -3979,19 +3646,16 @@ function renderProgression() {
   }
   // 1-indexed position among the rows actually rendered, distinct from
   // s.index (the absolute state.purchaseOrder position, used everywhere
-  // reordering happens - drag, up/down arrows, Move To). An inactive
-  // entry still occupies a real purchaseOrder slot even though it's
-  // filtered out above, so s.index alone can show gaps in the visible
-  // step numbering (a 2-active/1-inactive sequence rendering "1, 3" with
-  // no visible "2") - visiblePos is what the step-num display and Move
-  // To's "position" field are actually counting.
+  // reordering happens). An inactive entry still occupies a real
+  // purchaseOrder slot even though it's filtered out above, so s.index
+  // alone can show gaps in the visible step numbering (a 2-active/1-inactive
+  // sequence rendering "1, 3" with no visible "2") - visiblePos is what
+  // step-num and Move To's "position" field actually count.
   steps.forEach((s, i) => { s.visiblePos = i + 1; });
 
   // computeProgressionTimeline tags each step with segmentColor (the color
-  // of the waypoint whose range it falls under, if any) - every colored
-  // waypoint's segment renders simultaneously, not just one selected at a
-  // time, since the point of color-coding is seeing the whole plan's zones
-  // at a glance.
+  // of the waypoint whose range it falls under) - every colored segment
+  // renders simultaneously, so the whole plan's zones show at a glance.
   const timeline = computeProgressionTimeline(steps);
   const htmlParts = timeline.map((entry) => {
     if (entry.type === "divider") {
@@ -4010,21 +3674,15 @@ function renderProgression() {
     const segClass = s.segmentColor ? ` segment-color-${s.segmentColor}` : "";
     const stepDisp = s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
     // The running total blends in estimates the same way the topbar's own
-    // headline does (~N, blue, tooltip breakdown) once any step up to this
-    // point has an unconfirmed cost with a guess - see computeProgressionSteps
-    // for blendedCumulative. Plain and identical to s.cumulative until that
-    // first guessed step, so nothing changes visually for a build with no
-    // guesses at all.
+    // headline does, once any step up to this point has an unconfirmed
+    // cost with a guess (see computeProgressionSteps' blendedCumulative).
+    // Identical to s.cumulative until the first guessed step.
     const totalIsEstimate = s.blendedCumulative !== s.cumulative;
     const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCumulative - s.cumulative} estimated.` : "";
-    // Two independent, unrelated reasons a step can warn - reuses the exact
-    // same visual language (the row tint, the warn badge) for both rather
-    // than inventing a second one, since to the user both mean the same
-    // thing: "this step needs attention". prereqWarn is sequence-aware
-    // (computed above, per this exact click order); classCapWarn isn't (a
-    // step's own stepRank against today's cap, independent of position -
-    // see computeProgressionSteps). Concatenated rather than picked-one
-    // when both happen to apply to the same step.
+    // Two independent reasons a step can warn, sharing the same visual
+    // language since both mean "this step needs attention" to the user.
+    // prereqWarn is sequence-aware; classCapWarn isn't (stepRank vs.
+    // today's cap, independent of position). Concatenated when both apply.
     const warnTitles = [];
     if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
     if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
@@ -4057,20 +3715,14 @@ function renderProgression() {
     if (!expanded) return row;
     const nextRank = s.stepRank + 1;
     const nextRawCost = s.aa.costs[s.stepRank];
-    // costDisplayScoped doesn't need an active slot the way costDisplay's
-    // catKey does (same reasoning as Browse - see scopeForBrowseLabel), so
-    // an inactive-class step still gets its estimate shown here even
-    // though its cost pill above stays plain (that one mirrors stepCost,
-    // which is real math forced to 0 for an inactive step regardless).
-    const nextDisp = s.category
-      ? costDisplay(s.category, s.idx, s.stepRank, nextRawCost)
-      : costDisplayScoped(s.scope, s.className, s.idx, s.stepRank, nextRawCost);
+    // steps is already filtered to active entries (see above), so
+    // s.category is always set here - no need for costDisplayScoped's
+    // fallback the way Browse/Other Classes need it.
+    const nextDisp = costDisplay(s.category, s.idx, s.stepRank, nextRawCost);
     const nextChip = nextDisp.isGuess
       ? ` <span class="confidence-chip tier-${nextDisp.confidence}" title="${escapeHtml(nextDisp.title)}">${nextDisp.confidence}</span>`
       : "";
-    const nextDescLookup = s.category
-      ? effectLookup(s.category, s.idx)
-      : effectLookupScoped(s.scope, s.className, s.idx);
+    const nextDescLookup = effectLookup(s.category, s.idx);
     return row + `<div class="next-rank-box progression-next-rank${nextDisp.isGuess ? " is-estimate" : ""}">
         <div class="next-rank-title">Next Rank (${nextRank}/${s.aa.ranks}) &middot; costs <b class="${nextDisp.isGuess ? "is-estimate" : ""}" title="${nextDisp.isGuess ? escapeHtml(nextDisp.title) : ""}">${nextDisp.text}</b> pt(s)${nextChip}</div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(s.aa.description, nextRank), nextRank, nextDescLookup)}</div>
@@ -4146,10 +3798,9 @@ function renderProgression() {
       applyAttempt(attemptDecrement(category, idx));
     });
   });
-  // Toggles the owned watermark's boundary at this exact step: marking an
-  // unowned step owns it and everything below (you can't have actually
-  // trained rank 3 without ranks 1-2), unmarking an owned one drops the
-  // watermark to just below it, leaving anything still lower alone.
+  // Toggles the owned watermark at this step: marking an unowned step owns
+  // it and everything below it (you can't have rank 3 without ranks 1-2);
+  // unmarking an owned one drops the watermark to just below it.
   Array.from(el.progressionContent.querySelectorAll(".step-own")).forEach((btn) => {
     btn.addEventListener("click", () => {
       const scope = btn.getAttribute("data-scope");
@@ -4279,16 +3930,12 @@ function undoLast() {
 }
 
 // An up/down arrow swaps a visible row with its next VISIBLE neighbor, not
-// literally the next array slot - since a class swap no longer wipes an
-// inactive class's entries (events.js), one can now sit between two active
-// rows in state.purchaseOrder with nothing rendered for it. A plain
-// index+dir adjacent swap would swap past it invisibly (moveEntry still
-// runs, but nothing about the visible list changes - a dead-feeling click).
-// Skipping to the next entry isEntryActive still counts, then reinserting
-// at THAT entry's own pre-removal index reproduces a plain adjacent swap
-// when there's nothing to skip, and correctly "jumps over" any inactive
-// run otherwise, leaving those entries' relative order among themselves
-// undisturbed - see moveEntry's own splice-out/splice-in semantics.
+// literally the next array slot - an inactive entry can sit between two
+// active rows in state.purchaseOrder with nothing rendered for it, and a
+// plain index+dir swap would swap past it invisibly (a dead-feeling click).
+// Skips to the next entry isEntryActive still counts, then reinserts at
+// that entry's pre-removal index - a plain adjacent swap when there's
+// nothing to skip, and a clean jump over any inactive run otherwise.
 function moveProgressionEntry(index, dir) {
   let target = index + dir;
   while (target >= 0 && target < state.purchaseOrder.length && !isEntryActive(state.purchaseOrder[target])) {
@@ -4304,18 +3951,14 @@ function moveProgressionEntry(index, dir) {
 }
 
 // Drag-and-drop reorder: pulls the entry at fromIndex out and reinserts it at
-// toIndex (an insertion point, i.e. state.purchaseOrder.length is valid and
-// means "at the end"). Unlike moveProgressionEntry's adjacent swap, this never
-// needs a same-AA guard, including for dragging one rank of an AA past its
-// own other rank (which the arrows explicitly block with a toast instead).
-// purchaseOrder entries only ever hold {scope, className, idx} - never a rank
-// number - so two occurrences of the same AA are structurally identical
-// objects, and computeProgressionSteps derives stepRank purely from an
-// entry's position among same-key entries. Dragging "rank 2" above "rank 1"
-// is therefore indistinguishable from having dragged "rank 1" instead: the
-// row you drop simply renders as rank 1 afterward. No corruption either way -
-// but this stops being true the moment an entry starts carrying its own rank,
-// so revisit this if that ever changes.
+// toIndex (an insertion point; state.purchaseOrder.length means "at the
+// end"). Unlike moveProgressionEntry's adjacent swap, this never needs a
+// same-AA guard, including for dragging one rank of an AA past its own
+// other rank. purchaseOrder entries hold {scope, className, idx}, never a
+// rank number, so two occurrences of the same AA are structurally
+// identical - dragging "rank 2" above "rank 1" just renders as rank 1
+// afterward, no corruption. Revisit this if an entry ever starts carrying
+// its own rank.
 function moveProgressionEntryTo(fromIndex, toIndex) {
   if (toIndex > fromIndex) toIndex -= 1; // account for the shift left after removal
   if (fromIndex === toIndex) return;
@@ -4326,25 +3969,19 @@ function moveProgressionEntryTo(fromIndex, toIndex) {
 // Move To (the "⋯" popover menu): the shared destination math for every
 // action in it (top/bottom of list, a waypoint section's top/bottom, the
 // position field) - each just computes a different targetVisiblePos
-// (1-indexed among active rows, matching s.visiblePos - see renderProgression)
-// and hands it here.
+// (1-indexed among active rows, matching s.visiblePos) and hands it here.
 //
 // Unlike moveProgressionEntryTo's pre-removal "insert before this absolute
 // index" convention, this returns a POST-removal absolute index, directly
-// usable as moveEntry's own toIdx with no further adjustment - simpler to
-// reason about correctly here since the target is expressed as "how many
-// OTHER active rows precede it" rather than "which row currently occupies
-// that slot" (the latter reads intuitively but is actually wrong for a
-// forward move: inserting before today's occupant of position P lands one
-// slot too early once the removal above it shifts things - the direction-
-// dependent bug this filter+count approach sidesteps entirely).
+// usable as moveEntry's toIdx - simpler to reason about since the target
+// is "how many other active rows precede it" rather than "which row
+// currently occupies that slot" (which is actually wrong for a forward
+// move, landing one slot too early once the removal shifts things).
 //
 // Walks purchaseOrder with fromIndex conceptually removed, counting only
-// active entries (isEntryActive) exactly like the up/down-arrow neighbor
-// skip - an inactive entry between two active ones must never count
-// toward "position" or interrupt the count, and its own relative position
-// among whatever's left is otherwise undisturbed by this, same guarantee
-// moveEntry's plain splice-out/splice-in already gives everywhere else.
+// active entries (isEntryActive), same as the up/down-arrow neighbor skip
+// - an inactive entry between two active ones never counts toward
+// "position" or interrupts the count.
 function absoluteIndexForVisiblePosition(fromIndex, targetVisiblePos) {
   if (targetVisiblePos <= 1) return 0;
   const withoutMoved = state.purchaseOrder.filter((_, i) => i !== fromIndex);
@@ -4370,18 +4007,12 @@ function moveToVisiblePosition(fromIndex, targetVisiblePos) {
 // (only progressionContent's innerHTML is replaced), so binding it there would
 // stack up a fresh listener on every render.
 //
-// Bound to progressionWrap, not progressionContent: progressionContent has no
-// padding/border/overflow of its own, so only the *last* row's bottom margin
-// collapses through it - its box ends exactly at the last row's bottom edge,
-// and everything below genuinely belongs to the scrollable progressionWrap
-// around it. Binding this to progressionContent instead would make the
-// fallback unreachable except in the ~8px margin strip right under the last
-// row - a strip that doesn't even exist post-collapse. isBelowLastRow's
-// remaining job here is filtering progressionWrap's own side padding and the
-// toolbar area above the rows, not inter-row gaps: a *middle* row's margin
-// does NOT collapse out, so the pointer over one of those still lands on
-// progressionContent (see the dedicated listener below), never reaching this
-// wrap-level handler at all.
+// Bound to progressionWrap, not progressionContent: progressionContent has
+// no padding/border/overflow of its own, so only the last row's bottom
+// margin collapses through it, and everything below genuinely belongs to
+// the scrollable wrap around it. A middle row's margin does NOT collapse
+// out, so the pointer over an inter-row gap lands on progressionContent
+// instead (see the dedicated listener below), never reaching this handler.
 function lastProgressionRow() {
   const rows = el.progressionContent.querySelectorAll(".progression-row");
   return rows.length ? rows[rows.length - 1] : null;
@@ -4504,17 +4135,11 @@ function showToast(msg) {
   showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
 }
 
-// The list has grown enough (several versions, some with multi-paragraph
-// entries) that it routinely needs scrolling to read in full, and this
-// app's custom scrollbar (see the ::-webkit-scrollbar rules) is thin enough
-// - and, on some platforms/browsers, invisible until actively scrolling -
-// that a first-time viewer can miss it's there at all and mistake a
-// mid-sentence cutoff for the end of the list. updateChangelogFade adds a
-// bottom fade while there's more to scroll to, matching the "more content
-// below" convention, and removes it once actually scrolled to the end (or
-// if everything already fits with no scrolling needed at all - same check
-// covers both, since scrollTop+clientHeight >= scrollHeight is true either
-// way).
+// The changelog list routinely needs scrolling to read in full, and this
+// app's thin custom scrollbar can be easy to miss - a bottom fade signals
+// there's more below, and clears once actually scrolled to the end (or if
+// everything already fits with no scrolling needed - the same
+// scrollTop+clientHeight >= scrollHeight check covers both).
 function updateChangelogFade() {
   const el2 = el.changelogContent;
   const atBottom = el2.scrollTop + el2.clientHeight >= el2.scrollHeight - 1;
@@ -4643,12 +4268,10 @@ function handleBuildSave() {
 
 // Wire-format version for BUILD_CODE specifically (share links, export
 // text) — independent of state.js's SAVE_FORMAT_VERSION, which governs
-// localStorage only and stays name-keyed on purpose (readable, no size
-// pressure there). BUILD_CODE trades that readability for size: numeric AA
-// ids from aaIds.js instead of name keys, abbreviated field names, and
-// ranks/purchaseOrder as flat arrays instead of nested objects/objects-with-
-// repeated-keys. Never used 2 before (history went 3 -> 4), so no collision
-// with an old share code's v.
+// localStorage only and stays name-keyed (readable, no size pressure
+// there). BUILD_CODE trades that readability for size: numeric AA ids
+// instead of name keys, abbreviated field names, and ranks/purchaseOrder
+// as flat arrays instead of nested objects.
 const BUILD_CODE_VERSION = 2;
 
 // An AA missing from aaIds.js shouldn't happen for anything currently
@@ -4676,14 +4299,11 @@ function compactRanksFor(ranksLike) {
 
 // owned is character-global (state.js's OWNED_STORAGE_KEY), not part of any
 // one plan, so it's left out of the code unless the Export modal's "Include
-// owned progress" checkbox explicitly opts in - e.g. to move your own owned
-// data to another browser/device via export+import, or to hand a friend a
-// build that also shows what you've already trained. Off by default: most
-// exports are just sharing a plan, and owned is personal real-world data the
-// sender may not intend to broadcast. On the import side, an incoming `o`
-// field is never applied silently - see importBuildFromText/
-// applySharedBuildFromUrl, which warn and ask before overwriting the
-// receiver's own owned data with it.
+// owned progress" checkbox explicitly opts in. Off by default: most exports
+// are just sharing a plan, and owned is personal data the sender may not
+// intend to broadcast. On the import side, an incoming `o` field is never
+// applied silently - see importBuildFromText/applySharedBuildFromUrl, which
+// warn and ask before overwriting the receiver's own owned data with it.
 function buildCodeObject(includeOwned) {
   const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
     .map((e) => idForKey(e.scope, e.className, e.key))
@@ -4743,13 +4363,9 @@ function expandCompactPayload(compact) {
     v: SAVE_FORMAT_VERSION,
     selectedClasses: (compact.c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
     charLevel: compact.l,
-    // An older share code/link may still carry a `t` (totalPoints) field -
-    // simply never read into anything here, same graceful-ignore as any
-    // other field a decoder doesn't recognize. No BUILD_CODE_VERSION bump
-    // needed for either direction: an old link decoded by today's app just
-    // drops it; a new link decoded by an old app leaves totalPoints
-    // undefined, which that app's own applyLoaded already treated as "no
-    // change" for anything that wasn't a valid number.
+    // An older share code/link may still carry a `t` (totalPoints) field,
+    // from before the point cap was removed - simply never read into
+    // anything here, same graceful-ignore as any unrecognized field.
     ranks: expandCompactRanks(compact.r),
     purchaseOrder,
     // Raw [pts, label] pairs, or absent on an older link/build predating
@@ -4853,16 +4469,14 @@ async function buildShareUrl(includeOwned) {
 // Called once on startup. If the URL has a ?build= param, offers to load it — with
 // a confirmation if it would clobber an existing non-empty build — then strips the
 // param from the address bar either way so a refresh doesn't re-prompt. Returns
-// { applied, notice } rather than toasting directly — main.js is the single
-// place that decides what to show, so this outcome can be combined with
-// other load-time notices into one toast instead of one overwriting another.
+// { applied, notice } rather than toasting directly — main.js combines this
+// outcome with other load-time notices into one toast.
 //
 // localLoadResult is applyLoaded(loadLocal())'s result, from immediately
-// before this runs — needed because spentPoints() alone reflects the local
-// build *after* pruning any dropped picks. A build that lost every point
-// it had to a bad resync would otherwise read as empty, skip the confirm,
-// and get silently overwritten here (with an unconditional saveLocal below)
-// on the exact load where preserving the original save mattered most.
+// before this runs — needed because a build that lost every point to a bad
+// resync would otherwise read as empty, skip the confirm, and get silently
+// overwritten here on the exact load where preserving the original save
+// mattered most.
 async function applySharedBuildFromUrl(localLoadResult) {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get("build");
@@ -4881,12 +4495,11 @@ async function applySharedBuildFromUrl(localLoadResult) {
     const extraRisk = !!(localLoadResult && localLoadResult.droppedRanks > 0);
     // trustMatch: false when the active slot is the reused "imported" one -
     // proceeding is about to overwrite that exact slot via saveImportedBuild
-    // below, so treating a match against it as "safely backed up" would be
-    // trusting the very copy this operation is seconds from destroying. Open
-    // link A with no edits, open link B: without this, the gate sees A's
-    // untouched copy "matching" the imported slot and skips the prompt
-    // entirely, then saveImportedBuild silently overwrites A with B - worse
-    // than pre-slots behavior, which at least asked.
+    // below, so treating a match against it as "safely backed up" would
+    // trust the very copy this operation is about to destroy. Open link A
+    // with no edits, then link B: without this, the gate sees A "matching"
+    // the imported slot, skips the prompt, and saveImportedBuild silently
+    // overwrites A with B.
     const proceed = confirmReplaceCurrentBuild("load", "the shared build from this link", {
       extraRisk,
       trustMatch: !isActiveBuildTheImportedSlot()
@@ -4985,9 +4598,15 @@ async function openExportModal() {
 // focusText only applies on the initial open - re-running it on every
 // checkbox toggle would yank focus out of the checkbox and back into the
 // textarea on each click.
+let exportGeneration = 0;
 async function regenerateExportContent(focusText = true) {
+  const generation = ++exportGeneration;
   const includeOwned = el.includeOwnedCheckbox.checked;
   const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
+  // A second toggle while the first call is still compressing could resolve
+  // out of order - bail if a newer call has already started, so the fields
+  // never end up showing a stale includeOwned value.
+  if (generation !== exportGeneration) return;
   el.exportText.value = text;
   el.shareLinkInput.value = url;
   if (focusText) {
@@ -5146,12 +4765,10 @@ function wireEvents() {
       if (newValue === oldValue) return;
       const dupSlot = state.selectedClasses.findIndex((c, j) => j !== i && c === newValue);
 
-      // A genuine replacement (not a swap) - oldValue is leaving the 3-class
-      // combo - no longer wipes its picks. They simply stop being "active"
-      // (resolveEntryCategory, logic.js): invisible in the tree/Progression,
-      // but still fully intact and visible in the Other Classes tab, still
-      // counted in spentPoints()'s lifetime total, still part of the build
-      // payload. Swapping back in restores them exactly as left.
+      // A genuine replacement (oldValue leaving the 3-class combo) no
+      // longer wipes its picks - they just stop being "active"
+      // (resolveEntryCategory), staying visible in the Other Classes tab
+      // and counted in spentPoints() until swapped back in.
 
       state.selectedClasses[i] = newValue;
       if (dupSlot >= 0) {
@@ -5229,9 +4846,8 @@ function wireEvents() {
   el.resetModal.addEventListener("click", (e) => { if (e.target === el.resetModal) closeResetModal(); });
 
   // Standalone counterpart to Reset Build's checkbox: clears owned progress
-  // without touching the plan (the checkbox only ever clears owned alongside
-  // the plan, never alone). No modal needed - there's no option to offer,
-  // just a yes/no on a destructive action, so a plain confirm() is enough.
+  // without touching the plan. No modal needed - just a yes/no on a
+  // destructive action, so a plain confirm() is enough.
   el.clearOwnedBtn.addEventListener("click", () => {
     if (el.clearOwnedBtn.disabled) return;
     const ok = confirm("Clear all owned progress? This can't be undone, and won't affect your planned picks.");
@@ -5294,35 +4910,23 @@ function wireEvents() {
 async function init() {
   cacheDom();
   populateStaticControls();
-  // Before anything (a share link, later normal use) could call
-  // activeBuildMatchesCurrent() and compare a saved slot's stored payload
-  // against today's buildPayload() - see migrateStaleBuildSlots's own
-  // comment for why a stale field left in an old slot would otherwise read
-  // as "unsaved changes" the first time that comparison runs post-upgrade.
+  // Must run before anything could call activeBuildMatchesCurrent() and
+  // compare a saved slot against today's payload - see migrateStaleBuildSlots.
   migrateStaleBuildSlots();
   const rawLocal = loadLocal();
   const localResult = applyLoaded(rawLocal);
-  // Owned is character-global (its own storage key, not the build payload
-  // above - see state.js) so it loads independently of whichever build ends
-  // up active below. rawLocal is only consulted for a one-time migration of
-  // saves made during this feature's brief window of embedding owned inside
-  // the main payload instead. Folded into localResult.droppedRanks so the
-  // notice below and applySharedBuildFromUrl's extraRisk gate both already
-  // account for it without any further plumbing.
+  // Owned loads independently of whichever build ends up active below (see
+  // state.js). Folded into localResult.droppedRanks so the notice below and
+  // applySharedBuildFromUrl's extraRisk gate both account for it already.
   const ownedResult = loadAndApplyOwned(rawLocal);
   localResult.droppedRanks += ownedResult.droppedOwned;
-  // Hidden, like owned, is character-global and loaded from its own storage
-  // key independent of whichever build ends up active below - no dropped-
-  // count to fold in (an unresolvable saved key is just silently skipped,
-  // same as a stale field anywhere else - hiding a since-removed AA isn't
-  // something worth a load-time notice about).
+  // Hidden, like owned, loads independently of whichever build ends up
+  // active - no dropped-count to fold in, since a since-removed AA's
+  // hidden entry is just silently skipped, not worth a load-time notice.
   loadAndApplyHidden();
-  // If a share link applies, it replaces whatever localStorage just loaded -
-  // so the local load's result no longer describes the build actually in
-  // front of the user. Neither path toasts directly; this function is the
-  // one place that assembles and shows a load-time notice, so several
-  // simultaneous issues combine into one toast instead of each overwriting
-  // the last.
+  // If a share link applies, it replaces whatever localStorage just loaded.
+  // Neither path toasts directly - this function assembles and shows one
+  // combined load-time notice instead of several overwriting each other.
   const shared = await applySharedBuildFromUrl(localResult);
   wireEvents();
   cleanupStaleStorageKeys();
@@ -5346,26 +4950,19 @@ async function init() {
   if (repaired) {
     notices.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was out of sync and ${repaired === 1 ? "was" : "were"} repaired`);
   }
-  // Persisting a repair is safe — it's a lossless normalization of state
-  // that's already in memory, and it's why the toast above stops recurring
-  // once it's saved. Persisting a drop is not: localStorage is this path's
-  // *only* copy of the build (unlike a share link or pasted import text,
-  // where the source survives on its own), so writing back a build with a
-  // dropped AA missing risks turning a recoverable loss into a permanent
-  // one. So: only persist when something was actually repaired, and never
-  // on the same load a drop happened — the drop notice recurs every visit
-  // until the data is fixed, which is the point. (Also incidentally means a
-  // brand-new visitor with nothing saved yet — repaired is always 0 for
-  // them — no longer writes a default payload to storage for no reason.)
+  // Persisting a repair is safe - it's a lossless normalization of state
+  // already in memory. Persisting a drop is not: localStorage is this
+  // path's only copy of the build, so writing back with a dropped AA
+  // missing risks turning a recoverable loss into a permanent one. Only
+  // persist when something was actually repaired, and never on the same
+  // load a drop happened - the drop notice recurs every visit until the
+  // data is fixed, which is the point.
   //
-  // This only protects against the load itself overwriting the save. It's
-  // not a durable "your original build is safe until the data is fixed"
-  // guarantee — any normal interaction afterward (changeRank, an import,
-  // accepting a share link — see applySharedBuildFromUrl's own hasExisting
-  // check) still calls saveLocal() as usual and persists whatever's in
-  // memory at that point, dropped picks included. This buys the user a
-  // chance to notice and export/back up before that happens; it doesn't
-  // guarantee they will.
+  // This only protects against the load itself overwriting the save - any
+  // normal interaction afterward (changeRank, an import, accepting a share
+  // link) still calls saveLocal() and persists whatever's in memory,
+  // dropped picks included. It buys a chance to notice and back up before
+  // that happens, not a guarantee.
   if (!shared.applied && repaired > 0 && !localResult.droppedRanks) saveLocal();
   // Data can drift out from under a saved build (a resync renaming/reshaping a
   // prereq target, or reselecting classes away from a class-rank-cap AA's

@@ -7,7 +7,7 @@ export const USER_CHANGELOG = [
     version: "1.8.1",
     date: "2026-07-28",
     items: [
-      "New: a \"Move To\" button on each Progression row opens a quick-jump menu — top or bottom of the list, top or bottom of any waypoint section, or a specific position — for reordering a long build without dragging it row by row. If a step's own cost would push it past the section you're moving it into, it lands as close as it can while still staying inside that section instead of silently landing further along, and grays out if it can't fit there at all."
+      "New: a \"Move To\" button on each Progression row opens a quick-jump menu — top or bottom of the list, top or bottom of any waypoint, or a specific position — for reordering a long build without dragging it row by row. If a step's own cost would push it past the waypoint you're aiming for, it lands as close as it can instead of overshooting, and grays out if it truly can't fit."
     ]
   },
   {

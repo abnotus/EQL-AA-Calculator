@@ -1,10 +1,7 @@
-// Named build slots: save/load/rename/delete snapshots of the current build in
-// localStorage, independent of state.js's own always-autosaving STORAGE_KEY —
-// that key keeps holding "whatever you're currently editing", exactly as it
-// did before this existed. A named slot is an explicit snapshot you take of
-// that; loading one just overwrites the current working state with it, which
-// then goes on autosaving under STORAGE_KEY as normal. No migration needed:
-// an existing single-build save is untouched and simply has no active slot.
+// Named build slots: save/load/rename/delete snapshots of the current build
+// in localStorage, independent of state.js's always-autosaving STORAGE_KEY
+// (which keeps holding whatever you're currently editing). Loading a slot
+// just overwrites the current working state, which then autosaves as normal.
 
 import { state, saveLocal, serializeRanks, serializePurchaseOrder, applyLoaded, SAVE_FORMAT_VERSION } from "./state.js";
 import { spentPoints, clearLastMutation, reconcilePurchaseOrderCounts } from "./logic.js";
@@ -70,29 +67,11 @@ export function clearActiveBuild() {
   setActiveBuildId(null);
 }
 
-// One-time migration: strip the dead `totalPoints` field from every saved
-// slot's stored payload. buildPayload stopped emitting it when the total-
-// points cap was removed (see MAX_WAYPOINT_PTS's own history), but every
-// slot saved before that upgrade still has it baked into the stored JSON
-// string. Left in place, that mismatch makes activeBuildMatchesCurrent()'s
-// string comparison report "unsaved changes" for a slot the user hasn't
-// actually touched, the first time it's compared post-upgrade - self-
-// healing (a real save clears it) but a false "unsaved" reading is exactly
-// the wrong thing to get wrong in the one subsystem whose entire job is
-// telling the user whether their work is backed up, nine days before
-// launch, with slots up to three versions old. Parse -> delete -> re-
-// stringify preserves the remaining keys' insertion order (the string came
-// from that same object-literal shape originally), so a healed slot
-// compares byte-identical to what today's buildPayload produces for the
-// same content - the fix works entirely through the same string-equality
-// activeBuildMatchesCurrent already relies on, no structural comparison
-// needed. Strips only the one field buildPayload genuinely stopped
-// emitting - no opportunistic normalizing of anything else in the stored
-// payload. An unparseable slot is left alone, same tolerance
-// listBuilds/loadBuild already have for one. Runs once at boot (see
-// main.js), before anything could compare against a slot; every slot that
-// doesn't need touching is left byte-identical, so this is a no-op after
-// the first run per slot.
+// One-time migration: strips the dead `totalPoints` field (gone once the
+// point cap was removed) from every saved slot's stored JSON. Purely
+// cosmetic now that activeBuildMatchesCurrent ignores extra keys anyway -
+// kept so old slots don't carry stale data forever. Runs once at boot; a
+// no-op after the first pass per slot.
 export function migrateStaleBuildSlots() {
   loadIndex().forEach(({ id }) => {
     const key = BUILD_KEY_PREFIX + id;
@@ -134,11 +113,8 @@ function buildPayload() {
   };
 }
 
-// Order-independent (for object keys; array order still matters, since it's
-// semantically meaningful for purchaseOrder/waypoints/selectedClasses)
-// equality check. Deliberately not a generic "are these two values equal"
-// utility - see deepEqualIgnoringExtraKeys below for the one-directional
-// twist activeBuildMatchesCurrent actually needs.
+// Object-key order doesn't matter here; array order still does, since it's
+// meaningful for purchaseOrder/waypoints/selectedClasses.
 function deepEqual(a, b) {
   if (a === b) return true;
   if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
@@ -155,31 +131,15 @@ function isEmptyComposite(v) {
   return typeof v === "object" && v !== null && Object.keys(v).length === 0;
 }
 
-// Whether every field current buildPayload() defines matches the
-// corresponding field in a stored slot - deliberately checking only
-// `current`'s own keys, not requiring the two objects to have the *same*
-// key set, in EITHER direction:
-//
-// - stored has a key current doesn't (extra): a field that's since been
-//   retired (owned briefly living in the main payload; totalPoints before
-//   the point-cap removal). Simply never looked at, via Object.keys(current).
-// - current has a key stored doesn't (missing): a field that didn't exist
-//   *yet* when the slot was saved - waypoints shipped in 1.5.0, so any slot
-//   saved in 1.3.x-1.4.x has no waypoints key in its stored payload at all.
-//   applyLoaded itself proves the equivalence: loading that exact slot
-//   produces state.waypoints = [] (sanitizeWaypoints(undefined) -> []),
-//   the same empty default current buildPayload() would emit right now -
-//   so a missing key is only safely treated as a match when today's value
-//   for that key is an empty composite ([] or {}). Anything else (a
-//   non-empty array/object, a primitive) is a real difference and must
-//   still fail. Top-level only: nested shapes (ranks' four scope buckets,
-//   say) have been stable since slots first shipped, so a missing NESTED
-//   key can't legitimately occur this way and correctly still fails via
-//   plain deepEqual below.
-//
-// Both directions share the same justification - a key one side lacks
-// entirely is an artifact of history, not a real difference in plan
-// content - and must never make an untouched slot register as "changed".
+// Whether every field current buildPayload() defines matches a stored
+// slot - checking only `current`'s own keys, tolerant of key-set
+// mismatches in both directions: a key stored has but current doesn't is a
+// retired field (e.g. totalPoints) and is simply ignored; a key current
+// has but stored doesn't is one that didn't exist yet when the slot was
+// saved (e.g. waypoints, added in 1.5.0) and only counts as a match if
+// today's value for it is an empty array/object - anything else is a real
+// difference. Either way, a key one side lacks entirely is an artifact of
+// the payload's shape changing over time, not a real change to the plan.
 function deepEqualIgnoringExtraKeys(stored, current) {
   if (typeof stored !== "object" || stored === null) return false;
   return Object.keys(current).every((k) => {
@@ -188,26 +148,16 @@ function deepEqualIgnoringExtraKeys(stored, current) {
   });
 }
 
-// Whether the current working state matches what's actually stored under
-// the active slot — not just "there is an active slot", since further
-// changes since the last save/load would leave the two diverged even with
-// an id still set. Lets a caller about to replace the current build (the
-// Builds menu's own Load button, a share link, a text import - every
-// caller of confirmReplaceCurrentBuild, see that function) skip warning
-// about losing something that's already safely backed up, without needing
-// a separate "dirty" flag threaded through every mutation path - this just
-// compares on demand instead.
+// Whether the current working state matches what's stored under the active
+// slot - not just "there is an active slot", since changes since the last
+// save/load would leave the two diverged. Lets a caller about to replace
+// the build (Load, a share link, a text import - every caller of
+// confirmReplaceCurrentBuild) skip warning about losing something already
+// backed up, without threading a "dirty" flag through every mutation path.
 //
-// Structural, not a raw string/JSON.stringify comparison - the string
-// version broke the instant a field ever got added or removed from
-// buildPayload's shape (that happened for real: totalPoints's removal made
-// every pre-existing slot read as "unsaved" the first time this ran
-// against it, healed only by an extra one-time migration sweep). A
-// structural, current-keys-only comparison is immune to that entire class
-// of bug permanently - past or future field removals, additions, or a
-// slot whose stored JSON simply serialized its keys in a different order
-// than today's buildPayload happens to - none of it can ever cause a false
-// "unsaved" reading again, in any of the menus that ask this question.
+// Structural, not a string/JSON comparison - immune to buildPayload's
+// shape changing over time (a field added or removed) or the stored JSON's
+// keys simply serializing in a different order.
 function activeBuildMatchesCurrent() {
   const id = getActiveBuildId();
   if (!id) return false;
@@ -246,41 +196,28 @@ function saveBuildAs(name, id = null) {
 }
 
 // Saves under `name`, confirming first if it would silently duplicate an
-// existing slot's name — the interactive-save entry point (handleBuildSave
-// in render.js, confirmReplaceCurrentBuild's own save-first offer below)
-// both fork through here, so "does saving a duplicate name overwrite or
-// duplicate" can't drift between the two paths the way it did before this
-// existed. Returns the slot's id, false if the user declined the overwrite,
-// or null on a storage failure - three outcomes a caller needs to tell apart
-// (a decline isn't an error worth a "couldn't save" toast).
+// existing slot's name. Both interactive-save entry points (handleBuildSave
+// in render.js, and confirmReplaceCurrentBuild's save-first offer below)
+// go through here. Returns the slot's id, false if the user declined the
+// overwrite, or null on a storage failure - a decline isn't an error worth
+// a "couldn't save" toast, so callers need to tell the two apart.
 export function saveWithNameCheck(name) {
   const existing = listBuilds().find((b) => b.name === name);
   if (existing && !confirm(`A build named "${name}" already exists. Overwrite it?`)) return false;
   return saveBuildAs(name, existing ? existing.id : null);
 }
 
-// Gate in front of anything that's about to fully replace the current working
-// state (a share link, a text import, loading a different saved slot) with
-// something else. Three outcomes:
-//   - nothing at risk, or the current build already matches a saved slot
-//     exactly (activeBuildMatchesCurrent) -> proceed silently. This is what
-//     makes flipping between two already-saved builds nag-free in either
-//     direction, which is the whole point of the feature.
-//   - there's real content and it isn't backed up anywhere -> offer to save
-//     it under a name before proceeding, rather than just warning it'll be
-//     lost. Declining the name prompt (or the overwrite confirm inside
-//     saveWithNameCheck) backs out of the whole operation entirely rather
-//     than guessing whether that meant "save it anyway" or "never mind".
-//   - offered but explicitly declined saving -> fall back to the plain
-//     "this will replace your build" confirmation, so declining to save
-//     isn't itself a dead end.
-// extraRisk covers a risk source that doesn't fit "spentPoints() > 0" -
-// applySharedBuildFromUrl's caller-supplied droppedRanks check. trustMatch
-// lets a caller say the active-slot match itself isn't trustworthy: opening
-// a share link when the active slot is the reused "imported" one is about to
-// overwrite that exact slot via saveImportedBuild, so treating the match as
-// "safely backed up" would be trusting the very copy the operation is
-// seconds from destroying.
+// Gate in front of anything about to fully replace the current working
+// state (a share link, a text import, loading a different slot). Proceeds
+// silently if there's nothing at risk or the build already matches a saved
+// slot; otherwise offers to save it under a name first, falling back to a
+// plain replace-confirmation if that's declined.
+//
+// extraRisk covers a risk source that doesn't fit "spentPoints() > 0"
+// (applySharedBuildFromUrl's droppedRanks check). trustMatch lets a caller
+// say the active-slot match itself isn't trustworthy - opening a share
+// link while the active slot is the reused "Imported Build" one is about
+// to overwrite that very slot, so its match shouldn't count as backed up.
 export function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, trustMatch = true } = {}) {
   const isBackedUp = trustMatch && activeBuildMatchesCurrent();
   if ((spentPoints() <= 0 && !extraRisk) || isBackedUp) return true;
@@ -289,14 +226,10 @@ export function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, tr
     const name = prompt("Name this build:", "");
     if (!name || !name.trim()) return false;
     const result = saveWithNameCheck(name.trim());
-    // saveWithNameCheck's three outcomes need telling apart here, not
-    // collapsing to a truthy check: false (declined the overwrite) backs out
-    // the same as declining to name it at all - nothing was asked to be
-    // saved, so proceeding would silently replace a build the user never
-    // agreed to lose. null (storage full/unavailable) is the one case that
-    // must NOT proceed either, despite being the exact moment the user
-    // affirmatively asked for protection - proceeding anyway on a failed
-    // save is data loss precisely when the user did everything right.
+    // false (declined the overwrite) backs out the same as declining to
+    // name it - nothing was saved, so proceeding would replace a build the
+    // user never agreed to lose. null (storage full) must also not
+    // proceed, even though the user did everything right.
     if (result === false) return false;
     if (result === null) {
       alert('Couldn\'t save — local storage may be full or unavailable. Nothing was changed.');
@@ -307,51 +240,35 @@ export function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, tr
   return confirm(`${verb.charAt(0).toUpperCase()}${verb.slice(1)} ${target}? This will replace your current build and can't be undone.`);
 }
 
-// The slot saveImportedBuild would target on its next call - whichever entry
-// is *currently* named "Imported Build", if any, regardless of id. Naming is
-// the reuse key, not id: a rename only ever changes an entry's name, so
-// whatever id that entry has belongs to the (now renamed/adopted) entry
-// forever. A lookup keyed on id - as this used to be, back when a fixed
-// "imported" id existed for a first import to claim - would keep finding
-// that same permanently-adopted entry after every future rename and
-// concluding "adopted" each time, allocating a fresh id per import forever
-// after the first adoption: the exact unbounded pile of same-named slots the
-// fixed id existed to prevent. A user who saved before that changed may
-// still have a slot with the literal id "imported" sitting at the default
-// name - this lookup finds and reuses it exactly like any other, since it's
-// resolving by name, not by that now-meaningless id.
-// isActiveBuildTheImportedSlot and saveImportedBuild both need this exact
-// same answer (one to know what it's about to overwrite, one to know what to
-// distrust), so it's one predicate rather than two independent lookups that
-// could drift the way autoFloor's split into changeRank/attemptDecrement did.
+// The slot saveImportedBuild would target next - whichever entry is
+// currently named "Imported Build", regardless of id. Looked up by name,
+// not id: a rename only changes an entry's name, so the id it already has
+// stays attached to it - looking up by a fixed id would keep finding the
+// old (now-renamed) entry and allocate a fresh slot on every future import
+// instead of reusing the current one.
 //
-// One accepted consequence: naming your own build "Imported Build" opts it
-// into being the reuse target - already true before this fix (the id lookup
-// couldn't tell a user's own entry from an actually-imported one either), so
-// not a regression.
+// isActiveBuildTheImportedSlot and saveImportedBuild share this lookup so
+// they can't drift apart on what counts as "the" imported slot. Naming
+// your own build "Imported Build" opts it into being the reuse target - a
+// known tradeoff, not a bug.
 function findImportedSlot() {
   return loadIndex().find((b) => b.name === IMPORTED_BUILD_NAME) || null;
 }
 
 // True only while the active slot is the one the next saveImportedBuild()
-// call would actually overwrite. Once that slot's been renamed away from the
-// default name, findImportedSlot() no longer finds it, so there's nothing
-// left to distrust - confirmReplaceCurrentBuild's caller would otherwise
-// distrust an activeBuildMatchesCurrent() match that's actually accurate,
-// prompting to save content that's already safely sitting under its adopted
-// name.
+// call would overwrite. Once renamed away from the default name,
+// findImportedSlot() no longer finds it, so there's nothing left to
+// distrust in confirmReplaceCurrentBuild's trustMatch check.
 export function isActiveBuildTheImportedSlot() {
   const slot = findImportedSlot();
   return !!slot && slot.id === getActiveBuildId();
 }
 
-// A share link is often opened passively (a link in chat), not a deliberate
-// "load a build" action the way pasting import text or using the Builds
-// modal is - easy to lose track of afterward once it's not the active
-// working state anymore. Auto-saves it under one reused slot (found by name,
-// see findImportedSlot - not genId()'d fresh every time) so it stays one
-// click away in the Builds list even after you've moved on to something
-// else, without piling up a fresh "Imported Build" entry per link opened.
+// A share link is often opened passively (a link in chat) rather than a
+// deliberate "load a build" action - easy to lose track of once it's not
+// the active working state anymore. Auto-saves it under one reused slot
+// (see findImportedSlot) so it stays one click away in the Builds list
+// without piling up a fresh entry per link opened.
 export function saveImportedBuild() {
   const existing = findImportedSlot();
   return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null);
@@ -381,11 +298,9 @@ export function loadBuild(id) {
 }
 
 // False on a name collision with a *different* slot, not just "not found" -
-// renameBuild doesn't merge or overwrite the other entry (unlike saving,
-// where "overwrite it?" has an obvious meaning, two same-named slots would
-// leave save-by-name's find() picking one arbitrarily) - the caller is
-// expected to tell the two apart and report a clash rather than silently
-// treating it as "nothing happened".
+// renameBuild doesn't merge/overwrite the other entry, so the caller needs
+// to tell the two apart and report a clash rather than treating it as
+// nothing happened.
 export function renameBuild(id, name) {
   const index = loadIndex();
   const entry = index.find((b) => b.id === id);

@@ -9,12 +9,10 @@ import { idForKey, entryForId } from "./keys.js";
 
 // Wire-format version for BUILD_CODE specifically (share links, export
 // text) — independent of state.js's SAVE_FORMAT_VERSION, which governs
-// localStorage only and stays name-keyed on purpose (readable, no size
-// pressure there). BUILD_CODE trades that readability for size: numeric AA
-// ids from aaIds.js instead of name keys, abbreviated field names, and
-// ranks/purchaseOrder as flat arrays instead of nested objects/objects-with-
-// repeated-keys. Never used 2 before (history went 3 -> 4), so no collision
-// with an old share code's v.
+// localStorage only and stays name-keyed (readable, no size pressure
+// there). BUILD_CODE trades that readability for size: numeric AA ids
+// instead of name keys, abbreviated field names, and ranks/purchaseOrder
+// as flat arrays instead of nested objects.
 const BUILD_CODE_VERSION = 2;
 
 // An AA missing from aaIds.js shouldn't happen for anything currently
@@ -42,14 +40,11 @@ function compactRanksFor(ranksLike) {
 
 // owned is character-global (state.js's OWNED_STORAGE_KEY), not part of any
 // one plan, so it's left out of the code unless the Export modal's "Include
-// owned progress" checkbox explicitly opts in - e.g. to move your own owned
-// data to another browser/device via export+import, or to hand a friend a
-// build that also shows what you've already trained. Off by default: most
-// exports are just sharing a plan, and owned is personal real-world data the
-// sender may not intend to broadcast. On the import side, an incoming `o`
-// field is never applied silently - see importBuildFromText/
-// applySharedBuildFromUrl, which warn and ask before overwriting the
-// receiver's own owned data with it.
+// owned progress" checkbox explicitly opts in. Off by default: most exports
+// are just sharing a plan, and owned is personal data the sender may not
+// intend to broadcast. On the import side, an incoming `o` field is never
+// applied silently - see importBuildFromText/applySharedBuildFromUrl, which
+// warn and ask before overwriting the receiver's own owned data with it.
 function buildCodeObject(includeOwned) {
   const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
     .map((e) => idForKey(e.scope, e.className, e.key))
@@ -109,13 +104,9 @@ function expandCompactPayload(compact) {
     v: SAVE_FORMAT_VERSION,
     selectedClasses: (compact.c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
     charLevel: compact.l,
-    // An older share code/link may still carry a `t` (totalPoints) field -
-    // simply never read into anything here, same graceful-ignore as any
-    // other field a decoder doesn't recognize. No BUILD_CODE_VERSION bump
-    // needed for either direction: an old link decoded by today's app just
-    // drops it; a new link decoded by an old app leaves totalPoints
-    // undefined, which that app's own applyLoaded already treated as "no
-    // change" for anything that wasn't a valid number.
+    // An older share code/link may still carry a `t` (totalPoints) field,
+    // from before the point cap was removed - simply never read into
+    // anything here, same graceful-ignore as any unrecognized field.
     ranks: expandCompactRanks(compact.r),
     purchaseOrder,
     // Raw [pts, label] pairs, or absent on an older link/build predating
@@ -219,16 +210,14 @@ export async function buildShareUrl(includeOwned) {
 // Called once on startup. If the URL has a ?build= param, offers to load it — with
 // a confirmation if it would clobber an existing non-empty build — then strips the
 // param from the address bar either way so a refresh doesn't re-prompt. Returns
-// { applied, notice } rather than toasting directly — main.js is the single
-// place that decides what to show, so this outcome can be combined with
-// other load-time notices into one toast instead of one overwriting another.
+// { applied, notice } rather than toasting directly — main.js combines this
+// outcome with other load-time notices into one toast.
 //
 // localLoadResult is applyLoaded(loadLocal())'s result, from immediately
-// before this runs — needed because spentPoints() alone reflects the local
-// build *after* pruning any dropped picks. A build that lost every point
-// it had to a bad resync would otherwise read as empty, skip the confirm,
-// and get silently overwritten here (with an unconditional saveLocal below)
-// on the exact load where preserving the original save mattered most.
+// before this runs — needed because a build that lost every point to a bad
+// resync would otherwise read as empty, skip the confirm, and get silently
+// overwritten here on the exact load where preserving the original save
+// mattered most.
 export async function applySharedBuildFromUrl(localLoadResult) {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get("build");
@@ -247,12 +236,11 @@ export async function applySharedBuildFromUrl(localLoadResult) {
     const extraRisk = !!(localLoadResult && localLoadResult.droppedRanks > 0);
     // trustMatch: false when the active slot is the reused "imported" one -
     // proceeding is about to overwrite that exact slot via saveImportedBuild
-    // below, so treating a match against it as "safely backed up" would be
-    // trusting the very copy this operation is seconds from destroying. Open
-    // link A with no edits, open link B: without this, the gate sees A's
-    // untouched copy "matching" the imported slot and skips the prompt
-    // entirely, then saveImportedBuild silently overwrites A with B - worse
-    // than pre-slots behavior, which at least asked.
+    // below, so treating a match against it as "safely backed up" would
+    // trust the very copy this operation is about to destroy. Open link A
+    // with no edits, then link B: without this, the gate sees A "matching"
+    // the imported slot, skips the prompt, and saveImportedBuild silently
+    // overwrites A with B.
     const proceed = confirmReplaceCurrentBuild("load", "the shared build from this link", {
       extraRisk,
       trustMatch: !isActiveBuildTheImportedSlot()
@@ -351,9 +339,15 @@ export async function openExportModal() {
 // focusText only applies on the initial open - re-running it on every
 // checkbox toggle would yank focus out of the checkbox and back into the
 // textarea on each click.
+let exportGeneration = 0;
 export async function regenerateExportContent(focusText = true) {
+  const generation = ++exportGeneration;
   const includeOwned = el.includeOwnedCheckbox.checked;
   const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
+  // A second toggle while the first call is still compressing could resolve
+  // out of order - bail if a newer call has already started, so the fields
+  // never end up showing a stale includeOwned value.
+  if (generation !== exportGeneration) return;
   el.exportText.value = text;
   el.shareLinkInput.value = url;
   if (focusText) {

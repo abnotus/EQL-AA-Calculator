@@ -11,35 +11,23 @@ import { migrateStaleBuildSlots } from "./builds.js";
 async function init() {
   cacheDom();
   populateStaticControls();
-  // Before anything (a share link, later normal use) could call
-  // activeBuildMatchesCurrent() and compare a saved slot's stored payload
-  // against today's buildPayload() - see migrateStaleBuildSlots's own
-  // comment for why a stale field left in an old slot would otherwise read
-  // as "unsaved changes" the first time that comparison runs post-upgrade.
+  // Must run before anything could call activeBuildMatchesCurrent() and
+  // compare a saved slot against today's payload - see migrateStaleBuildSlots.
   migrateStaleBuildSlots();
   const rawLocal = loadLocal();
   const localResult = applyLoaded(rawLocal);
-  // Owned is character-global (its own storage key, not the build payload
-  // above - see state.js) so it loads independently of whichever build ends
-  // up active below. rawLocal is only consulted for a one-time migration of
-  // saves made during this feature's brief window of embedding owned inside
-  // the main payload instead. Folded into localResult.droppedRanks so the
-  // notice below and applySharedBuildFromUrl's extraRisk gate both already
-  // account for it without any further plumbing.
+  // Owned loads independently of whichever build ends up active below (see
+  // state.js). Folded into localResult.droppedRanks so the notice below and
+  // applySharedBuildFromUrl's extraRisk gate both account for it already.
   const ownedResult = loadAndApplyOwned(rawLocal);
   localResult.droppedRanks += ownedResult.droppedOwned;
-  // Hidden, like owned, is character-global and loaded from its own storage
-  // key independent of whichever build ends up active below - no dropped-
-  // count to fold in (an unresolvable saved key is just silently skipped,
-  // same as a stale field anywhere else - hiding a since-removed AA isn't
-  // something worth a load-time notice about).
+  // Hidden, like owned, loads independently of whichever build ends up
+  // active - no dropped-count to fold in, since a since-removed AA's
+  // hidden entry is just silently skipped, not worth a load-time notice.
   loadAndApplyHidden();
-  // If a share link applies, it replaces whatever localStorage just loaded -
-  // so the local load's result no longer describes the build actually in
-  // front of the user. Neither path toasts directly; this function is the
-  // one place that assembles and shows a load-time notice, so several
-  // simultaneous issues combine into one toast instead of each overwriting
-  // the last.
+  // If a share link applies, it replaces whatever localStorage just loaded.
+  // Neither path toasts directly - this function assembles and shows one
+  // combined load-time notice instead of several overwriting each other.
   const shared = await applySharedBuildFromUrl(localResult);
   wireEvents();
   cleanupStaleStorageKeys();
@@ -63,26 +51,19 @@ async function init() {
   if (repaired) {
     notices.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was out of sync and ${repaired === 1 ? "was" : "were"} repaired`);
   }
-  // Persisting a repair is safe — it's a lossless normalization of state
-  // that's already in memory, and it's why the toast above stops recurring
-  // once it's saved. Persisting a drop is not: localStorage is this path's
-  // *only* copy of the build (unlike a share link or pasted import text,
-  // where the source survives on its own), so writing back a build with a
-  // dropped AA missing risks turning a recoverable loss into a permanent
-  // one. So: only persist when something was actually repaired, and never
-  // on the same load a drop happened — the drop notice recurs every visit
-  // until the data is fixed, which is the point. (Also incidentally means a
-  // brand-new visitor with nothing saved yet — repaired is always 0 for
-  // them — no longer writes a default payload to storage for no reason.)
+  // Persisting a repair is safe - it's a lossless normalization of state
+  // already in memory. Persisting a drop is not: localStorage is this
+  // path's only copy of the build, so writing back with a dropped AA
+  // missing risks turning a recoverable loss into a permanent one. Only
+  // persist when something was actually repaired, and never on the same
+  // load a drop happened - the drop notice recurs every visit until the
+  // data is fixed, which is the point.
   //
-  // This only protects against the load itself overwriting the save. It's
-  // not a durable "your original build is safe until the data is fixed"
-  // guarantee — any normal interaction afterward (changeRank, an import,
-  // accepting a share link — see applySharedBuildFromUrl's own hasExisting
-  // check) still calls saveLocal() as usual and persists whatever's in
-  // memory at that point, dropped picks included. This buys the user a
-  // chance to notice and export/back up before that happens; it doesn't
-  // guarantee they will.
+  // This only protects against the load itself overwriting the save - any
+  // normal interaction afterward (changeRank, an import, accepting a share
+  // link) still calls saveLocal() and persists whatever's in memory,
+  // dropped picks included. It buys a chance to notice and back up before
+  // that happens, not a guarantee.
   if (!shared.applied && repaired > 0 && !localResult.droppedRanks) saveLocal();
   // Data can drift out from under a saved build (a resync renaming/reshaping a
   // prereq target, or reselecting classes away from a class-rank-cap AA's

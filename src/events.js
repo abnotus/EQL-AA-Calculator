@@ -24,12 +24,10 @@ export function wireEvents() {
       if (newValue === oldValue) return;
       const dupSlot = state.selectedClasses.findIndex((c, j) => j !== i && c === newValue);
 
-      // A genuine replacement (not a swap) - oldValue is leaving the 3-class
-      // combo - no longer wipes its picks. They simply stop being "active"
-      // (resolveEntryCategory, logic.js): invisible in the tree/Progression,
-      // but still fully intact and visible in the Other Classes tab, still
-      // counted in spentPoints()'s lifetime total, still part of the build
-      // payload. Swapping back in restores them exactly as left.
+      // A genuine replacement (oldValue leaving the 3-class combo) no
+      // longer wipes its picks - they just stop being "active"
+      // (resolveEntryCategory), staying visible in the Other Classes tab
+      // and counted in spentPoints() until swapped back in.
 
       state.selectedClasses[i] = newValue;
       if (dupSlot >= 0) {
@@ -107,9 +105,8 @@ export function wireEvents() {
   el.resetModal.addEventListener("click", (e) => { if (e.target === el.resetModal) closeResetModal(); });
 
   // Standalone counterpart to Reset Build's checkbox: clears owned progress
-  // without touching the plan (the checkbox only ever clears owned alongside
-  // the plan, never alone). No modal needed - there's no option to offer,
-  // just a yes/no on a destructive action, so a plain confirm() is enough.
+  // without touching the plan. No modal needed - just a yes/no on a
+  // destructive action, so a plain confirm() is enough.
   el.clearOwnedBtn.addEventListener("click", () => {
     if (el.clearOwnedBtn.disabled) return;
     const ok = confirm("Clear all owned progress? This can't be undone, and won't affect your planned picks.");
