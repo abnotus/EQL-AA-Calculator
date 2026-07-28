@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 159719,
+  "revid": 162597,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -766,7 +766,7 @@
       "costs": [
         "0"
       ],
-      "description": "This passive ability increases the chance that you will land a critical hit with a spell by 2/4/5%. Requirements: level 12."
+      "description": "This passive ability increases the chance that you will land a critical hit with a spell by 2/3/4%. Requirements: level 12."
     },
     "class:Enchanter::Unbound Clarity::0": {
       "ranks": "3",

@@ -113,7 +113,7 @@ const AA_DATA = {
     "Druid": [
       { name: "Enhanced Root", ranks: 1, costs: ["5"], levelReq: "1", description: "Reduces the chance that an NPC target entangled by your root spells will break free when struck by a non-melee attack by 50%." },
       { name: "Quick Evacuation", ranks: 3, costs: ["3","?","?"], levelReq: "1", description: "Reduces the cast time of your evacuation and succor spells and abilities by 10%/?/?." },
-      { name: "Unbound Nature", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance that you will land a critical hit with a spell by 2/4/5%." }
+      { name: "Unbound Nature", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance that you will land a critical hit with a spell by 2/3/4%." }
     ],
     "Enchanter": [
       { name: "Unbound Clarity", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your mana regeneration by 2 points per rank. Rank 2 requires level 30, rank 3 requires level 50." }
