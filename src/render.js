@@ -959,8 +959,13 @@ export function renderProgression() {
   const ownedReal = ownedPoints();
   const ownedExtra = estimatedExtraOwnedPoints();
   const spentExtra = estimatedExtraPoints();
-  const togoReal = spentPoints() - ownedReal;
-  const togoExtra = spentExtra - ownedExtra;
+  // Owned isn't capped to the current plan (a refund can drop a rank below
+  // its own owned watermark on purpose - owned is real-world truth,
+  // untouched by changeRank), so owned can exceed spent for an AA that's
+  // been refunded below what's already been trained. Clamped to 0 rather
+  // than showing a negative "to go" in that case.
+  const togoReal = Math.max(0, spentPoints() - ownedReal);
+  const togoExtra = Math.max(0, spentExtra - ownedExtra);
   function blendedFigure(real, extra) {
     return extra > 0
       ? `<span class="is-estimate" title="${real} confirmed + ${extra} estimated.">~${real + extra}</span>`

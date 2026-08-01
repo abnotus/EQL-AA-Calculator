@@ -2473,8 +2473,8 @@ el.otherClassesNote.textContent = inactiveSpent > 0
 const ownedReal = ownedPoints();
 const ownedExtra = estimatedExtraOwnedPoints();
 const spentExtra = estimatedExtraPoints();
-const togoReal = spentPoints() - ownedReal;
-const togoExtra = spentExtra - ownedExtra;
+const togoReal = Math.max(0, spentPoints() - ownedReal);
+const togoExtra = Math.max(0, spentExtra - ownedExtra);
 function blendedFigure(real, extra) {
 return extra > 0
 ? `<span class="is-estimate" title="${real} confirmed + ${extra} estimated.">~${real + extra}</span>`

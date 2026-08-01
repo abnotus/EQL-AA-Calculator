@@ -165,5 +165,51 @@ with sync_playwright() as p:
     print("PASS: a share code carrying a stale 't' field loads without error and produces an identical result to the clean one")
     page2.close()
 
+    # --- Third, independent scenario: owned/to-go must never show a
+    # negative "to go", even though nothing stops owned from exceeding
+    # what's currently planned. setOwnedRank deliberately doesn't clamp to
+    # the planned rank (owned is real-world truth, untouched by a refund -
+    # see its own comment in logic.js), so buying an AA, marking it owned,
+    # then refunding it back below that watermark is a real, reachable way
+    # for ownedPoints() to exceed spentPoints() for that AA. Combat
+    # Agility's costs are fully confirmed, so this isolates the plain
+    # real-number clamp from the estimate-blending logic above. ---
+    page3 = browser.new_page(viewport={"width": 1400, "height": 900})
+    errors3 = []
+    page3.on("pageerror", lambda exc: errors3.append(str(exc)))
+    page3.on("dialog", lambda d: d.accept())
+    page3.goto(BASE)
+    page3.wait_for_selector("#treeWrap .node")
+    page3.click('button[data-tab="general"]')
+    ca_node = page3.locator(".node", has=page3.locator(".name", has_text="Combat Agility"))
+    ca_node.click()
+    for _ in range(3):
+        page3.click("#incBtn")
+        page3.wait_for_timeout(15)
+    page3.click('button[data-tab="progression"]')
+    page3.wait_for_timeout(150)
+    page3.locator(".progression-row", has=page3.locator(".step-name", has_text="Combat Agility")).nth(2).locator(".step-own").click()
+    page3.wait_for_timeout(150)
+    print("owned summary with Combat Agility bought and owned to rank 3:", page3.locator("#ownedSummary").inner_text())
+    assert page3.locator("#ownedSummary").inner_text() == "12 pts owned, 0 to go"
+
+    page3.click('button[data-tab="general"]')
+    ca_node.click()
+    for _ in range(2):
+        page3.click("#decBtn")
+        page3.wait_for_timeout(15)
+    print("Combat Agility rank after refunding below its own owned watermark:", page3.locator("#sidePanel .current").inner_text())
+    assert page3.locator("#sidePanel .current").inner_text() == "1 / 3"
+    page3.click('button[data-tab="progression"]')
+    page3.wait_for_timeout(150)
+    owned_summary3 = page3.locator("#ownedSummary").inner_text()
+    print("owned summary after refunding below owned (must not go negative):", owned_summary3)
+    assert owned_summary3 == "12 pts owned, 0 to go", \
+        f"FAIL: 'to go' must clamp to 0, not go negative, when owned exceeds the current plan - got {owned_summary3!r}"
+    print("PASS: owned/to-go never shows a negative figure, even with owned exceeding the current plan")
+    print("ERRORS:", errors3)
+    assert not errors3
+    page3.close()
+
     browser.close()
     print("ALL PASS")
