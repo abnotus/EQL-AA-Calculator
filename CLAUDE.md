@@ -33,3 +33,7 @@ Classification (`vX.Y.Z`):
 - **Backlog** (no version bump, no tag, no changelog entry): internal-only work — refactors, comment cleanup, tooling, doc fixes, anything never user-visible.
 
 A data-only correction (a wiki re-scrape confirming/fixing an AA's cost or effect value, with no accompanying feature work) does not get its own changelog entry or version bump — just commit the data fix with a plain commit message. It's fine to fold a "Data correction from a fresh wiki scrape: ..." bullet into a changelog entry that's *already* shipping real feature work in the same version (see 1.6.0/1.6.1 for the pattern), but a data fix alone never justifies a version bump by itself.
+
+## Commits
+
+One fix per commit. When a review turns up multiple distinct issues (or a session touches several unrelated things — a feature, a data correction, a test-infra change), commit each separately rather than bundling them, even if they land back to back. Makes `git log`/`git bisect` actually useful, and keeps a revert from taking unrelated work down with it.
