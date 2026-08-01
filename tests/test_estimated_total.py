@@ -22,18 +22,20 @@
 # wiki scrapes confirm more of its still-undocumented ranks. Packrat trained
 # to rank 10, its last 6 ranks (5-10) all carrying the same flat "~1" manual
 # guess, mixed in with plenty of real, fully-confirmed ranks earlier in the
-# click order.
+# click order. Refreshed periodically to the user's current build as they
+# keep playing - BUILD_STALE is regenerated alongside it each time (decode
+# BUILD, inject "t": 1000, re-encode gzip+base64url) so both stay in sync.
 #
 # A second, separate scenario near the end of this file re-tests the same
 # build with a stale "t" (totalPoints) field injected into its payload, to
 # keep the backward-compatibility regression coverage that was lost when an
 # older two-build version of this file was simplified down to one.
-import sys, io
+import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
-BASE = "http://localhost:8743/index.html"
-BUILD = "H4sIAAAAAAAACn2OsQ4CMQxD_yWzh0vStL3-SpWJlQExsCD-HSW9EwwI5UmuJdfJkx40BHShMXc0sDroSsM20J3GnBXqmA3FMXu-hdOIgrfQCg5p6I6pnE5LRtWWrBLdU8qW_03SmaKGrBaOVnfQjUYkTCAVpl8IlCHtNyvTjqk5PScWiCKWn8RZifCHOHJRTuxA9A_-egN0VogmSwEAAA"
+BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
+BUILD = "H4sIAAAAAAAACn2PsQ5DIQhF_4X5DgKiPn_FOHXt0HTo0vTfG_CZ16nhmAvmgvKmF3UB3aiPAxWsE3Snbgn0pD5GgU6MijwxWuTCUYiCk2sBu1S0iaEcleawqi1ZQ_QIySn6cw6npbg0WaIoLmsm-xuuqULnBD2ou9MEUmD6g0DqiaUrl4po5u1LqGc0L_wTorCynX5KREODf3XjSwTCF77SIm_sRPQP8_MFNIrrBnkBAAA"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)
@@ -61,17 +63,17 @@ with sync_playwright() as p:
 
     sv = page.locator("#spentValue")
     print("spentValue:", sv.inner_text(), sv.get_attribute("title"))
-    assert sv.inner_text() == "~199"
+    assert sv.inner_text() == "~235"
     assert "is-estimate" in sv.get_attribute("class")
     color = sv.evaluate("el => getComputedStyle(el).color")
     print("spentValue computed color:", color)
     assert color == "rgb(90, 169, 230)", f"FAIL: blended headline should render blue, got {color}"
-    assert sv.get_attribute("title") == "193 confirmed + 6 estimated."
-    print("PASS: headline blends to ~199 in blue, full breakdown lives only in the tooltip")
+    assert sv.get_attribute("title") == "229 confirmed + 6 estimated."
+    print("PASS: headline blends to ~235 in blue, full breakdown lives only in the tooltip")
 
     # --- Progression's own running total now blends the same way the
     # topbar does - the last row's total must match the headline exactly
-    # (~199), with the same "193 confirmed + 6 estimated." breakdown in its
+    # (~235), with the same "229 confirmed + 6 estimated." breakdown in its
     # own tooltip, proving the two displays agree rather than showing two
     # different numbers for the same underlying build. ---
     page.click('button[data-tab="progression"]')
@@ -79,10 +81,10 @@ with sync_playwright() as p:
     prog_total_el = page.locator(".progression-row .cost-total").last
     prog_total = prog_total_el.inner_text()
     prog_title = prog_total_el.get_attribute("title")
-    print("Progression's blended running total (must match the topbar's ~199):", prog_total, "|", prog_title)
-    assert prog_total == "~199 total", f"FAIL: expected Progression's total to blend to ~199 like the topbar, got {prog_total}"
+    print("Progression's blended running total (must match the topbar's ~235):", prog_total, "|", prog_title)
+    assert prog_total == "~235 total", f"FAIL: expected Progression's total to blend to ~235 like the topbar, got {prog_total}"
     assert "is-estimate" in prog_total_el.get_attribute("class")
-    assert prog_title == "193 confirmed + 6 estimated.", f"FAIL: unexpected breakdown tooltip: {prog_title}"
+    assert prog_title == "229 confirmed + 6 estimated.", f"FAIL: unexpected breakdown tooltip: {prog_title}"
     print("PASS: Progression's running total blends in estimates exactly like the topbar headline does, agreeing on both the figure and its breakdown")
 
     # --- Packrat rank-by-rank: ranks 1-4 are its own real ranks (riding on
@@ -96,7 +98,7 @@ with sync_playwright() as p:
     packrat_rows = page.locator(".progression-row", has=page.locator(".step-name", has_text="Packrat"))
     totals = [packrat_rows.nth(i).locator(".cost-total").inner_text() for i in range(packrat_rows.count())]
     print("Packrat rank 1-10's running totals in order:", totals)
-    expected = [f"{n} total" for n in range(190, 194)] + [f"~{n} total" for n in range(194, 200)]
+    expected = [f"{n} total" for n in range(226, 230)] + [f"~{n} total" for n in range(230, 236)]
     assert totals == expected, \
         f"FAIL: Packrat's running total must climb by exactly 1 every rank, real or guessed - got {totals}"
     print("PASS: the running total climbs through Packrat's real ranks and its guessed ones alike, never freezing")
@@ -120,15 +122,15 @@ with sync_playwright() as p:
     errors2 = []
     page2.on("pageerror", lambda exc: errors2.append(str(exc)))
     page2.on("dialog", lambda d: d.accept())
-    BUILD_STALE = "H4sIAAAAAAAC_3WPPQ7DMAiF78LMAMY_ia9iZcraoaqqLlXv3gdO2qUVn_yMBQ_8pAf1xLRTHys3VtuYLtSLMN3wNirjZTTOOJe4J40kGau4VlaXxgvENDLLUWplyjSxNSRL9JcUWTGuLtNF3XXDClfMRgWAP2q-oE0Z034ya9oRNWKJ8AEw9-EnvlaAH33wJSf5pByg_T_Y-U5dReT1Brpd-CRUAQAA"
+    BUILD_STALE = "H4sIAAAAAAAC_3VPuw7DMAj8F2YGMH7FvxJ16tqhqqouVf-9B3bSqeKSM_gM3JteNBLTlca-cWO1C9ONRhGmB2p7ZVT2xhn_HuekkSRjFefK6tS4g0wjsxxSK5NmE9uCssT7nEOJQV4saZJxdZo91Wc4S8MtFrtjIygBTIX2B1TaAjqeZyAe66ETeJzRPfElMATzltK_GtERvuoBNxGA_xNuaSIfKAto-x_w8qShIvL5AqBuKhaCAQAA"
     page2.goto(f"{BASE}?build={BUILD_STALE}")
     page2.wait_for_selector("#treeWrap .node")
     page2.wait_for_timeout(200)
     assert not errors2, f"FAIL: loading a build with a stale 't' field threw: {errors2}"
     sv_stale = page2.locator("#spentValue")
     print("stale-field build spentValue:", sv_stale.inner_text(), sv_stale.get_attribute("title"))
-    assert sv_stale.inner_text() == "~199"
-    assert sv_stale.get_attribute("title") == "193 confirmed + 6 estimated."
+    assert sv_stale.inner_text() == "~235"
+    assert sv_stale.get_attribute("title") == "229 confirmed + 6 estimated."
     print("PASS: a share code carrying a stale 't' field loads without error and produces an identical result to the clean one")
     page2.close()
 

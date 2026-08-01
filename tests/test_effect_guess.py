@@ -18,11 +18,11 @@
 # confidence interpolated guess instead - Alchemy Mastery's gap is
 # trailing, so it's sibling-matched, not interpolated, and there's no
 # rank 4 to check "stays untouched" against.)
-import sys, io
+import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
-BASE = "http://localhost:8743/index.html"
+BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)

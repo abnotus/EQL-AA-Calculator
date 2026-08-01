@@ -20,15 +20,16 @@
 # source gap. Without the drop-handler stopAutoScroll() calls, the wrap
 # keeps scrolling after the drop using its last-known direction/speed
 # forever; with them, scrollTop goes stable within a couple of frames.
-import sys, io
+import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
-BASE = "http://localhost:8743/index.html"
+BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 # Same live fixture as test_estimated_total.py (Paladin/Monk/Shaman,
-# Packrat rank 10, 199 points across plenty of AAs) - reused here purely
-# for its row count, not its guess/estimate content.
-BUILD = "H4sIAAAAAAAACn2OsQ4CMQxD_yWzh0vStL3-SpWJlQExsCD-HSW9EwwI5UmuJdfJkx40BHShMXc0sDroSsM20J3GnBXqmA3FMXu-hdOIgrfQCg5p6I6pnE5LRtWWrBLdU8qW_03SmaKGrBaOVnfQjUYkTCAVpl8IlCHtNyvTjqk5PScWiCKWn8RZifCHOHJRTuxA9A_-egN0VogmSwEAAA"
+# Packrat rank 10, 235 points across plenty of AAs plus a couple of
+# waypoints) - reused here purely for its row count, not its guess/estimate
+# content or waypoints.
+BUILD = "H4sIAAAAAAAACn2PsQ5DIQhF_4X5DgKiPn_FOHXt0HTo0vTfG_CZ16nhmAvmgvKmF3UB3aiPAxWsE3Snbgn0pD5GgU6MijwxWuTCUYiCk2sBu1S0iaEcleawqi1ZQ_QIySn6cw6npbg0WaIoLmsm-xuuqULnBD2ou9MEUmD6g0DqiaUrl4po5u1LqGc0L_wTorCynX5KREODf3XjSwTCF77SIm_sRPQP8_MFNIrrBnkBAAA"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)

@@ -32,11 +32,11 @@
 # not just "close enough". The converse guard (missing on the stored side,
 # non-empty on the live side) must still warn, proving the tolerance only
 # forgives genuine emptiness, not any missing key regardless of content.
-import sys, io, json
+import os, sys, io, json
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
-BASE = "http://localhost:8743/index.html"
+BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)

@@ -43,11 +43,17 @@ actual app in a real Chrome instance via
 - A Chrome/Chromium install on PATH (these launch with `channel="chrome"` —
   the system browser, not a Playwright-managed one, so no `playwright
   install` download step is needed if Chrome is already present)
-- The app served locally on port 8743:
+- The app served locally, default port 8743:
   ```
   python -m http.server 8743
   ```
-  (run from the repo root, in a separate terminal, before the tests)
+  (run from the repo root, in a separate terminal, before the tests). To use
+  a different port (e.g. it's already taken), serve on that port instead and
+  set `AACALC_TEST_PORT` to match before running the tests:
+  ```
+  python -m http.server 8080
+  AACALC_TEST_PORT=8080 python tests/test_cost_guess.py
+  ```
 
 Then, from the repo root:
 

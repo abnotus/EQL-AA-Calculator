@@ -12,11 +12,11 @@
 # old buildPayload() would have produced (totalPoints included) and
 # confirms: the field is gone after boot, every other field is preserved
 # exactly (not just "some cleanup happened"), and nothing errors.
-import sys, io, json
+import os, sys, io, json
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
-BASE = "http://localhost:8743/index.html"
+BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 
 OLD_PAYLOAD = {
     "v": 4,

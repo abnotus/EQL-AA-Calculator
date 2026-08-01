@@ -12,11 +12,11 @@
 # prerequisite going stale (heldRankInvalidReason -> .invalidated node
 # class + the "No longer valid" side-panel line), plus a dimmed hatched
 # segment on the tree node's rank bar for the portion beyond the cap.
-import sys, io
+import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
-BASE = "http://localhost:8743/index.html"
+BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)

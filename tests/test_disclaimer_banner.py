@@ -3,11 +3,11 @@
 # "during beta" framing (the tool isn't in beta anymore) and the "(marked ?)"
 # aside were dropped from the wording - someone who already dismissed the v4
 # wording should see the updated v5 text; dismissing it should set the v5 key.
-import sys, io
+import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
-BASE = "http://localhost:8743/index.html"
+BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)

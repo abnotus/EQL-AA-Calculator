@@ -19,11 +19,11 @@
 #   3. The "Show Hidden" toggle only shows up once there's something hidden
 #      to reveal, and auto-resets to off once the last hidden AA is
 #      unhidden (rather than staying silently "on" but invisible).
-import sys, io
+import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
-BASE = "http://localhost:8743/index.html"
+BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)

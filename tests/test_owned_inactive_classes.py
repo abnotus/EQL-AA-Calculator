@@ -19,11 +19,11 @@
 #      this feature existed, so this is confirming existing generic behavior
 #      still holds now that inactive-class data is actually reachable in
 #      practice, not verifying something newly built.
-import sys, io, json
+import os, sys, io, json
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
-BASE = "http://localhost:8743/index.html"
+BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 
 
 def swap_class0_to_something_else(page):
