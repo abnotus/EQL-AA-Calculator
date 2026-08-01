@@ -147,7 +147,14 @@ const AA_ID_TABLE = {
   "class:Wizard:mana-burn": 132,
   "class:Wizard:quick-evacuation": 133,
   "class:Wizard:strong-root": 134,
-  "class:Wizard:unbound-destruction": 135
+  "class:Wizard:unbound-destruction": 135,
+  "class:Bard:unbound-versatility": 136,
+  "class:Beastlord:unbound-ferocity": 137,
+  "class:Enchanter:tricksters-misdirection": 138,
+  "class:Monk:unbound-alacrity": 139,
+  "class:Paladin:unbound-life": 140,
+  "class:Rogue:unbound-lethality": 141,
+  "class:Shadow Knight:unbound-drain": 142
 };
 
 // Pattern-inferred cost estimates for AAs the wiki hasn't documented
@@ -170,7 +177,6 @@ const COST_GUESS_TABLE = {
   "archetype::burst-of-power": { "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] } },
   "archetype::spell-casting-subtlety": { "1": { value: 3, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 4, confidence: "very-low", basedOn: [], manual: true }, "3": { value: 5, confidence: "very-low", basedOn: [], manual: true }, "4": { value: 6, confidence: "very-low", basedOn: [], manual: true }, "5": { value: 7, confidence: "very-low", basedOn: [], manual: true } },
   "class:Bard:reaching-notes": { "3": { value: 8, confidence: "very-low", basedOn: [], manual: true }, "4": { value: 10, confidence: "very-low", basedOn: [], manual: true }, "5": { value: 12, confidence: "very-low", basedOn: [], manual: true } },
-  "class:Berserker:blood-rune": { "2": { value: 4, confidence: "very-low", basedOn: [], manual: true } },
   "class:Druid:quick-evacuation": { "1": { value: 6, confidence: "high", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] }, "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] } },
   "class:Magician:conjurers-efficiency": { "1": { value: 4, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 5, confidence: "very-low", basedOn: [], manual: true }, "3": { value: 6, confidence: "very-low", basedOn: [], manual: true }, "4": { value: 7, confidence: "very-low", basedOn: [], manual: true } },
   "class:Magician:turn-summoned": { "1": { value: 6, confidence: "high", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] }, "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Critical Affliction", "Double Riposte", "Healing Boon", "Instrument Mastery", "Jam Fest", "Quick Damage", "Singing Mastery", "Slay Undead", "Soul Abrasion"] } },
@@ -186,7 +192,6 @@ const COST_GUESS_TABLE = {
   "general::first-aid": { "2": { value: 2, confidence: "medium", basedOn: ["Mnemonic Retention"] }, "3": { value: 2, confidence: "medium", basedOn: ["Mnemonic Retention"] }, "4": { value: 3, confidence: "medium", basedOn: ["Mnemonic Retention"] }, "5": { value: 3, confidence: "medium", basedOn: ["Mnemonic Retention"] } },
   "general::fletching-mastery": { "1": { value: 4, confidence: "medium", basedOn: ["Combat Agility", "Combat Stability", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Adept", "Healing Gift", "Jewel Craft Mastery", "Mastery of the Past", "Spell Casting Mastery"] }, "2": { value: 6, confidence: "medium", basedOn: ["Combat Agility", "Combat Stability", "Destructive Cascade", "Destructive Fury", "Finishing Blow", "Healing Adept", "Healing Gift", "Jewel Craft Mastery", "Mastery of the Past", "Spell Casting Mastery"] } },
   "general::innate-eminence": { "3": { value: 3, confidence: "very-low", basedOn: [], manual: true }, "4": { value: 3, confidence: "very-low", basedOn: [], manual: true } },
-  "general::innate-metabolism": { "1": { value: 1, confidence: "medium", basedOn: ["Innate Lung Capacity"] }, "2": { value: 1, confidence: "medium", basedOn: ["Innate Lung Capacity"] } },
   "general::innate-regeneration": { "5": { value: 4, confidence: "very-low", basedOn: [], manual: true }, "6": { value: 5, confidence: "very-low", basedOn: [], manual: true } },
   "general::innate-spell-resistance": { "4": { value: 2, confidence: "medium", basedOn: ["Stoicism"] } },
   "general::packrat": { "4": { value: 1, confidence: "very-low", basedOn: [], manual: true }, "5": { value: 1, confidence: "very-low", basedOn: [], manual: true }, "6": { value: 1, confidence: "very-low", basedOn: [], manual: true }, "7": { value: 1, confidence: "very-low", basedOn: [], manual: true }, "8": { value: 1, confidence: "very-low", basedOn: [], manual: true }, "9": { value: 1, confidence: "very-low", basedOn: [], manual: true } },
@@ -215,7 +220,6 @@ const EFFECT_GUESS_TABLE = {
   "class:Bard:jam-fest": { "0": { "1": { value: 3, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 5, confidence: "very-low", basedOn: [], manual: true } } },
   "class:Druid:quick-evacuation": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 30, confidence: "very-low", basedOn: [], manual: true } } },
   "class:Wizard:quick-evacuation": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 30, confidence: "very-low", basedOn: [], manual: true } } },
-  "general::adamant-will": { "0": { "3": { value: 80, confidence: "very-low", basedOn: [], manual: true } }, "1": { "3": { value: 60, confidence: "very-low", basedOn: [], manual: true } } },
   "general::alchemy-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "general::baking-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "general::blacksmithing-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },

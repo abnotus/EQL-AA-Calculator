@@ -140,5 +140,12 @@ export const AA_ID_TABLE = {
   "class:Wizard:mana-burn": 132,
   "class:Wizard:quick-evacuation": 133,
   "class:Wizard:strong-root": 134,
-  "class:Wizard:unbound-destruction": 135
+  "class:Wizard:unbound-destruction": 135,
+  "class:Bard:unbound-versatility": 136,
+  "class:Beastlord:unbound-ferocity": 137,
+  "class:Enchanter:tricksters-misdirection": 138,
+  "class:Monk:unbound-alacrity": 139,
+  "class:Paladin:unbound-life": 140,
+  "class:Rogue:unbound-lethality": 141,
+  "class:Shadow Knight:unbound-drain": 142
 };

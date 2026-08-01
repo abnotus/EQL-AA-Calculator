@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 162597,
+  "revid": 165003,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -10,7 +10,7 @@
         "6",
         "9"
       ],
-      "description": "This passive ability grants you an additional 20/40/60/?% chance to resist charm, and 15/30/45/?% chance to resist mesmerization spells. Requirements: level 1."
+      "description": "This passive ability grants you an additional 20/40/60/80% chance to resist charm, and 15/30/45/60% chance to resist mesmerization spells. Requirements: level 1."
     },
     "general::Alchemy Mastery::0": {
       "ranks": "3",
@@ -273,7 +273,7 @@
         "6",
         "12"
       ],
-      "description": "This passive ability grants you a 15/30/50/60/70/80/90/100% chance to endure what would otherwise be a stunning melee attack, from any angle, without being stunned. Requirements: level 1. Only tanks (WAR/PAL/SHD) can train the full 8/8, Rangers can reach 7/8 and all other classes are capped at 6/8."
+      "description": "This passive ability grants you a 15/30/50/60/70/80/90/100% chance to endure what would otherwise be a stunning melee attack, from any angle, without being stunned. Requirements: level 1. Only tanks (WAR/PAL/SHD) can train the full 8/8, Rangers and Monks can reach 7/8 and all other classes are capped at 6/8."
     },
     "general::Stoicism::0": {
       "ranks": "5",
@@ -421,7 +421,7 @@
       "costs": [
         "6"
       ],
-      "description": "This passive ability allows you to use your bash skill while wielding a two-handed weapon. Requirements: level 1."
+      "description": "This passive ability allows you to use your bash skill while wielding a two-handed weapon. Utilizes the best item (weapon or shield) from the Prmary, Secondary, or Any slots. Requirements: level 1."
     },
     "archetype::Innate Camouflage::0": {
       "ranks": "1",
@@ -513,7 +513,7 @@
       "costs": [
         "2"
       ],
-      "description": "Allows your pet to benefit from group beneficial spells and songs. Requirements: level 1."
+      "description": "Allows your pet to benefit from group beneficial spells and songs. Requirements: level 1.<br>NOTE: This AA is ''not'' required for Quick Buff to affect your pet for single-target spells. This AA ''is'' required for \"group\" spells to affect your pet."
     },
     "archetype::Physical Enhancement::0": {
       "ranks": "1",
@@ -645,6 +645,13 @@
       ],
       "description": "Ability Activation ID: 152 - Refresh Time: 0:00:01 - Ability Timer(s): 0. Expendable Charges: 1. Expend the current rank to disable this ability's effects. When enabled, this passive ability allows one Bard song to auto pulse. In order for a song to be eligible, it must have no mana cost, have no cooldown, and be a non-targeted area of effect song. Any song that meets these criteria cannot be played manually while the ability is turned on. This ability chooses the first eligible song, starting from your final spell gem, and working backwards. Total 5 songs at max rank. Requirements: level 1. Rank 1 is auto-granted. Each additional auto-pulsing song takes two ranks: the odd rank costs 3 points and grants the song, and the following even rank re-enables the ability at no cost. All 5 songs cost 12 points total. (The tooltip's ENABLED/DISABLED line reflects the state of your current rank, not a property of the ability.)"
     },
+    "class:Bard::Unbound Versatility::0": {
+      "ranks": "3",
+      "costs": [
+        "0"
+      ],
+      "description": "Gives a passive 5/10/15% chance for you to continue casting through a stun. Requirements: level 12/30/?."
+    },
     "class:Beastlord::Frenzy of Spirit::0": {
       "ranks": "1",
       "costs": [
@@ -673,14 +680,21 @@
       ],
       "description": "Ability Activation ID: 11073 - Refresh Time: 0:00:30 - Ability Timer(s): 53. This ability, when activated, allows you to instantly Feign Death with an 80% chance of success. Requirements: level 46."
     },
+    "class:Beastlord::Unbound Ferocity::0": {
+      "ranks": "3",
+      "costs": [
+        "0"
+      ],
+      "description": "Gives a passive 3/6/9% chance for your pet to flurry. Requirements: ?."
+    },
     "class:Berserker::Blood Rune::0": {
       "ranks": "3",
       "costs": [
         "1",
         "2",
-        "?"
+        "3"
       ],
-      "description": "Melee and ability critical hits give you 5% of the damage done as an absorption shield, up to 5% of your max hitpoints. Requirements: level 1."
+      "description": "Melee and ability critical hits give you 5/10/15% of the damage done as an absorption shield, up to 5/8/10% of your max hitpoints. Requirements: level 1."
     },
     "class:Berserker::Innate Power Strike::0": {
       "ranks": "1",
@@ -701,7 +715,7 @@
       "costs": [
         "0"
       ],
-      "description": "This passive ability increases your chance to land a critical hit with your melee attacks and abilites by 2%. Requirements: level 12."
+      "description": "This passive ability increases your chance to land a critical hit with your melee attacks and abilities by 2/4/6%. Requirements: level 12/30/50."
     },
     "class:Cleric::Bestow Divine Aura::0": {
       "ranks": "1",
@@ -766,14 +780,21 @@
       "costs": [
         "0"
       ],
-      "description": "This passive ability increases the chance that you will land a critical hit with a spell by 2/3/4%. Requirements: level 12."
+      "description": "This passive ability increases the chance that you will land a critical hit with a spell by 2/3/4%. Requirements: Level 12/30/50."
+    },
+    "class:Enchanter::Tricksters Misdirection::0": {
+      "ranks": "1",
+      "costs": [
+        "9"
+      ],
+      "description": "When triggered, casts Tricksters Misdirection, a defensive proc buff lasting 1 minute, with 1 charge. The charge, and mana cost of XX, is consumed when struck, causing a decoy appears in your place, and teleporting you backwards a short distance. The decoy spawns with all of the hatred your target has for you, and then your hatred is lowered. Requirements: Level 50."
     },
     "class:Enchanter::Unbound Clarity::0": {
       "ranks": "3",
       "costs": [
         "0"
       ],
-      "description": "This passive increases your mana regeneration by 2 points per rank. Requirements: level 12. Rank 2 level 30 and rank 3 at level 50."
+      "description": "This passive increases the Enchanters mana regeneration by 2/4/6 points. Requirements: Level 12/30/50."
     },
     "class:Magician::Companion's Fury::0": {
       "ranks": "1",
@@ -848,6 +869,13 @@
       ],
       "description": "This passive ability reduces the reuse time of your Feign Death skill by 1 second. Second level reduces the reuse time of FD skill by 3 seconds. Requirements: level 17."
     },
+    "class:Monk::Unbound Alacrity::0": {
+      "ranks": "3",
+      "costs": [
+        "0"
+      ],
+      "description": "Gives a passive 3/6/10% increase in your current and maximum haste value. Requirements: level 12/30/?."
+    },
     "class:Necromancer::Dead Mesmerization::0": {
       "ranks": "1",
       "costs": [
@@ -867,7 +895,7 @@
       "costs": [
         "3"
       ],
-      "description": "Ability Activation ID: 71 - Refresh Time: 0:00:07 - Ability Timer(s): 7. This ability, when activated, converts a meat or body part item you are holding into bone chips. Requirements: level 10."
+      "description": "Ability Activation ID: 71 - Refresh Time: 0:00:07 - Ability Timer(s): 7. This ability, when activated, converts a meat or body part item you are holding into NODROP bone chips. Requirements: level 10."
     },
     "class:Necromancer::Life Burn::0": {
       "ranks": "1",
@@ -881,7 +909,7 @@
       "costs": [
         "0"
       ],
-      "description": "This passive ability increases the chance your damage-over-time spells will deal critical damage at each 6 second interval they are active by 2/4/6%. Requirements: level 12."
+      "description": "This passive ability increases the chance your damage-over-time spells will deal critical damage at each 6 second interval they are active by 2/4/6%. Requirements: level 12/30/?."
     },
     "class:Paladin::Act of Valor::0": {
       "ranks": "1",
@@ -920,6 +948,13 @@
       ],
       "description": "This passive ability grants your melee attacks a 2.25% / 2.35% / 2.4%  chance to deal 445% / 850% / 1250% damage against undead and vampiric targets. Requirements: level 1."
     },
+    "class:Paladin::Unbound Life::0": {
+      "ranks": "3",
+      "costs": [
+        "0"
+      ],
+      "description": "Gives a passive 2/4/6% increase to your direct healing spells. Requirements: ?."
+    },
     "class:Paladin::Valiant Steed::0": {
       "ranks": "1",
       "costs": [
@@ -955,7 +990,7 @@
         "6",
         "?"
       ],
-      "description": "Increases the base damage of your archery attacks by 30/60/90%. Requirements: level 1."
+      "description": "Increases the base damage of your archery attacks by 30/60/100%. Requirements: level 1."
     },
     "class:Rogue::Chaotic Stab::0": {
       "ranks": "1",
@@ -992,6 +1027,13 @@
       ],
       "description": "This passive ability provides you a previously unheard of level of stealth that increases the invisibility offered by your Hide skill to tier 2, shadowing you from creatures that normally see through standard invisibility. Requirements: level 35."
     },
+    "class:Rogue::Unbound Lethality::0": {
+      "ranks": "3",
+      "costs": [
+        "0"
+      ],
+      "description": "Gives a passive 10/15/20% bonus to the duration of all poisons. Additionally lowers the resist value of all poisons by 25/50/75. Requirements: ?."
+    },
     "class:Shadow Knight::Abyssal Steed::0": {
       "ranks": "1",
       "costs": [
@@ -1004,14 +1046,14 @@
       "costs": [
         "0"
       ],
-      "description": "Ability Activation ID: 6000 - Refresh Time: 0:20:00 - Ability Timer(s): 2. Harm Touch II, when activated, grips a non-player target with agony, instantly dealing up to 751 damage based on your current level.  Requirements: level 6."
+      "description": "Ability Activation ID: 6000 - Refresh Time: 0:20:00 - Ability Timer(s): 2. Harm Touch II, when activated, grips a non-player target with agony, instantly dealing up to 751 damage based on your current level. Ranks 9 and 10 add a Damage Over Time effect to the target. Requirements: Level 1/6/11/16/21/26/31/?/?/?."
     },
     "class:Shadow Knight::Leech Touch::0": {
       "ranks": "1",
       "costs": [
         "6"
       ],
-      "description": "Ability Activation ID: 87 - Refresh Time: 1:12:00 - Ability Timer(s): 85. Leech Touch I, when activated, instantly drains 900 health from your target. Requirements: level 40."
+      "description": "This passive ability augments the Harm Touch ability by giving it a lifetap effect. Requirements: Level 1."
     },
     "class:Shadow Knight::Soul Abrasion::0": {
       "ranks": "3",
@@ -1021,6 +1063,13 @@
         "9"
       ],
       "description": "This passive ability increases the base damage of lifetaps triggered by Vampiric Embrace and Scream of Death by 50/100/200%. Requirements: level 15."
+    },
+    "class:Shadow Knight::Unbound Drain::0": {
+      "ranks": "3",
+      "costs": [
+        "0"
+      ],
+      "description": "Gives a passive 2/4/6% increase in damage for lifetap spells. Requirements: Level 12/30/50."
     },
     "class:Shadow Knight::Unholy Steed::0": {
       "ranks": "1",
