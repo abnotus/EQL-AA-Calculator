@@ -4,6 +4,14 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.8.2",
+    date: "2026-07-28",
+    items: [
+      "Fixed: the Progression tab's \"owned / to go\" split could quietly drop an owned rank's estimated cost, and in rare cases even show a negative number to go. Both figures now always add up to match the topbar's own total.",
+      "Data corrections from a fresh wiki scrape: several new AAs were added (including a handful of new \"Unbound\" abilities), Leech Touch's effect changed from an activated drain to a passive Harm Touch upgrade, and Steadfast Will's rank-7 tier now also covers Monk."
+    ]
+  },
+  {
     version: "1.8.1",
     date: "2026-07-28",
     items: [
