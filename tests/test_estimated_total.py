@@ -35,7 +35,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
-BUILD = "H4sIAAAAAAAACn2PsQ5DIQhF_4X5DgKiPn_FOHXt0HTo0vTfG_CZ16nhmAvmgvKmF3UB3aiPAxWsE3Snbgn0pD5GgU6MijwxWuTCUYiCk2sBu1S0iaEcleawqi1ZQ_QIySn6cw6npbg0WaIoLmsm-xuuqULnBD2ou9MEUmD6g0DqiaUrl4po5u1LqGc0L_wTorCynX5KREODf3XjSwTCF77SIm_sRPQP8_MFNIrrBnkBAAA"
+BUILD = "H4sIAAAAAAAACn2QTWoDMQyF76L1W9iS_-IbZNETGC-GZAgDaRKG0C5K714kz5Csij_zJPMky_6hL6oMOlFtB2R46aAr1ehAK9XWEqSjZYSOVixmbwkLvFNN8CoZpaOJt0yCWSUOGU3kYBKc1YdgzujsMPIQQVIZPb3eoeoypHfQg6o6I4MTorzB4LwR3SvmDCv2u88hb6tookOwIKbdqTvZKijQUXf0EQb7F_qkQdiJGyz_0EHf-rvBgY635blMVwLd1-l2mUl_2oE-lvNl-pwJtM5n6v33D8iR4qKsAQAA"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)
@@ -122,7 +122,7 @@ with sync_playwright() as p:
     errors2 = []
     page2.on("pageerror", lambda exc: errors2.append(str(exc)))
     page2.on("dialog", lambda d: d.accept())
-    BUILD_STALE = "H4sIAAAAAAAC_3VPuw7DMAj8F2YGMH7FvxJ16tqhqqouVf-9B3bSqeKSM_gM3JteNBLTlca-cWO1C9ONRhGmB2p7ZVT2xhn_HuekkSRjFefK6tS4g0wjsxxSK5NmE9uCssT7nEOJQV4saZJxdZo91Wc4S8MtFrtjIygBTIX2B1TaAjqeZyAe66ETeJzRPfElMATzltK_GtERvuoBNxGA_xNuaSIfKAto-x_w8qShIvL5AqBuKhaCAQAA"
+    BUILD_STALE = "H4sIAAAAAAAC_3VQMQ6DMAz8i2cPCUkI5Acd-gLUARWEkCitEGqHqn_v2QE6VT645OLYvrzpSalgulJqao5s3YVpohQM0wKtKRlKE9njX-m6sLopHFsjXLIVilyBnNWd85rqQqZcxNVK3uh97zUTjUQMRSbHpVCuaaWHsIk4xWAPTIRMAF2R-wOUuAEVjzWgl-2eZ-AxRyUbGQJN0G_LlK_UqBAy6g4xoYD_A2Ipw-8IG1D2P-DlJa-LunSax3VsJ2K6L-089CQvDf08dkN766EvfUdif6VkjTGfL3hlLFC1AQAA"
     page2.goto(f"{BASE}?build={BUILD_STALE}")
     page2.wait_for_selector("#treeWrap .node")
     page2.wait_for_timeout(200)

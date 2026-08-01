@@ -2,7 +2,7 @@
 # Class-based rank caps (data.src.js's classRankCap: { default, byClass }) -
 # Steadfast Will is the one live example: capped at rank 6 unless one of
 # your 3 selected classes is Warrior/Paladin/Shadow Knight (rank 8) or
-# Ranger (rank 7). Tri-class combines rather than switches, so ANY of the 3
+# Ranger/Monk (rank 7). Tri-class combines rather than switches, so ANY of the 3
 # selected classes granting a higher cap applies (see classRankCapFor's own
 # comment) - not some notion of one "active" class the tool doesn't track at
 # all. Purchasing past the current cap is blocked (structuralLockReason,
@@ -159,6 +159,34 @@ with sync_playwright() as p:
     print("invalid reason with Ranger selected:", invalid_line2.inner_text())
     assert invalid_line2.inner_text() == "⚠ No longer valid: exceeds the rank 7 cap for your currently selected classes."
     print("PASS: Ranger's own cap (7) is distinct from the tank classes' cap (8), not just a flat tank/non-tank boolean")
+
+    # --- Monk is also listed at cap 7 in classRankCap.byClass - checked
+    # independently rather than assumed from Ranger's passing case, since a
+    # missing/miskeyed byClass entry would silently fall back to the flat
+    # default (6) without either the Ranger check above or the default-cap
+    # check at the top of this file catching it. ---
+    page.select_option("#classSelect2", "Monk")
+    page.wait_for_timeout(150)
+    print("node class list with Monk selected (rank 8 still exceeds Monk's cap of 7):", node.get_attribute("class"))
+    assert "invalidated" in node.get_attribute("class"), "FAIL: Monk's cap is 7, not 8 - rank 8 should still be flagged"
+    invalid_line3 = page.locator("#sidePanel .req-line.warn").first
+    print("invalid reason with Monk selected:", invalid_line3.inner_text())
+    assert invalid_line3.inner_text() == "⚠ No longer valid: exceeds the rank 7 cap for your currently selected classes."
+
+    page.click("#decBtn")
+    page.wait_for_timeout(30)
+    print("rank after dropping to 7 with Monk selected:", current.inner_text())
+    assert current.inner_text() == "7 / 8"
+    assert "invalidated" not in node.get_attribute("class"), "FAIL: rank 7 is within Monk's own cap of 7, shouldn't be flagged invalid"
+    # Not warning-free, though - the AA's own ranks still go to 8, so sitting
+    # at 7 correctly shows the same "next purchase blocked" line the
+    # default-cap case at the top of this file already checks, and its exact
+    # wording is what actually pins the cap at 7 rather than 6 or 8.
+    monk_block_line = page.locator("#sidePanel .req-line.warn").first
+    print("block reason at rank 7 with Monk selected:", monk_block_line.inner_text())
+    assert monk_block_line.inner_text() == "Capped at rank 7 for your currently selected classes.", \
+        "FAIL: expected the next purchase to be blocked at exactly Monk's own cap of 7"
+    print("PASS: Monk's own cap (7) matches Ranger's rather than riding on its coattails - rank 8 flags as invalid, rank 7 sits cleanly at the correctly-valued cap")
 
     print("ERRORS:", errors)
     assert not errors

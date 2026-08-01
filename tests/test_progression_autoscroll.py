@@ -29,7 +29,7 @@ BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.htm
 # Packrat rank 10, 235 points across plenty of AAs plus a couple of
 # waypoints) - reused here purely for its row count, not its guess/estimate
 # content or waypoints.
-BUILD = "H4sIAAAAAAAACn2PsQ5DIQhF_4X5DgKiPn_FOHXt0HTo0vTfG_CZ16nhmAvmgvKmF3UB3aiPAxWsE3Snbgn0pD5GgU6MijwxWuTCUYiCk2sBu1S0iaEcleawqi1ZQ_QIySn6cw6npbg0WaIoLmsm-xuuqULnBD2ou9MEUmD6g0DqiaUrl4po5u1LqGc0L_wTorCynX5KREODf3XjSwTCF77SIm_sRPQP8_MFNIrrBnkBAAA"
+BUILD = "H4sIAAAAAAAACn2QTWoDMQyF76L1W9iS_-IbZNETGC-GZAgDaRKG0C5K714kz5Csij_zJPMky_6hL6oMOlFtB2R46aAr1ehAK9XWEqSjZYSOVixmbwkLvFNN8CoZpaOJt0yCWSUOGU3kYBKc1YdgzujsMPIQQVIZPb3eoeoypHfQg6o6I4MTorzB4LwR3SvmDCv2u88hb6tookOwIKbdqTvZKijQUXf0EQb7F_qkQdiJGyz_0EHf-rvBgY635blMVwLd1-l2mUl_2oE-lvNl-pwJtM5n6v33D8iR4qKsAQAA"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)
