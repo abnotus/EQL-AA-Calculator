@@ -961,6 +961,12 @@ main {
   align-self: center;
 }
 
+/* Same blended-estimate treatment as #spentValue.is-estimate - a sum across
+   however many confidence tiers, so no single tier color applies here either. */
+.owned-summary .is-estimate {
+  color: var(--estimate-high);
+}
+
 .waypoints-bar {
   display: flex;
   align-items: center;

@@ -13,7 +13,7 @@ import {
   estimatedExtraPoints, effectGuess, effectGuessScoped, guessTitle, classRankCapFor, effectiveDisplayRank,
   isHidden, isHiddenScoped, setHidden, setHiddenScoped, hasAnyHidden,
   effectiveRankScoped, countOtherClassesPicked, otherClassesWithPicks, spentForClass,
-  ownedPoints, isEntryActive, spentOnInactiveClasses
+  ownedPoints, isEntryActive, spentOnInactiveClasses, estimatedExtraOwnedPoints
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
@@ -952,9 +952,21 @@ export function renderProgression() {
   // swapped-away class is still real progress, and togoPts needs both
   // sides on the same footing or it double-counts that AA as "still to
   // go". Set ahead of both early returns below, same reasoning as above.
-  const ownedPts = ownedPoints();
-  const togoPts = spentPoints() - ownedPts;
-  el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
+  // Blends in estimates the same way the topbar headline does (see
+  // estimatedExtraOwnedPoints) - without this, an owned rank with an
+  // unconfirmed cost silently vanished from both "owned" and "to go",
+  // making the two figures fall short of the topbar's own blended total.
+  const ownedReal = ownedPoints();
+  const ownedExtra = estimatedExtraOwnedPoints();
+  const spentExtra = estimatedExtraPoints();
+  const togoReal = spentPoints() - ownedReal;
+  const togoExtra = spentExtra - ownedExtra;
+  function blendedFigure(real, extra) {
+    return extra > 0
+      ? `<span class="is-estimate" title="${real} confirmed + ${extra} estimated.">~${real + extra}</span>`
+      : `${real}`;
+  }
+  el.ownedSummary.innerHTML = `${blendedFigure(ownedReal, ownedExtra)} pt${(ownedReal + ownedExtra) === 1 ? "" : "s"} owned, ${blendedFigure(togoReal, togoExtra)} to go`;
   // Waypoints can reasonably be set up before any picks exist (an
   // aspirational "by 50 pts, get X"), so the chip bar renders unconditionally
   // too, ahead of the empty-progression early return below.

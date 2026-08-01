@@ -1650,6 +1650,22 @@ function estimatedExtraPoints() {
   return extra;
 }
 
+// Same idea as estimatedExtraPoints, scoped to owned ranks instead of
+// planned ones - how much higher ownedPoints() would probably be if every
+// owned rank with an unconfirmed cost cost what its guess says. Lets
+// renderProgression's "owned / to go" split blend the same way the topbar
+// headline and Progression's own running total already do, instead of
+// silently dropping every estimated rank from both sides.
+function estimatedExtraOwnedPoints() {
+  let extra = sumEstimatedExtra("general", null, AA_DATA.general, state.owned.general)
+    + sumEstimatedExtra("archetype", null, AA_DATA.archetype, state.owned.archetype)
+    + sumEstimatedExtra("special", null, AA_DATA.special, state.owned.special);
+  Object.keys(state.owned.classes).forEach((className) => {
+    extra += sumEstimatedExtra("class", className, AA_DATA.classes[className] || [], state.owned.classes[className]);
+  });
+  return extra;
+}
+
 // Plain "Requires X rank N" gates the whole ability behind a fixed target rank.
 // "Requires X rank 1/2/3" (matching the wiki's own phrasing for rank-synced
 // prereqs, e.g. Destructive Cascade needing the matching Critical Affliction
@@ -3625,9 +3641,21 @@ function renderProgression() {
   // swapped-away class is still real progress, and togoPts needs both
   // sides on the same footing or it double-counts that AA as "still to
   // go". Set ahead of both early returns below, same reasoning as above.
-  const ownedPts = ownedPoints();
-  const togoPts = spentPoints() - ownedPts;
-  el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
+  // Blends in estimates the same way the topbar headline does (see
+  // estimatedExtraOwnedPoints) - without this, an owned rank with an
+  // unconfirmed cost silently vanished from both "owned" and "to go",
+  // making the two figures fall short of the topbar's own blended total.
+  const ownedReal = ownedPoints();
+  const ownedExtra = estimatedExtraOwnedPoints();
+  const spentExtra = estimatedExtraPoints();
+  const togoReal = spentPoints() - ownedReal;
+  const togoExtra = spentExtra - ownedExtra;
+  function blendedFigure(real, extra) {
+    return extra > 0
+      ? `<span class="is-estimate" title="${real} confirmed + ${extra} estimated.">~${real + extra}</span>`
+      : `${real}`;
+  }
+  el.ownedSummary.innerHTML = `${blendedFigure(ownedReal, ownedExtra)} pt${(ownedReal + ownedExtra) === 1 ? "" : "s"} owned, ${blendedFigure(togoReal, togoExtra)} to go`;
   // Waypoints can reasonably be set up before any picks exist (an
   // aspirational "by 50 pts, get X"), so the chip bar renders unconditionally
   // too, ahead of the empty-progression early return below.

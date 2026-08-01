@@ -22,9 +22,13 @@
 # wiki scrapes confirm more of its still-undocumented ranks. Packrat trained
 # to rank 10, its last 6 ranks (5-10) all carrying the same flat "~1" manual
 # guess, mixed in with plenty of real, fully-confirmed ranks earlier in the
-# click order. Refreshed periodically to the user's current build as they
-# keep playing - BUILD_STALE is regenerated alongside it each time (decode
-# BUILD, inject "t": 1000, re-encode gzip+base64url) so both stay in sync.
+# click order. Also carries the build's real owned progress (opted in via
+# the export modal's "Include owned progress" checkbox) - none of it on
+# Packrat, so the owned/to-go scenario below can layer a guessed AA's
+# owned status on top of an otherwise real-only starting point. Refreshed
+# periodically to the user's current build as they keep playing -
+# BUILD_STALE is regenerated alongside it each time (decode BUILD, inject
+# "t": 1000, re-encode gzip+base64url) so both stay in sync.
 #
 # A second, separate scenario near the end of this file re-tests the same
 # build with a stale "t" (totalPoints) field injected into its payload, to
@@ -35,7 +39,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
-BUILD = "H4sIAAAAAAAACn2QTWoDMQyF76L1W9iS_-IbZNETGC-GZAgDaRKG0C5K714kz5Csij_zJPMky_6hL6oMOlFtB2R46aAr1ehAK9XWEqSjZYSOVixmbwkLvFNN8CoZpaOJt0yCWSUOGU3kYBKc1YdgzujsMPIQQVIZPb3eoeoypHfQg6o6I4MTorzB4LwR3SvmDCv2u88hb6tookOwIKbdqTvZKijQUXf0EQb7F_qkQdiJGyz_0EHf-rvBgY635blMVwLd1-l2mUl_2oE-lvNl-pwJtM5n6v33D8iR4qKsAQAA"
+BUILD = "H4sIAAAAAAAACn2QS27DMAxE78L1LCRSv_gGXfQEghZGYwQG0qQwinZR9O4FKSvuKtAzRjRGFDU_9EUTg95oqidkeGmgK03RgTaaak2QhpoRGmqxPXsrWOCdaoJXySgNVbxVEswqsUtvIieT4Ox8COaMzn5G7iJIKr2n1ztUXYa0BvqgSZ2RwQlR_sHgvBPdsecMO-yHzyHvq2ihQ7AgpuHUL9kqKNBRB_oIg_2BPqkTBnGH5QkNdNd0R66W4CPIfAT5LCWb9xFTA31ry-BAL7f1c52vBLpv8-2ykF7iQK_r-TK_LwTaljO19vsHCmycbf8BAAA"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)
@@ -103,6 +107,33 @@ with sync_playwright() as p:
         f"FAIL: Packrat's running total must climb by exactly 1 every rank, real or guessed - got {totals}"
     print("PASS: the running total climbs through Packrat's real ranks and its guessed ones alike, never freezing")
 
+    # --- Owned/to-go (ownedSummary) must blend the same way, not silently
+    # drop an owned rank's estimate from both sides - see
+    # estimatedExtraOwnedPoints in logic.js. BUILD's own preloaded owned
+    # progress (95 real points, none of it Packrat) starts this real-only;
+    # marking Packrat's last rank (10) owned on top of that pulls in all 6
+    # of its guessed ranks too, proving the blend also works layered on
+    # top of a real starting figure, not just from zero. ---
+    owned_summary = page.locator("#ownedSummary")
+    print("owned summary from BUILD's own preloaded owned progress:", owned_summary.inner_text())
+    assert owned_summary.inner_text() == "95 pts owned, ~140 to go", \
+        f"FAIL: preloaded owned progress should read as a real 95, with Packrat's still-unowned estimate on the 'to go' side - got {owned_summary.inner_text()!r}"
+    togo_span = owned_summary.locator(".is-estimate")
+    assert togo_span.count() == 1
+    assert togo_span.get_attribute("title") == "134 confirmed + 6 estimated.", \
+        f"FAIL: unexpected 'to go' breakdown tooltip: {togo_span.get_attribute('title')!r}"
+
+    packrat_rows.nth(packrat_rows.count() - 1).locator(".step-own").click()
+    page.wait_for_timeout(150)
+    print("owned summary after also marking all 10 Packrat ranks owned:", owned_summary.inner_text())
+    assert owned_summary.inner_text() == "~105 pts owned, 130 to go", \
+        f"FAIL: owned should blend in Packrat's 6 guessed ranks on top of the real 99 (95 + Packrat's own 4 real ranks) - got {owned_summary.inner_text()!r}"
+    owned_span = owned_summary.locator(".is-estimate")
+    assert owned_span.count() == 1, "FAIL: expected exactly one blended figure - to go's own estimate is now 0, all of it moved to owned"
+    assert owned_span.get_attribute("title") == "99 confirmed + 6 estimated.", \
+        f"FAIL: unexpected owned breakdown tooltip: {owned_span.get_attribute('title')!r}"
+    print("PASS: owned/to-go blends estimates the same way the topbar and Progression's own total do, so both sides always sum to the blended headline")
+
     print("ERRORS:", errors)
     assert not errors
 
@@ -122,7 +153,7 @@ with sync_playwright() as p:
     errors2 = []
     page2.on("pageerror", lambda exc: errors2.append(str(exc)))
     page2.on("dialog", lambda d: d.accept())
-    BUILD_STALE = "H4sIAAAAAAAC_3VQMQ6DMAz8i2cPCUkI5Acd-gLUARWEkCitEGqHqn_v2QE6VT645OLYvrzpSalgulJqao5s3YVpohQM0wKtKRlKE9njX-m6sLopHFsjXLIVilyBnNWd85rqQqZcxNVK3uh97zUTjUQMRSbHpVCuaaWHsIk4xWAPTIRMAF2R-wOUuAEVjzWgl-2eZ-AxRyUbGQJN0G_LlK_UqBAy6g4xoYD_A2Ipw-8IG1D2P-DlJa-LunSax3VsJ2K6L-089CQvDf08dkN766EvfUdif6VkjTGfL3hlLFC1AQAA"
+    BUILD_STALE = "H4sIAAAAAAAC_31QSQ7CMAz8i88-xE2alP6AAy-oOFS0QpXYVCE4IP7O2OkiDiBPO4lje2y_6EF1wXSgutlwYvF7phPVpWMa4Wsiw9MkDvhXdi7ELoVnccqRRSlxBfJiNx8s1JeZchG_MQrO8kOwSAipsywyeY5KuaaohrJLeEVjN3SESACqiF0BT5qAissZsGSZ4xxmzFbpRZuACPSmSP2iWQXTVmfoEAbMv0BHyggzygko-xuY5arbnfcqX4tM6yL_bcn6XdaEkk8tiVZpexnuQ3siqIzt5diTisC_G7pje-7hH_uONOVOtTjn3h86SJr-CAIAAA"
     page2.goto(f"{BASE}?build={BUILD_STALE}")
     page2.wait_for_selector("#treeWrap .node")
     page2.wait_for_timeout(200)

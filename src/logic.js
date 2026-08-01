@@ -582,6 +582,22 @@ export function estimatedExtraPoints() {
   return extra;
 }
 
+// Same idea as estimatedExtraPoints, scoped to owned ranks instead of
+// planned ones - how much higher ownedPoints() would probably be if every
+// owned rank with an unconfirmed cost cost what its guess says. Lets
+// renderProgression's "owned / to go" split blend the same way the topbar
+// headline and Progression's own running total already do, instead of
+// silently dropping every estimated rank from both sides.
+export function estimatedExtraOwnedPoints() {
+  let extra = sumEstimatedExtra("general", null, AA_DATA.general, state.owned.general)
+    + sumEstimatedExtra("archetype", null, AA_DATA.archetype, state.owned.archetype)
+    + sumEstimatedExtra("special", null, AA_DATA.special, state.owned.special);
+  Object.keys(state.owned.classes).forEach((className) => {
+    extra += sumEstimatedExtra("class", className, AA_DATA.classes[className] || [], state.owned.classes[className]);
+  });
+  return extra;
+}
+
 // Plain "Requires X rank N" gates the whole ability behind a fixed target rank.
 // "Requires X rank 1/2/3" (matching the wiki's own phrasing for rank-synced
 // prereqs, e.g. Destructive Cascade needing the matching Critical Affliction

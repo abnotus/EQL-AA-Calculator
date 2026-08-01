@@ -1122,6 +1122,15 @@ extra += sumEstimatedExtra("class", className, AA_DATA.classes[className] || [],
 });
 return extra;
 }
+function estimatedExtraOwnedPoints() {
+let extra = sumEstimatedExtra("general", null, AA_DATA.general, state.owned.general)
++ sumEstimatedExtra("archetype", null, AA_DATA.archetype, state.owned.archetype)
++ sumEstimatedExtra("special", null, AA_DATA.special, state.owned.special);
+Object.keys(state.owned.classes).forEach((className) => {
+extra += sumEstimatedExtra("class", className, AA_DATA.classes[className] || [], state.owned.classes[className]);
+});
+return extra;
+}
 function parsePrereqText(text) {
 if (!text) return null;
 const m = text.match(/^Requires\s+(.+?)\s+(?:rank|(?:at\s+)?level)\s+(\d+(?:\/\d+)*)\s*$/i);
@@ -2461,9 +2470,17 @@ el.otherClassesNote.classList.toggle("hidden", inactiveSpent === 0);
 el.otherClassesNote.textContent = inactiveSpent > 0
 ? ` ${inactiveSpent} more point${inactiveSpent === 1 ? "" : "s"} spent on other classes — see the Other Classes tab.`
 : "";
-const ownedPts = ownedPoints();
-const togoPts = spentPoints() - ownedPts;
-el.ownedSummary.textContent = `${ownedPts} pt${ownedPts === 1 ? "" : "s"} owned, ${togoPts} to go`;
+const ownedReal = ownedPoints();
+const ownedExtra = estimatedExtraOwnedPoints();
+const spentExtra = estimatedExtraPoints();
+const togoReal = spentPoints() - ownedReal;
+const togoExtra = spentExtra - ownedExtra;
+function blendedFigure(real, extra) {
+return extra > 0
+? `<span class="is-estimate" title="${real} confirmed + ${extra} estimated.">~${real + extra}</span>`
+: `${real}`;
+}
+el.ownedSummary.innerHTML = `${blendedFigure(ownedReal, ownedExtra)} pt${(ownedReal + ownedExtra) === 1 ? "" : "s"} owned, ${blendedFigure(togoReal, togoExtra)} to go`;
 renderWaypointChips();
 if (!state.purchaseOrder.length) {
 el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
