@@ -1,3 +1,8 @@
 __pycache__/
 *.pyc
 *.zip
+
+# Local Claude Code settings and project-convention notes for AI-assisted
+# sessions - not part of the deployed app, kept out of the public repo.
+.claude/
+CLAUDE.md
