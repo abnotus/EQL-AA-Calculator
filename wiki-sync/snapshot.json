@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 165003,
+  "revid": 165762,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -180,10 +180,10 @@
         "1",
         "2",
         "3",
-        "?",
-        "?"
+        "5",
+        "5"
       ],
-      "description": "This passive ability increases your health regeneration by 1/2/3/4/5/?/? point(s). Requirements: level 1."
+      "description": "This passive ability increases your health regeneration by 1/1/1/2/3/5/5 point(s). Requirements: level 1."
     },
     "general::Innate Spell Resistance::0": {
       "ranks": "5",
@@ -396,7 +396,7 @@
         "4",
         "6"
       ],
-      "description": "This passive ability increases the effectiveness of your instant-duration healing spells by 2%. Requirements: level 1."
+      "description": "This passive ability increases the effectiveness of your instant-duration healing spells by 2/5/???%. Requirements: level 1."
     },
     "archetype::Healing Boon::0": {
       "ranks": "3",
@@ -421,7 +421,7 @@
       "costs": [
         "6"
       ],
-      "description": "This passive ability allows you to use your bash skill while wielding a two-handed weapon. Utilizes the best item (weapon or shield) from the Prmary, Secondary, or Any slots. Requirements: level 1."
+      "description": "This passive ability allows you to use your bash skill to be used without a shield, and will always use the base AC from among equipped weapons or shields. The Improved Bash AA can now utilize the best item (weapon or shield) from the primary, secondary, or Any slots. Requirements: level 1."
     },
     "archetype::Innate Camouflage::0": {
       "ranks": "1",
@@ -861,16 +861,14 @@
       "description": "Ability Activation ID: 98 - Refresh Time: 0:30:00 - Ability Timer(s): 87. Purification I, when activated, instantly cures you of up to 20 detrimental effects (excluding charm, fear, resurrection, and revival sickness). Requirements: level 15."
     },
     "class:Monk::Rapid Feign::0": {
-      "ranks": "3",
+      "ranks": "1",
       "costs": [
-        "3",
-        "6",
-        "?"
+        "3"
       ],
       "description": "This passive ability reduces the reuse time of your Feign Death skill by 1 second. Second level reduces the reuse time of FD skill by 3 seconds. Requirements: level 17."
     },
     "class:Monk::Unbound Alacrity::0": {
-      "ranks": "3",
+      "ranks": "2",
       "costs": [
         "0"
       ],
@@ -988,7 +986,7 @@
       "costs": [
         "3",
         "6",
-        "?"
+        "9"
       ],
       "description": "Increases the base damage of your archery attacks by 30/60/100%. Requirements: level 1."
     },
@@ -1046,7 +1044,7 @@
       "costs": [
         "0"
       ],
-      "description": "Ability Activation ID: 6000 - Refresh Time: 0:20:00 - Ability Timer(s): 2. Harm Touch II, when activated, grips a non-player target with agony, instantly dealing up to 751 damage based on your current level. Ranks 9 and 10 add a Damage Over Time effect to the target. Requirements: Level 1/6/11/16/21/26/31/?/?/?."
+      "description": "Ability Activation ID: 6000 - Refresh Time: 0:20:00 - Ability Timer(s): 2. Harm Touch II, when activated, grips a non-player target with agony, instantly dealing up to 751 damage based on your current level. Ranks 9 and 10 add a Damage Over Time effect to the target. Requirements: Level 1/6/11/16/21/26/31/36/?/?."
     },
     "class:Shadow Knight::Leech Touch::0": {
       "ranks": "1",

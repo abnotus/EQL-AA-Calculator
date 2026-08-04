@@ -26,7 +26,7 @@ const AA_DATA = {
     { name: "Innate Eminence", ranks: 5, costs: ["3","3","3","?","?"], levelReq: "1", description: "Increases your strength, stamina, agility, dexterity, wisdom, intelligence, and charisma by 2/4/6/?/? points." },
     { name: "Innate Lung Capacity", ranks: 3, costs: ["1","1","1"], levelReq: "1", description: "Increases the amount of air you can hold in your lungs by 10/25/?%." },
     { name: "Innate Metabolism", ranks: 3, costs: ["1","?","?"], levelReq: "1", description: "Reduces your food and drink consumption by 110/125/?%." },
-    { name: "Innate Regeneration", ranks: 7, costs: ["1","1","1","2","3","?","?"], levelReq: "1", description: "Increases your health regeneration by 1/2/3/4/5/?/? point(s)." },
+    { name: "Innate Regeneration", ranks: 7, costs: ["1","1","1","2","3","5","5"], levelReq: "1", description: "Increases your health regeneration by 1/1/1/2/3/5/5 point(s)." },
     { name: "Innate Spell Resistance", ranks: 5, costs: ["2","2","2","2","?"], levelReq: "1", description: "Improves your cold, disease, fire, magic, and poison resistances by 2/4/6/8/? points." },
     { name: "Jewel Craft Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Jewelcrafting recipes by 10/25/50%." },
     { name: "Natural Durability", ranks: 4, costs: ["2","4","6","2"], levelReq: "1", description: "Increases your maximum base health (derived from your stamina) by 2/5/10/12%." },
@@ -52,10 +52,10 @@ const AA_DATA = {
     { name: "Exodus", ranks: 1, costs: ["6"], levelReq: "10", description: "Teleports group members within 100 feet to a safe zone location." },
     { name: "Finishing Blow", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Critical melee attacks deal 100/200/300% damage to level 50/53/55 or lower NPCs at 10/12/15% or less health." },
     { name: "Fury of Magic", ranks: 4, costs: ["1","2","3","4"], levelReq: "1", description: "Increases critical hit chance with direct damage spells by 2/4/7/10%." },
-    { name: "Healing Adept", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases instant-duration healing spell effectiveness by 2% per rank." },
+    { name: "Healing Adept", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases instant-duration healing spell effectiveness by 2/5/?%." },
     { name: "Healing Boon", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases HoT exceptional heal chance by 3/6/9%." },
     { name: "Healing Gift", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Grants instant healing spells 3%/6%/10% exceptional heal chance." },
-    { name: "Improved Bash", ranks: 1, costs: ["6"], levelReq: "1", description: "Allows bash usage while wielding two-handed weapons, using the best item from your Primary, Secondary, or Any slot." },
+    { name: "Improved Bash", ranks: 1, costs: ["6"], levelReq: "1", description: "Allows bash usage without a shield equipped, using the best available AC among your weapon and shield across your Primary, Secondary, and Any slots." },
     { name: "Innate Camouflage", ranks: 1, costs: ["5"], levelReq: "40", description: "Grants standard invisibility for up to 20 minutes." },
     { name: "Innate Invis to Undead", ranks: 1, costs: ["3"], levelReq: "40", description: "Renders you invisible to undead for up to 27 minutes." },
     { name: "Intimidation", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Successful intimidate triggers a fear effect on level 70 or lower targets for 18 seconds." },
@@ -155,7 +155,7 @@ const AA_DATA = {
       { name: "Hunter's Attack Power", ranks: 26, costs: Array(26).fill("0"), levelReq: "8", auto: true, description: "Increases your attack power by 4 points per rank." },
       { name: "Innate Called Shot", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Ranger the ability to unleash a double bow shot on stationary targets." },
       { name: "Unbounded Strikethrough", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance you will strike through your opponent's active defenses (dodge, block, parry, riposte) by 10/20/30%." },
-      { name: "Weapon Mastery of the Scout", ranks: 3, costs: ["3","6","?"], levelReq: "1", description: "Increases the base damage of your archery attacks by 30/60/100%." }
+      { name: "Weapon Mastery of the Scout", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases the base damage of your archery attacks by 30/60/100%." }
     ],
     "Rogue": [
       { name: "Chaotic Stab", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Allows your backstab attacks to deal minimal backstab damage if you are not behind your target." },
