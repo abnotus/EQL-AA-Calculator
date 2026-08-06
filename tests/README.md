@@ -82,14 +82,16 @@ exact scenario being tested instead of leaving it implicit in a sequence of
 clicks.
 
 Several of these tests are pinned to specific live AAs as their guessed-value
-examples (`test_effect_guess.py`'s Alchemy Mastery, `test_cost_guess.py`'s
-Alchemy Mastery and Combat Fury, `test_guess_all_tabs.py`'s Alchemy Mastery,
-`test_manual_guess.py`'s Crafting Mastery and Spell Casting Subtlety) — a
-future wiki scrape confirming one of those specific ranks will break that
-test, same as it's already happened more than once (Adamant Will, Combat
-Stability, and Combat Fury's effect value all resolved to real data and had
-to be swapped out for a still-live example over the course of this project).
-Regenerate `costGuesses.js`/`effectGuesses.js` first, then pick a fresh
+examples (`test_effect_guess.py`'s Alchemy Mastery and Spell Casting
+Subtlety, `test_cost_guess.py`'s Alchemy Mastery and Combat Fury,
+`test_guess_all_tabs.py`'s Alchemy Mastery, `test_manual_guess.py`'s
+Crafting Mastery and Spell Casting Subtlety, `test_estimated_total.py`'s
+Spell Casting Subtlety) — a future wiki scrape confirming one of those
+specific ranks will break that test, same as it's already happened more
+than once (Adamant Will, Combat Stability, and Combat Fury's effect value,
+and Packrat's entire cost/effect progression, all resolved to real data and
+had to be swapped out for a still-live example over the course of this
+project). Regenerate `costGuesses.js`/`effectGuesses.js` first, then pick a fresh
 example from whichever guess table still has one - see the affected test's
 own comments for how the swap played out last time.
 
