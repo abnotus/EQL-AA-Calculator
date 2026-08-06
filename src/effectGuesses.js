@@ -28,7 +28,6 @@ export const EFFECT_GUESS_TABLE = {
   "general::innate-lung-capacity": { "0": { "2": { value: 30, confidence: "very-low", basedOn: [], manual: true } } },
   "general::innate-metabolism": { "0": { "2": { value: 140, confidence: "very-low", basedOn: [], manual: true } } },
   "general::innate-spell-resistance": { "0": { "4": { value: 10, confidence: "very-low", basedOn: [], manual: true } } },
-  "general::packrat": { "0": { "3": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "4": { value: 25, confidence: "very-low", basedOn: [], manual: true }, "5": { value: 30, confidence: "very-low", basedOn: [], manual: true }, "6": { value: 35, confidence: "very-low", basedOn: [], manual: true }, "7": { value: 40, confidence: "very-low", basedOn: [], manual: true }, "8": { value: 45, confidence: "very-low", basedOn: [], manual: true }, "9": { value: 50, confidence: "very-low", basedOn: [], manual: true } } },
   "general::pottery-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "general::tailoring-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "special::banestrike": { "0": { "2": { value: 6, confidence: "very-low", basedOn: [], manual: true }, "3": { value: 8, confidence: "very-low", basedOn: [], manual: true } } }

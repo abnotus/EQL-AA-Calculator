@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 166344,
+  "revid": 166807,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -225,18 +225,9 @@
     "general::Packrat::0": {
       "ranks": "10",
       "costs": [
-        "1",
-        "1",
-        "1",
-        "1",
-        "?",
-        "?",
-        "?",
-        "?",
-        "?",
-        "?"
+        "1 for all ranks"
       ],
-      "description": "This passive ability reduces the weight of all equipped and carried items by 5/10/15/?/?/?/?/?/?/?%. Requirements: level 1."
+      "description": "This passive ability reduces the weight of all equipped and carried items by 5/10/15/20/25/30/35/40/45/50%. Requirements: level 1."
     },
     "general::Permanent Illusion::0": {
       "ranks": "1",
@@ -334,7 +325,7 @@
         "6",
         "9"
       ],
-      "description": "This passive ability increases the chance your damage-over-time spells will deal critical damage at each 6 second interval they are active by 3/6/9%. Requirements: level 1."
+      "description": "This passive ability increases the chance your damage over time spells will deal critical damage at each 6 second interval they are active by 3/6/9%. Requirements: level 1."
     },
     "archetype::Destructive Cascade::0": {
       "ranks": "3",
@@ -560,7 +551,7 @@
         "2",
         "4",
         "6",
-        "?"
+        "8"
       ],
       "description": "This passive ability increases the duration of beneficial spells that you cast by 5/15/30/50%. Spells that grant invulnerability and combat abilities are exempt from this extension. Requirements: level 1."
     },
@@ -848,7 +839,7 @@
       "ranks": "3",
       "costs": [
         "3",
-        "?",
+        "6",
         "?"
       ],
       "description": "This passive ability gives you a 10% chance to perform a superior mend, doubling the healing of your mend skill. Requirements: level 1, First Aid at level 3."
@@ -865,9 +856,9 @@
       "costs": [
         "3",
         "6",
-        "?"
+        "9"
       ],
-      "description": "This passive ability reduces the reuse time of your Feign Death skill by 1 second. Second level reduces the reuse time of FD skill by 3 seconds. Requirements: level 17."
+      "description": "This passive ability reduces the reuse time of your Feign Death skill by 1/3/5 second(s). Requirements: level 17."
     },
     "class:Monk::Unbound Alacrity::0": {
       "ranks": "3",
@@ -909,7 +900,7 @@
       "costs": [
         "0"
       ],
-      "description": "This passive ability increases the chance your damage-over-time spells will deal critical damage at each 6 second interval they are active by 2/4/6%. Requirements: level 12/30/?."
+      "description": "This passive ability increases the chance your damage over time spells will deal critical damage at each 6 second interval they are active by 2/4/6%. Requirements: level 12/30/?."
     },
     "class:Paladin::Act of Valor::0": {
       "ranks": "1",
@@ -1046,7 +1037,7 @@
       "costs": [
         "0"
       ],
-      "description": "Ability Activation ID: 6000 - Refresh Time: 0:20:00 - Ability Timer(s): 2. Harm Touch II, when activated, grips a non-player target with agony, instantly dealing up to 751 damage based on your current level. Ranks 9 and 10 add a Damage Over Time effect to the target. Requirements: Level 1/6/11/16/21/26/31/36/41/?."
+      "description": "Ability Activation ID: 6000 - Refresh Time: 0:20:00 - Ability Timer(s): 2. Harm Touch II, when activated, grips a non-player target with agony, instantly dealing up to 751 damage based on your current level. Ranks 9 and 10 add a Damage Over Time effect to the target. Requirements: Level 1/6/11/16/21/26/31/36/41/46."
     },
     "class:Shadow Knight::Leech Touch::0": {
       "ranks": "1",
@@ -1090,7 +1081,7 @@
       "costs": [
         "0"
       ],
-      "description": "This passive ability increases the damage dealt by your critical damage-over-time spells by 10/20/30%. Requirements: level 12."
+      "description": "This passive ability increases the damage dealt by your critical damage over time spells by 10/20/30%. Requirements: level 12."
     },
     "class:Warrior::Area Taunt::0": {
       "ranks": "1",
