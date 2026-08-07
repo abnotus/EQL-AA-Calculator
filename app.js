@@ -1142,16 +1142,19 @@ return ranks.length > 1
 ? { name: m[1].trim(), synced: true, ranks }
 : { name: m[1].trim(), synced: false, rank: ranks[0] };
 }
-function resolvePrereqTarget(text, sourceCategory) {
+function resolvePrereqTargetScoped(text, scope, className) {
 const parsed = parsePrereqText(text);
 if (!parsed) return null;
-const order = [];
+const candidates = [[scope, className], ["general", null], ["archetype", null], ["special", null]];
 const seen = new Set();
-[sourceCategory, "general", "archetype", "special"].forEach((k) => {
-if (!seen.has(k)) { seen.add(k); order.push(k); }
+const order = candidates.filter(([s, c]) => {
+const k = `${s}|${c || ""}`;
+if (seen.has(k)) return false;
+seen.add(k);
+return true;
 });
-for (const key of order) {
-const list = getList(key);
+for (const [s, c] of order) {
+const list = s === "class" ? (AA_DATA.classes[c] || []) : (AA_DATA[s] || []);
 let foundIdx = -1;
 list.forEach((aa, i) => {
 if (aa.name.toLowerCase() !== parsed.name.toLowerCase()) return;
@@ -1160,8 +1163,7 @@ if (list[foundIdx].auto && !aa.auto) foundIdx = i;
 });
 if (foundIdx >= 0) {
 return {
-category: key,
-idx: foundIdx,
+scope: s, className: c, idx: foundIdx,
 forRank(sourceRank) {
 if (!parsed.synced) return parsed.rank;
 const i = Math.min(Math.max(sourceRank, 1), parsed.ranks.length) - 1;
@@ -1171,6 +1173,15 @@ return parsed.ranks[i];
 }
 }
 return null;
+}
+function resolvePrereqTarget(text, sourceCategory) {
+const { scope, className } = categoryToScopeClassName(sourceCategory);
+const resolved = resolvePrereqTargetScoped(text, scope, className);
+if (!resolved) return null;
+const category = resolved.scope === "class"
+? CLASS_SLOT_KEYS[state.selectedClasses.indexOf(resolved.className)]
+: resolved.scope;
+return { category, idx: resolved.idx, forRank: resolved.forRank };
 }
 function tryResolvePrereq(text, sourceCategory) {
 const parsed = parsePrereqText(text);
@@ -1337,18 +1348,27 @@ function getBlockReason(catKey, idx) {
 const structural = structuralLockReason(catKey, idx);
 return structural ? structural.text : null;
 }
-function isDependedOn(category, idx, currentRank) {
-const newRank = currentRank - 1;
-for (const catKey of AA_CATEGORY_KEYS) {
-const list = getList(catKey);
+function checkPrereqDependents(list, scope, className, targetScope, targetClassName, idx, newRank) {
 for (let i = 0; i < list.length; i++) {
 const aa = list[i];
 if (!aa.prereq) continue;
-const aaRank = effectiveRank(catKey, i);
+const aaRank = effectiveRankScoped(scope, className, i);
 if (aaRank <= 0) continue;
-const r = resolvePrereqTarget(aa.prereq, catKey);
-if (r && r.category === category && r.idx === idx && newRank < r.forRank(aaRank)) return true;
+const r = resolvePrereqTargetScoped(aa.prereq, scope, className);
+if (r && r.scope === targetScope && r.className === targetClassName && r.idx === idx && newRank < r.forRank(aaRank)) return true;
 }
+return false;
+}
+function isDependedOn(category, idx, currentRank) {
+const newRank = currentRank - 1;
+const { scope: targetScope, className: targetClassName } = categoryToScopeClassName(category);
+for (const catKey of AA_CATEGORY_KEYS) {
+const { scope, className } = categoryToScopeClassName(catKey);
+if (checkPrereqDependents(getList(catKey), scope, className, targetScope, targetClassName, idx, newRank)) return true;
+}
+for (const className of Object.keys(state.ranks.classes)) {
+if (state.selectedClasses.includes(className)) continue;
+if (checkPrereqDependents(AA_DATA.classes[className] || [], "class", className, targetScope, targetClassName, idx, newRank)) return true;
 }
 return false;
 }

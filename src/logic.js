@@ -612,20 +612,29 @@ function parsePrereqText(text) {
     : { name: m[1].trim(), synced: false, rank: ranks[0] };
 }
 
-export function resolvePrereqTarget(text, sourceCategory) {
+// Same resolution as resolvePrereqTarget, but by (scope, className)
+// directly rather than a catKey - lets a caller resolve a prereq for a
+// class that isn't necessarily one of the 3 active slots (isDependedOn
+// needs this to check a dependency held by a swapped-out class). Returns
+// { scope, className, idx, forRank } - scope/className identity, not a
+// catKey, since an inactive class has none.
+export function resolvePrereqTargetScoped(text, scope, className) {
   const parsed = parsePrereqText(text);
   if (!parsed) return null;
-  // Only the source's own category plus the shared trees — a class AA's
-  // prereq should never resolve against whichever *other* class happens
-  // to occupy another slot right now. Widening this would make resolution
-  // depend on which classes are currently selected, not just the AA.
-  const order = [];
+  // Only the source's own class/category plus the shared trees — a class
+  // AA's prereq should never resolve against a different class, active or
+  // not. Widening this would make resolution depend on which classes
+  // happen to be selected, not just the AA.
+  const candidates = [[scope, className], ["general", null], ["archetype", null], ["special", null]];
   const seen = new Set();
-  [sourceCategory, "general", "archetype", "special"].forEach((k) => {
-    if (!seen.has(k)) { seen.add(k); order.push(k); }
+  const order = candidates.filter(([s, c]) => {
+    const k = `${s}|${c || ""}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
   });
-  for (const key of order) {
-    const list = getList(key);
+  for (const [s, c] of order) {
+    const list = s === "class" ? (AA_DATA.classes[c] || []) : (AA_DATA[s] || []);
     let foundIdx = -1;
     list.forEach((aa, i) => {
       if (aa.name.toLowerCase() !== parsed.name.toLowerCase()) return;
@@ -633,14 +642,13 @@ export function resolvePrereqTarget(text, sourceCategory) {
       // Duplicate name in this category (e.g. Cleric's two "Divine Aura"
       // rows) — prefer whichever costs points over an auto-granted one,
       // since gating behind a free ability isn't a meaningful prereq.
-      // Otherwise keep the first match, so resolution doesn't flip if the
-      // data gets reordered by a resync.
+      // Otherwise keep the first match, so resolution doesn't quietly flip
+      // if the data gets reordered by a resync.
       if (list[foundIdx].auto && !aa.auto) foundIdx = i;
     });
     if (foundIdx >= 0) {
       return {
-        category: key,
-        idx: foundIdx,
+        scope: s, className: c, idx: foundIdx,
         // Required target rank for the source AA to hold `sourceRank`. Fixed
         // prereqs ignore sourceRank; synced ones look up the matching entry
         // (clamped to the list, so a too-high/low sourceRank still resolves).
@@ -653,6 +661,22 @@ export function resolvePrereqTarget(text, sourceCategory) {
     }
   }
   return null;
+}
+
+// catKey-based convenience wrapper around resolvePrereqTargetScoped, for
+// the (more common) case where the source is known to be one of the 3
+// active slots. Translates the scoped result back into a catKey for the
+// existing catKey-addressed callers - always resolvable here, since a
+// class-scoped result can only ever be the source's own (active) class,
+// never a different one (see resolvePrereqTargetScoped's own comment).
+export function resolvePrereqTarget(text, sourceCategory) {
+  const { scope, className } = categoryToScopeClassName(sourceCategory);
+  const resolved = resolvePrereqTargetScoped(text, scope, className);
+  if (!resolved) return null;
+  const category = resolved.scope === "class"
+    ? CLASS_SLOT_KEYS[state.selectedClasses.indexOf(resolved.className)]
+    : resolved.scope;
+  return { category, idx: resolved.idx, forRank: resolved.forRank };
 }
 
 // Resolves a prereq, distinguishing *why* it failed: malformed text (a bug
@@ -900,18 +924,45 @@ export function getBlockReason(catKey, idx) {
   return structural ? structural.text : null;
 }
 
+// Whether some other AA's held rank would become invalid if the AA at
+// (category, idx) dropped from currentRank to currentRank - 1. Checks
+// every currently-active category (general/archetype/special, the 3 class
+// slots) plus every OTHER class ever picked - a swapped-out class's held
+// pick can still depend on something, same lifetime scope
+// spentPoints()/ownedPoints() already use, so refunding a general AA's
+// rank can't silently invalidate a dependent sitting in the Other Classes
+// tab without warning.
+function checkPrereqDependents(list, scope, className, targetScope, targetClassName, idx, newRank) {
+  for (let i = 0; i < list.length; i++) {
+    const aa = list[i];
+    if (!aa.prereq) continue;
+    const aaRank = effectiveRankScoped(scope, className, i);
+    if (aaRank <= 0) continue;
+    const r = resolvePrereqTargetScoped(aa.prereq, scope, className);
+    if (r && r.scope === targetScope && r.className === targetClassName && r.idx === idx && newRank < r.forRank(aaRank)) return true;
+  }
+  return false;
+}
+
 export function isDependedOn(category, idx, currentRank) {
   const newRank = currentRank - 1;
+  const { scope: targetScope, className: targetClassName } = categoryToScopeClassName(category);
+
+  // Active categories: walks every AA in each list (not just held ones),
+  // so an auto-granted AA's prereq is still caught even though auto AAs
+  // never get a state.ranks entry to key off.
   for (const catKey of AA_CATEGORY_KEYS) {
-    const list = getList(catKey);
-    for (let i = 0; i < list.length; i++) {
-      const aa = list[i];
-      if (!aa.prereq) continue;
-      const aaRank = effectiveRank(catKey, i);
-      if (aaRank <= 0) continue;
-      const r = resolvePrereqTarget(aa.prereq, catKey);
-      if (r && r.category === category && r.idx === idx && newRank < r.forRank(aaRank)) return true;
-    }
+    const { scope, className } = categoryToScopeClassName(catKey);
+    if (checkPrereqDependents(getList(catKey), scope, className, targetScope, targetClassName, idx, newRank)) return true;
+  }
+  // Every other class ever picked, not just the 3 active slots. Only a
+  // class with a manually-purchased rank can matter here - an inactive
+  // class's auto AAs never actually grant anything (effectiveRankScoped's
+  // own classActive gate), so state.ranks.classes' own keys are already a
+  // complete list of classes worth checking.
+  for (const className of Object.keys(state.ranks.classes)) {
+    if (state.selectedClasses.includes(className)) continue;
+    if (checkPrereqDependents(AA_DATA.classes[className] || [], "class", className, targetScope, targetClassName, idx, newRank)) return true;
   }
   return false;
 }

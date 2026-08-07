@@ -103,7 +103,7 @@ To make a change:
 
 ## Testing
 
-`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic, plus 14 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, hiding AAs, Progression's drag/auto-scroll/reorder, and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them. None are wired into CI — run the relevant ones by hand after touching whatever they cover.
+`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic, plus 15 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them. None are wired into CI — run the relevant ones by hand after touching whatever they cover.
 
 ## Deployment
 
