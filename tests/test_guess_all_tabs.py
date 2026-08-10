@@ -53,15 +53,18 @@ with sync_playwright() as p:
     # --- Browse view: a class NOT currently selected must still show its
     # guesses (Browse lists every class, not just the active 3). Default
     # selectedClasses is Bard/Beastlord/Berserker (CLASS_LIST[0..2]), so
-    # Magician's Conjurer's Efficiency (a manual guess) is a real example
-    # of a class outside the active 3. ---
+    # Magician's Conjurer's Efficiency is a real example of a class outside
+    # the active 3. (Its guess used to be a manual very-low fallback; a
+    # wiki scrape confirming Innate Eminence gave it a real cross-AA match
+    # instead, medium confidence - same AA, upgraded guess, still proves
+    # the point.) ---
     page.fill("#globalSearch", "Conjurer's Efficiency")
     page.wait_for_timeout(100)
     ce_card = page.locator(".browse-card", has=page.locator(".name", has_text="Conjurer's Efficiency"))
     ce_html = ce_card.locator(".info").inner_html()
     print("Conjurer's Efficiency browse info html:", ce_html)
-    assert "~4" in ce_html and "tier-very-low" in ce_html
-    print("PASS: Browse shows a manual guess even for a class outside the active 3 slots")
+    assert "~3" in ce_html and "tier-medium" in ce_html
+    print("PASS: Browse shows a guess even for a class outside the active 3 slots")
 
     page.fill("#globalSearch", "")
     page.click("#browseToggle")
