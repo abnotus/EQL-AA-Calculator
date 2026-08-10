@@ -19,15 +19,15 @@ const AA_DATA = {
     { name: "Combat Stability", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases the armor class soft cap of your class by 2/5/10%." },
     { name: "Crafting Mastery", ranks: 6, costs: ["3","?","?","?","?","?"], levelReq: "1", description: "Allows raising 1-6 additional tradeskills from a 200 to 300 cap." },
     { name: "Fear Resistance", ranks: 4, costs: ["2","4","6","9"], levelReq: "1", description: "Grants you an additional 25/50/75/100% chance to resist most fear spells." },
-    { name: "First Aid", ranks: 6, costs: ["1","1","?","?","?","?"], levelReq: "1", description: "Increases the maximum health you can bind wound to 80/90/100/100/100/100%, and increases bandage healing by 0/0/0/10/25/50%." },
+    { name: "First Aid", ranks: 6, costs: ["1","1","1","3","?","?"], levelReq: "1", description: "Increases the maximum health you can bind wound to 80/90/100/100/100/100%, and increases bandage healing by 0/0/0/10/25/50%." },
     { name: "Fletching Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Fletching recipes by 10/?/?%." },
     { name: "Foraging", ranks: 1, costs: ["3"], levelReq: "1", description: "Increases your Forage skill cap by 50 points." },
     { name: "Gather Party", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Gives everyone in your party the option of teleporting directly to your location. Automatically granted to every character — per the wiki's own General AA intro text." },
-    { name: "Innate Eminence", ranks: 5, costs: ["3","3","3","?","?"], levelReq: "1", description: "Increases your strength, stamina, agility, dexterity, wisdom, intelligence, and charisma by 2/4/6/?/? points." },
+    { name: "Innate Eminence", ranks: 5, costs: ["3","3","3","3","3"], levelReq: "1", description: "Increases your strength, stamina, agility, dexterity, wisdom, intelligence, and charisma by 2/4/6/8/10 points." },
     { name: "Innate Lung Capacity", ranks: 3, costs: ["1","1","1"], levelReq: "1", description: "Increases the amount of air you can hold in your lungs by 10/25/?%." },
     { name: "Innate Metabolism", ranks: 3, costs: ["1","?","?"], levelReq: "1", description: "Reduces your food and drink consumption by 110/125/?%." },
     { name: "Innate Regeneration", ranks: 7, costs: ["1","1","1","2","3","5","5"], levelReq: "1", description: "Increases your health regeneration by 1/1/1/2/3/5/5 point(s)." },
-    { name: "Innate Spell Resistance", ranks: 5, costs: ["2","2","2","2","?"], levelReq: "1", description: "Improves your cold, disease, fire, magic, and poison resistances by 2/4/6/8/? points." },
+    { name: "Innate Spell Resistance", ranks: 5, costs: ["2","2","2","2","2"], levelReq: "1", description: "Improves your cold, disease, fire, magic, and poison resistances by 2/4/6/8/10 points." },
     { name: "Jewel Craft Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Jewelcrafting recipes by 10/25/50%." },
     { name: "Natural Durability", ranks: 4, costs: ["2","4","6","2"], levelReq: "1", description: "Increases your maximum base health (derived from your stamina) by 2/5/10/12%." },
     { name: "Origin", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Transports you back to your starting city. Check location with /charinfo. Automatically granted to every character — per the wiki's own General AA intro text." },
@@ -52,7 +52,7 @@ const AA_DATA = {
     { name: "Exodus", ranks: 1, costs: ["6"], levelReq: "10", description: "Teleports group members within 100 feet to a safe zone location." },
     { name: "Finishing Blow", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Critical melee attacks deal 100/200/300% damage to level 50/53/55 or lower NPCs at 10/12/15% or less health." },
     { name: "Fury of Magic", ranks: 4, costs: ["1","2","3","4"], levelReq: "1", description: "Increases critical hit chance with direct damage spells by 2/4/7/10%." },
-    { name: "Healing Adept", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases instant-duration healing spell effectiveness by 2/5/?%." },
+    { name: "Healing Adept", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases instant-duration healing spell effectiveness by 2/5/10%." },
     { name: "Healing Boon", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases HoT exceptional heal chance by 3/6/9%." },
     { name: "Healing Gift", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Grants instant healing spells 3%/6%/10% exceptional heal chance." },
     { name: "Improved Bash", ranks: 1, costs: ["6"], levelReq: "1", description: "Allows bash usage without a shield equipped, using the best available AC among your weapon and shield across your Primary, Secondary, and Any slots." },
@@ -70,7 +70,7 @@ const AA_DATA = {
     { name: "Physical Enhancement", ranks: 1, costs: ["3"], levelReq: "1", description: "Increases melee avoidance by 2% and armor class soft cap by 2%." },
     { name: "Quick Damage", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Reduces the base cast time of 3+ second direct damage spells by 2/5/10%." },
     { name: "Rampage", ranks: 1, costs: ["5"], levelReq: "30", description: "Performs a single primary combat round on all creatures within 40 feet." },
-    { name: "Spell Casting Deftness", ranks: 3, costs: ["2","2","2"], levelReq: "1", description: "Reduces beneficial spell cast time (3+ seconds) by 10% per rank." },
+    { name: "Spell Casting Deftness", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces beneficial spell cast time (3+ seconds) by 10/25/50%." },
     { name: "Spell Casting Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces all spell mana cost by 2/5/10%." },
     { name: "Spell Casting Reinforcement", ranks: 4, costs: ["2","4","6","8"], levelReq: "1", description: "Increases beneficial spell duration by 5/15/30/50%." },
     { name: "Spell Casting Subtlety", ranks: 6, costs: ["2","?","?","?","?","?"], levelReq: "1", description: "Reduces hate generated by attacks/spells by 5/?/?/?/?/?%." },
@@ -133,7 +133,7 @@ const AA_DATA = {
       { name: "Improved Mend", ranks: 3, costs: ["3","6","?"], levelReq: "1", prereq: "Requires First Aid at level 3", description: "Gives you a 10% chance to perform a superior mend, doubling the healing of your mend skill." },
       { name: "Purify Body", ranks: 1, costs: ["9"], levelReq: "15", description: "Activated: instantly cures you of up to 20 detrimental effects (excluding charm, fear, resurrection, and revival sickness). (Refresh 0:30:00)" },
       { name: "Rapid Feign", ranks: 3, costs: ["3","6","9"], levelReq: "17", description: "Reduces the reuse time of your Feign Death skill by 1/3/5 second(s)." },
-      { name: "Unbound Alacrity", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your current and maximum haste value by 3/6/10%. Rank 2 requires level 30." }
+      { name: "Unbound Alacrity", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your current and maximum haste value by 3/6/10%. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Necromancer": [
       { name: "Dead Mesmerization", ranks: 1, costs: ["3"], levelReq: "40", description: "Activated: mesmerizes up to 12 level 59 or lower undead creatures within a 35 foot radius of your target for 0:00:36. (Refresh 0:15:00)" },
@@ -175,7 +175,7 @@ const AA_DATA = {
     ],
     "Shaman": [
       { name: "Cannibalization", ranks: 1, costs: ["5"], levelReq: "40", prereq: "Requires Mental Clarity at level 3", description: "Activated: consumes 1924 health to restore 1066 mana. (Refresh 0:03:00)" },
-      { name: "Unbound Cascade", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the damage dealt by your critical damage-over-time spells by 10/20/30%." }
+      { name: "Unbound Cascade", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the damage dealt by your critical damage-over-time spells by 10/20/30%. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Warrior": [
       { name: "Area Taunt", ranks: 1, costs: ["5"], levelReq: "25", description: "Activated: taunts all creatures within a 40 foot radius, placing you 100 points of hate higher than their previously most hated target. (Refresh 0:05:00)" },
