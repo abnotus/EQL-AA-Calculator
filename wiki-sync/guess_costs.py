@@ -89,16 +89,10 @@ DATA_ENTRY_COSTS = re.compile(r'\bcosts:\s*\[([^\]]*)\]')
 # a rank guess_for_entry itself produced nothing for.
 MANUAL_GUESSES = {
     "Crafting Mastery": {1: 4, 2: 5, 3: 6, 4: 7, 5: 8},
-    "First Aid": {1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
-    "Innate Eminence": {3: 3, 4: 3},
-    "Innate Regeneration": {5: 4, 6: 5},
-    "Packrat": {4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1},
-    "Stoicism": {1: 3, 2: 4, 3: 5, 4: 6},
+    "First Aid": {4: 5, 5: 6},
     "Spell Casting Subtlety": {1: 3, 2: 4, 3: 5, 4: 6, 5: 7},
     "Reaching Notes": {3: 8, 4: 10, 5: 12},
-    "Blood Rune": {2: 4},
     "Conjurer's Efficiency": {1: 4, 2: 5, 3: 6, 4: 7},
-    "Innate Spell Resistance": {1: 3, 2: 4, 3: 5, 4: 6},
 }
 
 
