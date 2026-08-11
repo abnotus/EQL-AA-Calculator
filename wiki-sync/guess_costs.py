@@ -90,6 +90,14 @@ DATA_ENTRY_COSTS = re.compile(r'\bcosts:\s*\[([^\]]*)\]')
 MANUAL_GUESSES = {
     "Crafting Mastery": {1: 4, 2: 5, 3: 6, 4: 7, 5: 8},
     "First Aid": {4: 5, 5: 6},
+    # A perfect 2-way tie in guess_for_entry (Innate Lung Capacity's 1/1/1
+    # vs. Blood Rune's 1/2/3, both matching rank 1's known cost of 1) - not
+    # confident enough for even "low". Leaning flat instead: every other
+    # confirmed "Innate X" AA is flat-cost (Innate Eminence 3/3/3/3/3,
+    # Innate Spell Resistance 2/2/2/2/2, Innate Lung Capacity itself), and
+    # Innate Regeneration starts flat too - a same-family pattern, stronger
+    # evidence than Blood Rune's coincidental single-rank match.
+    "Innate Metabolism": {1: 1, 2: 1},
     "Spell Casting Subtlety": {1: 3, 2: 4, 3: 5, 4: 6, 5: 7},
     "Reaching Notes": {3: 8, 4: 10, 5: 12},
     "Conjurer's Efficiency": {1: 4, 2: 5, 3: 6, 4: 7},
