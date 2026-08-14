@@ -35,9 +35,10 @@ stay true regardless of what `data.src.js` says on any given day.
 `test_class_rank_cap.py`, `test_progression_autoscroll.py`,
 `test_hidden_aas.py`, `test_other_classes.py`,
 `test_owned_inactive_classes.py`, `test_owned_legacy_migration.py`,
-`test_owned_profiles.py`, `test_progression_move_to.py`,
-`test_cross_class_prereq_dependency.py` drive the actual app in a real
-Chrome instance via [Playwright](https://playwright.dev/python/).
+`test_owned_profiles.py`, `test_owned_profile_cleanup.py`,
+`test_progression_move_to.py`, `test_cross_class_prereq_dependency.py`
+drive the actual app in a real Chrome instance via
+[Playwright](https://playwright.dev/python/).
 
 **Prerequisites:**
 - `pip install playwright`
@@ -74,6 +75,7 @@ python tests/test_other_classes.py
 python tests/test_owned_inactive_classes.py
 python tests/test_owned_legacy_migration.py
 python tests/test_owned_profiles.py
+python tests/test_owned_profile_cleanup.py
 python tests/test_progression_move_to.py
 python tests/test_cross_class_prereq_dependency.py
 ```
@@ -123,12 +125,15 @@ active-only filter and up/down-arrow neighbor-skipping in
 (`ownedStorageKeyFor`, `state.ownedProfileId`, `linkOwnedProfile`/
 `splitOwnedProfile`/`mergeOwnedProfileInto`/`adoptImportedOwnedAsNewProfile`
 in `state.js`; `saveBuildAs`/`loadBuild`'s profile handling,
-`migrateLegacyOwnedProfile`/`migrateStaleBuildSlots`'s backfill, or
-`linkOwnedToBuild`/`mergeOwnedFromBuild`/`splitOwnedFromCurrent` in
-`builds.js`; the Manage Owned Tracking modal in `render.js` - split across
-`test_owned_legacy_migration.py` for the backward-compatibility/migration
-side and `test_owned_profiles.py` for new-build independence, Link/Merge/
-Split, and silent-import-profile-creation), or the Move To popover
+`migrateLegacyOwnedProfile`/`migrateStaleBuildSlots`'s backfill,
+`linkOwnedToBuild`/`mergeOwnedFromBuild`/`splitOwnedFromCurrent`, or
+`cleanupOrphanedOwnedProfiles` in `builds.js`; `listOwnedProfileIds`/
+`removeOwnedProfile` in `state.js`; the Manage Owned Tracking modal in
+`render.js` - split across `test_owned_legacy_migration.py` for the
+backward-compatibility/migration side, `test_owned_profiles.py` for
+new-build independence, Link/Merge/Split, and silent-import-profile-
+creation, and `test_owned_profile_cleanup.py` for the orphaned-profile
+sweep specifically), or the Move To popover
 (`absoluteIndexForVisiblePosition`, `moveToVisiblePosition`,
 `waypointSections`'s fit-aware section-boundary math, `moveMenuHtml`, or
 `s.visiblePos`'s role in `computeProgressionSteps`/step-num display -

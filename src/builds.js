@@ -6,7 +6,8 @@
 import {
   state, saveLocal, serializeRanks, serializePurchaseOrder, applyLoaded, SAVE_FORMAT_VERSION,
   genId, LEGACY_OWNED_PROFILE_ID, loadAndApplyOwned, saveOwnedProfileTo,
-  linkOwnedProfile, splitOwnedProfile, mergeOwnedProfileInto
+  linkOwnedProfile, splitOwnedProfile, mergeOwnedProfileInto,
+  listOwnedProfileIds, removeOwnedProfile
 } from "./state.js";
 import { spentPoints, clearLastMutation, reconcilePurchaseOrderCounts } from "./logic.js";
 
@@ -125,6 +126,26 @@ function readBuildRaw(id) {
 function ownedProfileIdOfBuild(id) {
   const raw = readBuildRaw(id);
   return (raw && typeof raw.ownedProfileId === "string" && raw.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+}
+
+// Owned profiles are minted freely - every brand-new Save As, every Split,
+// every owned-carrying import mints its own (state.js) - but nothing ever
+// un-mints one when the build(s) pointing at it are deleted or re-linked
+// elsewhere. Sweeps any profile with no build slot's own ownedProfileId
+// pointing at it AND that isn't the live session's own state.ownedProfileId
+// either - a build still pointing at it, even one that isn't currently
+// loaded, means it's still reachable and must be left alone.
+// removeOwnedProfile (state.js) refuses to touch the legacy profile on its
+// own, so there's no need to special-case it here too. Called from
+// main.js alongside migrateStaleBuildSlots/cleanupStaleStorageKeys, once
+// per boot - cheap at the scale of profiles one browser actually
+// accumulates.
+export function cleanupOrphanedOwnedProfiles() {
+  const referenced = new Set([state.ownedProfileId]);
+  loadIndex().forEach(({ id }) => referenced.add(ownedProfileIdOfBuild(id)));
+  listOwnedProfileIds().forEach((profileId) => {
+    if (!referenced.has(profileId)) removeOwnedProfile(profileId);
+  });
 }
 
 // Deliberately just the plan - selectedClasses/charLevel/ranks/

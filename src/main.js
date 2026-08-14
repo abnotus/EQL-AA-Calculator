@@ -9,7 +9,7 @@ import { populateStaticControls, renderAll, showToast } from "./render.js";
 import { findInvalidatedPicks, reconcilePurchaseOrderCounts } from "./logic.js";
 import { wireEvents } from "./events.js";
 import { applySharedBuildFromUrl } from "./exportImport.js";
-import { migrateStaleBuildSlots } from "./builds.js";
+import { migrateStaleBuildSlots, cleanupOrphanedOwnedProfiles } from "./builds.js";
 
 async function init() {
   cacheDom();
@@ -45,6 +45,11 @@ async function init() {
   const shared = await applySharedBuildFromUrl(localResult);
   wireEvents();
   cleanupStaleStorageKeys();
+  // Must run after applySharedBuildFromUrl above, which can itself mint a
+  // fresh owned profile (an incoming share link carrying owned data) that
+  // needs to already count as "referenced" before anything unreferenced
+  // gets swept.
+  cleanupOrphanedOwnedProfiles();
   try {
     if (!localStorage.getItem(DISCLAIMER_DISMISSED_KEY)) el.disclaimerBanner.classList.remove("hidden");
   } catch (e) {

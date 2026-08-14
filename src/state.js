@@ -412,6 +412,35 @@ export function migrateLegacyOwnedProfile() {
   } catch (e) { /* storage unavailable, ignore */ }
 }
 
+// Every eql_aa_owned_<profileId> key currently in storage, except the
+// permanent legacy profile - callers (builds.js's orphan sweep) use this
+// to compute which profiles exist before checking which are still
+// referenced. Excludes OWNED_STORAGE_KEY itself too, in case its own
+// "_v1" suffix were ever mistaken for a profile id under the same prefix.
+export function listOwnedProfileIds() {
+  const prefix = "eql_aa_owned_";
+  const ids = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(prefix) || key === OWNED_STORAGE_KEY) continue;
+      const id = key.slice(prefix.length);
+      if (id !== LEGACY_OWNED_PROFILE_ID) ids.push(id);
+    }
+  } catch (e) { /* storage unavailable, ignore */ }
+  return ids;
+}
+
+// Removes a single owned profile's storage - refuses to touch the
+// permanent legacy profile no matter what a caller passes, since
+// preserving it is the one invariant this exists to never violate.
+export function removeOwnedProfile(profileId) {
+  if (profileId === LEGACY_OWNED_PROFILE_ID) return;
+  try {
+    localStorage.removeItem(ownedStorageKeyFor(profileId));
+  } catch (e) { /* storage unavailable, ignore */ }
+}
+
 export function loadLocal() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);

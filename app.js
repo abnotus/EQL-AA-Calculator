@@ -731,6 +731,25 @@ if (localStorage.getItem(profileKey) != null) return;
 localStorage.setItem(profileKey, legacyRaw);
 } catch (e) { /* storage unavailable, ignore */ }
 }
+function listOwnedProfileIds() {
+const prefix = "eql_aa_owned_";
+const ids = [];
+try {
+for (let i = 0; i < localStorage.length; i++) {
+const key = localStorage.key(i);
+if (!key || !key.startsWith(prefix) || key === OWNED_STORAGE_KEY) continue;
+const id = key.slice(prefix.length);
+if (id !== LEGACY_OWNED_PROFILE_ID) ids.push(id);
+}
+} catch (e) { /* storage unavailable, ignore */ }
+return ids;
+}
+function removeOwnedProfile(profileId) {
+if (profileId === LEGACY_OWNED_PROFILE_ID) return;
+try {
+localStorage.removeItem(ownedStorageKeyFor(profileId));
+} catch (e) { /* storage unavailable, ignore */ }
+}
 function loadLocal() {
 try {
 const raw = localStorage.getItem(STORAGE_KEY);
@@ -1709,6 +1728,13 @@ return null;
 function ownedProfileIdOfBuild(id) {
 const raw = readBuildRaw(id);
 return (raw && typeof raw.ownedProfileId === "string" && raw.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+}
+function cleanupOrphanedOwnedProfiles() {
+const referenced = new Set([state.ownedProfileId]);
+loadIndex().forEach(({ id }) => referenced.add(ownedProfileIdOfBuild(id)));
+listOwnedProfileIds().forEach((profileId) => {
+if (!referenced.has(profileId)) removeOwnedProfile(profileId);
+});
 }
 function buildPayload() {
 return {
@@ -3608,6 +3634,7 @@ loadAndApplyHidden();
 const shared = await applySharedBuildFromUrl(localResult);
 wireEvents();
 cleanupStaleStorageKeys();
+cleanupOrphanedOwnedProfiles();
 try {
 if (!localStorage.getItem(DISCLAIMER_DISMISSED_KEY)) el.disclaimerBanner.classList.remove("hidden");
 } catch (e) {

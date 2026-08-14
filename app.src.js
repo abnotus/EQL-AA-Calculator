@@ -1029,6 +1029,35 @@ function migrateLegacyOwnedProfile() {
   } catch (e) { /* storage unavailable, ignore */ }
 }
 
+// Every eql_aa_owned_<profileId> key currently in storage, except the
+// permanent legacy profile - callers (builds.js's orphan sweep) use this
+// to compute which profiles exist before checking which are still
+// referenced. Excludes OWNED_STORAGE_KEY itself too, in case its own
+// "_v1" suffix were ever mistaken for a profile id under the same prefix.
+function listOwnedProfileIds() {
+  const prefix = "eql_aa_owned_";
+  const ids = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(prefix) || key === OWNED_STORAGE_KEY) continue;
+      const id = key.slice(prefix.length);
+      if (id !== LEGACY_OWNED_PROFILE_ID) ids.push(id);
+    }
+  } catch (e) { /* storage unavailable, ignore */ }
+  return ids;
+}
+
+// Removes a single owned profile's storage - refuses to touch the
+// permanent legacy profile no matter what a caller passes, since
+// preserving it is the one invariant this exists to never violate.
+function removeOwnedProfile(profileId) {
+  if (profileId === LEGACY_OWNED_PROFILE_ID) return;
+  try {
+    localStorage.removeItem(ownedStorageKeyFor(profileId));
+  } catch (e) { /* storage unavailable, ignore */ }
+}
+
 function loadLocal() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -2612,6 +2641,26 @@ function readBuildRaw(id) {
 function ownedProfileIdOfBuild(id) {
   const raw = readBuildRaw(id);
   return (raw && typeof raw.ownedProfileId === "string" && raw.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+}
+
+// Owned profiles are minted freely - every brand-new Save As, every Split,
+// every owned-carrying import mints its own (state.js) - but nothing ever
+// un-mints one when the build(s) pointing at it are deleted or re-linked
+// elsewhere. Sweeps any profile with no build slot's own ownedProfileId
+// pointing at it AND that isn't the live session's own state.ownedProfileId
+// either - a build still pointing at it, even one that isn't currently
+// loaded, means it's still reachable and must be left alone.
+// removeOwnedProfile (state.js) refuses to touch the legacy profile on its
+// own, so there's no need to special-case it here too. Called from
+// main.js alongside migrateStaleBuildSlots/cleanupStaleStorageKeys, once
+// per boot - cheap at the scale of profiles one browser actually
+// accumulates.
+function cleanupOrphanedOwnedProfiles() {
+  const referenced = new Set([state.ownedProfileId]);
+  loadIndex().forEach(({ id }) => referenced.add(ownedProfileIdOfBuild(id)));
+  listOwnedProfileIds().forEach((profileId) => {
+    if (!referenced.has(profileId)) removeOwnedProfile(profileId);
+  });
 }
 
 // Deliberately just the plan - selectedClasses/charLevel/ranks/
@@ -5359,6 +5408,11 @@ async function init() {
   const shared = await applySharedBuildFromUrl(localResult);
   wireEvents();
   cleanupStaleStorageKeys();
+  // Must run after applySharedBuildFromUrl above, which can itself mint a
+  // fresh owned profile (an incoming share link carrying owned data) that
+  // needs to already count as "referenced" before anything unreferenced
+  // gets swept.
+  cleanupOrphanedOwnedProfiles();
   try {
     if (!localStorage.getItem(DISCLAIMER_DISMISSED_KEY)) el.disclaimerBanner.classList.remove("hidden");
   } catch (e) {

@@ -93,6 +93,8 @@ A brand-new saved build gets its own fresh profile, seeded with a copy of whatev
 
 Every existing user's builds are backfilled to a well-known shared `LEGACY_OWNED_PROFILE_ID` profile the first time they're seen post-upgrade (`migrateLegacyOwnedProfile`/`migrateStaleBuildSlots`) — a self-healing sweep that re-checks on every boot rather than a one-time flag, so a build that reaches a given browser later (a restored backup, a synced device) still gets caught. The original `eql_aa_owned_v1` key is left in place, never deleted.
 
+Minting a profile has no matching cleanup on its own — deleting a build only removes its index entry and slot key, not whatever profile it pointed at, since another build might still be linked to it. `builds.js`'s `cleanupOrphanedOwnedProfiles()`, called once per boot, sweeps any profile with no build slot's `ownedProfileId` and no live session pointing at it (via `state.js`'s `listOwnedProfileIds`/`removeOwnedProfile`), leaving the legacy profile untouched regardless.
+
 ### A cost or effect estimate can never outrank a real one
 
 `src/costGuesses.js` is only ever consulted through `keys.js`'s `costGuessFor`, and only when the real `costs[rankIdx]` is exactly `"?"` — `logic.js`'s `costNum()`/`spentPoints()` never look at it, so an estimate can't affect real point totals. The moment a real number replaces `"?"` in `data.src.js`, that slot's guess (if one still exists) is simply never read again.
@@ -107,7 +109,7 @@ To make a change:
 
 ## Testing
 
-`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic, plus 17 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, per-build owned-tracking profiles (Link/Merge/Split, migration), and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them. None are wired into CI — run the relevant ones by hand after touching whatever they cover.
+`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic, plus 18 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, per-build owned-tracking profiles (Link/Merge/Split, migration, orphaned-profile cleanup), and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them. None are wired into CI — run the relevant ones by hand after touching whatever they cover.
 
 ## Deployment
 
