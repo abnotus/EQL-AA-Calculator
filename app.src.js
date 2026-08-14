@@ -3003,7 +3003,6 @@ function cacheDom() {
   el.resetBtn = document.getElementById("resetBtn");
   el.exportModal = document.getElementById("exportModal");
   el.exportText = document.getElementById("exportText");
-  el.includeOwnedCheckbox = document.getElementById("includeOwnedCheckbox");
   el.shareLinkInput = document.getElementById("shareLinkInput");
   el.copyShareLinkBtn = document.getElementById("copyShareLinkBtn");
   el.copyExportBtn = document.getElementById("copyExportBtn");
@@ -4778,25 +4777,23 @@ function compactRanksFor(ranksLike) {
   return out;
 }
 
-// owned is per-build/per-profile (state.js's ownedProfileId), not part of
-// any one plan's own fields, so it's left out of the code unless the
-// Export modal's "Include owned progress" checkbox explicitly opts in. Off
-// by default: most exports are just sharing a plan, and owned is personal
-// data the sender may not intend to broadcast. On the import side, an
-// incoming `o` field always lands in its own fresh profile rather than
-// touching the receiver's existing one - see maybeImportOwned below.
-function buildCodeArray(includeOwned) {
+// owned is per-build/per-profile (state.js's ownedProfileId), so it's
+// unconditional here just like ranks/purchaseOrder/waypoints - it's this
+// build's own data, not a separate account-wide pool an export would be
+// reaching outside the plan to include. On the import side, an incoming
+// `o` field always lands in its own fresh profile rather than touching
+// the receiver's existing one - see maybeImportOwned below.
+function buildCodeArray() {
   const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
     .map((e) => idForKey(e.scope, e.className, e.key))
     .filter((id) => id != null);
 
-  const compactOwned = includeOwned ? compactRanksFor(state.owned) : [];
-  // Unlike owned, waypoints are unconditional - plan structure ("get these
-  // by 75 pts" is a statement about this ordering), same as ranks/
-  // purchaseOrder, not personal data that needs an opt-in. No AA identity
-  // involved (just a point total + label + color), so no id lookup needed
-  // the way compactRanksFor needs for ranks/owned - a bare
-  // [pts, label, color] triple per waypoint.
+  const compactOwned = compactRanksFor(state.owned);
+  // Same unconditional treatment as owned above - plan structure ("get
+  // these by 75 pts" is a statement about this ordering), same as ranks/
+  // purchaseOrder. No AA identity involved (just a point total + label +
+  // color), so no id lookup needed the way compactRanksFor needs for
+  // ranks/owned - a bare [pts, label, color] triple per waypoint.
   const waypoints = state.waypoints.map((w) => [w.pts, w.label, w.color]);
 
   return [
@@ -4858,12 +4855,12 @@ function expandCompactPayload(compact) {
     // call handles validating/clamping/defaulting, same as it does for a
     // verbose payload.
     waypoints: w || [],
-    // Present only if the sender opted in and actually had owned data (see
-    // buildCodeArray) - expandCompactRanks(null/undefined) degrades to the
-    // empty shape either way. applyLoaded itself still never reads this
-    // (owned isn't part of "the build" it applies); the import layer
-    // inspects it separately via payloadOwnedHasContent before deciding
-    // whether to create a fresh profile for it (see maybeImportOwned).
+    // null/absent only if the sender genuinely had nothing owned yet -
+    // expandCompactRanks(null/undefined) degrades to the empty shape
+    // either way. applyLoaded itself still never reads this (owned isn't
+    // part of "the build" it applies); the import layer inspects it
+    // separately via payloadOwnedHasContent before deciding whether to
+    // create a fresh profile for it (see maybeImportOwned).
     owned: expandCompactRanks(o)
   };
 }
@@ -4915,8 +4912,8 @@ function base64ToBytes(b64) {
   return bytes;
 }
 
-async function encodeBuildCode(includeOwned) {
-  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeArray(includeOwned)));
+async function encodeBuildCode() {
+  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeArray()));
   return bytesToBase64(await compress(bytes, "deflate-raw"));
 }
 
@@ -4985,11 +4982,11 @@ function fromBase64Url(b64url) {
   return b64;
 }
 
-async function buildShareUrl(includeOwned) {
+async function buildShareUrl() {
   const url = new URL(window.location.href);
   url.search = "";
   url.hash = "";
-  url.searchParams.set("build", toBase64Url(await encodeBuildCode(includeOwned)));
+  url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
   return url.toString();
 }
 
@@ -5054,7 +5051,7 @@ async function applySharedBuildFromUrl(localLoadResult) {
   return { applied, notice };
 }
 
-async function buildExportText(includeOwned) {
+async function buildExportText() {
   const spent = spentPoints();
   const lines = [];
   lines.push("EverQuest Legends - AA Build");
@@ -5091,7 +5088,7 @@ async function buildExportText(includeOwned) {
       const s = entry;
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
       const suffix = s.active ? "" : " (class not currently selected)";
-      const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";
+      const ownedSuffix = s.owned ? " [OWNED]" : "";
       // Mirrors the Progression tab's own row exactly, both pieces: a
       // guessed step (real cost still "?", stepCost forced to 0) shows its
       // "~N" estimate instead of a flat 0, and the running total blends the
@@ -5107,39 +5104,30 @@ async function buildExportText(includeOwned) {
     lines.push("");
   }
 
-  lines.push(`BUILD_CODE:${await encodeBuildCode(includeOwned)}`);
+  lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
   return lines.join("\n");
 }
 
 async function openExportModal() {
   el.exportText.value = "Generating…";
   el.shareLinkInput.value = "";
-  el.includeOwnedCheckbox.checked = false;
   el.exportModal.classList.remove("hidden");
   await regenerateExportContent();
 }
 
-// Re-populates both the export text and share link for the current
-// includeOwned checkbox state - called on open, and again on the checkbox's
-// own change event so toggling it actually changes what gets copied/shared.
-// focusText only applies on the initial open - re-running it on every
-// checkbox toggle would yank focus out of the checkbox and back into the
-// textarea on each click.
+// Re-populates both the export text and share link. A second call (an
+// impatient re-click of the Export button while the first is still
+// compressing) could resolve out of order - bail if a newer call has
+// already started, so the fields never end up showing a stale result.
 let exportGeneration = 0;
-async function regenerateExportContent(focusText = true) {
+async function regenerateExportContent() {
   const generation = ++exportGeneration;
-  const includeOwned = el.includeOwnedCheckbox.checked;
-  const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
-  // A second toggle while the first call is still compressing could resolve
-  // out of order - bail if a newer call has already started, so the fields
-  // never end up showing a stale includeOwned value.
+  const [text, url] = await Promise.all([buildExportText(), buildShareUrl()]);
   if (generation !== exportGeneration) return;
   el.exportText.value = text;
   el.shareLinkInput.value = url;
-  if (focusText) {
-    el.exportText.focus();
-    el.exportText.select();
-  }
+  el.exportText.focus();
+  el.exportText.select();
 }
 
 function closeExportModal() {
@@ -5205,14 +5193,12 @@ function extractBuildCode(text) {
   return null;
 }
 
-// Owned is normally untouched by import entirely - see state.js. The one
-// exception is a build that explicitly opted into carrying owned data (the
-// Export modal's "Include owned progress too" checkbox), which now always
-// lands in its own brand-new profile (adoptImportedOwnedAsNewProfile)
-// rather than overwriting whatever the receiver was already tracking -
-// silent, no confirmation, since nothing existing is ever at risk. Only
-// runs at all if the decoded payload actually has owned content; a plain
-// build with no `o` field (the common case) never touches owned tracking.
+// Owned rides every export unconditionally (buildCodeArray), but importing
+// one never touches the receiver's own owned tracking directly - an
+// incoming `o` field always lands in its own brand-new profile
+// (adoptImportedOwnedAsNewProfile) instead, silent and unconfirmed, since
+// nothing existing is ever at risk of being overwritten. A no-op if the
+// sender genuinely had nothing owned yet (no `o` field to begin with).
 function maybeImportOwned(json) {
   if (!payloadOwnedHasContent(json.owned)) return { imported: false, dropped: 0, hadOwned: false };
   const result = adoptImportedOwnedAsNewProfile(json.owned);
@@ -5314,7 +5300,6 @@ function wireEvents() {
   });
 
   el.exportBtn.addEventListener("click", openExportModal);
-  el.includeOwnedCheckbox.addEventListener("change", () => regenerateExportContent(false));
   el.copyExportBtn.addEventListener("click", copyExportText);
   el.copyShareLinkBtn.addEventListener("click", copyShareLink);
   el.saveExportBtn.addEventListener("click", saveExportAsTxt);

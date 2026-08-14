@@ -15,7 +15,7 @@ import {
 } from "./render.js";
 import {
   openExportModal, copyExportText, copyShareLink, saveExportAsTxt, closeExportModal,
-  openImportModal, closeImportModal, doImport, regenerateExportContent
+  openImportModal, closeImportModal, doImport
 } from "./exportImport.js";
 
 export function wireEvents() {
@@ -55,7 +55,6 @@ export function wireEvents() {
   });
 
   el.exportBtn.addEventListener("click", openExportModal);
-  el.includeOwnedCheckbox.addEventListener("change", () => regenerateExportContent(false));
   el.copyExportBtn.addEventListener("click", copyExportText);
   el.copyShareLinkBtn.addEventListener("click", copyShareLink);
   el.saveExportBtn.addEventListener("click", saveExportAsTxt);

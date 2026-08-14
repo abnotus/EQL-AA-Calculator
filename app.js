@@ -1930,7 +1930,6 @@ el.closeImportBtn = document.getElementById("closeImportBtn");
 el.resetBtn = document.getElementById("resetBtn");
 el.exportModal = document.getElementById("exportModal");
 el.exportText = document.getElementById("exportText");
-el.includeOwnedCheckbox = document.getElementById("includeOwnedCheckbox");
 el.shareLinkInput = document.getElementById("shareLinkInput");
 el.copyShareLinkBtn = document.getElementById("copyShareLinkBtn");
 el.copyExportBtn = document.getElementById("copyExportBtn");
@@ -3199,11 +3198,11 @@ Object.keys(store).forEach((key) => pushCompactRank(out, "class", className, key
 });
 return out;
 }
-function buildCodeArray(includeOwned) {
+function buildCodeArray() {
 const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
 .map((e) => idForKey(e.scope, e.className, e.key))
 .filter((id) => id != null);
-const compactOwned = includeOwned ? compactRanksFor(state.owned) : [];
+const compactOwned = compactRanksFor(state.owned);
 const waypoints = state.waypoints.map((w) => [w.pts, w.label, w.color]);
 return [
 BUILD_CODE_VERSION,
@@ -3266,8 +3265,8 @@ const bytes = new Uint8Array(binary.length);
 for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 return bytes;
 }
-async function encodeBuildCode(includeOwned) {
-const bytes = new TextEncoder().encode(JSON.stringify(buildCodeArray(includeOwned)));
+async function encodeBuildCode() {
+const bytes = new TextEncoder().encode(JSON.stringify(buildCodeArray()));
 return bytesToBase64(await compress(bytes, "deflate-raw"));
 }
 const GZIP_MAGIC_0 = 0x1f;
@@ -3296,11 +3295,11 @@ let b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
 while (b64.length % 4) b64 += "=";
 return b64;
 }
-async function buildShareUrl(includeOwned) {
+async function buildShareUrl() {
 const url = new URL(window.location.href);
 url.search = "";
 url.hash = "";
-url.searchParams.set("build", toBase64Url(await encodeBuildCode(includeOwned)));
+url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
 return url.toString();
 }
 async function applySharedBuildFromUrl(localLoadResult) {
@@ -3342,7 +3341,7 @@ cleanUrl.searchParams.delete("build");
 window.history.replaceState({}, "", cleanUrl.toString());
 return { applied, notice };
 }
-async function buildExportText(includeOwned) {
+async function buildExportText() {
 const spent = spentPoints();
 const lines = [];
 lines.push("EverQuest Legends - AA Build");
@@ -3370,7 +3369,7 @@ return;
 const s = entry;
 const maxRank = s.aa ? `/${s.aa.ranks}` : "";
 const suffix = s.active ? "" : " (class not currently selected)";
-const ownedSuffix = includeOwned && s.owned ? " [OWNED]" : "";
+const ownedSuffix = s.owned ? " [OWNED]" : "";
 const stepDisp = s.active && s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
 const costText = stepDisp.isGuess ? stepDisp.text : s.stepCost;
 const totalText = s.blendedCumulative !== s.cumulative ? `~${s.blendedCumulative}` : s.cumulative;
@@ -3378,28 +3377,24 @@ lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costT
 });
 lines.push("");
 }
-lines.push(`BUILD_CODE:${await encodeBuildCode(includeOwned)}`);
+lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
 return lines.join("\n");
 }
 async function openExportModal() {
 el.exportText.value = "Generating…";
 el.shareLinkInput.value = "";
-el.includeOwnedCheckbox.checked = false;
 el.exportModal.classList.remove("hidden");
 await regenerateExportContent();
 }
 let exportGeneration = 0;
-async function regenerateExportContent(focusText = true) {
+async function regenerateExportContent() {
 const generation = ++exportGeneration;
-const includeOwned = el.includeOwnedCheckbox.checked;
-const [text, url] = await Promise.all([buildExportText(includeOwned), buildShareUrl(includeOwned)]);
+const [text, url] = await Promise.all([buildExportText(), buildShareUrl()]);
 if (generation !== exportGeneration) return;
 el.exportText.value = text;
 el.shareLinkInput.value = url;
-if (focusText) {
 el.exportText.focus();
 el.exportText.select();
-}
 }
 function closeExportModal() {
 el.exportModal.classList.add("hidden");
@@ -3529,7 +3524,6 @@ state.activeView = state.activeView === "browse" ? "calculator" : "browse";
 renderAll();
 });
 el.exportBtn.addEventListener("click", openExportModal);
-el.includeOwnedCheckbox.addEventListener("change", () => regenerateExportContent(false));
 el.copyExportBtn.addEventListener("click", copyExportText);
 el.copyShareLinkBtn.addEventListener("click", copyShareLink);
 el.saveExportBtn.addEventListener("click", saveExportAsTxt);

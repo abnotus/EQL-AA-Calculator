@@ -198,8 +198,6 @@ with sync_playwright() as p:
 
     sender.click("#exportBtn")
     sender.wait_for_timeout(300)
-    sender.check("#includeOwnedCheckbox")
-    sender.wait_for_timeout(300)
     export_text = sender.locator("#exportText").input_value()
     sender.close()
 

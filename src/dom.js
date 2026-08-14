@@ -22,7 +22,6 @@ export function cacheDom() {
   el.resetBtn = document.getElementById("resetBtn");
   el.exportModal = document.getElementById("exportModal");
   el.exportText = document.getElementById("exportText");
-  el.includeOwnedCheckbox = document.getElementById("includeOwnedCheckbox");
   el.shareLinkInput = document.getElementById("shareLinkInput");
   el.copyShareLinkBtn = document.getElementById("copyShareLinkBtn");
   el.copyExportBtn = document.getElementById("copyExportBtn");
