@@ -4,6 +4,13 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.9.2",
+    date: "2026-08-15",
+    items: [
+      "Share links and exported build codes are noticeably shorter now. Any link or export you already have keeps working exactly the same."
+    ]
+  },
+  {
     version: "1.9.1",
     date: "2026-08-14",
     items: [
