@@ -134,8 +134,10 @@ in `state.js`; `saveBuildAs`/`loadBuild`'s profile handling,
 backward-compatibility/migration side, `test_owned_profiles.py` for
 new-build independence, Link/Merge/Split, and silent-import-profile-
 creation, and `test_owned_profile_cleanup.py` for the orphaned-profile
-sweep specifically), share-code compression (`compress`/`decompress`,
-`encodeBuildCode`/`decodeBuildCode`'s format-fallback chain in
+sweep specifically), share-code encoding (`compress`/`decompress`,
+`encodeBuildCode`/`decodeBuildCode`'s format-fallback chain,
+`pushCompactRank`/`compactRanksFor`/`expandCompactRanks`'s columnar
+shape, or `buildCodeArray`'s unconditional owned field, in
 `exportImport.js` - `test_share_code_compression.py`), or the Move To popover
 (`absoluteIndexForVisiblePosition`, `moveToVisiblePosition`,
 `waypointSections`'s fit-aware section-boundary math, `moveMenuHtml`, or

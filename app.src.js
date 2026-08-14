@@ -4742,39 +4742,43 @@ function handleBuildSave() {
 // text) — independent of state.js's SAVE_FORMAT_VERSION, which governs
 // localStorage only and stays name-keyed (readable, no size pressure
 // there). BUILD_CODE trades that readability for size: numeric AA ids
-// instead of name keys, ranks/purchaseOrder as flat arrays instead of
-// nested objects, and (v3+) a positional array instead of a keyed object -
-// [v, c, l, r, p, o, w]. Every position's meaning is fixed by this same
-// version number, so the object keys a v2 code spent real bytes on carry
-// no information a v3 decoder doesn't already know from position alone.
-// A future field is still safe to add additively at the end (position 7,
-// 8, ...) the same way o/w were once added to v2 without a version bump -
-// an older, shorter array just destructures the new position as
-// undefined, same as a missing object key always has. v2 (a keyed object)
-// still decodes - see expandCompactPayload.
-const BUILD_CODE_VERSION = 3;
+// instead of name keys, a positional array instead of a keyed object (v3+)
+// - [v, c, l, r, p, o, w] - and (v4+) r/o stored columnar - [[ids...],
+// [ranks...]] instead of [[id,rank],[id,rank],...]. Same information
+// either way; separating same-typed values into their own runs just gives
+// the compressor longer, more repetitive stretches to work with than an
+// interleaved id/rank/id/rank/... sequence does - measured ~10-15%
+// smaller on a realistic build, even after compression already ate most
+// of the naive JSON-shrink number. A future field is still safe to add
+// additively at the end (position 7, 8, ...) the same way o/w were once
+// added to v2 without a version bump - an older, shorter array just
+// destructures the new position as undefined, same as a missing object
+// key always has. v2 (keyed object) and v3 (positional, pair-shaped r/o)
+// both still decode - see expandCompactPayload/expandCompactRanks.
+const BUILD_CODE_VERSION = 4;
 
 // An AA missing from aaIds.js shouldn't happen for anything currently
 // pickable (build_minify.py's invariant check + assign_aa_ids.py being run
 // together keep them in sync) - degrades to "dropped" rather than guessed
 // at, same as everywhere else this app handles an unresolved key.
-function pushCompactRank(arr, scope, className, key, rank) {
+function pushCompactRank(ids, ranks, scope, className, key, rank) {
   const id = idForKey(scope, className, key);
-  if (id != null) arr.push([id, rank]);
+  if (id != null) { ids.push(id); ranks.push(rank); }
 }
 
 function compactRanksFor(ranksLike) {
   const serialized = serializeRanks(ranksLike);
-  const out = [];
+  const ids = [];
+  const ranks = [];
   ["general", "archetype", "special"].forEach((scope) => {
     const store = serialized[scope] || {};
-    Object.keys(store).forEach((key) => pushCompactRank(out, scope, null, key, store[key]));
+    Object.keys(store).forEach((key) => pushCompactRank(ids, ranks, scope, null, key, store[key]));
   });
   Object.keys(serialized.classes || {}).forEach((className) => {
     const store = serialized.classes[className] || {};
-    Object.keys(store).forEach((key) => pushCompactRank(out, "class", className, key, store[key]));
+    Object.keys(store).forEach((key) => pushCompactRank(ids, ranks, "class", className, key, store[key]));
   });
-  return out;
+  return [ids, ranks];
 }
 
 // owned is per-build/per-profile (state.js's ownedProfileId), so it's
@@ -4802,7 +4806,9 @@ function buildCodeArray() {
     state.charLevel,
     compactRanksFor(state.ranks),
     compactPurchaseOrder,
-    compactOwned.length ? compactOwned : null,
+    // compactRanksFor always returns the 2-element [ids, ranks] pair -
+    // check the ids array itself for actual entries, not the wrapper.
+    compactOwned[0].length ? compactOwned : null,
     waypoints.length ? waypoints : null
   ];
 }
@@ -4810,9 +4816,15 @@ function buildCodeArray() {
 // An id that no longer resolves (entryForId returns null - the AA was
 // removed since this link's ranks were assigned their ids) is dropped, same
 // degrade-gracefully philosophy as an unresolved name key elsewhere.
-function expandCompactRanks(list) {
+// Accepts either the current columnar shape (BUILD_CODE_VERSION 4+,
+// [[ids...],[ranks...]]) or the older array-of-pairs shape (v2/v3,
+// [[id,rank],[id,rank],...]) - columnar says which to expect, decided by
+// expandCompactPayload from the code's own version number.
+function expandCompactRanks(list, columnar) {
   const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
-  (list || []).forEach(([id, rank]) => {
+  if (!list) return ranks;
+  const pairs = columnar ? list[0].map((id, i) => [id, list[1][i]]) : list;
+  pairs.forEach(([id, rank]) => {
     const entry = entryForId(id);
     if (!entry) return;
     if (entry.scope === "class") {
@@ -4826,17 +4838,22 @@ function expandCompactRanks(list) {
 }
 
 // Reconstructs the verbose, name-keyed shape applyLoaded already understands
-// (the same shape a v4 localStorage/legacy payload is in) from a decoded
-// compact BUILD_CODE payload, so applyLoaded itself never needs to know the
-// compact format exists — only this file and keys.js do. Accepts either the
-// current positional-array shape (v3+, [v,c,l,r,p,o,w]) or the older keyed-
-// object shape (v2, {v,c,l,r,p,o?,w?}) - same fields either way, just
-// normalized to plain variables up front so the rest of this function
-// doesn't care which container they arrived in.
+// (the same shape a SAVE_FORMAT_VERSION 4 localStorage/legacy payload is in
+// - an unrelated version number, see state.js) from a decoded compact
+// BUILD_CODE payload, so applyLoaded itself never needs to know the compact
+// format exists — only this file and keys.js do. Accepts the current
+// positional-array shape (BUILD_CODE_VERSION 3+, [v,c,l,r,p,o,w]) or the
+// older keyed-object shape (v2, {v,c,l,r,p,o?,w?}) - same fields either
+// way, just normalized to plain variables up front so the rest of this
+// function doesn't care which container they arrived in. r/o's own inner
+// shape (columnar vs pair-array) is decided separately, by version.
 function expandCompactPayload(compact) {
-  const [c, l, r, p, o, w] = Array.isArray(compact)
+  const isArray = Array.isArray(compact);
+  const v = isArray ? compact[0] : compact.v;
+  const [c, l, r, p, o, w] = isArray
     ? compact.slice(1)
     : [compact.c, compact.l, compact.r, compact.p, compact.o, compact.w];
+  const columnar = v >= 4;
   const purchaseOrder = (p || []).map((id) => {
     const entry = entryForId(id);
     return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
@@ -4848,7 +4865,7 @@ function expandCompactPayload(compact) {
     // An older share code/link may still carry a `t` (totalPoints) field,
     // from before the point cap was removed - simply never read into
     // anything here, same graceful-ignore as any unrecognized field.
-    ranks: expandCompactRanks(r),
+    ranks: expandCompactRanks(r, columnar),
     purchaseOrder,
     // Raw [pts, label] pairs, or absent/null on an older link/build
     // predating this field - either way applyLoaded's sanitizeWaypoints
@@ -4861,7 +4878,7 @@ function expandCompactPayload(compact) {
     // part of "the build" it applies); the import layer inspects it
     // separately via payloadOwnedHasContent before deciding whether to
     // create a fresh profile for it (see maybeImportOwned).
-    owned: expandCompactRanks(o)
+    owned: expandCompactRanks(o, columnar)
   };
 }
 
@@ -4953,19 +4970,16 @@ async function decodeBuildCode(code) {
     }
   }
   const parsed = JSON.parse(new TextDecoder().decode(jsonBytes));
-  // A compact payload (v2 keyed-object or v3+ positional-array - see
+  // A compact payload (v2 keyed-object, v3+ positional-array - see
   // expandCompactPayload) needs expanding back to the name-keyed shape
-  // applyLoaded understands; anything else (v4 verbose, or an old legacy
-  // shape) is already in that shape and passes through as-is - applyLoaded's
-  // own v check handles v4-vs-legacy from here.
-  // Hardcoding v === 2 alongside BUILD_CODE_VERSION is fine for exactly
-  // one prior compact version - a third (BUILD_CODE_VERSION 4) would mean
-  // a third disjunct here, and a fourth a fourth. If that ever happens,
-  // switch to a KNOWN_COMPACT_VERSIONS set (or a v >= 2 range check, since
-  // every version so far has stayed compact-shaped) instead of continuing
-  // to accumulate `|| v === N` terms one at a time.
+  // applyLoaded understands; anything else (a verbose SAVE_FORMAT_VERSION
+  // payload, or an old legacy shape) is already in that shape and passes
+  // through as-is - applyLoaded's own v check handles that case from here.
+  // Range check rather than an explicit per-version list - every compact
+  // version so far (2, 3, 4, ...) has stayed compact-shaped, so there's
+  // been no reason yet to expect that to stop.
   const v = Array.isArray(parsed) ? parsed[0] : parsed && parsed.v;
-  return v === BUILD_CODE_VERSION || v === 2 ? expandCompactPayload(parsed) : parsed;
+  return v >= 2 ? expandCompactPayload(parsed) : parsed;
 }
 
 // Standard base64 (as used in BUILD_CODE) uses +, /, and = padding, which are legal

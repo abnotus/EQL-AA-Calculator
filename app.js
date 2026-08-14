@@ -3180,23 +3180,24 @@ renderBuildsList();
 renderTopbar();
 showToast(`Saved "${name}"`);
 }
-const BUILD_CODE_VERSION = 3;
-function pushCompactRank(arr, scope, className, key, rank) {
+const BUILD_CODE_VERSION = 4;
+function pushCompactRank(ids, ranks, scope, className, key, rank) {
 const id = idForKey(scope, className, key);
-if (id != null) arr.push([id, rank]);
+if (id != null) { ids.push(id); ranks.push(rank); }
 }
 function compactRanksFor(ranksLike) {
 const serialized = serializeRanks(ranksLike);
-const out = [];
+const ids = [];
+const ranks = [];
 ["general", "archetype", "special"].forEach((scope) => {
 const store = serialized[scope] || {};
-Object.keys(store).forEach((key) => pushCompactRank(out, scope, null, key, store[key]));
+Object.keys(store).forEach((key) => pushCompactRank(ids, ranks, scope, null, key, store[key]));
 });
 Object.keys(serialized.classes || {}).forEach((className) => {
 const store = serialized.classes[className] || {};
-Object.keys(store).forEach((key) => pushCompactRank(out, "class", className, key, store[key]));
+Object.keys(store).forEach((key) => pushCompactRank(ids, ranks, "class", className, key, store[key]));
 });
-return out;
+return [ids, ranks];
 }
 function buildCodeArray() {
 const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
@@ -3210,13 +3211,15 @@ state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
 state.charLevel,
 compactRanksFor(state.ranks),
 compactPurchaseOrder,
-compactOwned.length ? compactOwned : null,
+compactOwned[0].length ? compactOwned : null,
 waypoints.length ? waypoints : null
 ];
 }
-function expandCompactRanks(list) {
+function expandCompactRanks(list, columnar) {
 const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
-(list || []).forEach(([id, rank]) => {
+if (!list) return ranks;
+const pairs = columnar ? list[0].map((id, i) => [id, list[1][i]]) : list;
+pairs.forEach(([id, rank]) => {
 const entry = entryForId(id);
 if (!entry) return;
 if (entry.scope === "class") {
@@ -3229,9 +3232,12 @@ ranks[entry.scope][entry.key] = rank;
 return ranks;
 }
 function expandCompactPayload(compact) {
-const [c, l, r, p, o, w] = Array.isArray(compact)
+const isArray = Array.isArray(compact);
+const v = isArray ? compact[0] : compact.v;
+const [c, l, r, p, o, w] = isArray
 ? compact.slice(1)
 : [compact.c, compact.l, compact.r, compact.p, compact.o, compact.w];
+const columnar = v >= 4;
 const purchaseOrder = (p || []).map((id) => {
 const entry = entryForId(id);
 return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
@@ -3240,10 +3246,10 @@ return {
 v: SAVE_FORMAT_VERSION,
 selectedClasses: (c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
 charLevel: l,
-ranks: expandCompactRanks(r),
+ranks: expandCompactRanks(r, columnar),
 purchaseOrder,
 waypoints: w || [],
-owned: expandCompactRanks(o)
+owned: expandCompactRanks(o, columnar)
 };
 }
 async function compress(bytes, format) {
@@ -3285,7 +3291,7 @@ jsonBytes = bytes;
 }
 const parsed = JSON.parse(new TextDecoder().decode(jsonBytes));
 const v = Array.isArray(parsed) ? parsed[0] : parsed && parsed.v;
-return v === BUILD_CODE_VERSION || v === 2 ? expandCompactPayload(parsed) : parsed;
+return v >= 2 ? expandCompactPayload(parsed) : parsed;
 }
 function toBase64Url(b64) {
 return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
