@@ -4,6 +4,13 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.9.1",
+    date: "2026-08-14",
+    items: [
+      "Build Summary now also shows picks for a class you've swapped away from, below a divider, so you don't have to switch to the Other Classes tab to see them."
+    ]
+  },
+  {
     version: "1.9.0",
     date: "2026-08-14",
     items: [

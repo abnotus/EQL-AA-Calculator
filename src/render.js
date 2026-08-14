@@ -534,25 +534,26 @@ function renderSummary() {
     }).join("") + `</div>`;
   });
 
+  const otherClassNames = otherClassesWithPicks();
+  if (otherClassNames.length) {
+    anyPicked = true;
+    // A lighter-weight divider than a section-title h3, since what follows
+    // is itself a group of per-class sections, not a single section.
+    html += `<div class="summary-other-classes-divider">Also includes picks for classes you're not currently using (see the Other Classes tab too):</div>`;
+    html += otherClassesSectionsHtml(otherClassNames);
+  }
+
   el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
 }
 
-// Picks for a class that isn't currently one of your 3 selected slots -
-// left intact by a class swap (see events.js) rather than wiped, so this
-// is where they live instead of the tree/Progression/Summary. Modeled on
-// renderSummary above but grouped by className via otherClassesWithPicks,
-// and using the *Scoped lookups since an inactive class has no catKey at
-// all. No invalidReason line either - that machinery is about an AA the
+// Shared by renderSummary above (folded into the main page) and
+// renderOtherClasses below (its own dedicated tab) - one heading + spent
+// subtotal + card grid per inactive class. Uses the *Scoped lookups since
+// an inactive class has no catKey at all, and skips the invalidReason line
+// renderSummary's own sections have - that machinery is about an AA the
 // tree can currently show, which an inactive-class pick isn't.
-function renderOtherClasses() {
-  const classNames = otherClassesWithPicks();
-
-  if (!classNames.length) {
-    el.otherClassesContent.innerHTML = '<div class="empty">Nothing here yet &mdash; swap a class out after spending points on it, and its picks show up here instead of disappearing.</div>';
-    return;
-  }
-
-  const html = classNames.map((className) => {
+function otherClassesSectionsHtml(classNames) {
+  return classNames.map((className) => {
     const list = AA_DATA.classes[className] || [];
     const picked = list
       .map((aa, idx) => ({ aa, idx, rank: effectiveRankScoped("class", className, idx) }))
@@ -571,8 +572,22 @@ function renderOtherClasses() {
       <div class="other-classes-subtotal">Not one of your current 3 classes &mdash; ${subtotal} point${subtotal === 1 ? "" : "s"} spent here still count${subtotal === 1 ? "s" : ""} toward Points Spent above.</div>
       <div class="browse-grid">${cards}</div>`;
   }).join("");
+}
 
-  el.otherClassesContent.innerHTML = html;
+// Picks for a class that isn't currently one of your 3 selected slots -
+// left intact by a class swap (see events.js) rather than wiped, so this
+// is where they live instead of the tree/Progression. Also folded into
+// renderSummary above so they're visible without switching tabs; this is
+// still the dedicated place for them, with its own empty state.
+function renderOtherClasses() {
+  const classNames = otherClassesWithPicks();
+
+  if (!classNames.length) {
+    el.otherClassesContent.innerHTML = '<div class="empty">Nothing here yet &mdash; swap a class out after spending points on it, and its picks show up here instead of disappearing.</div>';
+    return;
+  }
+
+  el.otherClassesContent.innerHTML = otherClassesSectionsHtml(classNames);
 }
 
 // Which progression rows have their next-rank preview open, keyed by AA

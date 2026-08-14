@@ -320,6 +320,13 @@ return prog ? (prog[rankIdx] || null) : null;
 }
 const USER_CHANGELOG = [
 {
+version: "1.9.1",
+date: "2026-08-14",
+items: [
+"Build Summary now also shows picks for a class you've swapped away from, below a divider, so you don't have to switch to the Other Classes tab to see them."
+]
+},
+{
 version: "1.9.0",
 date: "2026-08-14",
 items: [
@@ -2356,15 +2363,16 @@ return `
       </div>`;
 }).join("") + `</div>`;
 });
+const otherClassNames = otherClassesWithPicks();
+if (otherClassNames.length) {
+anyPicked = true;
+html += `<div class="summary-other-classes-divider">Also includes picks for classes you're not currently using (see the Other Classes tab too):</div>`;
+html += otherClassesSectionsHtml(otherClassNames);
+}
 el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
 }
-function renderOtherClasses() {
-const classNames = otherClassesWithPicks();
-if (!classNames.length) {
-el.otherClassesContent.innerHTML = '<div class="empty">Nothing here yet &mdash; swap a class out after spending points on it, and its picks show up here instead of disappearing.</div>';
-return;
-}
-const html = classNames.map((className) => {
+function otherClassesSectionsHtml(classNames) {
+return classNames.map((className) => {
 const list = AA_DATA.classes[className] || [];
 const picked = list
 .map((aa, idx) => ({ aa, idx, rank: effectiveRankScoped("class", className, idx) }))
@@ -2383,7 +2391,14 @@ return `
       <div class="other-classes-subtotal">Not one of your current 3 classes &mdash; ${subtotal} point${subtotal === 1 ? "" : "s"} spent here still count${subtotal === 1 ? "s" : ""} toward Points Spent above.</div>
       <div class="browse-grid">${cards}</div>`;
 }).join("");
-el.otherClassesContent.innerHTML = html;
+}
+function renderOtherClasses() {
+const classNames = otherClassesWithPicks();
+if (!classNames.length) {
+el.otherClassesContent.innerHTML = '<div class="empty">Nothing here yet &mdash; swap a class out after spending points on it, and its picks show up here instead of disappearing.</div>';
+return;
+}
+el.otherClassesContent.innerHTML = otherClassesSectionsHtml(classNames);
 }
 const expandedSteps = new Set();
 function expandKey(s) { return `${s.category || ""}:${s.idx}:${s.stepRank}`; }

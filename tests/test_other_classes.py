@@ -7,6 +7,9 @@
 # still counted in spentPoints()'s now-lifetime total, still part of the
 # build payload, and visible instead in the new Other Classes tab
 # (renderOtherClasses, render.js) - grouped by class with its own subtotal.
+# The same grouped sections are also folded into the Summary tab
+# (renderSummary, via the shared otherClassesSectionsHtml helper) below a
+# lighter divider line, so they're visible without switching tabs too.
 #
 # Two totals are DELIBERATELY allowed to diverge once any inactive-class
 # spending exists: the topbar's Points Spent (a genuine lifetime total
@@ -118,6 +121,23 @@ with sync_playwright() as p:
     badge_count_text = other_classes_tab.locator(".count").inner_text()
     print("Other Classes tab badge:", badge_count_text)
     assert badge_count_text == "(2)"
+
+    # --- Summary tab: the same inactive-class picks are folded in below
+    # the active sections too, not just on the dedicated Other Classes tab -
+    # same per-class heading/subtotal/cards, behind a lighter divider line
+    # rather than its own section-title h3. ---
+    page.click('button[data-tab="summary"]')
+    page.wait_for_timeout(150)
+    divider = page.locator("#summaryContent .summary-other-classes-divider")
+    print("Summary shows the other-classes divider:", divider.count())
+    assert divider.count() == 1
+    summary_section_title = page.locator("#summaryContent .summary-section-title", has_text=old_class)
+    assert summary_section_title.count() == 1
+    summary_card_a = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text=node_a_name))
+    summary_card_b = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text=node_b_name))
+    print("Summary cards for the inactive class's picks:", summary_card_a.count(), summary_card_b.count())
+    assert summary_card_a.count() == 1 and summary_card_b.count() == 1
+    print("PASS: Summary also shows the inactive class's picks, alongside the active sections")
 
     # --- Export: the inactive class's data round-trips (always included,
     # no opt-in checkbox needed - it's just more of the same ranks/

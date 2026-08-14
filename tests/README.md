@@ -117,7 +117,8 @@ of the drop handlers wired in `renderProgression`/`wireProgressionDropZone` -
 `spentForClass`/`spentOnInactiveClasses`, `effectiveRankScoped`,
 `otherClassesWithPicks`/`countOtherClassesPicked`, `isEntryActive`, the
 active-only filter and up/down-arrow neighbor-skipping in
-`renderProgression`, or `renderOtherClasses` - `test_other_classes.py` and
+`renderProgression`, or `renderOtherClasses`/`renderSummary`'s shared
+`otherClassesSectionsHtml` helper - `test_other_classes.py` and
 `test_owned_inactive_classes.py`), per-build owned-tracking profiles
 (`ownedStorageKeyFor`, `state.ownedProfileId`, `linkOwnedProfile`/
 `splitOwnedProfile`/`mergeOwnedProfileInto`/`adoptImportedOwnedAsNewProfile`

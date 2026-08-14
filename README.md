@@ -13,7 +13,7 @@ A talent-calculator-style planner for [EverQuest Legends](https://eqlwiki.com/Al
 - Next-rank preview — see what the next rank upgrades to before you buy it
 - Global search, with match-count badges on every tab
 - **Browse All AAs** — a searchable reference independent of your current build
-- **Build Summary** — everything you've picked, grouped by category
+- **Build Summary** — everything you've picked, grouped by category, including picks for a class you've swapped away from (also on their own Other Classes tab)
 - **Progression** tab — the order you spent points in, drag-and-drop or arrow-key reorderable, with per-step and running-total cost. A "Move To" button quick-jumps a step to the top/bottom of the list or of any waypoint, or to a specific position — handy once a build gets long
 - **Waypoints** — mark a point total worth returning to (e.g. "Level 20"), and it shows up as a colored divider right where your training order crosses it. Anchored to the point total, not a list position, so reordering and Reset Build never break one
 - Mark AAs as **owned** to track what you've actually trained in-game, separate from what's just planned — with a running "points owned / to go" total. Each Build tracks its own owned progress by default; **Manage tracking…** on the Progression tab lets you Link two builds to share the same live progress, Merge in progress from another build without disturbing it, or Split one back off onto its own copy
