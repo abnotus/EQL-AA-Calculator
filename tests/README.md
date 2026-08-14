@@ -36,9 +36,9 @@ stay true regardless of what `data.src.js` says on any given day.
 `test_hidden_aas.py`, `test_other_classes.py`,
 `test_owned_inactive_classes.py`, `test_owned_legacy_migration.py`,
 `test_owned_profiles.py`, `test_owned_profile_cleanup.py`,
-`test_progression_move_to.py`, `test_cross_class_prereq_dependency.py`
-drive the actual app in a real Chrome instance via
-[Playwright](https://playwright.dev/python/).
+`test_share_code_compression.py`, `test_progression_move_to.py`,
+`test_cross_class_prereq_dependency.py` drive the actual app in a real
+Chrome instance via [Playwright](https://playwright.dev/python/).
 
 **Prerequisites:**
 - `pip install playwright`
@@ -76,6 +76,7 @@ python tests/test_owned_inactive_classes.py
 python tests/test_owned_legacy_migration.py
 python tests/test_owned_profiles.py
 python tests/test_owned_profile_cleanup.py
+python tests/test_share_code_compression.py
 python tests/test_progression_move_to.py
 python tests/test_cross_class_prereq_dependency.py
 ```
@@ -133,7 +134,9 @@ in `state.js`; `saveBuildAs`/`loadBuild`'s profile handling,
 backward-compatibility/migration side, `test_owned_profiles.py` for
 new-build independence, Link/Merge/Split, and silent-import-profile-
 creation, and `test_owned_profile_cleanup.py` for the orphaned-profile
-sweep specifically), or the Move To popover
+sweep specifically), share-code compression (`compress`/`decompress`,
+`encodeBuildCode`/`decodeBuildCode`'s format-fallback chain in
+`exportImport.js` - `test_share_code_compression.py`), or the Move To popover
 (`absoluteIndexForVisiblePosition`, `moveToVisiblePosition`,
 `waypointSections`'s fit-aware section-boundary math, `moveMenuHtml`, or
 `s.visiblePos`'s role in `computeProgressionSteps`/step-num display -

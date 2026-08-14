@@ -3174,7 +3174,7 @@ renderBuildsList();
 renderTopbar();
 showToast(`Saved "${name}"`);
 }
-const BUILD_CODE_VERSION = 2;
+const BUILD_CODE_VERSION = 3;
 function pushCompactRank(arr, scope, className, key, rank) {
 const id = idForKey(scope, className, key);
 if (id != null) arr.push([id, rank]);
@@ -3192,23 +3192,21 @@ Object.keys(store).forEach((key) => pushCompactRank(out, "class", className, key
 });
 return out;
 }
-function buildCodeObject(includeOwned) {
+function buildCodeArray(includeOwned) {
 const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
 .map((e) => idForKey(e.scope, e.className, e.key))
 .filter((id) => id != null);
-const payload = {
-v: BUILD_CODE_VERSION,
-c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
-l: state.charLevel,
-r: compactRanksFor(state.ranks),
-p: compactPurchaseOrder
-};
-if (includeOwned) {
-const compactOwned = compactRanksFor(state.owned);
-if (compactOwned.length) payload.o = compactOwned;
-}
-if (state.waypoints.length) payload.w = state.waypoints.map((w) => [w.pts, w.label, w.color]);
-return payload;
+const compactOwned = includeOwned ? compactRanksFor(state.owned) : [];
+const waypoints = state.waypoints.map((w) => [w.pts, w.label, w.color]);
+return [
+BUILD_CODE_VERSION,
+state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
+state.charLevel,
+compactRanksFor(state.ranks),
+compactPurchaseOrder,
+compactOwned.length ? compactOwned : null,
+waypoints.length ? waypoints : null
+];
 }
 function expandCompactRanks(list) {
 const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
@@ -3225,33 +3223,30 @@ ranks[entry.scope][entry.key] = rank;
 return ranks;
 }
 function expandCompactPayload(compact) {
-const purchaseOrder = (compact.p || []).map((id) => {
+const [c, l, r, p, o, w] = Array.isArray(compact)
+? compact.slice(1)
+: [compact.c, compact.l, compact.r, compact.p, compact.o, compact.w];
+const purchaseOrder = (p || []).map((id) => {
 const entry = entryForId(id);
 return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
 }).filter(Boolean);
 return {
 v: SAVE_FORMAT_VERSION,
-selectedClasses: (compact.c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
-charLevel: compact.l,
-ranks: expandCompactRanks(compact.r),
+selectedClasses: (c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
+charLevel: l,
+ranks: expandCompactRanks(r),
 purchaseOrder,
-waypoints: compact.w || [],
-owned: expandCompactRanks(compact.o)
+waypoints: w || [],
+owned: expandCompactRanks(o)
 };
 }
-async function gzipCompress(bytes) {
-const cs = new CompressionStream("gzip");
-const writer = cs.writable.getWriter();
-writer.write(bytes);
-writer.close();
-return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+async function compress(bytes, format) {
+const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream(format));
+return new Uint8Array(await new Response(stream).arrayBuffer());
 }
-async function gzipDecompress(bytes) {
-const ds = new DecompressionStream("gzip");
-const writer = ds.writable.getWriter();
-writer.write(bytes);
-writer.close();
-return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+async function decompress(bytes, format) {
+const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format));
+return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 function bytesToBase64(bytes) {
 let binary = "";
@@ -3265,19 +3260,26 @@ for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 return bytes;
 }
 async function encodeBuildCode(includeOwned) {
-const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject(includeOwned)));
-return bytesToBase64(await gzipCompress(bytes));
+const bytes = new TextEncoder().encode(JSON.stringify(buildCodeArray(includeOwned)));
+return bytesToBase64(await compress(bytes, "deflate-raw"));
 }
+const GZIP_MAGIC_0 = 0x1f;
+const GZIP_MAGIC_1 = 0x8b;
 async function decodeBuildCode(code) {
 const bytes = base64ToBytes(code);
 let jsonBytes;
+if (bytes.length >= 2 && bytes[0] === GZIP_MAGIC_0 && bytes[1] === GZIP_MAGIC_1) {
+jsonBytes = await decompress(bytes, "gzip");
+} else {
 try {
-jsonBytes = await gzipDecompress(bytes);
+jsonBytes = await decompress(bytes, "deflate-raw");
 } catch (e) {
 jsonBytes = bytes;
 }
+}
 const parsed = JSON.parse(new TextDecoder().decode(jsonBytes));
-return parsed && parsed.v === BUILD_CODE_VERSION ? expandCompactPayload(parsed) : parsed;
+const v = Array.isArray(parsed) ? parsed[0] : parsed && parsed.v;
+return v === BUILD_CODE_VERSION || v === 2 ? expandCompactPayload(parsed) : parsed;
 }
 function toBase64Url(b64) {
 return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

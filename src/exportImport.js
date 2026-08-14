@@ -11,9 +11,17 @@ import { idForKey, entryForId } from "./keys.js";
 // text) — independent of state.js's SAVE_FORMAT_VERSION, which governs
 // localStorage only and stays name-keyed (readable, no size pressure
 // there). BUILD_CODE trades that readability for size: numeric AA ids
-// instead of name keys, abbreviated field names, and ranks/purchaseOrder
-// as flat arrays instead of nested objects.
-const BUILD_CODE_VERSION = 2;
+// instead of name keys, ranks/purchaseOrder as flat arrays instead of
+// nested objects, and (v3+) a positional array instead of a keyed object -
+// [v, c, l, r, p, o, w]. Every position's meaning is fixed by this same
+// version number, so the object keys a v2 code spent real bytes on carry
+// no information a v3 decoder doesn't already know from position alone.
+// A future field is still safe to add additively at the end (position 7,
+// 8, ...) the same way o/w were once added to v2 without a version bump -
+// an older, shorter array just destructures the new position as
+// undefined, same as a missing object key always has. v2 (a keyed object)
+// still decodes - see expandCompactPayload.
+const BUILD_CODE_VERSION = 3;
 
 // An AA missing from aaIds.js shouldn't happen for anything currently
 // pickable (build_minify.py's invariant check + assign_aa_ids.py being run
@@ -45,32 +53,29 @@ function compactRanksFor(ranksLike) {
 // data the sender may not intend to broadcast. On the import side, an
 // incoming `o` field always lands in its own fresh profile rather than
 // touching the receiver's existing one - see maybeImportOwned below.
-function buildCodeObject(includeOwned) {
+function buildCodeArray(includeOwned) {
   const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
     .map((e) => idForKey(e.scope, e.className, e.key))
     .filter((id) => id != null);
 
-  const payload = {
-    v: BUILD_CODE_VERSION,
-    c: state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
-    l: state.charLevel,
-    r: compactRanksFor(state.ranks),
-    p: compactPurchaseOrder
-  };
-  if (includeOwned) {
-    const compactOwned = compactRanksFor(state.owned);
-    if (compactOwned.length) payload.o = compactOwned;
-  }
-  // Unlike o (owned), w is unconditional - waypoints are plan structure
-  // ("get these by 75 pts" is a statement about this ordering), same as
-  // ranks/purchaseOrder, not personal data that needs an opt-in. No AA
-  // identity involved (just a point total + label + color), so no id lookup
-  // needed the way compactRanksFor needs for ranks/owned - a bare
-  // [pts, label, color] triple per waypoint. Additive field: old clients
-  // that don't know about it just ignore it, no BUILD_CODE_VERSION bump
-  // needed.
-  if (state.waypoints.length) payload.w = state.waypoints.map((w) => [w.pts, w.label, w.color]);
-  return payload;
+  const compactOwned = includeOwned ? compactRanksFor(state.owned) : [];
+  // Unlike owned, waypoints are unconditional - plan structure ("get these
+  // by 75 pts" is a statement about this ordering), same as ranks/
+  // purchaseOrder, not personal data that needs an opt-in. No AA identity
+  // involved (just a point total + label + color), so no id lookup needed
+  // the way compactRanksFor needs for ranks/owned - a bare
+  // [pts, label, color] triple per waypoint.
+  const waypoints = state.waypoints.map((w) => [w.pts, w.label, w.color]);
+
+  return [
+    BUILD_CODE_VERSION,
+    state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
+    state.charLevel,
+    compactRanksFor(state.ranks),
+    compactPurchaseOrder,
+    compactOwned.length ? compactOwned : null,
+    waypoints.length ? waypoints : null
+  ];
 }
 
 // An id that no longer resolves (entryForId returns null - the AA was
@@ -93,58 +98,76 @@ function expandCompactRanks(list) {
 
 // Reconstructs the verbose, name-keyed shape applyLoaded already understands
 // (the same shape a v4 localStorage/legacy payload is in) from a decoded
-// BUILD_CODE_VERSION payload, so applyLoaded itself never needs to know the
-// compact format exists — only this file and keys.js do.
+// compact BUILD_CODE payload, so applyLoaded itself never needs to know the
+// compact format exists — only this file and keys.js do. Accepts either the
+// current positional-array shape (v3+, [v,c,l,r,p,o,w]) or the older keyed-
+// object shape (v2, {v,c,l,r,p,o?,w?}) - same fields either way, just
+// normalized to plain variables up front so the rest of this function
+// doesn't care which container they arrived in.
 function expandCompactPayload(compact) {
-  const purchaseOrder = (compact.p || []).map((id) => {
+  const [c, l, r, p, o, w] = Array.isArray(compact)
+    ? compact.slice(1)
+    : [compact.c, compact.l, compact.r, compact.p, compact.o, compact.w];
+  const purchaseOrder = (p || []).map((id) => {
     const entry = entryForId(id);
     return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
   }).filter(Boolean);
   return {
     v: SAVE_FORMAT_VERSION,
-    selectedClasses: (compact.c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
-    charLevel: compact.l,
+    selectedClasses: (c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
+    charLevel: l,
     // An older share code/link may still carry a `t` (totalPoints) field,
     // from before the point cap was removed - simply never read into
     // anything here, same graceful-ignore as any unrecognized field.
-    ranks: expandCompactRanks(compact.r),
+    ranks: expandCompactRanks(r),
     purchaseOrder,
-    // Raw [pts, label] pairs, or absent on an older link/build predating
-    // this field - either way applyLoaded's sanitizeWaypoints call handles
-    // validating/clamping/defaulting, same as it does for a verbose payload.
-    waypoints: compact.w || [],
+    // Raw [pts, label] pairs, or absent/null on an older link/build
+    // predating this field - either way applyLoaded's sanitizeWaypoints
+    // call handles validating/clamping/defaulting, same as it does for a
+    // verbose payload.
+    waypoints: w || [],
     // Present only if the sender opted in and actually had owned data (see
-    // buildCodeObject) - expandCompactRanks(undefined) degrades to the empty
-    // shape either way. applyLoaded itself still never reads this (owned
-    // isn't part of "the build" it applies); the import layer inspects it
-    // separately via payloadOwnedHasContent before deciding whether to
-    // create a fresh profile for it (see maybeImportOwned).
-    owned: expandCompactRanks(compact.o)
+    // buildCodeArray) - expandCompactRanks(null/undefined) degrades to the
+    // empty shape either way. applyLoaded itself still never reads this
+    // (owned isn't part of "the build" it applies); the import layer
+    // inspects it separately via payloadOwnedHasContent before deciding
+    // whether to create a fresh profile for it (see maybeImportOwned).
+    owned: expandCompactRanks(o)
   };
 }
 
 // purchaseOrder is highly repetitive (one entry per rank bought, not per AA —
 // a maxed 6-rank AA repeats the same scope/className/key six times), so
-// gzip beats every hand-rolled format short of assigning every AA a stable
-// numeric id, which is a bigger change than this one. CompressionStream is
-// the standard streams-based API for this; no library needed. Needs Firefox
-// 113+ / Safari 16.4+ (mid-2023) - no feature-detection fallback, since
-// that's an old floor for this app's audience; an unsupported browser fails
-// on both encode and decode (share links / export text), not just one.
-async function gzipCompress(bytes) {
-  const cs = new CompressionStream("gzip");
-  const writer = cs.writable.getWriter();
-  writer.write(bytes);
-  writer.close();
-  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+// compression beats every hand-rolled format short of assigning every AA a
+// stable numeric id, which is a bigger change than this one. CompressionStream
+// is the standard streams-based API for this; no library needed. Needs
+// Firefox 113+ / Safari 16.4+ (mid-2023) - no feature-detection fallback,
+// since that's an old floor for this app's audience; an unsupported browser
+// fails on both encode and decode (share links / export text), not just one.
+//
+// Raw DEFLATE ("deflate-raw"), not gzip - same underlying compression, but
+// without gzip's 10-byte header + 8-byte trailer (magic bytes, mtime, a
+// CRC32, ...) that a code embedded in a URL/text blob has no use for.
+// Same browser floor either way - every engine's initial CompressionStream
+// shipped all three formats together, deflate-raw included. Saves a fixed
+// ~24 base64 characters per code regardless of build size, which is most
+// noticeable proportionally on an already-short link for a small build.
+//
+// Piped through a Blob's stream rather than manually writing to a
+// writer - decodeBuildCode below tries more than one format in sequence
+// on the same rejected input, and a manual writer.write()'s own promise
+// goes unawaited/unhandled the moment the stream rejects, independently
+// of the awaited read side a try/catch actually guards. Piping avoids
+// that split entirely: every failure surfaces as the one promise this
+// function already returns.
+async function compress(bytes, format) {
+  const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream(format));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
-async function gzipDecompress(bytes) {
-  const ds = new DecompressionStream("gzip");
-  const writer = ds.writable.getWriter();
-  writer.write(bytes);
-  writer.close();
-  return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+async function decompress(bytes, format) {
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
 function bytesToBase64(bytes) {
@@ -161,28 +184,53 @@ function base64ToBytes(b64) {
 }
 
 async function encodeBuildCode(includeOwned) {
-  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeObject(includeOwned)));
-  return bytesToBase64(await gzipCompress(bytes));
+  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeArray(includeOwned)));
+  return bytesToBase64(await compress(bytes, "deflate-raw"));
 }
 
+// gzip's fixed 2-byte magic number - the one format this app has ever
+// compressed with that's actually self-identifying. deflate-raw (this
+// app's current format) has no header at all by design, and neither does
+// plain pre-compression JSON, so between those two there's nothing
+// reliable to sniff - see decodeBuildCode's own fallback for how that
+// gets resolved without it.
+const GZIP_MAGIC_0 = 0x1f;
+const GZIP_MAGIC_1 = 0x8b;
+
+// Decodes every format this app has ever encoded with, so a link/export
+// made before this exact format was current keeps working forever -
+// format-sniffed on the bytes themselves rather than gated on
+// BUILD_CODE_VERSION, which governs the JSON shape inside, not the bytes
+// wrapping it. Checks gzip's magic bytes directly instead of just
+// attempting every format in sequence and catching failures - a real,
+// growing cost otherwise, since every format this app has ever moved away
+// from adds one more guaranteed-failing attempt to the common case.
 async function decodeBuildCode(code) {
   const bytes = base64ToBytes(code);
   let jsonBytes;
-  try {
-    jsonBytes = await gzipDecompress(bytes);
-  } catch (e) {
-    // Not a gzip stream - most likely a share code or export text made
-    // before compression was added, which was plain UTF-8 JSON straight
-    // from base64. Fall back to reading it that way so old links and old
-    // exported text both keep working, rather than just failing.
-    jsonBytes = bytes;
+  if (bytes.length >= 2 && bytes[0] === GZIP_MAGIC_0 && bytes[1] === GZIP_MAGIC_1) {
+    // An older share code/export, from when this app compressed with gzip
+    // instead of raw deflate.
+    jsonBytes = await decompress(bytes, "gzip");
+  } else {
+    try {
+      jsonBytes = await decompress(bytes, "deflate-raw");
+    } catch (e) {
+      // Not gzip (checked above) and not valid deflate-raw either - a code
+      // from before compression existed, plain UTF-8 JSON straight from
+      // base64. Fall back to reading it that way so links/exports from
+      // every era keep working.
+      jsonBytes = bytes;
+    }
   }
   const parsed = JSON.parse(new TextDecoder().decode(jsonBytes));
-  // BUILD_CODE_VERSION (compact, id-keyed) needs expanding back to the
-  // name-keyed shape applyLoaded understands; anything else (v4 verbose, or
-  // an old legacy shape) is already in that shape and passes through as-is -
-  // applyLoaded's own v check handles v4-vs-legacy from here.
-  return parsed && parsed.v === BUILD_CODE_VERSION ? expandCompactPayload(parsed) : parsed;
+  // A compact payload (v2 keyed-object or v3+ positional-array - see
+  // expandCompactPayload) needs expanding back to the name-keyed shape
+  // applyLoaded understands; anything else (v4 verbose, or an old legacy
+  // shape) is already in that shape and passes through as-is - applyLoaded's
+  // own v check handles v4-vs-legacy from here.
+  const v = Array.isArray(parsed) ? parsed[0] : parsed && parsed.v;
+  return v === BUILD_CODE_VERSION || v === 2 ? expandCompactPayload(parsed) : parsed;
 }
 
 // Standard base64 (as used in BUILD_CODE) uses +, /, and = padding, which are legal
@@ -292,7 +340,7 @@ export async function buildExportText(includeOwned) {
     // where a waypoint's boundary falls - the readable listing should show
     // the same divider placement the Progression tab itself does, not a
     // second, independently-computed opinion of it. Waypoints ride the
-    // BUILD_CODE either way (unconditionally - see buildCodeObject), but
+    // BUILD_CODE either way (unconditionally - see buildCodeArray), but
     // without this a human just reading the text has no way to see them at
     // all, unlike owned's [OWNED] marker a few lines below.
     computeProgressionTimeline(computeProgressionSteps()).forEach((entry) => {

@@ -81,6 +81,12 @@ At runtime, `state.ranks` and `purchaseOrder` address AAs by index into `AA_DATA
 
 `keys.js` also carries a frozen snapshot of `AA_DATA`'s ordering as of 2026-07-09 (`LEGACY_AA_ORDER`), used only to migrate saves made before this existed. Never update it — it's a historical record of what old saves meant, not current data.
 
+### Share codes are compressed, format-sniffed on decode
+
+A share link/export's `BUILD_CODE` is a compact, numeric-id-keyed JSON payload (`src/exportImport.js`'s `buildCodeArray`/`expandCompactPayload`) compressed with the Compression Streams API and base64-encoded. The payload itself is a positional array (`[v, c, l, r, p, o, w]`, `BUILD_CODE_VERSION` 3+) rather than a keyed object — every position's meaning is fixed by the version number, so the object keys an older code spent real bytes on carry no information a fixed-position schema doesn't already know. Compression uses raw DEFLATE (`"deflate-raw"`) rather than gzip — same underlying compression, without gzip's ~18 bytes of header/trailer a code embedded in a URL has no use for; on a typical small build that's the difference between the code shrinking and gzip's own overhead making it *longer* than staying uncompressed.
+
+`decodeBuildCode` checks gzip's own fixed 2-byte magic number directly (the one format here that's actually self-identifying) rather than just attempting every format in sequence and catching failures — deflate-raw has no header to sniff by design, so that part still tries-then-falls-back, but gzip detection no longer costs a guaranteed-failing attempt on the common case. Falls back to no compression at all if deflate-raw fails too (a code from before compression existed), and `expandCompactPayload` accepts either the current array shape or the older `v2` keyed-object shape — every check is sniffed from the content itself rather than gated on `BUILD_CODE_VERSION`, so a link from any era keeps working. `compress`/`decompress` pipe through a `Blob`'s stream rather than manually driving a writer, since a manually-written stream's rejection can otherwise surface as an unhandled error independently of the awaited call a `try`/`catch` actually guards.
+
 ### Named builds don't replace the always-autosaving current build
 
 `state.js`'s `STORAGE_KEY` is whatever build you're currently looking at — autosaved on every change, loaded unconditionally on boot. `src/builds.js` adds named snapshots on top as a separate concern: saving copies the current state into its own key, loading overwrites the current state with a saved copy. Which slot a loaded/saved build is "active" is tracked only for UI display, and cleared on Reset/Import/a share link so a later save can't mistake unrelated content for an update to a slot it no longer matches.
@@ -109,7 +115,7 @@ To make a change:
 
 ## Testing
 
-`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic, plus 18 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, per-build owned-tracking profiles (Link/Merge/Split, migration, orphaned-profile cleanup), and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them. None are wired into CI — run the relevant ones by hand after touching whatever they cover.
+`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic, plus 19 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, per-build owned-tracking profiles (Link/Merge/Split, migration, orphaned-profile cleanup), share-code compression backward-compatibility, and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them. None are wired into CI — run the relevant ones by hand after touching whatever they cover.
 
 ## Deployment
 
