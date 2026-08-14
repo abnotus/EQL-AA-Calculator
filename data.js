@@ -124,7 +124,7 @@ classes: {
 ],
 "Monk": [
 { name: "Dragon Force", ranks: 1, costs: ["5"], levelReq: "15", description: "Activated: pushes your target backwards and deals 10 damage." },
-{ name: "Improved Mend", ranks: 3, costs: ["3","6","?"], levelReq: "1", prereq: "Requires First Aid at level 3", description: "Gives you a 10% chance to perform a superior mend, doubling the healing of your mend skill." },
+{ name: "Improved Mend", ranks: 3, costs: ["3","6","9"], levelReq: "1", prereq: "Requires First Aid at level 3", description: "Gives you a 10/20/30% chance to perform a superior mend, doubling the healing of your mend skill." },
 { name: "Purify Body", ranks: 1, costs: ["9"], levelReq: "15", description: "Activated: instantly cures you of up to 20 detrimental effects (excluding charm, fear, resurrection, and revival sickness). (Refresh 0:30:00)" },
 { name: "Rapid Feign", ranks: 3, costs: ["3","6","9"], levelReq: "17", description: "Reduces the reuse time of your Feign Death skill by 1/3/5 second(s)." },
 { name: "Unbound Alacrity", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your current and maximum haste value by 3/6/10%. Rank 2 requires level 30, rank 3 requires level 50." }
