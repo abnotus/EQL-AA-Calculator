@@ -193,6 +193,33 @@ with sync_playwright() as p:
     print("other-classes note hidden again once nothing's inactive:", note_after.is_visible())
     assert not note_after.is_visible()
 
+    # --- Summary's anyPicked flag has two ways to become true - the normal
+    # AA_CATEGORY_KEYS sections, or otherClassNames.length alone - and every
+    # scenario above always has both at once, which can't tell them apart.
+    # A build with ONLY an inactive-class pick and nothing active at all
+    # pins the second path specifically: Summary must still show the
+    # other-classes divider/section instead of falling through to the
+    # "No AAs selected yet" empty state. Same hand-crafted build code
+    # test_guess_all_tabs.py uses for the same reason (defaults selectedClasses,
+    # one purchaseOrder entry on Magician's Conjurer's Efficiency, nothing else). ---
+    inactive_only_build = "H4sIAAAAAAAC_6tWKlOyUjDSUVBKBtLRBjoKhjoKRrFAfg6QbwrkK5UAGYYGBiBmEUhNtCVIVSxITQGIb2kQWwsAdrvsFEcAAAA"
+    page3 = browser.new_page(viewport={"width": 1400, "height": 900})
+    page3.on("dialog", lambda d: d.accept())
+    page3.goto(f"{BASE}?build={inactive_only_build}")
+    page3.wait_for_selector("#treeWrap .node")
+    page3.wait_for_timeout(200)
+    page3.click('button[data-tab="summary"]')
+    page3.wait_for_timeout(150)
+    empty_state = page3.locator("#summaryContent .empty")
+    print("Summary empty-state count with only an inactive-class pick (should be 0):", empty_state.count())
+    assert empty_state.count() == 0, "FAIL: Summary should not show its empty state when only an inactive-class pick exists"
+    inactive_only_divider = page3.locator("#summaryContent .summary-other-classes-divider")
+    inactive_only_card = page3.locator("#summaryContent .browse-card", has=page3.locator(".name", has_text="Conjurer's Efficiency"))
+    print("Summary divider/card count with only an inactive-class pick:", inactive_only_divider.count(), inactive_only_card.count())
+    assert inactive_only_divider.count() == 1 and inactive_only_card.count() == 1
+    print("PASS: Summary shows other-classes content even when it's the only thing picked at all")
+    page3.close()
+
     print("ERRORS:", errors)
     assert not errors
     browser.close()
