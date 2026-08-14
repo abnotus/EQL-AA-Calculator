@@ -229,6 +229,12 @@ async function decodeBuildCode(code) {
   // applyLoaded understands; anything else (v4 verbose, or an old legacy
   // shape) is already in that shape and passes through as-is - applyLoaded's
   // own v check handles v4-vs-legacy from here.
+  // Hardcoding v === 2 alongside BUILD_CODE_VERSION is fine for exactly
+  // one prior compact version - a third (BUILD_CODE_VERSION 4) would mean
+  // a third disjunct here, and a fourth a fourth. If that ever happens,
+  // switch to a KNOWN_COMPACT_VERSIONS set (or a v >= 2 range check, since
+  // every version so far has stayed compact-shaped) instead of continuing
+  // to accumulate `|| v === N` terms one at a time.
   const v = Array.isArray(parsed) ? parsed[0] : parsed && parsed.v;
   return v === BUILD_CODE_VERSION || v === 2 ? expandCompactPayload(parsed) : parsed;
 }
