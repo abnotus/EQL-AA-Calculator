@@ -4842,8 +4842,8 @@ function expandCompactPayload(compact) {
     // buildCodeObject) - expandCompactRanks(undefined) degrades to the empty
     // shape either way. applyLoaded itself still never reads this (owned
     // isn't part of "the build" it applies); the import layer inspects it
-    // separately via payloadOwnedHasContent before deciding whether to ask
-    // about it at all.
+    // separately via payloadOwnedHasContent before deciding whether to
+    // create a fresh profile for it (see maybeImportOwned).
     owned: expandCompactRanks(compact.o)
   };
 }
