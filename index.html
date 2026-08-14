@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EverQuest Legends - AA Calculator</title>
-<link rel="stylesheet" href="styles.css?v=a64fd22c" />
+<link rel="stylesheet" href="styles.css?v=8d72fb56" />
 </head>
 <body>
 
@@ -94,6 +94,7 @@
       <div class="progression-toolbar">
         <div class="progression-hint">The order you've spent points in, for planning a leveling path. Drag a row to reorder it (or use the arrows) &mdash; ranks of the same AA always stay in order, the drop line turns amber if that spot would leave the row's own prerequisite unmet, and a &#9888; means a step's prerequisite hasn't been reached yet at that point in the sequence.<span id="otherClassesNote" class="other-classes-note hidden"></span></div>
         <span id="ownedSummary" class="owned-summary"></span>
+        <button type="button" class="owned-tracking-link" id="manageOwnedTrackingBtn" title="Link, merge, or split owned progress tracking across builds">Manage tracking&hellip;</button>
         <button class="btn danger" id="clearOwnedBtn" title="Clear all owned progress without touching your planned picks">Clear Owned</button>
         <button class="btn" id="undoLastBtn">Undo Last</button>
       </div>
@@ -134,6 +135,25 @@
     <div id="buildsList" class="builds-list"></div>
     <div class="modal-actions">
       <button class="btn" id="closeBuildsBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="ownedTrackingModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h2>Manage Owned Tracking</h2>
+    <p class="modal-hint">Owned progress is tracked separately per build by default. Link this build to another to share the same live progress, merge in progress from another build without disturbing it, or split off your own independent copy.</p>
+    <div id="ownedTrackingStatus" class="owned-tracking-status"></div>
+    <div class="owned-tracking-row">
+      <select id="ownedTrackingBuildSelect"></select>
+    </div>
+    <div class="modal-actions owned-tracking-actions">
+      <button class="btn" id="ownedTrackingLinkBtn" title="Share the same live owned progress as the selected build">Link</button>
+      <button class="btn" id="ownedTrackingMergeBtn" title="Add anything owned in the selected build into this one, without removing anything">Merge In</button>
+      <button class="btn danger" id="ownedTrackingSplitBtn" title="Stop sharing owned progress with any other build, keeping your own independent copy">Split Off</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="closeOwnedTrackingBtn">Close</button>
     </div>
   </div>
 </div>
@@ -216,7 +236,7 @@
   </div>
 </div>
 
-<script src="data.js?v=a64fd22c"></script>
-<script src="app.js?v=a64fd22c"></script>
+<script src="data.js?v=8d72fb56"></script>
+<script src="app.js?v=8d72fb56"></script>
 </body>
 </html>

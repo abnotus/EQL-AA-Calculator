@@ -4,6 +4,15 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.9.0",
+    date: "2026-08-14",
+    items: [
+      "New: owned progress is now tracked separately for each build by default, instead of one shared pool across everything. A \"Manage tracking…\" link on the Progression tab lets you link two builds to share the same live progress, merge in progress from another build without touching it, or split one back off onto its own copy, whenever you want. Clear Owned now only clears the current build's own tracking, not every build's.",
+      "Importing a build that includes owned progress no longer asks to overwrite yours. It always keeps its own separate progress, with a quick toast to let you know.",
+      "Your existing builds keep sharing progress exactly like they always did, until you choose to change that."
+    ]
+  },
+  {
     version: "1.8.2",
     date: "2026-07-28",
     items: [

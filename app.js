@@ -320,6 +320,15 @@ return prog ? (prog[rankIdx] || null) : null;
 }
 const USER_CHANGELOG = [
 {
+version: "1.9.0",
+date: "2026-08-14",
+items: [
+"New: owned progress is now tracked separately for each build by default, instead of one shared pool across everything. A \"Manage tracking…\" link on the Progression tab lets you link two builds to share the same live progress, merge in progress from another build without touching it, or split one back off onto its own copy, whenever you want. Clear Owned now only clears the current build's own tracking, not every build's.",
+"Importing a build that includes owned progress no longer asks to overwrite yours. It always keeps its own separate progress, with a quick toast to let you know.",
+"Your existing builds keep sharing progress exactly like they always did, until you choose to change that."
+]
+},
+{
 version: "1.8.2",
 date: "2026-07-28",
 items: [
@@ -476,6 +485,13 @@ const MAX_WAYPOINT_PTS = 100000;
 const SAVE_FORMAT_VERSION = 4;
 const STORAGE_KEY = "eql_aa_builder_v1";
 const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
+const LEGACY_OWNED_PROFILE_ID = "legacy";
+function ownedStorageKeyFor(profileId) {
+return `eql_aa_owned_${profileId}`;
+}
+function genId() {
+return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
 const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v5";
 const HIDDEN_STORAGE_KEY = "eql_aa_hidden_v1";
 const STALE_DISCLAIMER_KEYS = [
@@ -499,6 +515,7 @@ charLevel: 50,
 ranks: { general: {}, archetype: {}, special: {}, classes: {} },
 purchaseOrder: [],
 owned: { general: {}, archetype: {}, special: {}, classes: {} },
+ownedProfileId: LEGACY_OWNED_PROFILE_ID,
 hiddenAAs: { general: {}, archetype: {}, special: {}, classes: {} },
 showHidden: false,
 waypoints: [],
@@ -676,23 +693,36 @@ selectedClasses: state.selectedClasses,
 charLevel: state.charLevel,
 ranks: serializeRanks(state.ranks),
 purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
-waypoints: state.waypoints
+waypoints: state.waypoints,
+ownedProfileId: state.ownedProfileId
 };
 localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 } catch (e) { /* storage unavailable, ignore */ }
 }
-function saveOwned() {
+function saveOwnedProfileTo(profileId, ownedLike) {
 try {
-localStorage.setItem(OWNED_STORAGE_KEY, JSON.stringify({ v: SAVE_FORMAT_VERSION, owned: serializeRanks(state.owned) }));
+localStorage.setItem(ownedStorageKeyFor(profileId), JSON.stringify({ v: SAVE_FORMAT_VERSION, owned: serializeRanks(ownedLike) }));
 } catch (e) { /* storage unavailable, ignore */ }
 }
-function loadOwnedStorage() {
+function saveOwned() {
+saveOwnedProfileTo(state.ownedProfileId, state.owned);
+}
+function loadOwnedProfileRaw(profileId) {
 try {
-const raw = localStorage.getItem(OWNED_STORAGE_KEY);
+const raw = localStorage.getItem(ownedStorageKeyFor(profileId));
 if (!raw) return null;
 const parsed = JSON.parse(raw);
 return parsed && typeof parsed === "object" ? parsed : null;
 } catch (e) { return null; }
+}
+function migrateLegacyOwnedProfile() {
+try {
+const legacyRaw = localStorage.getItem(OWNED_STORAGE_KEY);
+if (!legacyRaw) return;
+const profileKey = ownedStorageKeyFor(LEGACY_OWNED_PROFILE_ID);
+if (localStorage.getItem(profileKey) != null) return;
+localStorage.setItem(profileKey, legacyRaw);
+} catch (e) { /* storage unavailable, ignore */ }
 }
 function loadLocal() {
 try {
@@ -734,7 +764,7 @@ state.waypoints = sanitizeWaypoints(loaded.waypoints);
 return { droppedRanks };
 }
 function loadAndApplyOwned(rawMainPayload) {
-const stored = loadOwnedStorage();
+const stored = loadOwnedProfileRaw(state.ownedProfileId);
 if (stored && stored.owned && typeof stored.owned === "object") {
 const result = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key));
 state.owned = result.ranks;
@@ -755,11 +785,41 @@ if (Object.keys(owned.general || {}).length || Object.keys(owned.archetype || {}
 const classes = owned.classes || {};
 return Object.keys(classes).some((className) => Object.keys(classes[className] || {}).length > 0);
 }
-function applyImportedOwned(ownedField) {
+function adoptImportedOwnedAsNewProfile(ownedField) {
+const newId = genId();
 const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
+state.ownedProfileId = newId;
 state.owned = result.ranks;
 saveOwned();
 return { dropped: result.dropped };
+}
+function linkOwnedProfile(targetProfileId) {
+state.ownedProfileId = targetProfileId;
+loadAndApplyOwned(null);
+}
+function splitOwnedProfile() {
+state.ownedProfileId = genId();
+saveOwned();
+}
+function mergeOwnedProfileInto(sourceProfileId) {
+const sourceRaw = loadOwnedProfileRaw(sourceProfileId);
+if (!sourceRaw || !sourceRaw.owned || typeof sourceRaw.owned !== "object") return { merged: 0 };
+const source = deserializeRanks(sourceRaw.owned, (scope, cls, key) => idxForKey(scope, cls, key)).ranks;
+let merged = 0;
+function mergeStore(target, src) {
+Object.keys(src).forEach((idxStr) => {
+const idx = parseInt(idxStr, 10);
+const current = target[idx] || 0;
+if (src[idx] > current) { target[idx] = src[idx]; merged++; }
+});
+}
+["general", "archetype", "special"].forEach((scope) => mergeStore(state.owned[scope], source[scope]));
+Object.keys(source.classes).forEach((className) => {
+if (!state.owned.classes[className]) state.owned.classes[className] = {};
+mergeStore(state.owned.classes[className], source.classes[className]);
+});
+if (merged) saveOwned();
+return { merged };
 }
 function costNum(c) {
 const n = parseInt(c, 10);
@@ -1582,9 +1642,6 @@ try {
 localStorage.setItem(BUILDS_INDEX_KEY, JSON.stringify(index));
 } catch (e) { /* storage unavailable/full - the slot data write already failed first if so */ }
 }
-function genId() {
-return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-}
 function listBuilds() {
 return loadIndex().slice().sort((a, b) => b.updatedAt - a.updatedAt);
 }
@@ -1620,13 +1677,31 @@ parsed = JSON.parse(raw);
 } catch (e) {
 return;
 }
-if (!parsed || typeof parsed !== "object" || !("totalPoints" in parsed)) return;
-delete parsed.totalPoints;
+if (!parsed || typeof parsed !== "object") return;
+let changed = false;
+if ("totalPoints" in parsed) { delete parsed.totalPoints; changed = true; }
+if (typeof parsed.ownedProfileId !== "string" || !parsed.ownedProfileId) {
+parsed.ownedProfileId = LEGACY_OWNED_PROFILE_ID;
+changed = true;
+}
+if (!changed) return;
 try {
 localStorage.setItem(key, JSON.stringify(parsed));
 } catch (e) {
 }
 });
+}
+function readBuildRaw(id) {
+try {
+const raw = localStorage.getItem(BUILD_KEY_PREFIX + id);
+return raw ? JSON.parse(raw) : null;
+} catch (e) {
+return null;
+}
+}
+function ownedProfileIdOfBuild(id) {
+const raw = readBuildRaw(id);
+return (raw && typeof raw.ownedProfileId === "string" && raw.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
 }
 function buildPayload() {
 return {
@@ -1670,10 +1745,19 @@ return deepEqualIgnoringExtraKeys(JSON.parse(raw), buildPayload());
 return false;
 }
 }
-function saveBuildAs(name, id = null) {
+function saveBuildAs(name, id = null, mirrorProfileId = null) {
 const targetId = id || genId();
+const payload = buildPayload();
+if (mirrorProfileId) {
+payload.ownedProfileId = mirrorProfileId;
+} else if (id) {
+payload.ownedProfileId = ownedProfileIdOfBuild(id);
+} else {
+payload.ownedProfileId = genId();
+saveOwnedProfileTo(payload.ownedProfileId, state.owned);
+}
 try {
-localStorage.setItem(BUILD_KEY_PREFIX + targetId, JSON.stringify(buildPayload()));
+localStorage.setItem(BUILD_KEY_PREFIX + targetId, JSON.stringify(payload));
 } catch (e) {
 return null;
 }
@@ -1721,7 +1805,7 @@ return !!slot && slot.id === getActiveBuildId();
 }
 function saveImportedBuild() {
 const existing = findImportedSlot();
-return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null);
+return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null, state.ownedProfileId);
 }
 function loadBuild(id) {
 let parsed;
@@ -1736,6 +1820,8 @@ const result = applyLoaded(parsed);
 state.selectedNode = null;
 clearLastMutation();
 const repaired = reconcilePurchaseOrderCounts();
+state.ownedProfileId = (typeof parsed.ownedProfileId === "string" && parsed.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+loadAndApplyOwned(null);
 setActiveBuildId(id);
 saveLocal();
 return { droppedRanks: result.droppedRanks, repaired };
@@ -1755,6 +1841,33 @@ try {
 localStorage.removeItem(BUILD_KEY_PREFIX + id);
 } catch (e) { /* ignore */ }
 if (getActiveBuildId() === id) setActiveBuildId(null);
+}
+function persistActiveBuildOwnedProfile() {
+const id = getActiveBuildId();
+if (!id) return;
+const parsed = readBuildRaw(id);
+if (!parsed) return;
+parsed.ownedProfileId = state.ownedProfileId;
+try {
+localStorage.setItem(BUILD_KEY_PREFIX + id, JSON.stringify(parsed));
+} catch (e) { /* storage unavailable, ignore */ }
+}
+function buildsSharingCurrentOwnedProfile() {
+const activeId = getActiveBuildId();
+return listBuilds().filter((b) => b.id !== activeId && ownedProfileIdOfBuild(b.id) === state.ownedProfileId);
+}
+function linkOwnedToBuild(targetBuildId) {
+linkOwnedProfile(ownedProfileIdOfBuild(targetBuildId));
+persistActiveBuildOwnedProfile();
+saveLocal();
+}
+function mergeOwnedFromBuild(sourceBuildId) {
+return mergeOwnedProfileInto(ownedProfileIdOfBuild(sourceBuildId));
+}
+function splitOwnedFromCurrent() {
+splitOwnedProfile();
+persistActiveBuildOwnedProfile();
+saveLocal();
 }
 const el = {};
 function cacheDom() {
@@ -1798,6 +1911,14 @@ el.undoLastBtn = document.getElementById("undoLastBtn");
 el.otherClassesNote = document.getElementById("otherClassesNote");
 el.ownedSummary = document.getElementById("ownedSummary");
 el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
+el.manageOwnedTrackingBtn = document.getElementById("manageOwnedTrackingBtn");
+el.ownedTrackingModal = document.getElementById("ownedTrackingModal");
+el.ownedTrackingStatus = document.getElementById("ownedTrackingStatus");
+el.ownedTrackingBuildSelect = document.getElementById("ownedTrackingBuildSelect");
+el.ownedTrackingLinkBtn = document.getElementById("ownedTrackingLinkBtn");
+el.ownedTrackingMergeBtn = document.getElementById("ownedTrackingMergeBtn");
+el.ownedTrackingSplitBtn = document.getElementById("ownedTrackingSplitBtn");
+el.closeOwnedTrackingBtn = document.getElementById("closeOwnedTrackingBtn");
 el.addWaypointBtn = document.getElementById("addWaypointBtn");
 el.waypointChips = document.getElementById("waypointChips");
 el.waypointModal = document.getElementById("waypointModal");
@@ -2939,6 +3060,53 @@ el.buildSaveName.focus();
 function closeBuildsModal() {
 el.buildsModal.classList.add("hidden");
 }
+function renderOwnedTrackingModal() {
+const activeId = getActiveBuildId();
+const sharing = buildsSharingCurrentOwnedProfile();
+const others = listBuilds().filter((b) => b.id !== activeId);
+el.ownedTrackingStatus.innerHTML = sharing.length
+? `Sharing live owned progress with <span class="shared-with">${sharing.map((b) => escapeHtml(b.name)).join(", ")}</span>.`
+: "Tracking its own independent owned progress right now.";
+el.ownedTrackingBuildSelect.innerHTML = others.length
+? others.map((b) => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join("")
+: '<option value="">No other saved builds yet</option>';
+el.ownedTrackingBuildSelect.disabled = !others.length;
+el.ownedTrackingLinkBtn.disabled = !others.length;
+el.ownedTrackingMergeBtn.disabled = !others.length;
+}
+function openOwnedTrackingModal() {
+renderOwnedTrackingModal();
+el.ownedTrackingModal.classList.remove("hidden");
+}
+function closeOwnedTrackingModal() {
+el.ownedTrackingModal.classList.add("hidden");
+}
+function handleOwnedTrackingLink() {
+const id = el.ownedTrackingBuildSelect.value;
+if (!id) return;
+const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
+linkOwnedToBuild(id);
+renderOwnedTrackingModal();
+renderProgression();
+showToast(`Now sharing owned progress with "${name}"`);
+}
+function handleOwnedTrackingMerge() {
+const id = el.ownedTrackingBuildSelect.value;
+if (!id) return;
+const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
+const result = mergeOwnedFromBuild(id);
+renderOwnedTrackingModal();
+renderProgression();
+showToast(result.merged
+? `Merged in ${result.merged} owned rank${result.merged === 1 ? "" : "s"} from "${name}"`
+: `Nothing new to merge in from "${name}"`);
+}
+function handleOwnedTrackingSplit() {
+splitOwnedFromCurrent();
+renderOwnedTrackingModal();
+renderProgression();
+showToast("Now tracking its own independent owned progress");
+}
 function openResetModal() {
 el.resetClearOwnedCheckbox.checked = false;
 el.resetModal.classList.remove("hidden");
@@ -3235,17 +3403,12 @@ return null;
 }
 function maybeImportOwned(json) {
 if (!payloadOwnedHasContent(json.owned)) return { imported: false, dropped: 0, hadOwned: false };
-const include = confirm(
-"This build also includes real-world owned progress. Importing it will overwrite your own owned progress with theirs.\n\n" +
-"OK to include it, Cancel to import just the plan and leave your own owned progress untouched."
-);
-if (!include) return { imported: false, dropped: 0, hadOwned: true };
-const result = applyImportedOwned(json.owned);
+const result = adoptImportedOwnedAsNewProfile(json.owned);
 return { imported: true, dropped: result.dropped, hadOwned: true };
 }
 function ownedNoticeSuffix(ownedOutcome) {
 if (!ownedOutcome.hadOwned) return "";
-return ownedOutcome.imported ? " — owned progress included" : " — owned progress was not imported (yours was kept)";
+return " — owned progress included (tracked separately from your existing progress)";
 }
 async function importBuildFromText(text) {
 const code = extractBuildCode(text);
@@ -3328,6 +3491,7 @@ if (!el.exportModal.classList.contains("hidden")) closeExportModal();
 if (!el.importModal.classList.contains("hidden")) closeImportModal();
 if (!el.changelogModal.classList.contains("hidden")) closeChangelogModal();
 if (!el.buildsModal.classList.contains("hidden")) closeBuildsModal();
+if (!el.ownedTrackingModal.classList.contains("hidden")) closeOwnedTrackingModal();
 if (!el.resetModal.classList.contains("hidden")) closeResetModal();
 if (!el.waypointModal.classList.contains("hidden")) closeWaypointModal();
 closeMoveMenu();
@@ -3364,12 +3528,18 @@ el.confirmResetBtn.addEventListener("click", handleConfirmReset);
 el.resetModal.addEventListener("click", (e) => { if (e.target === el.resetModal) closeResetModal(); });
 el.clearOwnedBtn.addEventListener("click", () => {
 if (el.clearOwnedBtn.disabled) return;
-const ok = confirm("Clear all owned progress? This can't be undone, and won't affect your planned picks.");
+const ok = confirm("Clear owned progress for this build's tracking? This can't be undone, and won't affect your planned picks. If this build shares tracking with another (see Manage tracking…), that one is cleared too.");
 if (!ok) return;
 clearAllOwned();
 renderProgression();
 showToast("Owned progress cleared");
 });
+el.manageOwnedTrackingBtn.addEventListener("click", openOwnedTrackingModal);
+el.closeOwnedTrackingBtn.addEventListener("click", closeOwnedTrackingModal);
+el.ownedTrackingModal.addEventListener("click", (e) => { if (e.target === el.ownedTrackingModal) closeOwnedTrackingModal(); });
+el.ownedTrackingLinkBtn.addEventListener("click", handleOwnedTrackingLink);
+el.ownedTrackingMergeBtn.addEventListener("click", handleOwnedTrackingMerge);
+el.ownedTrackingSplitBtn.addEventListener("click", handleOwnedTrackingSplit);
 el.addWaypointBtn.addEventListener("click", () => openWaypointModal());
 el.cancelWaypointBtn.addEventListener("click", closeWaypointModal);
 el.saveWaypointBtn.addEventListener("click", handleSaveWaypoint);
@@ -3412,9 +3582,11 @@ if (state.activeView === "calculator") renderTree(state.activeTab);
 async function init() {
 cacheDom();
 populateStaticControls();
+migrateLegacyOwnedProfile();
 migrateStaleBuildSlots();
 const rawLocal = loadLocal();
 const localResult = applyLoaded(rawLocal);
+state.ownedProfileId = (rawLocal && typeof rawLocal.ownedProfileId === "string" && rawLocal.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
 const ownedResult = loadAndApplyOwned(rawLocal);
 localResult.droppedRanks += ownedResult.droppedOwned;
 loadAndApplyHidden();

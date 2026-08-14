@@ -16,7 +16,7 @@ A talent-calculator-style planner for [EverQuest Legends](https://eqlwiki.com/Al
 - **Build Summary** — everything you've picked, grouped by category
 - **Progression** tab — the order you spent points in, drag-and-drop or arrow-key reorderable, with per-step and running-total cost. A "Move To" button quick-jumps a step to the top/bottom of the list or of any waypoint, or to a specific position — handy once a build gets long
 - **Waypoints** — mark a point total worth returning to (e.g. "Level 20"), and it shows up as a colored divider right where your training order crosses it. Anchored to the point total, not a list position, so reordering and Reset Build never break one
-- Mark AAs as **owned** to track what you've actually trained in-game, separate from what's just planned — with a running "points owned / to go" total. Owned status follows your character, not any one plan, so switching Builds never touches it
+- Mark AAs as **owned** to track what you've actually trained in-game, separate from what's just planned — with a running "points owned / to go" total. Each Build tracks its own owned progress by default; **Manage tracking…** on the Progression tab lets you Link two builds to share the same live progress, Merge in progress from another build without disturbing it, or Split one back off onto its own copy
 - **Builds** — save named snapshots of your build and switch between them, for comparing class combos or planning alternate paths
 - Export a build as text or a shareable link; import by pasting text, a link, or loading a saved file
 - Undocumented costs and effect values can show a pattern-inferred estimate instead of a bare `?`, color-coded by confidence. Purely a display hint — never counted in real point totals, and automatically replaced the moment the wiki confirms the real value
@@ -85,9 +85,13 @@ At runtime, `state.ranks` and `purchaseOrder` address AAs by index into `AA_DATA
 
 `state.js`'s `STORAGE_KEY` is whatever build you're currently looking at — autosaved on every change, loaded unconditionally on boot. `src/builds.js` adds named snapshots on top as a separate concern: saving copies the current state into its own key, loading overwrites the current state with a saved copy. Which slot a loaded/saved build is "active" is tracked only for UI display, and cleared on Reset/Import/a share link so a later save can't mistake unrelated content for an update to a slot it no longer matches.
 
-### Owned progress lives outside any single build
+### Owned progress is tracked per build, through swappable "profiles"
 
-`state.owned` (the Progression tab's "actually trained in-game" watermark) persists to its own `localStorage` key (`OWNED_STORAGE_KEY`), not inside the build payload or a Builds slot. It's loaded once at boot and never touched when switching Builds, loading a share link, or importing text — that's what lets it survive flipping between saved plans without re-syncing by hand. A build/share code can opt into *carrying* owned data too (the Export modal's checkbox), but importing one asks first, since overwriting someone's real progress from a pasted link is the one case here that isn't easily undone.
+`state.owned` (the Progression tab's "actually trained in-game" watermark) persists to a `localStorage` key scoped to an owned *profile* id (`ownedStorageKeyFor`, `state.js`), not a single fixed key. `state.ownedProfileId` says which profile the current session is showing; each saved Build slot carries its own `ownedProfileId` field pointing at one too. Two builds pointing at the same profile id read/write the same storage entry — that's what "linked" tracking means concretely, and it's how the old single-global-owned behavior is still available, just opt-in now instead of the only option.
+
+A brand-new saved build gets its own fresh profile, seeded with a copy of whatever's showing at save time — independent from that point on. The Progression tab's **Manage tracking…** control (`render.js`'s owned-tracking modal, backed by `linkOwnedToBuild`/`mergeOwnedFromBuild`/`splitOwnedFromCurrent` in `builds.js`) can Link two builds onto the same profile, Merge another build's marks in as a one-directional non-destructive union, or Split a linked build back onto its own copy, at any time — not just when it's first saved. Importing a build that carries owned data (the Export modal's checkbox) always creates its own fresh profile silently, with just a toast — nothing existing is ever at risk of being overwritten, so there's nothing to confirm.
+
+Every existing user's builds are backfilled to a well-known shared `LEGACY_OWNED_PROFILE_ID` profile the first time they're seen post-upgrade (`migrateLegacyOwnedProfile`/`migrateStaleBuildSlots`) — a self-healing sweep that re-checks on every boot rather than a one-time flag, so a build that reaches a given browser later (a restored backup, a synced device) still gets caught. The original `eql_aa_owned_v1` key is left in place, never deleted.
 
 ### A cost or effect estimate can never outrank a real one
 
@@ -103,7 +107,7 @@ To make a change:
 
 ## Testing
 
-`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic, plus 15 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them. None are wired into CI — run the relevant ones by hand after touching whatever they cover.
+`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic, plus 17 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, per-build owned-tracking profiles (Link/Merge/Split, migration), and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them. None are wired into CI — run the relevant ones by hand after touching whatever they cover.
 
 ## Deployment
 

@@ -3,7 +3,11 @@
 // (which keeps holding whatever you're currently editing). Loading a slot
 // just overwrites the current working state, which then autosaves as normal.
 
-import { state, saveLocal, serializeRanks, serializePurchaseOrder, applyLoaded, SAVE_FORMAT_VERSION } from "./state.js";
+import {
+  state, saveLocal, serializeRanks, serializePurchaseOrder, applyLoaded, SAVE_FORMAT_VERSION,
+  genId, LEGACY_OWNED_PROFILE_ID, loadAndApplyOwned, saveOwnedProfileTo,
+  linkOwnedProfile, splitOwnedProfile, mergeOwnedProfileInto
+} from "./state.js";
 import { spentPoints, clearLastMutation, reconcilePurchaseOrderCounts } from "./logic.js";
 
 const BUILDS_INDEX_KEY = "eql_aa_builds_index_v1";
@@ -35,10 +39,6 @@ function saveIndex(index) {
   } catch (e) { /* storage unavailable/full - the slot data write already failed first if so */ }
 }
 
-function genId() {
-  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-}
-
 // Most-recently-updated first — the one you're most likely to want is at the top.
 export function listBuilds() {
   return loadIndex().slice().sort((a, b) => b.updatedAt - a.updatedAt);
@@ -67,11 +67,16 @@ export function clearActiveBuild() {
   setActiveBuildId(null);
 }
 
-// One-time migration: strips the dead `totalPoints` field (gone once the
-// point cap was removed) from every saved slot's stored JSON. Purely
-// cosmetic now that activeBuildMatchesCurrent ignores extra keys anyway -
-// kept so old slots don't carry stale data forever. Runs once at boot; a
-// no-op after the first pass per slot.
+// Sweeps every saved slot's stored JSON for two independent, self-healing
+// fixups: strips the dead `totalPoints` field (gone once the point cap was
+// removed), and backfills a missing `ownedProfileId` to the shared legacy
+// profile (see LEGACY_OWNED_PROFILE_ID) - a slot saved before per-build
+// owned tracking existed always meant "the one global pool", so this keeps
+// it behaving exactly that way until something (Save As, or the Link/
+// Merge/Split controls) deliberately diverges it. Deliberately re-checked
+// on every boot rather than gated behind a "have we migrated" flag, so a
+// slot that only reaches this browser later (restored from a backup,
+// synced from another device) still gets caught.
 export function migrateStaleBuildSlots() {
   loadIndex().forEach(({ id }) => {
     const key = BUILD_KEY_PREFIX + id;
@@ -88,17 +93,48 @@ export function migrateStaleBuildSlots() {
     } catch (e) {
       return;
     }
-    if (!parsed || typeof parsed !== "object" || !("totalPoints" in parsed)) return;
-    delete parsed.totalPoints;
+    if (!parsed || typeof parsed !== "object") return;
+    let changed = false;
+    if ("totalPoints" in parsed) { delete parsed.totalPoints; changed = true; }
+    if (typeof parsed.ownedProfileId !== "string" || !parsed.ownedProfileId) {
+      parsed.ownedProfileId = LEGACY_OWNED_PROFILE_ID;
+      changed = true;
+    }
+    if (!changed) return;
     try {
       localStorage.setItem(key, JSON.stringify(parsed));
     } catch (e) {
-      // storage unavailable/full - leave the stale field in place, same
+      // storage unavailable/full - leave the stale data in place, same
       // "nothing changed" outcome as any other failed write here
     }
   });
 }
 
+function readBuildRaw(id) {
+  try {
+    const raw = localStorage.getItem(BUILD_KEY_PREFIX + id);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// A saved slot's own owned-tracking pointer, defaulting to the shared
+// legacy profile for a slot that somehow still lacks the field (shouldn't
+// happen once migrateStaleBuildSlots has run, but cheap to be defensive).
+function ownedProfileIdOfBuild(id) {
+  const raw = readBuildRaw(id);
+  return (raw && typeof raw.ownedProfileId === "string" && raw.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+}
+
+// Deliberately just the plan - selectedClasses/charLevel/ranks/
+// purchaseOrder/waypoints. A slot's owned-tracking pointer
+// (ownedProfileId) is real data too, but it's assigned by saveBuildAs
+// below with its own logic (fresh + seeded for a new slot, preserved
+// as-is for an overwrite), not read off the current session the way
+// everything here is - keeping it out of this function is also what lets
+// deepEqualIgnoringExtraKeys below ignore it automatically when deciding
+// whether a slot is already backed up.
 function buildPayload() {
   return {
     v: SAVE_FORMAT_VERSION,
@@ -106,9 +142,6 @@ function buildPayload() {
     charLevel: state.charLevel,
     ranks: serializeRanks(state.ranks),
     purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
-    // Unlike owned (deliberately NOT part of a slot's snapshot - see
-    // OWNED_STORAGE_KEY), waypoints describe the plan itself, so a saved
-    // slot captures them same as ranks/purchaseOrder.
     waypoints: state.waypoints
   };
 }
@@ -174,10 +207,30 @@ function activeBuildMatchesCurrent() {
 // one if id is given (the caller's "overwrite this slot" path). Returns the
 // slot's id, or null if localStorage rejected the write (full/unavailable),
 // in which case nothing was changed.
-function saveBuildAs(name, id = null) {
+//
+// A brand-new slot gets its own fresh owned profile, seeded with a copy of
+// whatever the current session is showing right now (not empty - you've
+// likely already been tracking progress against this exact plan). The
+// current session's own state.ownedProfileId is left untouched either way
+// - saving a snapshot doesn't change what's live, only what the snapshot
+// itself will show if loaded later. Overwriting an existing slot leaves
+// its ownedProfileId exactly as it already was. mirrorProfileId is an
+// override for saveImportedBuild below, where the slot needs to track
+// exactly the same profile the live session is using, not an independent
+// fork of it (see that function's own comment for why).
+function saveBuildAs(name, id = null, mirrorProfileId = null) {
   const targetId = id || genId();
+  const payload = buildPayload();
+  if (mirrorProfileId) {
+    payload.ownedProfileId = mirrorProfileId;
+  } else if (id) {
+    payload.ownedProfileId = ownedProfileIdOfBuild(id);
+  } else {
+    payload.ownedProfileId = genId();
+    saveOwnedProfileTo(payload.ownedProfileId, state.owned);
+  }
   try {
-    localStorage.setItem(BUILD_KEY_PREFIX + targetId, JSON.stringify(buildPayload()));
+    localStorage.setItem(BUILD_KEY_PREFIX + targetId, JSON.stringify(payload));
   } catch (e) {
     return null;
   }
@@ -269,9 +322,15 @@ export function isActiveBuildTheImportedSlot() {
 // the active working state anymore. Auto-saves it under one reused slot
 // (see findImportedSlot) so it stays one click away in the Builds list
 // without piling up a fresh entry per link opened.
+//
+// Mirrors state.ownedProfileId exactly rather than forking an independent
+// copy the way a deliberate Save As does - this slot IS the current
+// session, not a separate named build alongside it, so it needs to keep
+// showing whatever the session shows (including anything marked owned
+// after this auto-save), not a snapshot frozen at import time.
 export function saveImportedBuild() {
   const existing = findImportedSlot();
-  return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null);
+  return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null, state.ownedProfileId);
 }
 
 // Replaces the current working state with a saved slot's contents — same
@@ -292,6 +351,13 @@ export function loadBuild(id) {
   state.selectedNode = null;
   clearLastMutation();
   const repaired = reconcilePurchaseOrderCounts();
+  // Switches owned tracking to this slot's own profile - the one
+  // genuinely visible behavior change for existing multi-build users:
+  // two builds only show the same owned progress now if explicitly
+  // linked (see linkOwnedToBuild below), not implicitly just by both
+  // being builds.
+  state.ownedProfileId = (typeof parsed.ownedProfileId === "string" && parsed.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+  loadAndApplyOwned(null);
   setActiveBuildId(id);
   saveLocal();
   return { droppedRanks: result.droppedRanks, repaired };
@@ -317,4 +383,55 @@ export function deleteBuild(id) {
     localStorage.removeItem(BUILD_KEY_PREFIX + id);
   } catch (e) { /* ignore */ }
   if (getActiveBuildId() === id) setActiveBuildId(null);
+}
+
+// --- Owned-tracking management (Link / Merge / Split) ----------------------
+// Build-aware wrappers around state.js's profile primitives: those only
+// touch state.owned/state.ownedProfileId, so anything here that changes
+// which profile is live also needs to keep the active saved slot (if the
+// current session is one right now) in sync, or reloading that slot later
+// would show something different from what's showing today.
+
+function persistActiveBuildOwnedProfile() {
+  const id = getActiveBuildId();
+  if (!id) return;
+  const parsed = readBuildRaw(id);
+  if (!parsed) return;
+  parsed.ownedProfileId = state.ownedProfileId;
+  try {
+    localStorage.setItem(BUILD_KEY_PREFIX + id, JSON.stringify(parsed));
+  } catch (e) { /* storage unavailable, ignore */ }
+}
+
+// Other saved builds (never the one currently active/loaded) that
+// currently share the live session's owned profile - drives the "Manage
+// owned tracking…" status line in render.js.
+export function buildsSharingCurrentOwnedProfile() {
+  const activeId = getActiveBuildId();
+  return listBuilds().filter((b) => b.id !== activeId && ownedProfileIdOfBuild(b.id) === state.ownedProfileId);
+}
+
+// "Just use one or the other" - repoints the live session (and its active
+// saved slot, if any) at targetBuildId's own profile. From then on the two
+// read/write the same data until Split pulls them apart again.
+export function linkOwnedToBuild(targetBuildId) {
+  linkOwnedProfile(ownedProfileIdOfBuild(targetBuildId));
+  persistActiveBuildOwnedProfile();
+  saveLocal();
+}
+
+// "Combine progress from save slots" - one-time, one-directional union
+// into the live session's own profile. sourceBuildId's own data is never
+// modified.
+export function mergeOwnedFromBuild(sourceBuildId) {
+  return mergeOwnedProfileInto(ownedProfileIdOfBuild(sourceBuildId));
+}
+
+// Inverse of Link - the live session (and its active saved slot, if any)
+// gets its own fresh, independent profile, seeded with a copy of whatever
+// it's showing right now. Whatever it used to share with is unaffected.
+export function splitOwnedFromCurrent() {
+  splitOwnedProfile();
+  persistActiveBuildOwnedProfile();
+  saveLocal();
 }

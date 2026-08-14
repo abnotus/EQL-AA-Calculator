@@ -9,7 +9,9 @@ import {
   openBuildsModal, closeBuildsModal, handleBuildSave,
   openResetModal, closeResetModal, handleConfirmReset, renderProgression,
   openWaypointModal, closeWaypointModal, handleSaveWaypoint, handleDeleteWaypoint,
-  closeMoveMenu
+  closeMoveMenu,
+  openOwnedTrackingModal, closeOwnedTrackingModal, handleOwnedTrackingLink,
+  handleOwnedTrackingMerge, handleOwnedTrackingSplit
 } from "./render.js";
 import {
   openExportModal, copyExportText, copyShareLink, saveExportAsTxt, closeExportModal,
@@ -65,6 +67,7 @@ export function wireEvents() {
     if (!el.importModal.classList.contains("hidden")) closeImportModal();
     if (!el.changelogModal.classList.contains("hidden")) closeChangelogModal();
     if (!el.buildsModal.classList.contains("hidden")) closeBuildsModal();
+    if (!el.ownedTrackingModal.classList.contains("hidden")) closeOwnedTrackingModal();
     if (!el.resetModal.classList.contains("hidden")) closeResetModal();
     if (!el.waypointModal.classList.contains("hidden")) closeWaypointModal();
     closeMoveMenu();
@@ -109,12 +112,19 @@ export function wireEvents() {
   // destructive action, so a plain confirm() is enough.
   el.clearOwnedBtn.addEventListener("click", () => {
     if (el.clearOwnedBtn.disabled) return;
-    const ok = confirm("Clear all owned progress? This can't be undone, and won't affect your planned picks.");
+    const ok = confirm("Clear owned progress for this build's tracking? This can't be undone, and won't affect your planned picks. If this build shares tracking with another (see Manage tracking…), that one is cleared too.");
     if (!ok) return;
     clearAllOwned();
     renderProgression();
     showToast("Owned progress cleared");
   });
+
+  el.manageOwnedTrackingBtn.addEventListener("click", openOwnedTrackingModal);
+  el.closeOwnedTrackingBtn.addEventListener("click", closeOwnedTrackingModal);
+  el.ownedTrackingModal.addEventListener("click", (e) => { if (e.target === el.ownedTrackingModal) closeOwnedTrackingModal(); });
+  el.ownedTrackingLinkBtn.addEventListener("click", handleOwnedTrackingLink);
+  el.ownedTrackingMergeBtn.addEventListener("click", handleOwnedTrackingMerge);
+  el.ownedTrackingSplitBtn.addEventListener("click", handleOwnedTrackingSplit);
 
   el.addWaypointBtn.addEventListener("click", () => openWaypointModal());
   el.cancelWaypointBtn.addEventListener("click", closeWaypointModal);

@@ -1,6 +1,6 @@
 // Build export/import: the text format, the share-code encoding, share links, and modal wiring.
 
-import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, serializeRanks, serializePurchaseOrder, payloadOwnedHasContent, applyImportedOwned } from "./state.js";
+import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, serializeRanks, serializePurchaseOrder, payloadOwnedHasContent, adoptImportedOwnedAsNewProfile } from "./state.js";
 import { el } from "./dom.js";
 import { getList, effectiveRank, labelFor, spentPoints, computeProgressionSteps, computeProgressionTimeline, clearLastMutation, reconcilePurchaseOrderCounts, loadIssuesSuffix } from "./logic.js";
 import { clearActiveBuild, saveImportedBuild, confirmReplaceCurrentBuild, isActiveBuildTheImportedSlot } from "./builds.js";
@@ -38,13 +38,13 @@ function compactRanksFor(ranksLike) {
   return out;
 }
 
-// owned is character-global (state.js's OWNED_STORAGE_KEY), not part of any
-// one plan, so it's left out of the code unless the Export modal's "Include
-// owned progress" checkbox explicitly opts in. Off by default: most exports
-// are just sharing a plan, and owned is personal data the sender may not
-// intend to broadcast. On the import side, an incoming `o` field is never
-// applied silently - see importBuildFromText/applySharedBuildFromUrl, which
-// warn and ask before overwriting the receiver's own owned data with it.
+// owned is per-build/per-profile (state.js's ownedProfileId), not part of
+// any one plan's own fields, so it's left out of the code unless the
+// Export modal's "Include owned progress" checkbox explicitly opts in. Off
+// by default: most exports are just sharing a plan, and owned is personal
+// data the sender may not intend to broadcast. On the import side, an
+// incoming `o` field always lands in its own fresh profile rather than
+// touching the receiver's existing one - see maybeImportOwned below.
 function buildCodeObject(includeOwned) {
   const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
     .map((e) => idForKey(e.scope, e.className, e.key))
@@ -419,30 +419,23 @@ function extractBuildCode(text) {
   return null;
 }
 
-// Owned is character-global and normally untouched by import entirely - see
-// state.js. The one exception is a build that explicitly opted into
-// carrying owned data (the Export modal's "Include owned progress too"
-// checkbox), which the recipient's own owned data would otherwise get
-// silently overwritten by. Asked separately from - and after -
-// confirmReplaceCurrentBuild's plan-replacement gate, and only if the
-// decoded payload actually has owned content worth asking about; a plain
-// build with no `o` field (the common case) never triggers this at all.
-// Declining leaves the receiver's own owned data untouched while the rest
-// of the import (the plan) still proceeds - "import just the build".
+// Owned is normally untouched by import entirely - see state.js. The one
+// exception is a build that explicitly opted into carrying owned data (the
+// Export modal's "Include owned progress too" checkbox), which now always
+// lands in its own brand-new profile (adoptImportedOwnedAsNewProfile)
+// rather than overwriting whatever the receiver was already tracking -
+// silent, no confirmation, since nothing existing is ever at risk. Only
+// runs at all if the decoded payload actually has owned content; a plain
+// build with no `o` field (the common case) never touches owned tracking.
 function maybeImportOwned(json) {
   if (!payloadOwnedHasContent(json.owned)) return { imported: false, dropped: 0, hadOwned: false };
-  const include = confirm(
-    "This build also includes real-world owned progress. Importing it will overwrite your own owned progress with theirs.\n\n" +
-    "OK to include it, Cancel to import just the plan and leave your own owned progress untouched."
-  );
-  if (!include) return { imported: false, dropped: 0, hadOwned: true };
-  const result = applyImportedOwned(json.owned);
+  const result = adoptImportedOwnedAsNewProfile(json.owned);
   return { imported: true, dropped: result.dropped, hadOwned: true };
 }
 
 function ownedNoticeSuffix(ownedOutcome) {
   if (!ownedOutcome.hadOwned) return "";
-  return ownedOutcome.imported ? " — owned progress included" : " — owned progress was not imported (yours was kept)";
+  return " — owned progress included (tracked separately from your existing progress)";
 }
 
 export async function importBuildFromText(text) {

@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
-# Owned progress (state.owned) is character-global, independent of the plan
-# and independent of which classes are currently active - that was already
-# true before this session's Other Classes feature (see OWNED_STORAGE_KEY's
-# own comment, state.js), but a class swap no longer wiping ranks/
-# purchaseOrder (events.js) means owned marks on an inactive class are now
-# a routine, reachable case instead of a rare one. Three things this covers,
+# Owned progress (state.owned) is independent of the plan and independent
+# of which classes are currently active - true within a single owned
+# profile regardless of the per-build tracking split (see
+# LEGACY_OWNED_PROFILE_ID's own comment, state.js): a class swap never
+# changes which profile is active, only which of the 3 slots are shown.
+# This test never saves a named build, so it stays on the default "legacy"
+# profile throughout (eql_aa_owned_legacy) - a class swap no longer wiping
+# ranks/purchaseOrder (events.js) means owned marks on an inactive class are
+# now a routine, reachable case instead of a rare one. Three things this covers,
 # each pinned against raw localStorage as well as the UI so a display-only
 # bug (correct data, wrong render) can't slip past an assertion that only
 # checks the DOM:
@@ -86,7 +89,7 @@ with sync_playwright() as p:
     print("Clear Owned disabled again once nothing's owned:", clear_owned_btn.get_attribute("disabled") is not None)
     assert clear_owned_btn.get_attribute("disabled") is not None
 
-    owned_storage = page.evaluate("localStorage.getItem('eql_aa_owned_v1')")
+    owned_storage = page.evaluate("localStorage.getItem('eql_aa_owned_legacy')")
     print("raw owned storage after Clear Owned:", owned_storage)
     owned_parsed = json.loads(owned_storage)
     assert owned_parsed["owned"]["classes"] == {}, "FAIL: Clear Owned should wipe every class's owned watermark, including inactive ones"
@@ -198,7 +201,7 @@ with sync_playwright() as p:
     page3.wait_for_timeout(150)
 
     build_after_full_reset = json.loads(page3.evaluate("localStorage.getItem('eql_aa_builder_v1')"))
-    owned_after_full_reset = json.loads(page3.evaluate("localStorage.getItem('eql_aa_owned_v1')"))
+    owned_after_full_reset = json.loads(page3.evaluate("localStorage.getItem('eql_aa_owned_legacy')"))
     print("ranks.classes after full Reset Build:", build_after_full_reset["ranks"]["classes"])
     print("owned.classes after full Reset Build:", owned_after_full_reset["owned"]["classes"])
     assert old_class3 not in build_after_full_reset["ranks"]["classes"] or not build_after_full_reset["ranks"]["classes"][old_class3]

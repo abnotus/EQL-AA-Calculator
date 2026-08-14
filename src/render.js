@@ -17,7 +17,8 @@ import {
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
-  saveWithNameCheck, confirmReplaceCurrentBuild, clearActiveBuild
+  saveWithNameCheck, confirmReplaceCurrentBuild, clearActiveBuild,
+  buildsSharingCurrentOwnedProfile, linkOwnedToBuild, mergeOwnedFromBuild, splitOwnedFromCurrent
 } from "./builds.js";
 
 export function renderAll() {
@@ -1576,6 +1577,65 @@ export function openBuildsModal() {
 
 export function closeBuildsModal() {
   el.buildsModal.classList.add("hidden");
+}
+
+// Populates the status line ("sharing with X" vs "tracking its own") and
+// the build picker for Link/Merge, and enables/disables Link/Merge based
+// on whether there's anything to link/merge with at all - Split needs
+// neither (it always acts on the current session alone).
+function renderOwnedTrackingModal() {
+  const activeId = getActiveBuildId();
+  const sharing = buildsSharingCurrentOwnedProfile();
+  const others = listBuilds().filter((b) => b.id !== activeId);
+
+  el.ownedTrackingStatus.innerHTML = sharing.length
+    ? `Sharing live owned progress with <span class="shared-with">${sharing.map((b) => escapeHtml(b.name)).join(", ")}</span>.`
+    : "Tracking its own independent owned progress right now.";
+
+  el.ownedTrackingBuildSelect.innerHTML = others.length
+    ? others.map((b) => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join("")
+    : '<option value="">No other saved builds yet</option>';
+  el.ownedTrackingBuildSelect.disabled = !others.length;
+  el.ownedTrackingLinkBtn.disabled = !others.length;
+  el.ownedTrackingMergeBtn.disabled = !others.length;
+}
+
+export function openOwnedTrackingModal() {
+  renderOwnedTrackingModal();
+  el.ownedTrackingModal.classList.remove("hidden");
+}
+
+export function closeOwnedTrackingModal() {
+  el.ownedTrackingModal.classList.add("hidden");
+}
+
+export function handleOwnedTrackingLink() {
+  const id = el.ownedTrackingBuildSelect.value;
+  if (!id) return;
+  const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
+  linkOwnedToBuild(id);
+  renderOwnedTrackingModal();
+  renderProgression();
+  showToast(`Now sharing owned progress with "${name}"`);
+}
+
+export function handleOwnedTrackingMerge() {
+  const id = el.ownedTrackingBuildSelect.value;
+  if (!id) return;
+  const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
+  const result = mergeOwnedFromBuild(id);
+  renderOwnedTrackingModal();
+  renderProgression();
+  showToast(result.merged
+    ? `Merged in ${result.merged} owned rank${result.merged === 1 ? "" : "s"} from "${name}"`
+    : `Nothing new to merge in from "${name}"`);
+}
+
+export function handleOwnedTrackingSplit() {
+  splitOwnedFromCurrent();
+  renderOwnedTrackingModal();
+  renderProgression();
+  showToast("Now tracking its own independent owned progress");
 }
 
 export function openResetModal() {

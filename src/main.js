@@ -1,6 +1,9 @@
 // Entry point: wires everything together and boots the app on DOMContentLoaded.
 
-import { loadLocal, applyLoaded, saveLocal, loadAndApplyOwned, loadAndApplyHidden, DISCLAIMER_DISMISSED_KEY, cleanupStaleStorageKeys } from "./state.js";
+import {
+  state, loadLocal, applyLoaded, saveLocal, loadAndApplyOwned, loadAndApplyHidden,
+  DISCLAIMER_DISMISSED_KEY, cleanupStaleStorageKeys, migrateLegacyOwnedProfile, LEGACY_OWNED_PROFILE_ID
+} from "./state.js";
 import { cacheDom, el } from "./dom.js";
 import { populateStaticControls, renderAll, showToast } from "./render.js";
 import { findInvalidatedPicks, reconcilePurchaseOrderCounts } from "./logic.js";
@@ -11,14 +14,25 @@ import { migrateStaleBuildSlots } from "./builds.js";
 async function init() {
   cacheDom();
   populateStaticControls();
+  // Must run before loadAndApplyOwned below, which reads from whichever
+  // profile the current session ends up pointing at - if that's the
+  // shared legacy one, its content needs to already be copied over.
+  migrateLegacyOwnedProfile();
   // Must run before anything could call activeBuildMatchesCurrent() and
   // compare a saved slot against today's payload - see migrateStaleBuildSlots.
   migrateStaleBuildSlots();
   const rawLocal = loadLocal();
   const localResult = applyLoaded(rawLocal);
-  // Owned loads independently of whichever build ends up active below (see
-  // state.js). Folded into localResult.droppedRanks so the notice below and
-  // applySharedBuildFromUrl's extraRisk gate both account for it already.
+  // ownedProfileId isn't part of applyLoaded's own contract (same as owned
+  // itself - see state.js) since import/share-link payloads never carry
+  // it and shouldn't disturb whatever's already tracking; boot is the one
+  // caller that always wants to adopt the saved session's own value,
+  // falling back to the shared legacy profile for a pre-migration save.
+  state.ownedProfileId = (rawLocal && typeof rawLocal.ownedProfileId === "string" && rawLocal.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+  // Owned loads from that profile now, independent of whichever build ends
+  // up active below (see state.js). Folded into localResult.droppedRanks
+  // so the notice below and applySharedBuildFromUrl's extraRisk gate both
+  // account for it already.
   const ownedResult = loadAndApplyOwned(rawLocal);
   localResult.droppedRanks += ownedResult.droppedOwned;
   // Hidden, like owned, loads independently of whichever build ends up

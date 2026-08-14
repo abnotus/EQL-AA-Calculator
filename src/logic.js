@@ -272,18 +272,23 @@ export function hasAnyHidden() {
 }
 
 // Whether state.owned holds anything at all, across every scope/class —
-// owned is global, not scoped to the current 3 slots. Disables the
-// standalone "Clear Owned" control when there's nothing to do.
+// not scoped to the current 3 slots, but scoped to whichever owned
+// profile is currently active (state.ownedProfileId), same as state.owned
+// itself always is now. Disables the standalone "Clear Owned" control when
+// there's nothing to do.
 export function hasAnyOwned() {
   const o = state.owned;
   if (Object.keys(o.general).length || Object.keys(o.archetype).length || Object.keys(o.special).length) return true;
   return Object.keys(o.classes).some((className) => Object.keys(o.classes[className]).length > 0);
 }
 
-// Wipes owned entirely — the standalone counterpart to performReset's
-// clearOwnedToo option, for clearing real-world progress without touching
-// the plan. Not undoable (the single-level undo only records one AA's
-// watermark at a time); the confirm before calling this is the safety net.
+// Wipes the current owned profile entirely — the standalone counterpart to
+// performReset's clearOwnedToo option, for clearing real-world progress
+// without touching the plan. If this build is currently sharing its
+// profile with another (see the Manage Owned Tracking control), that one
+// is cleared too, since they're the same underlying data. Not undoable
+// (the single-level undo only records one AA's watermark at a time); the
+// confirm before calling this is the safety net.
 export function clearAllOwned() {
   state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
   lastMutation = null;

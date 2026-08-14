@@ -43,6 +43,14 @@ export function cacheDom() {
   el.otherClassesNote = document.getElementById("otherClassesNote");
   el.ownedSummary = document.getElementById("ownedSummary");
   el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
+  el.manageOwnedTrackingBtn = document.getElementById("manageOwnedTrackingBtn");
+  el.ownedTrackingModal = document.getElementById("ownedTrackingModal");
+  el.ownedTrackingStatus = document.getElementById("ownedTrackingStatus");
+  el.ownedTrackingBuildSelect = document.getElementById("ownedTrackingBuildSelect");
+  el.ownedTrackingLinkBtn = document.getElementById("ownedTrackingLinkBtn");
+  el.ownedTrackingMergeBtn = document.getElementById("ownedTrackingMergeBtn");
+  el.ownedTrackingSplitBtn = document.getElementById("ownedTrackingSplitBtn");
+  el.closeOwnedTrackingBtn = document.getElementById("closeOwnedTrackingBtn");
   el.addWaypointBtn = document.getElementById("addWaypointBtn");
   el.waypointChips = document.getElementById("waypointChips");
   el.waypointModal = document.getElementById("waypointModal");

@@ -34,7 +34,8 @@ stay true regardless of what `data.src.js` says on any given day.
 `test_build_slot_migration.py`, `test_active_build_match.py`,
 `test_class_rank_cap.py`, `test_progression_autoscroll.py`,
 `test_hidden_aas.py`, `test_other_classes.py`,
-`test_owned_inactive_classes.py`, `test_progression_move_to.py`,
+`test_owned_inactive_classes.py`, `test_owned_legacy_migration.py`,
+`test_owned_profiles.py`, `test_progression_move_to.py`,
 `test_cross_class_prereq_dependency.py` drive the actual app in a real
 Chrome instance via [Playwright](https://playwright.dev/python/).
 
@@ -71,6 +72,8 @@ python tests/test_progression_autoscroll.py
 python tests/test_hidden_aas.py
 python tests/test_other_classes.py
 python tests/test_owned_inactive_classes.py
+python tests/test_owned_legacy_migration.py
+python tests/test_owned_profiles.py
 python tests/test_progression_move_to.py
 python tests/test_cross_class_prereq_dependency.py
 ```
@@ -115,7 +118,16 @@ of the drop handlers wired in `renderProgression`/`wireProgressionDropZone` -
 `otherClassesWithPicks`/`countOtherClassesPicked`, `isEntryActive`, the
 active-only filter and up/down-arrow neighbor-skipping in
 `renderProgression`, or `renderOtherClasses` - `test_other_classes.py` and
-`test_owned_inactive_classes.py`), or the Move To popover
+`test_owned_inactive_classes.py`), per-build owned-tracking profiles
+(`ownedStorageKeyFor`, `state.ownedProfileId`, `linkOwnedProfile`/
+`splitOwnedProfile`/`mergeOwnedProfileInto`/`adoptImportedOwnedAsNewProfile`
+in `state.js`; `saveBuildAs`/`loadBuild`'s profile handling,
+`migrateLegacyOwnedProfile`/`migrateStaleBuildSlots`'s backfill, or
+`linkOwnedToBuild`/`mergeOwnedFromBuild`/`splitOwnedFromCurrent` in
+`builds.js`; the Manage Owned Tracking modal in `render.js` - split across
+`test_owned_legacy_migration.py` for the backward-compatibility/migration
+side and `test_owned_profiles.py` for new-build independence, Link/Merge/
+Split, and silent-import-profile-creation), or the Move To popover
 (`absoluteIndexForVisiblePosition`, `moveToVisiblePosition`,
 `waypointSections`'s fit-aware section-boundary math, `moveMenuHtml`, or
 `s.visiblePos`'s role in `computeProgressionSteps`/step-num display -
