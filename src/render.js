@@ -98,7 +98,7 @@ function renderTopbar() {
   el.buildsBtn.textContent = activeBuild ? `Builds: ${activeBuild.name} ▾` : "Builds ▾";
 }
 
-export function populateClassSelects() {
+function populateClassSelects() {
   const html = CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
   el.classSelects.forEach((sel, i) => {
     if (sel.innerHTML !== html) sel.innerHTML = html;
