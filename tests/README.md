@@ -14,6 +14,7 @@ server, no browser — just:
 ```
 python tests/test_guess_costs_interpolation.py
 python tests/test_guess_effects.py
+python tests/test_assign_aa_ids.py
 ```
 
 This is deliberately *not* pinned to any AA's current confidence tier: the
@@ -26,6 +27,10 @@ zero-known edge case, and — for effects specifically — multi-progression
 extraction and that sibling-matching only works within an explicitly
 declared group, never a coincidental text match) with hand-built inputs that
 stay true regardless of what `data.src.js` says on any given day.
+
+`test_assign_aa_ids.py` tests `wiki-sync/assign_aa_ids.py`'s rename-detection
+logic (`compute_vanished`) the same way — synthetic id tables, not a wait for
+an actual pending wiki rename to exercise it against.
 
 ## Browser (Playwright) tests
 
@@ -142,7 +147,8 @@ sweep specifically), share-code encoding (`compress`/`decompress`,
 shape, or `buildCodeArray`'s unconditional owned field, in
 `exportImport.js` - `test_share_code_compression.py`), `MAX_PURCHASE_ORDER`/
 `deserializePurchaseOrder` in `state.js` (`test_purchase_order_cap.py`),
-or the Move To popover
+rename-detection in `wiki-sync/assign_aa_ids.py` (`compute_vanished` -
+`test_assign_aa_ids.py`), or the Move To popover
 (`absoluteIndexForVisiblePosition`, `moveToVisiblePosition`,
 `waypointSections`'s fit-aware section-boundary math, `moveMenuHtml`, or
 `s.visiblePos`'s role in `computeProgressionSteps`/step-num display -

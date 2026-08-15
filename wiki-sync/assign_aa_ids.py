@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Maintains src/aaIds.js — the append-only numeric id table used by the
-compact share/export wire format (see exportImport.js's BUILD_CODE v2 and
+compact share/export wire format (see exportImport.js's BUILD_CODE and
 keys.js's idForKey/entryForId). Run by hand whenever data.src.js changes:
 
     python wiki-sync/assign_aa_ids.py
@@ -19,6 +19,18 @@ risking a future different AA silently inheriting its number).
 
 This mirrors exactly how LEGACY_AA_ORDER in keys.js must never be edited
 after the fact - the numbers are a historical record, not a live view.
+
+A wiki RENAME (a typo fix, a capitalization change) looks identical to a
+removal from this script's point of view: the old slug's id has nothing
+current pointing at it, so it's left behind - but unlike a real removal,
+the same AA also gets a brand-new id appended under its new name, and
+every share link encoding the old id silently drops that AA from then on.
+This can't be told apart from a coincidental removal-and-unrelated-
+addition automatically, so it isn't - main() just prints a warning when
+an id vanishes in the same run new ones are assigned, prompting a manual
+check (the wiki's edit history, same as any other data correction) and,
+if it really is a rename, a hand-edit of src/aaIds.js to point the new
+key at the OLD id instead of leaving the new one appended.
 """
 import json
 import re
@@ -98,11 +110,25 @@ def write_table(table):
         f.write(content)
 
 
+def compute_vanished(existing, current_id_keys):
+    """Ids `existing` still has that no current AA's identity key resolves
+    to. A genuine removal is exactly this with no corresponding new id
+    assigned in the same run; a rename looks the same on this side, but
+    ALSO shows up as a new id, since the renamed AA's new slug doesn't
+    match its old table entry and gets appended as if it were a brand-new
+    AA. This can't tell those two apart on its own - see main()'s warning."""
+    return sorted(k for k in existing if k not in current_id_keys)
+
+
 def main():
     entries = parse_data_src()
     keyed = compute_keys(entries)
+    current_id_keys = {id_key(scope, className, key) for scope, className, key in keyed}
 
     existing = load_existing_table()
+    # Captured before the table is mutated below.
+    vanished = compute_vanished(existing, current_id_keys)
+
     next_id = (max(existing.values()) + 1) if existing else 0
 
     added = []
@@ -123,6 +149,29 @@ def main():
             print(f"  {i}: {ik}")
     else:
         print("No new AAs since last run - table unchanged.")
+
+    # A rename (not just a removal-and-unrelated-addition) is the one case
+    # worth a loud nudge: an id vanishing silently breaks every existing
+    # share link for that AA (it resolves to "gone", indistinguishable from
+    # a genuine removal - see the module docstring) the moment the SAME AA
+    # gets a brand-new id under its new name instead of keeping its old one.
+    # This can't disambiguate a real rename from a coincidental remove+add
+    # in the same wiki update - that judgment call (check the wiki's edit
+    # history, same as any other data correction) is on whoever runs this.
+    if vanished and added:
+        print()
+        print(f"WARNING: {len(vanished)} id(s) present in the table are no longer in data.src.js,")
+        print(f"in the same run {len(added)} new id(s) were assigned. If any of these are the")
+        print("same AA under a new name (a wiki rename), edit src/aaIds.js by hand to point")
+        print("the new key at the OLD id instead of leaving the new one appended, so existing")
+        print("share links for that AA keep resolving. If they're unrelated (a genuine removal")
+        print("and a genuine addition), no action needed - this is just a heads-up.")
+        print(f"Vanished ({len(vanished)}):")
+        for ik in vanished:
+            print(f"  {existing[ik]}: {ik}")
+        print(f"Newly assigned ({len(added)}):")
+        for ik, i in added:
+            print(f"  {i}: {ik}")
 
 
 if __name__ == "__main__":

@@ -65,6 +65,16 @@ Same idea, applied to the numeric values inside AA effect descriptions instead o
 
 The one real difference: sibling matching only compares AAs within an explicitly hand-declared group (`EFFECT_SIBLING_GROUPS` in the script) — a human confirming two AAs share the same formula, not a text-similarity guess. A cost curve recurring across AAs is a real pattern (the game reuses cost templates); an effect *magnitude* recurring is just coincidence. Interpolation and the manual fallback otherwise work the same as the cost version.
 
+### Keeping share-link ids in sync
+
+```
+python wiki-sync/assign_aa_ids.py
+```
+
+Maintains `src/aaIds.js`, the append-only numeric id table the compact share/export wire format addresses AAs by (see `keys.js`'s `idForKey`/`entryForId`). Every AA currently in `data.src.js` keeps its existing id if it already has one; anything new gets the next unused integer appended at the end. An id is never reassigned or reused, even for an AA since removed — its old entry stays in the table, so an old share link for it resolves to "gone" rather than a different AA someday inheriting the same number.
+
+Run this after any `data.src.js` change that adds, removes, or **renames** an AA. A rename is the one case worth real care: the script computes identity from the AA's (slugified) name, so a rename looks exactly like "the old AA was removed and a new one was added" — the old id is orphaned, and every share link already encoding it silently drops that AA's picks from then on (reported as "N picks no longer exist," indistinguishable from a genuine deletion). The script can't tell a rename apart from a coincidental removal-and-unrelated-addition on its own, so it doesn't try — it prints a warning whenever an id vanishes in the same run new ones are assigned, prompting a manual check against the wiki's edit history. If it really was a rename, hand-edit `aaIds.js` to point the new key at the *old* id instead of leaving the freshly-appended one in place, so existing links keep resolving.
+
 ## Running locally
 
 No build tools, no server — just open `index.html` in a browser.
@@ -119,7 +129,7 @@ To make a change:
 
 ## Testing
 
-`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s and `wiki-sync/guess_effects.py`'s core logic, plus 20 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, per-build owned-tracking profiles (Link/Merge/Split, migration, orphaned-profile cleanup), share-code encoding backward-compatibility, and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them. None are wired into CI — run the relevant ones by hand after touching whatever they cover.
+`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s, `wiki-sync/guess_effects.py`'s, and `wiki-sync/assign_aa_ids.py`'s core logic, plus 20 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, per-build owned-tracking profiles (Link/Merge/Split, migration, orphaned-profile cleanup), share-code encoding backward-compatibility, and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them. None are wired into CI — run the relevant ones by hand after touching whatever they cover.
 
 ## Deployment
 
