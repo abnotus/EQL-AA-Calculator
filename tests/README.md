@@ -36,9 +36,10 @@ stay true regardless of what `data.src.js` says on any given day.
 `test_hidden_aas.py`, `test_other_classes.py`,
 `test_owned_inactive_classes.py`, `test_owned_legacy_migration.py`,
 `test_owned_profiles.py`, `test_owned_profile_cleanup.py`,
-`test_share_code_compression.py`, `test_progression_move_to.py`,
-`test_cross_class_prereq_dependency.py` drive the actual app in a real
-Chrome instance via [Playwright](https://playwright.dev/python/).
+`test_share_code_compression.py`, `test_purchase_order_cap.py`,
+`test_progression_move_to.py`, `test_cross_class_prereq_dependency.py`
+drive the actual app in a real Chrome instance via
+[Playwright](https://playwright.dev/python/).
 
 **Prerequisites:**
 - `pip install playwright`
@@ -77,6 +78,7 @@ python tests/test_owned_legacy_migration.py
 python tests/test_owned_profiles.py
 python tests/test_owned_profile_cleanup.py
 python tests/test_share_code_compression.py
+python tests/test_purchase_order_cap.py
 python tests/test_progression_move_to.py
 python tests/test_cross_class_prereq_dependency.py
 ```
@@ -138,7 +140,9 @@ sweep specifically), share-code encoding (`compress`/`decompress`,
 `encodeBuildCode`/`decodeBuildCode`'s format-fallback chain,
 `pushCompactRank`/`compactRanksFor`/`expandCompactRanks`'s columnar
 shape, or `buildCodeArray`'s unconditional owned field, in
-`exportImport.js` - `test_share_code_compression.py`), or the Move To popover
+`exportImport.js` - `test_share_code_compression.py`), `MAX_PURCHASE_ORDER`/
+`deserializePurchaseOrder` in `state.js` (`test_purchase_order_cap.py`),
+or the Move To popover
 (`absoluteIndexForVisiblePosition`, `moveToVisiblePosition`,
 `waypointSections`'s fit-aware section-boundary math, `moveMenuHtml`, or
 `s.visiblePos`'s role in `computeProgressionSteps`/step-num display -

@@ -659,8 +659,10 @@ const key = keyForIdx(e.scope, e.className || null, e.idx);
 return key ? { scope: e.scope, className: e.className || null, key } : null;
 }).filter(Boolean);
 }
+const MAX_PURCHASE_ORDER = 2000;
 function deserializePurchaseOrder(saved, entryIdOf, resolveIdx) {
-return (Array.isArray(saved) ? saved : []).map((e) => {
+const list = Array.isArray(saved) ? saved.slice(0, MAX_PURCHASE_ORDER) : [];
+return list.map((e) => {
 if (!e || typeof e !== "object" || typeof e.scope !== "string") return null;
 const id = entryIdOf(e);
 if (id == null) return null;

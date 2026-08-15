@@ -284,13 +284,27 @@ export function serializePurchaseOrder(purchaseOrder) {
   }).filter(Boolean);
 }
 
+// The entire AA roster - every class, general/archetype/special, everything
+// maxed - is a few hundred entries at most (well under 500 as of this
+// writing). Generous headroom above that, but a hard ceiling: without one,
+// a crafted purchaseOrder array costs reconcilePurchaseOrderCounts (logic.js)
+// far worse than linear time to reconcile against the real, small rank
+// counts in `r` - a multi-second tab freeze from a share link short enough
+// to paste in chat, not a large download. Applied to the raw untrusted
+// input before any per-entry work, so a malicious array can't cost more
+// than this many entries' worth of processing no matter how large it claims
+// to be.
+const MAX_PURCHASE_ORDER = 2000;
+
 // Unlike deserializeRanks, a dropped purchaseOrder entry isn't its own
 // user-facing signal — reconcilePurchaseOrderCounts (logic.js) checks
 // purchaseOrder's entry count against each AA's actual held rank directly
 // after load and repairs any mismatch, which catches this and every other
-// way the two could end up disagreeing, not just this one cause.
+// way the two could end up disagreeing, not just this one cause (including
+// the truncation below, on the rare/hostile input that needs it).
 function deserializePurchaseOrder(saved, entryIdOf, resolveIdx) {
-  return (Array.isArray(saved) ? saved : []).map((e) => {
+  const list = Array.isArray(saved) ? saved.slice(0, MAX_PURCHASE_ORDER) : [];
+  return list.map((e) => {
     if (!e || typeof e !== "object" || typeof e.scope !== "string") return null;
     const id = entryIdOf(e);
     if (id == null) return null;
