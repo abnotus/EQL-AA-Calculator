@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 169128,
+  "revid": 170035,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -307,7 +307,7 @@
       "costs": [
         "3",
         "6",
-        "?"
+        "9"
       ],
       "description": "This passive ability increases your flurry chance (up to two extra attacks after a primary slot triple attack) by 7/11/?%. Requirements: level 46."
     },
@@ -396,7 +396,7 @@
         "6",
         "9"
       ],
-      "description": "This passive ability increased chance that your heal-over-time spells will exceptionally heal their target by 3/6/9%. An exceptional heal does double healing value of the spell for that 6 second interval. Requirements: level 1."
+      "description": "This passive ability increased chance that your heal-over-time spells will exceptionally heal their target by 3/6/10%. An exceptional heal does double healing value of the spell for that 6 second interval. Requirements: level 1."
     },
     "archetype::Healing Gift::0": {
       "ranks": "3",
@@ -527,7 +527,7 @@
       "costs": [
         "5"
       ],
-      "description": "Ability Activation ID: 109 - Refresh Time: 0:10:00 - Ability Timer(s): 81. This ability, when activated, performs a single primary slot combat round on all creatures within a 40 foot radius. Requirements: level 30."
+      "description": "Ability Activation ID: 109 - Refresh Time: 0:10:00 - Ability Timer(s): 81. This ability, when activated, performs a single primary slot combat round on all creatures within a 40 foot radius. The cooldown for this ability is reduced by 1 minute each time Frenzy or Cleave is used. The reduction is only 40 seconds if the player is in Berserker Stance. Requirements: level 30, No previous ability requirements."
     },
     "archetype::Spell Casting Deftness::0": {
       "ranks": "3",
