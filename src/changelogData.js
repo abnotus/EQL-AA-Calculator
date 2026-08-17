@@ -4,6 +4,13 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "1.9.3",
+    date: "2026-08-17",
+    items: [
+      "The topbar's headline number now shows owned / spent instead of just spent, so you can see at a glance how much of your plan you've actually trained in-game against its total cost."
+    ]
+  },
+  {
     version: "1.9.2",
     date: "2026-08-15",
     items: [
