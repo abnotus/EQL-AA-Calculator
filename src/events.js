@@ -7,7 +7,7 @@ import {
   renderAll, showToast, renderTree, renderBrowse, undoLast,
   openChangelogModal, closeChangelogModal, wireProgressionDropZone,
   openBuildsModal, closeBuildsModal, handleBuildSave,
-  openResetModal, closeResetModal, handleConfirmReset, renderProgression,
+  openResetModal, closeResetModal, handleConfirmReset,
   openWaypointModal, closeWaypointModal, handleSaveWaypoint, handleDeleteWaypoint,
   closeMoveMenu,
   openOwnedTrackingModal, closeOwnedTrackingModal, handleOwnedTrackingLink,
@@ -114,7 +114,7 @@ export function wireEvents() {
     const ok = confirm("Clear owned progress for this build's tracking? This can't be undone, and won't affect your planned picks. If this build shares tracking with another (see Manage tracking…), that one is cleared too.");
     if (!ok) return;
     clearAllOwned();
-    renderProgression();
+    renderAll();
     showToast("Owned progress cleared");
   });
 

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-# The topbar's "Points Spent" headline number blends real + estimated costs
-# (colored blue, ~9 instead of 3) when the build includes at least one
-# purchased-but-unconfirmed rank with a guess - the ~ prefix and color are
-# the only visible cue; the confirmed/estimated breakdown lives in the
-# title tooltip only, same hover-to-disclose pattern as every other
-# estimate badge in the app (no separate visible note element anymore -
-# topbar is glanceable-density territory). Progression's own running total
-# blends the exact same way now (it used to stay strictly real while the
+# The topbar's #spentValue shows "owned / spent" (renderTopbar, render.js) -
+# each side blends real + estimated costs independently (colored blue, ~9
+# instead of 3, in its own <span class="is-estimate">) when it includes at
+# least one purchased-but-unconfirmed rank with a guess. The ~ prefix and
+# per-side color are the only visible cue; the confirmed/estimated
+# breakdown lives in one combined title tooltip on the outer element
+# ("Owned: ..." and/or "Spent: ..."), same hover-to-disclose pattern as
+# every other estimate badge in the app. Progression's own running total
+# blends the exact same way (it used to stay strictly real while the
 # topbar blended, but a cumulative frozen through a step whose own pill
 # shows a nonzero ~N estimate read as "the estimate isn't doing anything" -
 # see logic.js's computeProgressionSteps for blendedCumulative). What's
@@ -55,12 +56,12 @@ with sync_playwright() as p:
     page.wait_for_selector("#treeWrap .node")
     sv0 = page.locator("#spentValue")
     print("fresh spentValue text/class:", sv0.inner_text(), sv0.get_attribute("class"))
-    assert sv0.inner_text() == "0"
-    assert sv0.get_attribute("class") is None
+    assert sv0.inner_text() == "0 / 0"
+    assert sv0.locator(".is-estimate").count() == 0
     color0 = sv0.evaluate("el => getComputedStyle(el).color")
     assert color0 == "rgb(217, 76, 76)", f"FAIL: expected real 'spent' red, got {color0}"
     assert sv0.get_attribute("title") is None
-    print("PASS: no guesses purchased -> plain real number, red, no tooltip")
+    print("PASS: no guesses purchased -> plain owned/spent, red, no tooltip")
 
     # --- Load the real build - fully confirmed now, so it's a plain real
     # number too, same as the fresh-page case above (just non-zero). ---
@@ -70,8 +71,8 @@ with sync_playwright() as p:
 
     sv = page.locator("#spentValue")
     print("spentValue with BUILD alone (now fully confirmed):", sv.inner_text(), sv.get_attribute("class"))
-    assert sv.inner_text() == "235"
-    assert sv.get_attribute("class") is None, "FAIL: a fully-confirmed build shouldn't carry estimate styling"
+    assert sv.inner_text() == "95 / 235"
+    assert sv.locator(".is-estimate").count() == 0, "FAIL: a fully-confirmed build shouldn't carry estimate styling"
     assert sv.get_attribute("title") is None
 
     # --- Buy Spell Casting Subtlety live on top of it: rank 1 is real (cost
@@ -88,13 +89,18 @@ with sync_playwright() as p:
         page.click("#incBtn")
         page.wait_for_timeout(15)
     print("spentValue after buying Spell Casting Subtlety to rank 6:", sv.inner_text(), sv.get_attribute("title"))
-    assert sv.inner_text() == "~262"
-    assert "is-estimate" in sv.get_attribute("class")
-    color = sv.evaluate("el => getComputedStyle(el).color")
-    print("spentValue computed color:", color)
-    assert color == "rgb(90, 169, 230)", f"FAIL: blended headline should render blue, got {color}"
-    assert sv.get_attribute("title") == "237 confirmed + 25 estimated."
-    print("PASS: headline blends to ~262 in blue, full breakdown lives only in the tooltip")
+    # Owned (95) has no estimate contribution here - only the spent side
+    # does, so exactly one of the two numbers gets the estimate span/color,
+    # not the whole "owned / spent" pair.
+    assert sv.inner_text() == "95 / ~262"
+    assert sv.locator(".is-estimate").count() == 1
+    spent_span = sv.locator(".is-estimate")
+    assert spent_span.inner_text() == "~262"
+    color = spent_span.evaluate("el => getComputedStyle(el).color")
+    print("spent estimate span computed color:", color)
+    assert color == "rgb(90, 169, 230)", f"FAIL: the blended spent side should render blue, got {color}"
+    assert sv.get_attribute("title") == "Spent: 237 confirmed + 25 estimated."
+    print("PASS: spent side blends to ~262 in blue, full breakdown lives only in the tooltip")
 
     # --- Progression's own running total now blends the same way the
     # topbar does - the last row's total must match the headline exactly
@@ -187,8 +193,8 @@ with sync_playwright() as p:
     assert not errors2, f"FAIL: loading a build with a stale 't' field threw: {errors2}"
     sv_stale = page2.locator("#spentValue")
     print("stale-field build spentValue:", sv_stale.inner_text(), sv_stale.get_attribute("title"))
-    assert sv_stale.inner_text() == "235"
-    assert sv_stale.get_attribute("class") is None
+    assert sv_stale.inner_text() == "95 / 235"
+    assert sv_stale.locator(".is-estimate").count() == 0
     assert sv_stale.get_attribute("title") is None
     print("PASS: a share code carrying a stale 't' field loads without error and produces an identical result to the clean one")
     page2.close()

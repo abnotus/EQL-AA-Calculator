@@ -133,16 +133,17 @@ select:focus, input:focus {
   color: var(--accent-bright);
 }
 
-/* #spentValue is an ID selector, so this wins over the inherited
-   .points-display .value red trivially - no specificity war needed, unlike
-   the compound overrides elsewhere in this file. Same flat "guess concept"
-   blue as the disclaimer banner's own estimate callout, since this headline
-   number blends however many different confidence tiers are currently
-   purchased-but-unconfirmed - no single tier color would mean anything
-   here. The ~ prefix plus this color are the only visual cue; the
-   confirmed/estimated breakdown lives in the title tooltip, same
-   hover-to-disclose pattern as every other estimate badge in the app. */
-#spentValue.is-estimate {
+/* #spentValue now shows "owned / spent", each side its own span so only
+   the side actually carrying an estimate gets colored - #spentValue's own
+   ID-selector specificity still wins over the inherited .points-display
+   .value color trivially. Same flat "guess concept" blue as the disclaimer
+   banner's own estimate callout, since a side blends however many
+   different confidence tiers are currently purchased/owned-but-unconfirmed
+   - no single tier color would mean anything here. The ~ prefix plus this
+   color are the only visual cue; the confirmed/estimated breakdown lives
+   in the title tooltip, same hover-to-disclose pattern as every other
+   estimate badge in the app. */
+#spentValue .is-estimate {
   color: var(--estimate-high);
 }
 

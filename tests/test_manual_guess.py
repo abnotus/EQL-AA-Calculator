@@ -31,7 +31,7 @@ with sync_playwright() as p:
 
     spent_before = page.locator("#spentValue").inner_text()
     print("points spent after rank1 (real cost 3):", spent_before)
-    assert spent_before == "3"
+    assert spent_before == "0 / 3"
 
     tag = cm.locator(".costtag")
     print("tree costtag text:", tag.inner_text(), "class:", tag.get_attribute("class"))
@@ -61,16 +61,16 @@ with sync_playwright() as p:
     # --- Buying the manually-guessed rank must cost costNum('?') == 0 in
     # spentPoints()/affordability terms, not the guessed 4 - manual guesses
     # must never leak into real point math, same structural guarantee as
-    # algorithmic guesses. The headline spentValue blends in the guess for
-    # display (test_estimated_total.py); Progression's own running total
-    # blends the same way now (~7, matching the headline) instead of
+    # algorithmic guesses. The topbar's "spent" side blends in the guess
+    # for display (test_estimated_total.py); Progression's own running
+    # total blends the same way now (~7, matching the topbar) instead of
     # staying frozen at the real 3 - see test_estimated_total.py and
     # logic.js's computeProgressionSteps (blendedCumulative) for why. ---
     page.click("#incBtn")  # buy rank2 (real cost "?", math treats as 0)
     page.wait_for_timeout(50)
     spent_after = page.locator("#spentValue").inner_text()
     print("spentValue after buying the manually-guessed rank (blends in the guess for display):", spent_after)
-    assert spent_after == "~7", "FAIL: expected the headline to blend real 3 + guessed 4"
+    assert spent_after == "0 / ~7", "FAIL: expected the headline to blend real 3 + guessed 4"
     page.click('button[data-tab="progression"]')
     page.wait_for_timeout(50)
     total_el = page.locator(".progression-row .cost-total").last

@@ -2033,17 +2033,17 @@ function renderTopbar() {
 populateClassSelects();
 el.levelInput.value = state.charLevel;
 const spent = spentPoints();
-const extra = estimatedExtraPoints();
-if (extra > 0) {
-el.spentValue.textContent = `~${spent + extra}`;
-el.spentValue.classList.add("is-estimate");
-} else {
-el.spentValue.textContent = spent;
-el.spentValue.classList.remove("is-estimate");
+const spentExtra = estimatedExtraPoints();
+const ownedReal = ownedPoints();
+const ownedExtra = estimatedExtraOwnedPoints();
+function blendedSpan(real, extra) {
+return extra > 0 ? `<span class="is-estimate">~${real + extra}</span>` : `${real}`;
 }
+el.spentValue.innerHTML = `${blendedSpan(ownedReal, ownedExtra)} / ${blendedSpan(spent, spentExtra)}`;
 const inactive = spentOnInactiveClasses();
 const titleParts = [];
-if (extra > 0) titleParts.push(`${spent} confirmed + ${extra} estimated.`);
+if (ownedExtra > 0) titleParts.push(`Owned: ${ownedReal} confirmed + ${ownedExtra} estimated.`);
+if (spentExtra > 0) titleParts.push(`Spent: ${spent} confirmed + ${spentExtra} estimated.`);
 if (inactive > 0) titleParts.push(`${inactive} pt${inactive === 1 ? "" : "s"} from classes not currently selected (see the Other Classes tab).`);
 if (titleParts.length) el.spentValue.title = titleParts.join(" ");
 else el.spentValue.removeAttribute("title");
@@ -2811,7 +2811,7 @@ const idx = parseInt(btn.getAttribute("data-idx"), 10);
 const rank = parseInt(btn.getAttribute("data-rank"), 10);
 const nowOwned = btn.classList.contains("active");
 setOwnedRank(scope, className, idx, nowOwned ? rank - 1 : rank);
-renderProgression();
+renderAll();
 });
 });
 Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((rowEl) => {
@@ -3135,7 +3135,7 @@ if (!id) return;
 const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
 linkOwnedToBuild(id);
 renderOwnedTrackingModal();
-renderProgression();
+renderAll();
 showToast(`Now sharing owned progress with "${name}"`);
 }
 function handleOwnedTrackingMerge() {
@@ -3144,7 +3144,7 @@ if (!id) return;
 const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
 const result = mergeOwnedFromBuild(id);
 renderOwnedTrackingModal();
-renderProgression();
+renderAll();
 showToast(result.merged
 ? `Merged in ${result.merged} owned rank${result.merged === 1 ? "" : "s"} from "${name}"`
 : `Nothing new to merge in from "${name}"`);
@@ -3152,7 +3152,7 @@ showToast(result.merged
 function handleOwnedTrackingSplit() {
 splitOwnedFromCurrent();
 renderOwnedTrackingModal();
-renderProgression();
+renderAll();
 showToast("Now tracking its own independent owned progress");
 }
 function openResetModal() {
@@ -3582,7 +3582,7 @@ if (el.clearOwnedBtn.disabled) return;
 const ok = confirm("Clear owned progress for this build's tracking? This can't be undone, and won't affect your planned picks. If this build shares tracking with another (see Manage tracking…), that one is cleared too.");
 if (!ok) return;
 clearAllOwned();
-renderProgression();
+renderAll();
 showToast("Owned progress cleared");
 });
 el.manageOwnedTrackingBtn.addEventListener("click", openOwnedTrackingModal);

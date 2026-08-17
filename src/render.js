@@ -69,26 +69,30 @@ function renderTopbar() {
   populateClassSelects();
   el.levelInput.value = state.charLevel;
   const spent = spentPoints();
-
-  const extra = estimatedExtraPoints();
-  // The headline number blends real + estimate for display only - a guess
-  // is never added to spentPoints() itself (see estimatedExtraPoints).
-  // The ~ prefix signals "includes an estimate", same shorthand as every
-  // per-rank guess; the breakdown lives in the tooltip, not inline.
-  if (extra > 0) {
-    el.spentValue.textContent = `~${spent + extra}`;
-    el.spentValue.classList.add("is-estimate");
-  } else {
-    el.spentValue.textContent = spent;
-    el.spentValue.classList.remove("is-estimate");
+  const spentExtra = estimatedExtraPoints();
+  // Owned/spent, not spent alone - now that owned tracking is a first-class,
+  // always-on concept (per-build profiles, always included in exports),
+  // "how much of the plan is actually trained" is more useful up top than
+  // the plan's raw size alone, which is still the second number here. Same
+  // blended-estimate treatment as Progression's own owned/to-go summary
+  // (renderProgression) - each side colors independently since a guess can
+  // land on either (or both, or neither) of owned/spent. #spentValue kept
+  // its name despite showing both now - renaming would touch a lot of
+  // tests for a purely cosmetic gain.
+  const ownedReal = ownedPoints();
+  const ownedExtra = estimatedExtraOwnedPoints();
+  function blendedSpan(real, extra) {
+    return extra > 0 ? `<span class="is-estimate">~${real + extra}</span>` : `${real}`;
   }
+  el.spentValue.innerHTML = `${blendedSpan(ownedReal, ownedExtra)} / ${blendedSpan(spent, spentExtra)}`;
   // spentPoints() is a lifetime total (see its own comment in logic.js) -
   // when some of it comes from a class that isn't currently selected,
   // that's another way this number can diverge from Progression's own
   // rows. Both disclosures fold into the same tooltip.
   const inactive = spentOnInactiveClasses();
   const titleParts = [];
-  if (extra > 0) titleParts.push(`${spent} confirmed + ${extra} estimated.`);
+  if (ownedExtra > 0) titleParts.push(`Owned: ${ownedReal} confirmed + ${ownedExtra} estimated.`);
+  if (spentExtra > 0) titleParts.push(`Spent: ${spent} confirmed + ${spentExtra} estimated.`);
   if (inactive > 0) titleParts.push(`${inactive} pt${inactive === 1 ? "" : "s"} from classes not currently selected (see the Other Classes tab).`);
   if (titleParts.length) el.spentValue.title = titleParts.join(" ");
   else el.spentValue.removeAttribute("title");
@@ -1173,7 +1177,7 @@ export function renderProgression() {
       const rank = parseInt(btn.getAttribute("data-rank"), 10);
       const nowOwned = btn.classList.contains("active");
       setOwnedRank(scope, className, idx, nowOwned ? rank - 1 : rank);
-      renderProgression();
+      renderAll();
     });
   });
 
@@ -1630,7 +1634,7 @@ export function handleOwnedTrackingLink() {
   const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
   linkOwnedToBuild(id);
   renderOwnedTrackingModal();
-  renderProgression();
+  renderAll();
   showToast(`Now sharing owned progress with "${name}"`);
 }
 
@@ -1640,7 +1644,7 @@ export function handleOwnedTrackingMerge() {
   const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
   const result = mergeOwnedFromBuild(id);
   renderOwnedTrackingModal();
-  renderProgression();
+  renderAll();
   showToast(result.merged
     ? `Merged in ${result.merged} owned rank${result.merged === 1 ? "" : "s"} from "${name}"`
     : `Nothing new to merge in from "${name}"`);
@@ -1649,7 +1653,7 @@ export function handleOwnedTrackingMerge() {
 export function handleOwnedTrackingSplit() {
   splitOwnedFromCurrent();
   renderOwnedTrackingModal();
-  renderProgression();
+  renderAll();
   showToast("Now tracking its own independent owned progress");
 }
 

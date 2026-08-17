@@ -34,7 +34,7 @@ with sync_playwright() as p:
 
     spent_before = page.locator("#spentValue").inner_text()
     print("points spent after 1 real rank (3):", spent_before)
-    assert spent_before == "3"
+    assert spent_before == "0 / 3"
 
     # Tree node badge shows the high-tier guess.
     tag = am.locator(".costtag")
@@ -68,8 +68,9 @@ with sync_playwright() as p:
 
     # --- Buying the guessed rank must cost exactly costNum('?') == 0 in
     # spentPoints()/affordability terms, not the guessed 6 - guesses must
-    # never leak into real point math. The topbar's headline number blends
-    # in the guess for display (see test_estimated_total.py); Progression's
+    # never leak into real point math. The topbar's "spent" side (the
+    # second of its owned/spent pair) blends in the guess for display (see
+    # test_estimated_total.py); Progression's
     # own per-step running total blends the same way (~9, matching the
     # topbar) instead of freezing at the real 3 - the earlier design kept
     # it strictly real, but a cumulative that never moves through a step
@@ -85,7 +86,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(50)
     spent_after = page.locator("#spentValue").inner_text()
     print("spentValue after buying the guessed rank (blends in the guess for display):", spent_after)
-    assert spent_after == "~9", "FAIL: expected the headline to blend real 3 + guessed 6"
+    assert spent_after == "0 / ~9", "FAIL: expected the headline to blend real 3 + guessed 6"
     page.click('button[data-tab="progression"]')
     page.wait_for_timeout(50)
     total_el = page.locator(".progression-row .cost-total").last

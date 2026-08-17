@@ -114,7 +114,10 @@ with sync_playwright() as p:
     assert a_rank_text.startswith("RANK 2/")
     subtotal_text = page.locator("#otherClassesContent .other-classes-subtotal").first.inner_text()
     print("Other Classes subtotal line:", subtotal_text)
-    assert str(int(spent_after_swap)) + " point" in subtotal_text or spent_after_swap in subtotal_text
+    # spent_after_swap is "owned / spent" (topbar's #spentValue) - only the
+    # spent half is comparable to the subtotal's own points-spent figure.
+    spent_only = spent_after_swap.split("/")[-1].strip()
+    assert str(int(spent_only)) + " point" in subtotal_text or spent_only in subtotal_text
 
     # Tab badge count reflects the picks.
     other_classes_tab = page.locator('button[data-tab="otherClasses"]')
