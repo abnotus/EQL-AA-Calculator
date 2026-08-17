@@ -99,7 +99,7 @@ classes: {
 { name: "Unbound Fury", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your chance to land a critical hit with your melee attacks and abilities by 2/4/6%. Rank 2 requires level 30, rank 3 requires level 50." }
 ],
 "Cleric": [
-{ name: "Divine Aura", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Cleric a 5% bonus to most direct healing spells." },
+{ name: "Innate Divine Healing", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Cleric a 5% bonus to most direct healing spells." },
 { name: "Divine Aura", ranks: 1, costs: ["6"], levelReq: "50", description: "Activated: instantly renders you invulnerable to most attacks but also unable to attack, and heals 5000 health every 6 seconds for 0:00:18. (Refresh 0:10:00)" },
 { name: "Bestow Divine Aura", ranks: 1, costs: ["3"], levelReq: "50", prereq: "Requires Divine Aura at level 1", description: "Activated: instantly renders your target invulnerable to most attacks but also unable to attack, and heals 5000 health every 6 seconds for 0:00:18. (Refresh 0:10:00)" },
 { name: "Purify Soul", ranks: 1, costs: ["5"], levelReq: "15", prereq: "Requires Healing Gift level 3", description: "Activated: cures a target up to 100 feet away of 72 poison, disease, and curse counters and has a 95% chance to remove up to 6 detrimental effects. (Refresh 0:30:00)" },

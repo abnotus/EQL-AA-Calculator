@@ -91,7 +91,7 @@ const AA_ID_TABLE = {
   "class:Berserker:innate-power-strike": 76,
   "class:Berserker:tireless-spirit": 77,
   "class:Berserker:unbound-fury": 78,
-  "class:Cleric:divine-aura-auto": 79,
+  "class:Cleric:innate-divine-healing": 79,
   "class:Cleric:divine-aura": 80,
   "class:Cleric:bestow-divine-aura": 81,
   "class:Cleric:purify-soul": 82,

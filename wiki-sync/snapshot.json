@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 170035,
+  "revid": 170177,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -724,7 +724,7 @@
       ],
       "description": "Ability Activation ID: 39 - Refresh Time: 0:10:00 - Ability Timer(s): 4. Divine Aura I, when activated, instantly renders you invulnerable to most attacks but also unable to attack and heals 5000 health every 6 seconds for 0:00:18. Requirements: level 50."
     },
-    "class:Cleric::Divine Aura::1": {
+    "class:Cleric::Innate Divine Healing::0": {
       "ranks": "1",
       "costs": [
         "0"
