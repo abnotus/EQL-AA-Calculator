@@ -247,6 +247,24 @@ with sync_playwright() as p:
     assert rows3_.nth(1).locator(".step-remove").get_attribute("disabled") is not None
     print("PASS: the swapped-out class's row renders muted and read-only, not hidden")
 
+    # The inactive row's own cost must genuinely count toward Progression's
+    # running total, not get forced to 0 - computeProgressionSteps' stepCost
+    # is no longer gated behind s.active (see logic.js). Checked against the
+    # topbar's own spentValue rather than re-summing the rows' own .cost-this
+    # pills: those pills are computed from the same stepCost this is meant
+    # to catch a regression in, so comparing against them would be circular
+    # (a forced-to-0 stepCost would show up as 0 in both places at once).
+    # spentPoints() (the topbar's source) is a fully independent computation
+    # that never goes through computeProgressionSteps at all, so it can't
+    # silently share the same bug.
+    last_total_text = rows3_.nth(2).locator(".cost-total").inner_text().strip()
+    last_total = int(last_total_text.split()[0])
+    spent_text = page3.locator("#spentValue").inner_text()
+    spent = int(spent_text.split("/")[-1].strip())
+    print("last row cost-total:", last_total_text, "| topbar spentValue:", spent_text)
+    assert last_total == spent, f"FAIL: the inactive row's stepCost must count toward the running total, not be forced to 0 - got {last_total}, expected {spent} (topbar's independently-computed total)"
+    print("PASS: the inactive row's own cost genuinely contributes to the running cumulative total")
+
     # Move the first row to "Bottom of list" - it's a fully normal row now,
     # so this lands it after BOTH other rows, including the inactive one.
     rows3_.nth(0).locator(".step-move").click()
