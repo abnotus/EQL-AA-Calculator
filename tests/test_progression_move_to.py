@@ -197,10 +197,11 @@ with sync_playwright() as p:
     assert not errors2
     page2.close()
 
-    # --- Fresh page: an inactive class's entry sitting between two visible
-    # rows - step-num must read as a clean sequence (no gaps), and Move To
-    # must skip the inactive entry the same way the up/down arrows already
-    # do (see moveProgressionEntry's own neighbor-skip). ---
+    # --- Fresh page: a swapped-out class's entry sitting between two other
+    # rows now stays visible in Progression (muted/read-only), not hidden -
+    # step-num still reads as a clean sequence, and it's a fully normal,
+    # addressable row for Move To (no more "skip the invisible entry"
+    # behavior - there's nothing invisible left to skip). ---
     page3 = browser.new_page(viewport={"width": 1400, "height": 900})
     errors3 = []
     page3.on("pageerror", lambda exc: errors3.append(str(exc)))
@@ -229,27 +230,50 @@ with sync_playwright() as p:
     page3.click('button[data-tab="progression"]')
     page3.wait_for_timeout(150)
     rows3_ = page3.locator(".progression-row")
-    print("visible row count with one inactive entry in between:", rows3_.count())
-    assert rows3_.count() == 2
-    step_nums = [rows3_.nth(i).locator(".step-num").inner_text() for i in range(2)]
+    print("visible row count with the swapped-out class's entry still shown:", rows3_.count())
+    assert rows3_.count() == 3
+    step_nums = [rows3_.nth(i).locator(".step-num").inner_text() for i in range(3)]
     print("step-num sequence:", step_nums)
-    assert step_nums == ["1", "2"], f"FAIL: step-num should read as a clean 1..N sequence, got {step_nums}"
-    print("PASS: step-num shows no gap despite an inactive entry sitting between the two visible rows")
+    assert step_nums == ["1", "2", "3"], f"FAIL: step-num should read as a clean 1..N sequence, got {step_nums}"
+    print("PASS: step-num shows a clean sequence with the inactive entry still occupying its own row")
 
-    # Move the first visible row to "Bottom of list" - must skip the
-    # invisible inactive entry and land after the second visible row, not
-    # get lost swapping with something nothing shows for.
     row0_name = rows3_.nth(0).locator(".step-name").inner_text()
-    row1_name = rows3_.nth(1).locator(".step-name").inner_text()
+    row1_name = rows3_.nth(1).locator(".step-name").inner_text()  # the swapped-out class's row
+    row2_name = rows3_.nth(2).locator(".step-name").inner_text()
+    row1_class = rows3_.nth(1).get_attribute("class")
+    print("middle row (swapped-out class) classes:", row1_class)
+    assert "inactive" in row1_class
+    assert rows3_.nth(1).locator(".step-add").get_attribute("disabled") is not None
+    assert rows3_.nth(1).locator(".step-remove").get_attribute("disabled") is not None
+    print("PASS: the swapped-out class's row renders muted and read-only, not hidden")
+
+    # Move the first row to "Bottom of list" - it's a fully normal row now,
+    # so this lands it after BOTH other rows, including the inactive one.
     rows3_.nth(0).locator(".step-move").click()
     page3.wait_for_timeout(80)
     rows3_.nth(0).locator(".move-menu-item", has_text="Bottom of list").click()
     page3.wait_for_timeout(100)
     rows3_after = page3.locator(".progression-row")
-    names3_after = [rows3_after.nth(i).locator(".step-name").inner_text() for i in range(2)]
-    print("order after Bottom of list, with an inactive entry to skip:", names3_after)
-    assert names3_after == [row1_name, row0_name], "FAIL: Move To must skip the invisible inactive entry, not swap with it"
-    print("PASS: Move To correctly skips an inactive entry sitting between visible rows")
+    names3_after = [rows3_after.nth(i).locator(".step-name").inner_text() for i in range(3)]
+    print("order after Bottom of list:", names3_after)
+    assert names3_after == [row1_name, row2_name, row0_name], "FAIL: Bottom of list should move past every other row, active or not"
+    print("PASS: Move To treats the inactive row as a normal, addressable row")
+
+    # The inactive row's own Move To still works too - it's currently at the
+    # top (row1_name landed there after the previous move), so move it to
+    # "Bottom of list" to actually prove its own reorder controls work
+    # rather than checking a no-op.
+    inactive_row = page3.locator(".progression-row.inactive")
+    assert inactive_row.count() == 1
+    inactive_row.locator(".step-move").click()
+    page3.wait_for_timeout(80)
+    inactive_row.locator(".move-menu-item", has_text="Bottom of list").click()
+    page3.wait_for_timeout(100)
+    rows3_final = page3.locator(".progression-row")
+    names3_final = [rows3_final.nth(i).locator(".step-name").inner_text() for i in range(3)]
+    print("order after moving the inactive row to Bottom of list:", names3_final)
+    assert names3_final[-1] == row1_name, "FAIL: an inactive row's own Move To should still work"
+    print("PASS: the inactive row's own reorder controls stay live")
 
     print("ERRORS:", errors3)
     assert not errors3

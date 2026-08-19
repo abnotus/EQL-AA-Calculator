@@ -39,7 +39,6 @@ export function cacheDom() {
   el.progressionWrap = document.getElementById("progressionWrap");
   el.progressionContent = document.getElementById("progressionContent");
   el.undoLastBtn = document.getElementById("undoLastBtn");
-  el.otherClassesNote = document.getElementById("otherClassesNote");
   el.ownedSummary = document.getElementById("ownedSummary");
   el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
   el.manageOwnedTrackingBtn = document.getElementById("manageOwnedTrackingBtn");

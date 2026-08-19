@@ -1632,15 +1632,6 @@ function resolveEntryCategory(entry) {
   return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
 }
 
-// Whether a purchaseOrder entry belongs to one of the 3 currently active
-// classes (general/archetype/special always are) - exported for
-// render.js's up/down arrow reordering, which needs to skip over an
-// inactive entry sitting between two visible rows rather than swap with it
-// and produce no visible change at all.
-function isEntryActive(entry) {
-  return resolveEntryCategory(entry) !== null;
-}
-
 function pushPurchase(category, idx) {
   state.purchaseOrder.push({ scope: scopeForCategory(category), className: classNameForCategory(category), idx });
 }
@@ -2441,13 +2432,19 @@ function computeProgressionSteps(order = state.purchaseOrder) {
     const autoOffset = autoRanksOffset(aa);
     const stepRank = purchaseCount + autoOffset;
 
+    // Resolved by scope+className directly rather than through category,
+    // so a prereq check works the same whether this step's class is one of
+    // the 3 active slots or not - the plan's own internal consistency
+    // doesn't depend on which classes happen to be selected right now.
     let prereqWarn = false;
-    if (active && aa && aa.prereq) {
-      const attempt = tryResolvePrereq(aa.prereq, category);
-      if (!attempt.ok) {
+    if (aa && aa.prereq) {
+      const resolved = resolvePrereqTargetScoped(aa.prereq, entry.scope, entry.className);
+      if (!resolved) {
         prereqWarn = true; // malformed or unresolvable - same "unmet" signal as elsewhere
       } else {
-        const targetAA = getList(attempt.resolved.category)[attempt.resolved.idx];
+        const targetAA = resolved.scope === "class"
+          ? (AA_DATA.classes[resolved.className] || [])[resolved.idx]
+          : (AA_DATA[resolved.scope] || [])[resolved.idx];
         // A fully-auto target never goes through purchaseOrder, and an
         // autoRanks target's free floor doesn't either — counts[targetKey]
         // alone would under-count it, unlike effectiveRank elsewhere
@@ -2458,10 +2455,9 @@ function computeProgressionSteps(order = state.purchaseOrder) {
         const targetAutoFloor = targetAA && targetAA.auto ? targetAA.ranks
           : targetAA && targetAA.autoRanks ? Math.min(targetAA.autoRanks, targetAA.ranks)
           : 0;
-        const t = categoryToScopeClassName(attempt.resolved.category);
-        const targetKey = entryKey(t.scope, t.className, attempt.resolved.idx);
+        const targetKey = entryKey(resolved.scope, resolved.className, resolved.idx);
         const targetHeld = (counts[targetKey] || 0) + targetAutoFloor;
-        if (targetHeld < attempt.resolved.forRank(stepRank)) prereqWarn = true;
+        if (targetHeld < resolved.forRank(stepRank)) prereqWarn = true;
       }
     }
 
@@ -2470,12 +2466,12 @@ function computeProgressionSteps(order = state.purchaseOrder) {
     // never introduce or clear it. Deliberately separate from prereqWarn:
     // the two conditions are unrelated (a step can be class-capped without
     // a prereq at all).
-    const classCapWarn = active && aa && aa.classRankCap && stepRank > classRankCapFor(aa);
+    const classCapWarn = aa && aa.classRankCap && stepRank > classRankCapFor(aa);
 
     counts[key] = purchaseCount;
     const isLast = purchaseCount === totalCounts[key];
 
-    const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
+    const stepCost = aa ? costNum(aa.costs[stepRank - 1]) : 0;
     cumulative += stepCost;
 
     // Running blend of the same kind estimatedExtraPoints() computes as
@@ -2483,11 +2479,12 @@ function computeProgressionSteps(order = state.purchaseOrder) {
     // running total doesn't stay frozen through a step whose own pill
     // shows a nonzero estimate. Same guarantee as every guess: never read
     // by spentPoints()/getBlockReason/any affordability check — purely
-    // what .cost-total displays. Forced to 0 for an inactive step, same as
-    // stepCost above.
+    // what .cost-total displays. Scoped by (scope, className) rather than
+    // category so a guess still resolves for a step whose class isn't one
+    // of the 3 active slots.
     let blendedStepCost = stepCost;
-    if (active && aa && aa.costs[stepRank - 1] === "?") {
-      const guess = costGuess(category, entry.idx, stepRank - 1);
+    if (aa && aa.costs[stepRank - 1] === "?") {
+      const guess = costGuessScoped(entry.scope, entry.className, entry.idx, stepRank - 1);
       if (guess) blendedStepCost = guess.value;
     }
     blendedCumulative += blendedStepCost;
@@ -3040,7 +3037,6 @@ function cacheDom() {
   el.progressionWrap = document.getElementById("progressionWrap");
   el.progressionContent = document.getElementById("progressionContent");
   el.undoLastBtn = document.getElementById("undoLastBtn");
-  el.otherClassesNote = document.getElementById("otherClassesNote");
   el.ownedSummary = document.getElementById("ownedSummary");
   el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
   el.manageOwnedTrackingBtn = document.getElementById("manageOwnedTrackingBtn");
@@ -3236,8 +3232,8 @@ function costDisplay(catKey, idx, rankIdx, rawCost) {
 }
 
 // (scope, className)-based lookup, bypassing the active-slot requirement -
-// for Browse, which shows every class's AAs regardless of whether that
-// class is one of the 3 currently selected.
+// for Browse and any Progression row whose class isn't one of the 3
+// currently selected, which shows every class's AAs regardless.
 function costDisplayScoped(scope, className, idx, rankIdx, rawCost) {
   return formatGuessDisplay(rawCost, rawCost === "?" ? costGuessScoped(scope, className, idx, rankIdx) : null);
 }
@@ -3668,7 +3664,7 @@ function renderOtherClasses() {
 // transient UI state — not persisted, and reset takes care of itself since a
 // removed/changed step just stops matching any key.
 const expandedSteps = new Set();
-function expandKey(s) { return `${s.category || ""}:${s.idx}:${s.stepRank}`; }
+function expandKey(s) { return `${s.scope}:${s.className || ""}:${s.idx}:${s.stepRank}`; }
 
 // Which row's Move To popover is open (expandKey-identified, same as
 // expandedSteps above) - a single nullable value, not a Set, since only
@@ -4028,14 +4024,6 @@ function renderProgression() {
   // progression list, so this is set before (and independent of) the
   // empty-purchaseOrder early return below.
   el.clearOwnedBtn.disabled = !hasAnyOwned();
-  // Same reasoning as the topbar's own tooltip (renderTopbar) - set ahead
-  // of every early return below, since inactive spending doesn't depend on
-  // whether there's anything active to show right now.
-  const inactiveSpent = spentOnInactiveClasses();
-  el.otherClassesNote.classList.toggle("hidden", inactiveSpent === 0);
-  el.otherClassesNote.textContent = inactiveSpent > 0
-    ? ` ${inactiveSpent} more point${inactiveSpent === 1 ? "" : "s"} spent on other classes — see the Other Classes tab.`
-    : "";
   // Lifetime-scoped (ownedPoints(), not a sum over just the rows rendered
   // below) to match spentPoints()'s own lifetime scope - an AA owned on a
   // swapped-away class is still real progress, and togoPts needs both
@@ -4071,23 +4059,14 @@ function renderProgression() {
     return;
   }
 
-  // Only your current 3 classes' click history shows up here - a pick for
-  // a swapped-away class (still fully intact, still counted in
-  // spentPoints()'s lifetime total) lives in the Other Classes tab
-  // instead. Every step below this line is guaranteed active, so nothing
-  // downstream needs to branch on s.active.
-  const steps = computeProgressionSteps().filter((s) => s.active);
-  if (!steps.length) {
-    el.progressionContent.innerHTML = '<div class="empty">Nothing picked for your current 3 classes yet &mdash; your training order will appear here as you spend points. (Picks for other classes you\'ve used are in the Other Classes tab.)</div>';
-    return;
-  }
-  // 1-indexed position among the rows actually rendered, distinct from
-  // s.index (the absolute state.purchaseOrder position, used everywhere
-  // reordering happens). An inactive entry still occupies a real
-  // purchaseOrder slot even though it's filtered out above, so s.index
-  // alone can show gaps in the visible step numbering (a 2-active/1-inactive
-  // sequence rendering "1, 3" with no visible "2") - visiblePos is what
-  // step-num and Move To's "position" field actually count.
+  // Every purchaseOrder entry ever made shows up here now, active class or
+  // not - a pick for a swapped-away class renders muted and read-only (see
+  // the .inactive row class below) instead of living exclusively in the
+  // Other Classes tab.
+  const steps = computeProgressionSteps();
+  // 1-indexed position, identical to s.index + 1 now that nothing's
+  // filtered - kept as its own field so the row template, moveMenuHtml,
+  // and waypointSections don't need to read s.index + 1 everywhere instead.
   steps.forEach((s, i) => { s.visiblePos = i + 1; });
 
   // computeProgressionTimeline tags each step with segmentColor (the color
@@ -4105,11 +4084,14 @@ function renderProgression() {
       </div>`;
     }
     const s = entry;
-    const canExpand = !!(s.aa && s.stepRank < s.aa.ranks);
+    // Read-only for a class that isn't one of your 3 active slots right
+    // now - matches Other Classes/Browse, which are read-only for the same
+    // reason. Swap the class back in to keep training it.
+    const canExpand = s.active && !!(s.aa && s.stepRank < s.aa.ranks);
     const key = expandKey(s);
     const expanded = canExpand && expandedSteps.has(key);
     const segClass = s.segmentColor ? ` segment-color-${s.segmentColor}` : "";
-    const stepDisp = s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+    const stepDisp = s.aa ? costDisplayScoped(s.scope, s.className, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
     // The running total blends in estimates the same way the topbar's own
     // headline does, once any step up to this point has an unconfirmed
     // cost with a guess (see computeProgressionSteps' blendedCumulative).
@@ -4124,7 +4106,7 @@ function renderProgression() {
     if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
     if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
     const rowWarn = warnTitles.length > 0;
-    const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
+    const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${s.active ? "" : " inactive"}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.visiblePos}</span>
       <span class="step-info">
@@ -4140,9 +4122,9 @@ function renderProgression() {
         <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === steps[0].index ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps[steps.length - 1].index ? "disabled" : ""}>&darr;</button>
-        <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
-        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
-        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast ? "" : "disabled"} title="${!s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
+        <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to preview this.` : canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
+        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.active && s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
+        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.active && s.isLast ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
         <span class="move-menu-wrap">
           <button class="step-btn step-move${openMoveMenuKey === key ? " active" : ""}" data-key="${key}" title="Move to...">&#8943;</button>
           ${openMoveMenuKey === key ? moveMenuHtml(s, timeline, steps.length) : ""}
@@ -4152,9 +4134,9 @@ function renderProgression() {
     if (!expanded) return row;
     const nextRank = s.stepRank + 1;
     const nextRawCost = s.aa.costs[s.stepRank];
-    // steps is already filtered to active entries (see above), so
-    // s.category is always set here - no need for costDisplayScoped's
-    // fallback the way Browse/Other Classes need it.
+    // canExpand requires s.active, so s.category is always set here - no
+    // need for costDisplayScoped's fallback the way Browse/Other Classes
+    // need it.
     const nextDisp = costDisplay(s.category, s.idx, s.stepRank, nextRawCost);
     const nextChip = nextDisp.isGuess
       ? ` <span class="confidence-chip tier-${nextDisp.confidence}" title="${escapeHtml(nextDisp.title)}">${nextDisp.confidence}</span>`
@@ -4366,18 +4348,11 @@ function undoLast() {
   applyAttempt(undoLastMutation());
 }
 
-// An up/down arrow swaps a visible row with its next VISIBLE neighbor, not
-// literally the next array slot - an inactive entry can sit between two
-// active rows in state.purchaseOrder with nothing rendered for it, and a
-// plain index+dir swap would swap past it invisibly (a dead-feeling click).
-// Skips to the next entry isEntryActive still counts, then reinserts at
-// that entry's pre-removal index - a plain adjacent swap when there's
-// nothing to skip, and a clean jump over any inactive run otherwise.
+// An up/down arrow swaps a row with its literal adjacent purchaseOrder
+// slot - every entry renders now, so there's never an invisible neighbor
+// to skip over.
 function moveProgressionEntry(index, dir) {
-  let target = index + dir;
-  while (target >= 0 && target < state.purchaseOrder.length && !isEntryActive(state.purchaseOrder[target])) {
-    target += dir;
-  }
+  const target = index + dir;
   if (target < 0 || target >= state.purchaseOrder.length) return;
   const a = state.purchaseOrder[index];
   const b = state.purchaseOrder[target];
@@ -4406,33 +4381,20 @@ function moveProgressionEntryTo(fromIndex, toIndex) {
 // Move To (the "⋯" popover menu): the shared destination math for every
 // action in it (top/bottom of list, a waypoint section's top/bottom, the
 // position field) - each just computes a different targetVisiblePos
-// (1-indexed among active rows, matching s.visiblePos) and hands it here.
+// (1-indexed, matching s.visiblePos) and hands it here.
 //
-// Unlike moveProgressionEntryTo's pre-removal "insert before this absolute
-// index" convention, this returns a POST-removal absolute index, directly
-// usable as moveEntry's toIdx - simpler to reason about since the target
-// is "how many other active rows precede it" rather than "which row
-// currently occupies that slot" (which is actually wrong for a forward
-// move, landing one slot too early once the removal shifts things).
-//
-// Walks purchaseOrder with fromIndex conceptually removed, counting only
-// active entries (isEntryActive), same as the up/down-arrow neighbor skip
-// - an inactive entry between two active ones never counts toward
-// "position" or interrupts the count.
-function absoluteIndexForVisiblePosition(fromIndex, targetVisiblePos) {
+// Returns a POST-removal absolute index, directly usable as moveEntry's
+// toIdx. Every entry counts toward "position" now (nothing's filtered), so
+// removing any one entry always shortens the array by exactly 1 regardless
+// of which entry it was - the result depends only on targetVisiblePos and
+// the total count, not on which row is being moved.
+function absoluteIndexForVisiblePosition(targetVisiblePos) {
   if (targetVisiblePos <= 1) return 0;
-  const withoutMoved = state.purchaseOrder.filter((_, i) => i !== fromIndex);
-  let activeSeen = 0;
-  for (let i = 0; i < withoutMoved.length; i++) {
-    if (!isEntryActive(withoutMoved[i])) continue;
-    activeSeen++;
-    if (activeSeen === targetVisiblePos - 1) return i + 1; // insert right after this active entry
-  }
-  return withoutMoved.length; // fewer active entries exist than targetVisiblePos implies - append at the end
+  return Math.min(targetVisiblePos - 1, state.purchaseOrder.length - 1);
 }
 
 function moveToVisiblePosition(fromIndex, targetVisiblePos) {
-  const toIdx = absoluteIndexForVisiblePosition(fromIndex, targetVisiblePos);
+  const toIdx = absoluteIndexForVisiblePosition(targetVisiblePos);
   if (toIdx === fromIndex) return;
   moveEntry(fromIndex, toIdx);
   renderProgression();
@@ -5127,14 +5089,13 @@ async function buildExportText() {
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
       const suffix = s.active ? "" : " (class not currently selected)";
       const ownedSuffix = s.owned ? " [OWNED]" : "";
-      // Mirrors the Progression tab's own row exactly, both pieces: a
-      // guessed step (real cost still "?", stepCost forced to 0) shows its
-      // "~N" estimate instead of a flat 0, and the running total blends the
-      // same way s.blendedCumulative does there (see computeProgressionSteps)
-      // instead of freezing through every guessed step. Only for an active
-      // step - an inactive one's pill stays plain in the UI too (see
-      // render.js), so costDisplay is skipped here the same way.
-      const stepDisp = s.active && s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+      // Mirrors the Progression tab's own row exactly: a guessed step (real
+      // cost still "?") shows its "~N" estimate instead of a flat 0, and the
+      // running total blends the same way s.blendedCumulative does there
+      // (see computeProgressionSteps) instead of freezing through every
+      // guessed step. Scoped by (scope, className) rather than category so
+      // this resolves the same way for a step whose class isn't active.
+      const stepDisp = s.aa ? costDisplayScoped(s.scope, s.className, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
       const costText = stepDisp.isGuess ? stepDisp.text : s.stepCost;
       const totalText = s.blendedCumulative !== s.cumulative ? `~${s.blendedCumulative}` : s.cumulative;
       lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costText} pt(s), ${totalText} total${suffix}${ownedSuffix}`);

@@ -2,22 +2,21 @@
 # Swapping a class slot to a genuinely different class used to wipe that
 # class's ranks/purchaseOrder entirely (clearClassData, after a confirm()
 # dialog if any points were spent) - it no longer does. The old class's
-# picks simply stop being "active" (resolveEntryCategory/isEntryActive,
-# logic.js): invisible in the tree/Progression, but still fully intact,
-# still counted in spentPoints()'s now-lifetime total, still part of the
-# build payload, and visible instead in the new Other Classes tab
-# (renderOtherClasses, render.js) - grouped by class with its own subtotal.
-# The same grouped sections are also folded into the Summary tab
+# picks simply stop being "active" (resolveEntryCategory, logic.js), but
+# stay fully intact, still counted in spentPoints()'s lifetime total, still
+# part of the build payload, and visible in two places: the Other Classes
+# tab (renderOtherClasses, render.js), grouped by class with its own
+# subtotal, and inline in Progression itself, muted/read-only (the
+# .inactive row class) rather than hidden - Progression is the whole
+# leveling plan from start to finish, so a step never disappears from it
+# just because its class isn't one of the current 3 slots. The same
+# grouped Other-Classes sections are also folded into the Summary tab
 # (renderSummary, via the shared otherClassesSectionsHtml helper) below a
 # lighter divider line, so they're visible without switching tabs too.
 #
-# Two totals are DELIBERATELY allowed to diverge once any inactive-class
-# spending exists: the topbar's Points Spent (a genuine lifetime total
-# across every class ever picked) vs. Progression's own running total
-# (scoped to just the current 3 classes' click history, computed the same
-# way it always was - see computeProgressionSteps' active-gated stepCost).
-# Both sides get a note pointing at the split (renderTopbar's tooltip,
-# Progression's own toolbar note) rather than leaving it implicit.
+# Progression's own running total is now a genuine lifetime total too,
+# identical to the topbar's Points Spent - both sides count every pick ever
+# made, active class or not.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -82,19 +81,21 @@ with sync_playwright() as p:
     print("old class's node A still present under the new class's tree:", stale_nodes.count())
     assert stale_nodes.count() == 0
 
-    # --- Progression: nothing from the old class shows up inline anymore. ---
+    # --- Progression: the swapped-out class's picks still show up inline,
+    # muted and read-only. node A was bought to rank 2 (2 purchaseOrder
+    # entries -> 2 rows), node B to rank 1 (1 row). ---
     page.click('button[data-tab="progression"]')
     page.wait_for_timeout(150)
     prog_a = page.locator(".progression-row", has=page.locator(".step-name", has_text=node_a_name))
     prog_b = page.locator(".progression-row", has=page.locator(".step-name", has_text=node_b_name))
-    print("Progression rows for the swapped-out class's picks (should be 0):", prog_a.count(), prog_b.count())
-    assert prog_a.count() == 0 and prog_b.count() == 0
-
-    # Progression's own toolbar note should point at the divergence.
-    note = page.locator("#otherClassesNote")
-    print("Progression's other-classes note:", note.is_visible(), note.inner_text())
-    assert note.is_visible()
-    assert "Other Classes" in note.inner_text()
+    print("Progression rows for the swapped-out class's picks (should be 2 and 1, muted):", prog_a.count(), prog_b.count())
+    assert prog_a.count() == 2 and prog_b.count() == 1
+    for i in range(prog_a.count()):
+        assert "inactive" in prog_a.nth(i).get_attribute("class")
+        assert prog_a.nth(i).locator(".step-add").get_attribute("disabled") is not None
+        assert prog_a.nth(i).locator(".step-remove").get_attribute("disabled") is not None
+    assert "inactive" in prog_b.get_attribute("class")
+    print("PASS: swapped-out picks still render inline in Progression, muted and read-only")
 
     # --- Other Classes tab: both picks show up, grouped under the old
     # class's name, with the right subtotal. ---
@@ -192,9 +193,9 @@ with sync_playwright() as p:
     print("Progression rows restored after swapping back:", prog_a2.count(), prog_b2.count())
     assert prog_a2.count() == 2  # rank 1 and rank 2 of node A
     assert prog_b2.count() == 1
-    note_after = page.locator("#otherClassesNote")
-    print("other-classes note hidden again once nothing's inactive:", note_after.is_visible())
-    assert not note_after.is_visible()
+    for i in range(prog_a2.count()):
+        assert "inactive" not in (prog_a2.nth(i).get_attribute("class") or "")
+    assert "inactive" not in (prog_b2.get_attribute("class") or "")
 
     # --- Summary's anyPicked flag has two ways to become true - the normal
     # AA_CATEGORY_KEYS sections, or otherClassNames.length alone - and every

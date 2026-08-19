@@ -125,11 +125,12 @@ of the drop handlers wired in `renderProgression`/`wireProgressionDropZone` -
 `saveHidden` - `test_hidden_aas.py`), or a class swap's now-persistent data
 (`spentPoints`/`estimatedExtraPoints`/`ownedPoints`'s lifetime scope,
 `spentForClass`/`spentOnInactiveClasses`, `effectiveRankScoped`,
-`otherClassesWithPicks`/`countOtherClassesPicked`, `isEntryActive`, the
-active-only filter and up/down-arrow neighbor-skipping in
-`renderProgression`, or `renderOtherClasses`/`renderSummary`'s shared
-`otherClassesSectionsHtml` helper - `test_other_classes.py` and
-`test_owned_inactive_classes.py`), per-build owned-tracking profiles
+`otherClassesWithPicks`/`countOtherClassesPicked`, the `.inactive`
+muted/read-only row treatment `renderProgression` now gives a swapped-out
+class's picks instead of hiding them, or `renderOtherClasses`/
+`renderSummary`'s shared `otherClassesSectionsHtml` helper -
+`test_other_classes.py` and `test_owned_inactive_classes.py`), per-build
+owned-tracking profiles
 (`ownedStorageKeyFor`, `state.ownedProfileId`, `linkOwnedProfile`/
 `splitOwnedProfile`/`mergeOwnedProfileInto`/`adoptImportedOwnedAsNewProfile`
 in `state.js`; `saveBuildAs`/`loadBuild`'s profile handling,
@@ -151,8 +152,10 @@ rename-detection in `wiki-sync/assign_aa_ids.py` (`compute_vanished` -
 `test_assign_aa_ids.py`), or the Move To popover
 (`absoluteIndexForVisiblePosition`, `moveToVisiblePosition`,
 `waypointSections`'s fit-aware section-boundary math, `moveMenuHtml`, or
-`s.visiblePos`'s role in `computeProgressionSteps`/step-num display -
-`test_progression_move_to.py`), or prereq/dependency resolution
+`s.visiblePos`'s role in `computeProgressionSteps`/step-num display - now
+just `s.index + 1` for every row, active class or not, since nothing gets
+filtered out of Progression anymore - `test_progression_move_to.py`), or
+prereq/dependency resolution
 (`resolvePrereqTarget`/`resolvePrereqTargetScoped`, `isDependedOn`,
 `tryResolvePrereq` - `test_cross_class_prereq_dependency.py`) before
 rebuilding and committing.

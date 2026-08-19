@@ -379,15 +379,6 @@ function resolveEntryCategory(entry) {
   return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
 }
 
-// Whether a purchaseOrder entry belongs to one of the 3 currently active
-// classes (general/archetype/special always are) - exported for
-// render.js's up/down arrow reordering, which needs to skip over an
-// inactive entry sitting between two visible rows rather than swap with it
-// and produce no visible change at all.
-export function isEntryActive(entry) {
-  return resolveEntryCategory(entry) !== null;
-}
-
 function pushPurchase(category, idx) {
   state.purchaseOrder.push({ scope: scopeForCategory(category), className: classNameForCategory(category), idx });
 }
@@ -1188,13 +1179,19 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
     const autoOffset = autoRanksOffset(aa);
     const stepRank = purchaseCount + autoOffset;
 
+    // Resolved by scope+className directly rather than through category,
+    // so a prereq check works the same whether this step's class is one of
+    // the 3 active slots or not - the plan's own internal consistency
+    // doesn't depend on which classes happen to be selected right now.
     let prereqWarn = false;
-    if (active && aa && aa.prereq) {
-      const attempt = tryResolvePrereq(aa.prereq, category);
-      if (!attempt.ok) {
+    if (aa && aa.prereq) {
+      const resolved = resolvePrereqTargetScoped(aa.prereq, entry.scope, entry.className);
+      if (!resolved) {
         prereqWarn = true; // malformed or unresolvable - same "unmet" signal as elsewhere
       } else {
-        const targetAA = getList(attempt.resolved.category)[attempt.resolved.idx];
+        const targetAA = resolved.scope === "class"
+          ? (AA_DATA.classes[resolved.className] || [])[resolved.idx]
+          : (AA_DATA[resolved.scope] || [])[resolved.idx];
         // A fully-auto target never goes through purchaseOrder, and an
         // autoRanks target's free floor doesn't either — counts[targetKey]
         // alone would under-count it, unlike effectiveRank elsewhere
@@ -1205,10 +1202,9 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
         const targetAutoFloor = targetAA && targetAA.auto ? targetAA.ranks
           : targetAA && targetAA.autoRanks ? Math.min(targetAA.autoRanks, targetAA.ranks)
           : 0;
-        const t = categoryToScopeClassName(attempt.resolved.category);
-        const targetKey = entryKey(t.scope, t.className, attempt.resolved.idx);
+        const targetKey = entryKey(resolved.scope, resolved.className, resolved.idx);
         const targetHeld = (counts[targetKey] || 0) + targetAutoFloor;
-        if (targetHeld < attempt.resolved.forRank(stepRank)) prereqWarn = true;
+        if (targetHeld < resolved.forRank(stepRank)) prereqWarn = true;
       }
     }
 
@@ -1217,12 +1213,12 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
     // never introduce or clear it. Deliberately separate from prereqWarn:
     // the two conditions are unrelated (a step can be class-capped without
     // a prereq at all).
-    const classCapWarn = active && aa && aa.classRankCap && stepRank > classRankCapFor(aa);
+    const classCapWarn = aa && aa.classRankCap && stepRank > classRankCapFor(aa);
 
     counts[key] = purchaseCount;
     const isLast = purchaseCount === totalCounts[key];
 
-    const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
+    const stepCost = aa ? costNum(aa.costs[stepRank - 1]) : 0;
     cumulative += stepCost;
 
     // Running blend of the same kind estimatedExtraPoints() computes as
@@ -1230,11 +1226,12 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
     // running total doesn't stay frozen through a step whose own pill
     // shows a nonzero estimate. Same guarantee as every guess: never read
     // by spentPoints()/getBlockReason/any affordability check — purely
-    // what .cost-total displays. Forced to 0 for an inactive step, same as
-    // stepCost above.
+    // what .cost-total displays. Scoped by (scope, className) rather than
+    // category so a guess still resolves for a step whose class isn't one
+    // of the 3 active slots.
     let blendedStepCost = stepCost;
-    if (active && aa && aa.costs[stepRank - 1] === "?") {
-      const guess = costGuess(category, entry.idx, stepRank - 1);
+    if (aa && aa.costs[stepRank - 1] === "?") {
+      const guess = costGuessScoped(entry.scope, entry.className, entry.idx, stepRank - 1);
       if (guess) blendedStepCost = guess.value;
     }
     blendedCumulative += blendedStepCost;

@@ -117,14 +117,14 @@ with sync_playwright() as p:
     print("PASS: a real known per-step cost never gets estimate styling")
 
     # --- An inactive-class purchaseOrder entry (its class isn't in the
-    # current 3 slots, e.g. from an imported build) no longer renders as a
-    # Progression row at all - it shows up in the Other Classes tab instead
-    # (test_other_classes.py covers that tab's own content in depth; this
-    # just confirms Progression genuinely has nothing for it). Hand-crafted
-    # build code: selectedClasses = [Bard, Beastlord, Berserker] (the
-    # defaults), but purchaseOrder references Magician's Conjurer's
-    # Efficiency (id 90) anyway - simulates a build from before this app
-    # enforced the 3-slot model, or one edited by hand. ---
+    # current 3 slots, e.g. from an imported build) still renders as a
+    # Progression row - muted/read-only (see .inactive, styles.css) - and
+    # also shows up in the Other Classes tab (test_other_classes.py covers
+    # that tab's own content in depth). Hand-crafted build code:
+    # selectedClasses = [Bard, Beastlord, Berserker] (the defaults), but
+    # purchaseOrder references Magician's Conjurer's Efficiency (id 90)
+    # anyway - simulates a build from before this app enforced the 3-slot
+    # model, or one edited by hand. ---
     inactive_build = "H4sIAAAAAAAC_6tWKlOyUjDSUVBKBtLRBjoKhjoKRrFAfg6QbwrkK5UAGYYGBiBmEUhNtCVIVSxITQGIb2kQWwsAdrvsFEcAAAA"
     # Fresh page (no unsaved-build prompt to fight through) rather than
     # reusing the one with Alchemy Mastery already bought above.
@@ -136,15 +136,18 @@ with sync_playwright() as p:
     inactive_page.click('button[data-tab="progression"]')
     inactive_page.wait_for_timeout(150)
     inactive_row = inactive_page.locator(".progression-row", has=inactive_page.locator(".step-name", has_text="Conjurer's Efficiency"))
-    print("Progression row count for the inactive-class pick (should be 0):", inactive_row.count())
-    assert inactive_row.count() == 0, "FAIL: an inactive-class pick should no longer render inline in Progression at all"
+    print("Progression row count for the inactive-class pick (should be 1, muted):", inactive_row.count())
+    assert inactive_row.count() == 1, "FAIL: an inactive-class pick should still render inline in Progression, muted"
+    assert "inactive" in inactive_row.get_attribute("class")
+    assert inactive_row.locator(".step-add").get_attribute("disabled") is not None
+    assert inactive_row.locator(".step-remove").get_attribute("disabled") is not None
 
     inactive_page.click('button[data-tab="otherClasses"]')
     inactive_page.wait_for_timeout(150)
     other_classes_html = inactive_page.locator("#otherClassesContent").inner_html()
     print("Other Classes tab shows Conjurer's Efficiency:", "Conjurer&#39;s Efficiency" in other_classes_html or "Conjurer's Efficiency" in other_classes_html)
     assert "Conjurer" in other_classes_html
-    print("PASS: an inactive-class pick is absent from Progression and shows up in Other Classes instead")
+    print("PASS: an inactive-class pick renders muted in Progression and also shows up in Other Classes")
     inactive_page.close()
 
     print("ERRORS:", errors)

@@ -958,11 +958,6 @@ main {
   line-height: 1.5;
 }
 
-.other-classes-note {
-  color: var(--text-dim);
-  font-weight: 600;
-}
-
 .owned-summary {
   flex-shrink: 0;
   white-space: nowrap;
@@ -1169,12 +1164,8 @@ main {
    lighter dim than .inactive's, since this is a fixable ordering issue, not
    "the class isn't even in your build". Applied per-child rather than to the
    row itself so the ⚠ - the one thing that should stay legible - isn't
-   flattened along with everything else by the parent's own opacity.
-   No .inactive combo rule: computeProgressionSteps gates prereqWarn behind
-   `active`, so a row can never be both inactive and prereq-warn-row today -
-   if that gate ever loosens (e.g. warning on deselected classes too), this
-   needs an explicit combo rule, not silence, since opacity would otherwise
-   compound (0.45 row × 0.6 children = 0.27, darker than either alone). */
+   flattened along with everything else by the parent's own opacity. See the
+   .inactive combo rule below for how the two resolve when both apply. */
 .progression-row.prereq-warn-row > *:not(.step-warn) { opacity: 0.6; }
 
 /* .dragging's 0.4 is on the row itself; without this override, a warned
@@ -1185,6 +1176,26 @@ main {
 .progression-row.dragging.prereq-warn-row > *:not(.step-warn) { opacity: 1; }
 
 .progression-row.dragging { opacity: 0.4; }
+
+/* Picked for a class that isn't one of your current 3 slots right now -
+   still real history, shown for context, but read-only until that class is
+   swapped back in (see the disabled .step-add/.step-remove/.step-expand in
+   render.js). 0.45 dim, heavier than prereq-warn-row's per-child 0.6 since
+   this is a structural "can't touch this" state, not a fixable ordering
+   nudge. */
+.progression-row.inactive { opacity: 0.45; }
+
+/* Row-level .inactive opacity and prereq-warn-row's per-child opacity
+   target different elements and would otherwise compound (0.45 × 0.6 =
+   0.27, darker than either alone) - resolve to the single row-level dim,
+   same pattern as .dragging's own override just above. */
+.progression-row.inactive.prereq-warn-row > *:not(.step-warn) { opacity: 1; }
+
+/* .dragging and .inactive both set opacity directly on the row at equal
+   specificity - without this, whichever rule comes later in the cascade
+   would win by declaration order alone. Dragging is the more immediate,
+   transient state, so it wins the combo. */
+.progression-row.dragging.inactive { opacity: 0.4; }
 
 .progression-row.drag-over-top { box-shadow: inset 0 2px 0 var(--accent-bright); }
 
@@ -1256,9 +1267,10 @@ main {
    modifier class - see classBadgeClass, render.js), a class AA gets a
    small colored pill instead. 3 fixed hues keyed by slot index (0/1/2),
    not the class's own identity - this only ever needs to distinguish the 3
-   CURRENTLY active classes (every row here already is one - see the
-   active-only filter in renderProgression), not build a stable color
-   mapping for all ~24 possible classes. */
+   CURRENTLY active classes, not build a stable color mapping for all ~24
+   possible classes. A row for a class outside the 3 slots gets no colored
+   badge at all (classBadgeClass returns "" for it) - the .inactive dim
+   already signals that case. */
 .step-cat.step-cat-slot0,
 .step-cat.step-cat-slot1,
 .step-cat.step-cat-slot2 {

@@ -1089,9 +1089,6 @@ if (entry.scope !== "class") return entry.scope;
 const slot = state.selectedClasses.indexOf(entry.className);
 return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
 }
-function isEntryActive(entry) {
-return resolveEntryCategory(entry) !== null;
-}
 function pushPurchase(category, idx) {
 state.purchaseOrder.push({ scope: scopeForCategory(category), className: classNameForCategory(category), idx });
 }
@@ -1610,29 +1607,30 @@ const purchaseCount = (counts[key] || 0) + 1;
 const autoOffset = autoRanksOffset(aa);
 const stepRank = purchaseCount + autoOffset;
 let prereqWarn = false;
-if (active && aa && aa.prereq) {
-const attempt = tryResolvePrereq(aa.prereq, category);
-if (!attempt.ok) {
+if (aa && aa.prereq) {
+const resolved = resolvePrereqTargetScoped(aa.prereq, entry.scope, entry.className);
+if (!resolved) {
 prereqWarn = true;
 } else {
-const targetAA = getList(attempt.resolved.category)[attempt.resolved.idx];
+const targetAA = resolved.scope === "class"
+? (AA_DATA.classes[resolved.className] || [])[resolved.idx]
+: (AA_DATA[resolved.scope] || [])[resolved.idx];
 const targetAutoFloor = targetAA && targetAA.auto ? targetAA.ranks
 : targetAA && targetAA.autoRanks ? Math.min(targetAA.autoRanks, targetAA.ranks)
 : 0;
-const t = categoryToScopeClassName(attempt.resolved.category);
-const targetKey = entryKey(t.scope, t.className, attempt.resolved.idx);
+const targetKey = entryKey(resolved.scope, resolved.className, resolved.idx);
 const targetHeld = (counts[targetKey] || 0) + targetAutoFloor;
-if (targetHeld < attempt.resolved.forRank(stepRank)) prereqWarn = true;
+if (targetHeld < resolved.forRank(stepRank)) prereqWarn = true;
 }
 }
-const classCapWarn = active && aa && aa.classRankCap && stepRank > classRankCapFor(aa);
+const classCapWarn = aa && aa.classRankCap && stepRank > classRankCapFor(aa);
 counts[key] = purchaseCount;
 const isLast = purchaseCount === totalCounts[key];
-const stepCost = active && aa ? costNum(aa.costs[stepRank - 1]) : 0;
+const stepCost = aa ? costNum(aa.costs[stepRank - 1]) : 0;
 cumulative += stepCost;
 let blendedStepCost = stepCost;
-if (active && aa && aa.costs[stepRank - 1] === "?") {
-const guess = costGuess(category, entry.idx, stepRank - 1);
+if (aa && aa.costs[stepRank - 1] === "?") {
+const guess = costGuessScoped(entry.scope, entry.className, entry.idx, stepRank - 1);
 if (guess) blendedStepCost = guess.value;
 }
 blendedCumulative += blendedStepCost;
@@ -1955,7 +1953,6 @@ el.progressionView = document.getElementById("progressionView");
 el.progressionWrap = document.getElementById("progressionWrap");
 el.progressionContent = document.getElementById("progressionContent");
 el.undoLastBtn = document.getElementById("undoLastBtn");
-el.otherClassesNote = document.getElementById("otherClassesNote");
 el.ownedSummary = document.getElementById("ownedSummary");
 el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
 el.manageOwnedTrackingBtn = document.getElementById("manageOwnedTrackingBtn");
@@ -2441,7 +2438,7 @@ return;
 el.otherClassesContent.innerHTML = otherClassesSectionsHtml(classNames);
 }
 const expandedSteps = new Set();
-function expandKey(s) { return `${s.category || ""}:${s.idx}:${s.stepRank}`; }
+function expandKey(s) { return `${s.scope}:${s.className || ""}:${s.idx}:${s.stepRank}`; }
 let openMoveMenuKey = null;
 let editingWaypointPts = null;
 let modalSelectedColor = null;
@@ -2659,11 +2656,6 @@ return `<div class="move-menu" data-key="${expandKey(s)}">
 function renderProgression() {
 el.undoLastBtn.disabled = !canUndo();
 el.clearOwnedBtn.disabled = !hasAnyOwned();
-const inactiveSpent = spentOnInactiveClasses();
-el.otherClassesNote.classList.toggle("hidden", inactiveSpent === 0);
-el.otherClassesNote.textContent = inactiveSpent > 0
-? ` ${inactiveSpent} more point${inactiveSpent === 1 ? "" : "s"} spent on other classes — see the Other Classes tab.`
-: "";
 const ownedReal = ownedPoints();
 const ownedExtra = estimatedExtraOwnedPoints();
 const spentExtra = estimatedExtraPoints();
@@ -2680,11 +2672,7 @@ if (!state.purchaseOrder.length) {
 el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
 return;
 }
-const steps = computeProgressionSteps().filter((s) => s.active);
-if (!steps.length) {
-el.progressionContent.innerHTML = '<div class="empty">Nothing picked for your current 3 classes yet &mdash; your training order will appear here as you spend points. (Picks for other classes you\'ve used are in the Other Classes tab.)</div>';
-return;
-}
+const steps = computeProgressionSteps();
 steps.forEach((s, i) => { s.visiblePos = i + 1; });
 const timeline = computeProgressionTimeline(steps);
 const htmlParts = timeline.map((entry) => {
@@ -2698,18 +2686,18 @@ return `<div class="progression-divider${entry.unreached ? " unreached" : ""}" d
       </div>`;
 }
 const s = entry;
-const canExpand = !!(s.aa && s.stepRank < s.aa.ranks);
+const canExpand = s.active && !!(s.aa && s.stepRank < s.aa.ranks);
 const key = expandKey(s);
 const expanded = canExpand && expandedSteps.has(key);
 const segClass = s.segmentColor ? ` segment-color-${s.segmentColor}` : "";
-const stepDisp = s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+const stepDisp = s.aa ? costDisplayScoped(s.scope, s.className, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
 const totalIsEstimate = s.blendedCumulative !== s.cumulative;
 const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCumulative - s.cumulative} estimated.` : "";
 const warnTitles = [];
 if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
 if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
 const rowWarn = warnTitles.length > 0;
-const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${segClass}" draggable="true" data-index="${s.index}">
+const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${s.active ? "" : " inactive"}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.visiblePos}</span>
       <span class="step-info">
@@ -2725,9 +2713,9 @@ const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${se
         <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === steps[0].index ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps[steps.length - 1].index ? "disabled" : ""}>&darr;</button>
-        <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
-        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
-        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.isLast ? "" : "disabled"} title="${!s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
+        <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to preview this.` : canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
+        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.active && s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
+        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.active && s.isLast ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
         <span class="move-menu-wrap">
           <button class="step-btn step-move${openMoveMenuKey === key ? " active" : ""}" data-key="${key}" title="Move to...">&#8943;</button>
           ${openMoveMenuKey === key ? moveMenuHtml(s, timeline, steps.length) : ""}
@@ -2918,10 +2906,7 @@ function undoLast() {
 applyAttempt(undoLastMutation());
 }
 function moveProgressionEntry(index, dir) {
-let target = index + dir;
-while (target >= 0 && target < state.purchaseOrder.length && !isEntryActive(state.purchaseOrder[target])) {
-target += dir;
-}
+const target = index + dir;
 if (target < 0 || target >= state.purchaseOrder.length) return;
 const a = state.purchaseOrder[index];
 const b = state.purchaseOrder[target];
@@ -2936,19 +2921,12 @@ if (fromIndex === toIndex) return;
 moveEntry(fromIndex, toIndex);
 renderProgression();
 }
-function absoluteIndexForVisiblePosition(fromIndex, targetVisiblePos) {
+function absoluteIndexForVisiblePosition(targetVisiblePos) {
 if (targetVisiblePos <= 1) return 0;
-const withoutMoved = state.purchaseOrder.filter((_, i) => i !== fromIndex);
-let activeSeen = 0;
-for (let i = 0; i < withoutMoved.length; i++) {
-if (!isEntryActive(withoutMoved[i])) continue;
-activeSeen++;
-if (activeSeen === targetVisiblePos - 1) return i + 1;
-}
-return withoutMoved.length;
+return Math.min(targetVisiblePos - 1, state.purchaseOrder.length - 1);
 }
 function moveToVisiblePosition(fromIndex, targetVisiblePos) {
-const toIdx = absoluteIndexForVisiblePosition(fromIndex, targetVisiblePos);
+const toIdx = absoluteIndexForVisiblePosition(targetVisiblePos);
 if (toIdx === fromIndex) return;
 moveEntry(fromIndex, toIdx);
 renderProgression();
@@ -3384,7 +3362,7 @@ const s = entry;
 const maxRank = s.aa ? `/${s.aa.ranks}` : "";
 const suffix = s.active ? "" : " (class not currently selected)";
 const ownedSuffix = s.owned ? " [OWNED]" : "";
-const stepDisp = s.active && s.aa ? costDisplay(s.category, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+const stepDisp = s.aa ? costDisplayScoped(s.scope, s.className, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
 const costText = stepDisp.isGuess ? stepDisp.text : s.stepCost;
 const totalText = s.blendedCumulative !== s.cumulative ? `~${s.blendedCumulative}` : s.cumulative;
 lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costText} pt(s), ${totalText} total${suffix}${ownedSuffix}`);
