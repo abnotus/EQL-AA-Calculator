@@ -319,6 +319,13 @@ return prog ? (prog[rankIdx] || null) : null;
 }
 const USER_CHANGELOG = [
 {
+version: "1.9.4",
+date: "2026-08-20",
+items: [
+"Progression now shows every AA you've picked, not just the ones for your current 3 classes. A pick for a class you've swapped out stays right where it was, muted with a small warning icon, instead of only living in the Other Classes tab. Progression's running total now always matches your Points Spent total at the top of the page."
+]
+},
+{
 version: "1.9.3",
 date: "2026-08-17",
 items: [
