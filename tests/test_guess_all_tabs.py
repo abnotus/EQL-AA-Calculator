@@ -117,15 +117,14 @@ with sync_playwright() as p:
     print("PASS: a real known per-step cost never gets estimate styling")
 
     # --- An inactive-class purchaseOrder entry (its class isn't in the
-    # current 3 slots, e.g. from an imported build) still renders as a
-    # Progression row - muted/read-only (see .inactive, styles.css) - and
-    # also shows up in the Other Classes tab (test_other_classes.py covers
-    # that tab's own content in depth). Hand-crafted build code:
-    # selectedClasses = [Bard, Beastlord, Berserker] (the defaults), but
-    # purchaseOrder references Magician's Conjurer's Efficiency (id 90)
-    # anyway - simulates a build from before this app enforced the 3-slot
-    # model, or one edited by hand. ---
-    inactive_build = "H4sIAAAAAAAC_6tWKlOyUjDSUVBKBtLRBjoKhjoKRrFAfg6QbwrkK5UAGYYGBiBmEUhNtCVIVSxITQGIb2kQWwsAdrvsFEcAAAA"
+    # current 3 slots) still renders as a Progression row - muted/read-only
+    # (see .inactive, styles.css) - and also shows up in the Other Classes
+    # tab (test_other_classes.py covers that tab's own content in depth).
+    # Real share link from a live Paladin/Monk/Enchanter build with Bard and
+    # Shaman history (see tests/test_real_world_build.py's own header for
+    # the pinned-to-a-live-build caveat) - Cannibalization is one of its
+    # Shaman picks, now inactive. ---
+    inactive_build = "jZLLasQwDEX_JeuzkCzLjj-hi35B8GKgQxnoA0r_nyJ7MjN9UnwCiS2HK927ZbZGxTsubJtTqKyoooY6uqKNpCQjFVLFFDMsY44VrGKNLGQlJ7KRM7nF7zzhhheKUBRNhkpGxVGpNKdVilMKpVJWSqNKZ8sY8RiKhzriFhrC0HEw1yyKsnmljNM8qm7r5r5K72yhKkUvoe1CitYmLtf3VIdU071OqOe1Rlsu0W50Fh-j01QpY62sY3AX7C9igjIGOqcpNyNuw49BDG1w3pcpsO0UvRLWDHxfaVh6S_uMeJirFg5eiAx8I4ye6E46EyaH-KnfqfIrYf2k7fjOOlLxif5jRP-Zz99ieY5jmDgi-S2AX-J3jVYE7Wvw4ophkbQtC8vdy-n9dHhaWF7fDi-Px6WzrcJyf3p4PDwfF5a348PSe_8A"
     # Fresh page (no unsaved-build prompt to fight through) rather than
     # reusing the one with Alchemy Mastery already bought above.
     inactive_page = browser.new_page(viewport={"width": 1400, "height": 900})
@@ -135,7 +134,7 @@ with sync_playwright() as p:
     inactive_page.wait_for_timeout(200)
     inactive_page.click('button[data-tab="progression"]')
     inactive_page.wait_for_timeout(150)
-    inactive_row = inactive_page.locator(".progression-row", has=inactive_page.locator(".step-name", has_text="Conjurer's Efficiency"))
+    inactive_row = inactive_page.locator(".progression-row", has=inactive_page.locator(".step-name", has_text="Cannibalization"))
     print("Progression row count for the inactive-class pick (should be 1, muted):", inactive_row.count())
     assert inactive_row.count() == 1, "FAIL: an inactive-class pick should still render inline in Progression, muted"
     assert "inactive" in inactive_row.get_attribute("class")
@@ -145,8 +144,8 @@ with sync_playwright() as p:
     inactive_page.click('button[data-tab="otherClasses"]')
     inactive_page.wait_for_timeout(150)
     other_classes_html = inactive_page.locator("#otherClassesContent").inner_html()
-    print("Other Classes tab shows Conjurer's Efficiency:", "Conjurer&#39;s Efficiency" in other_classes_html or "Conjurer's Efficiency" in other_classes_html)
-    assert "Conjurer" in other_classes_html
+    print("Other Classes tab shows Cannibalization:", "Cannibalization" in other_classes_html)
+    assert "Cannibalization" in other_classes_html
     print("PASS: an inactive-class pick renders muted in Progression and also shows up in Other Classes")
     inactive_page.close()
 

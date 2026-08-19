@@ -42,7 +42,8 @@ an actual pending wiki rename to exercise it against.
 `test_owned_inactive_classes.py`, `test_owned_legacy_migration.py`,
 `test_owned_profiles.py`, `test_owned_profile_cleanup.py`,
 `test_share_code_compression.py`, `test_purchase_order_cap.py`,
-`test_progression_move_to.py`, `test_cross_class_prereq_dependency.py`
+`test_progression_move_to.py`, `test_cross_class_prereq_dependency.py`,
+`test_real_world_build.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -86,6 +87,7 @@ python tests/test_share_code_compression.py
 python tests/test_purchase_order_cap.py
 python tests/test_progression_move_to.py
 python tests/test_cross_class_prereq_dependency.py
+python tests/test_real_world_build.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -109,6 +111,14 @@ project). Regenerate `costGuesses.js`/`effectGuesses.js` first, then pick a fres
 example from whichever guess table still has one - see the affected test's
 own comments for how the swap played out last time.
 
+`test_real_world_build.py` is pinned the same way, but to a whole real
+share link (a live user's actual Paladin/Monk/Enchanter build) rather than
+one AA - a wiki change affecting any of its 151 picks would shift its exact
+row/point-total assertions and need a fresh share link swapped in. The same
+build also shows up as a lighter-weight fixture in
+`test_guess_all_tabs.py` (one inactive-class row) and
+`test_progression_autoscroll.py` (reused purely for its row count).
+
 None of these are wired into CI; run them by hand after a change that
 touches either guessing feature (`wiki-sync/guess_costs.py` or
 `wiki-sync/guess_effects.py`, their consumers in `src/keys.js`/
@@ -129,8 +139,9 @@ of the drop handlers wired in `renderProgression`/`wireProgressionDropZone` -
 muted/read-only row treatment `renderProgression` now gives a swapped-out
 class's picks instead of hiding them, or `renderOtherClasses`/
 `renderSummary`'s shared `otherClassesSectionsHtml` helper -
-`test_other_classes.py` and `test_owned_inactive_classes.py`), per-build
-owned-tracking profiles
+`test_other_classes.py`, `test_owned_inactive_classes.py`, and
+`test_real_world_build.py` for a large-scale real-build sanity check on the
+same behavior), per-build owned-tracking profiles
 (`ownedStorageKeyFor`, `state.ownedProfileId`, `linkOwnedProfile`/
 `splitOwnedProfile`/`mergeOwnedProfileInto`/`adoptImportedOwnedAsNewProfile`
 in `state.js`; `saveBuildAs`/`loadBuild`'s profile handling,

@@ -25,11 +25,11 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
-# Same live fixture as test_estimated_total.py (Paladin/Monk/Shaman,
-# Packrat rank 10, 235 points across plenty of AAs, a couple of waypoints,
-# and 95 points of real owned progress) - reused here purely for its row
-# count, not its guess/estimate content, waypoints, or owned status.
-BUILD = "H4sIAAAAAAAACn2QS27DMAxE78L1LCRSv_gGXfQEghZGYwQG0qQwinZR9O4FKSvuKtAzRjRGFDU_9EUTg95oqidkeGmgK03RgTaaak2QhpoRGmqxPXsrWOCdaoJXySgNVbxVEswqsUtvIieT4Ox8COaMzn5G7iJIKr2n1ztUXYa0BvqgSZ2RwQlR_sHgvBPdsecMO-yHzyHvq2ihQ7AgpuHUL9kqKNBRB_oIg_2BPqkTBnGH5QkNdNd0R66W4CPIfAT5LCWb9xFTA31ry-BAL7f1c52vBLpv8-2ykF7iQK_r-TK_LwTaljO19vsHCmycbf8BAAA"
+# Real Paladin/Monk/Enchanter share link (same one test_real_world_build.py
+# pins to), reused here purely for its row count (151 rows, easily enough to
+# need scrolling) - not its guess/estimate content, waypoints, or owned
+# status.
+BUILD = "jZLLasQwDEX_JeuzkCzLjj-hi35B8GKgQxnoA0r_nyJ7MjN9UnwCiS2HK927ZbZGxTsubJtTqKyoooY6uqKNpCQjFVLFFDMsY44VrGKNLGQlJ7KRM7nF7zzhhheKUBRNhkpGxVGpNKdVilMKpVJWSqNKZ8sY8RiKhzriFhrC0HEw1yyKsnmljNM8qm7r5r5K72yhKkUvoe1CitYmLtf3VIdU071OqOe1Rlsu0W50Fh-j01QpY62sY3AX7C9igjIGOqcpNyNuw49BDG1w3pcpsO0UvRLWDHxfaVh6S_uMeJirFg5eiAx8I4ye6E46EyaH-KnfqfIrYf2k7fjOOlLxif5jRP-Zz99ieY5jmDgi-S2AX-J3jVYE7Wvw4ophkbQtC8vdy-n9dHhaWF7fDi-Px6WzrcJyf3p4PDwfF5a348PSe_8A"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)
