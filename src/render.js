@@ -1041,6 +1041,11 @@ export function renderProgression() {
     if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
     if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
     const rowWarn = warnTitles.length > 0;
+    // A separate warning icon, not folded into warnTitles/rowWarn above -
+    // "this class isn't currently selected" isn't a problem with the step
+    // itself the way an unmet prereq or a class cap overshoot is, so it
+    // doesn't get prereq-warn-row's per-child dim, just its own ⚠.
+    const inactiveWarnTitle = s.active ? "" : `Not one of your current 3 classes — swap ${s.className || ""} back in to keep training this.`;
     const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${s.active ? "" : " inactive"}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.visiblePos}</span>
@@ -1049,6 +1054,7 @@ export function renderProgression() {
         <span class="step-cat${classBadgeClass(s)}">${escapeHtml(s.label)}</span>
       </span>
       ${rowWarn ? `<span class="step-warn" title="${escapeHtml(warnTitles.join(" "))}">&#9888;</span>` : ""}
+      ${!s.active ? `<span class="step-warn step-inactive-warn" title="${escapeHtml(inactiveWarnTitle)}">&#9888;</span>` : ""}
       <span class="step-cost">
         <span class="cost-this${stepDisp.isGuess ? ` is-estimate tier-${stepDisp.confidence}` : ""}"${stepDisp.isGuess ? ` title="${escapeHtml(stepDisp.title)}"` : ""}>+${stepDisp.isGuess ? stepDisp.text : s.stepCost} ${stepDisp.isGuess ? "pt(s)" : `pt${s.stepCost === 1 ? "" : "s"}`}</span>
         <span class="cost-total${totalIsEstimate ? " is-estimate" : ""}"${totalIsEstimate ? ` title="${escapeHtml(totalTitle)}"` : ""}>${totalIsEstimate ? `~${s.blendedCumulative}` : s.cumulative} total</span>
