@@ -10,9 +10,19 @@
 # Pinned to this build's exact numbers (151 rows, 26 inactive, "373 / ~578"
 # spent) the same way test_effect_guess.py etc. are pinned to specific live
 # AAs - see tests/README.md's note on that. A future wiki scrape that
-# resolves one of this build's unconfirmed costs, or a rename affecting one
-# of its AAs, would shift these numbers and need a fresh share link swapped
-# in from a still-representative real build.
+# resolves one of this build's unconfirmed costs, or a rename/removal
+# affecting one of its AAs, would shift these numbers and need a fresh share
+# link swapped in from a still-representative real build.
+#
+# This is the widest-coverage test in the suite and, because of the above,
+# also the most likely to fail for a reason that isn't a code regression -
+# every count assertion below carries a reminder to check a recent wiki
+# scrape / data.src.js diff for this build's AAs BEFORE assuming something
+# broke. The one exception is the last-row-vs-topbar total check near the
+# bottom: it compares two independently-computed numbers against each
+# other rather than against a hardcoded figure, so it stays meaningful
+# regardless of what the wiki says on a given day - a failure there really
+# is a code regression.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -33,7 +43,8 @@ with sync_playwright() as p:
 
     classes = [page.locator(f"#classSelect{i}").input_value() for i in range(3)]
     print("selected classes:", classes)
-    assert classes == ["Paladin", "Monk", "Enchanter"]
+    assert classes == ["Paladin", "Monk", "Enchanter"], \
+        "FAIL: check wiki-sync/snapshot.json's recent diff before assuming a code regression - a class rename would land here first"
 
     # --- Progression: every pick renders, active or not - none silently
     # dropped for a build this size. ---
@@ -42,12 +53,14 @@ with sync_playwright() as p:
     rows = page.locator(".progression-row")
     row_count = rows.count()
     print("Progression row count:", row_count)
-    assert row_count == 151
+    assert row_count == 151, \
+        "FAIL: check for a wiki rename/removal affecting one of this build's AAs before assuming a code regression - see this file's header comment"
 
     inactive_rows = page.locator(".progression-row.inactive")
     inactive_count = inactive_rows.count()
     print("inactive row count:", inactive_count)
-    assert inactive_count == 26
+    assert inactive_count == 26, \
+        "FAIL: check for a wiki rename/removal affecting a Bard or Shaman AA before assuming a code regression - see this file's header comment"
 
     # Every inactive row stays read-only and full-opacity with just the
     # warning icon signaling its status (not dimmed - see the
@@ -68,10 +81,12 @@ with sync_playwright() as p:
     page.wait_for_timeout(200)
     section_titles = page.locator("#otherClassesContent .summary-section-title").all_inner_texts()
     print("Other Classes sections:", section_titles)
-    assert sorted(section_titles) == ["BARD", "SHAMAN"]
+    assert sorted(section_titles) == ["BARD", "SHAMAN"], \
+        "FAIL: check for a wiki rename/removal before assuming a code regression - see this file's header comment"
     oc_badge = page.locator('button[data-tab="otherClasses"] .count').inner_text()
     print("Other Classes tab badge:", oc_badge)
-    assert oc_badge == "(7)"
+    assert oc_badge == "(7)", \
+        "FAIL: check for a wiki rename/removal affecting a Bard or Shaman AA before assuming a code regression - see this file's header comment"
     print("PASS: Other Classes groups the same inactive picks by class")
 
     # --- Progression's own running total must exactly match the topbar's
