@@ -341,7 +341,7 @@ export async function buildExportText() {
   lines.push("EverQuest Legends - AA Build");
   lines.push(`Classes: ${state.selectedClasses.join(" / ")}`);
   lines.push(`Points Owned: ${owned}`);
-  lines.push(`Points Spent: ${spent}`);
+  lines.push(`Points Planned: ${spent}`);
   lines.push(`Exported: ${new Date().toLocaleString()}`);
   lines.push("");
 
@@ -355,7 +355,7 @@ export async function buildExportText() {
   });
 
   if (state.purchaseOrder.length) {
-    lines.push("== Progression (click order) ==");
+    lines.push("== Progression (pick order) ==");
     // Reuses computeProgressionTimeline (logic.js) rather than re-deriving
     // where a waypoint's boundary falls - the readable listing should show
     // the same divider placement the Progression tab itself does, not a
@@ -372,7 +372,7 @@ export async function buildExportText() {
       }
       const s = entry;
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
-      const suffix = s.active ? "" : " (class not currently selected)";
+      const suffix = s.active ? "" : " (not one of your current 3 classes)";
       const ownedSuffix = s.owned ? " [OWNED]" : "";
       // Mirrors the Progression tab's own row exactly: a guessed step (real
       // cost still "?") shows its "~N" estimate instead of a flat 0, and the
@@ -382,8 +382,12 @@ export async function buildExportText() {
       // this resolves the same way for a step whose class isn't active.
       const stepDisp = s.aa ? costDisplayScoped(s.scope, s.className, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
       const costText = stepDisp.isGuess ? stepDisp.text : s.stepCost;
+      // Same conditional pluralization as the row's own cost-this pill in
+      // render.js - a guessed cost keeps the literal "pt(s)" (matching that
+      // pill), a real one properly pluralizes.
+      const costUnit = stepDisp.isGuess ? "pt(s)" : `pt${s.stepCost === 1 ? "" : "s"}`;
       const totalText = s.blendedCumulative !== s.cumulative ? `~${s.blendedCumulative}` : s.cumulative;
-      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costText} pt(s), ${totalText} total${suffix}${ownedSuffix}`);
+      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costText} ${costUnit}, ${totalText} total${suffix}${ownedSuffix}`);
     });
     lines.push("");
   }

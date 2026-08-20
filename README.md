@@ -7,23 +7,23 @@ A talent-calculator-style planner for [EverQuest Legends](https://eqlwiki.com/Al
 ## Features
 
 - Pick up to 3 classes (EQL's tri-class combo system) and spend points across General, Archetype, Class, and Special AAs
-- Swap classes freely — picks for a class you're not currently using stay right where they were in **Progression** (just muted and read-only) and still count toward your total Points Spent, with a dedicated **Other Classes** tab for a filtered look at just those. Switch back and everything's exactly as you left it
+- Swap classes freely — picks for a class you're not currently using stay right where they were in **Progression** (just muted and read-only) and still count toward your total Points Planned, with a dedicated **Other Classes** tab for a filtered look at just those. Switch back and everything's exactly as you left it
 - Prerequisite, level, and class-based rank-cap checks before you can spend a point, with no artificial point cap of its own. A rank that a later class swap puts out of reach is never stripped — it stays flagged until a qualifying class comes back
 - Locked AAs show *why* — a missing prerequisite looks different from a plain level gate, in both the tree and Browse All AAs
 - Next-rank preview — see what the next rank upgrades to before you buy it
 - Global search, with match-count badges on every tab
 - **Browse All AAs** — a searchable reference independent of your current build
 - **Build Summary** — everything you've picked, grouped by category, including picks for a class you've swapped away from (also on their own Other Classes tab)
-- **Progression** tab — the order you spent points in, drag-and-drop or arrow-key reorderable, with per-step and running-total cost. A "Move To" button quick-jumps a step to the top/bottom of the list or of any waypoint, or to a specific position — handy once a build gets long
+- **Progression** tab — the order you picked things in, drag-and-drop or arrow-key reorderable, with per-step and running-total cost. A "Move To" button quick-jumps a step to the top/bottom of the list or of any waypoint, or to a specific position — handy once a build gets long
 - **Waypoints** — mark a point total worth returning to (e.g. "Level 20"), and it shows up as a colored divider right where your training order crosses it. Anchored to the point total, not a list position, so reordering and Reset Build never break one
-- Mark AAs as **owned** to track what you've actually trained in-game, separate from what's just planned — the topbar shows a running owned/spent total at a glance, and the Progression tab breaks it down further into "points owned / to go". Each Build tracks its own owned progress by default; **Manage tracking…** on the Progression tab lets you Link two builds to share the same live progress, Merge in progress from another build without disturbing it, or Split one back off onto its own copy
+- Mark AAs as **owned** to track what you've actually trained in-game, separate from what's just planned — the topbar shows a running owned/planned total at a glance, and the Progression tab breaks it down further into "points owned / to go". Each Build tracks its own owned progress by default; **Manage tracking…** on the Progression tab lets you Link two builds to share the same live progress, Merge in progress from another build without disturbing it, or Split one back off onto its own copy
 - **Builds** — save named snapshots of your build and switch between them, for comparing class combos or planning alternate paths
 - Export a build as text or a shareable link; import by pasting text, a link, or loading a saved file
 - Undocumented costs and effect values can show a pattern-inferred estimate instead of a bare `?`, color-coded by confidence. Purely a display hint — never counted in real point totals, and automatically replaced the moment the wiki confirms the real value
 - Auto-granted AAs are applied automatically, no points needed
 - Responsive layout, keyboard-accessible
 - Saved builds stay correct even when the underlying AA data changes — you'll see a notice if a pick disappeared or a prerequisite stopped being met
-- **Hide** AAs you don't care about to declutter the tree and Browse All AAs, with a toggle to bring them back. An AA you've already spent points on always stays visible regardless
+- **Hide** AAs you don't care about to declutter the tree and Browse All AAs, with a toggle to bring them back. An AA you've already picked always stays visible regardless
 
 Player-facing version history is in the app itself — click the version tag in the bottom-right corner. For everything else, `git log` is the changelog.
 

@@ -2054,7 +2054,7 @@ el.spentValue.innerHTML = `${blendedSpan(ownedReal, ownedExtra)} / ${blendedSpan
 const inactive = spentOnInactiveClasses();
 const titleParts = [];
 if (ownedExtra > 0) titleParts.push(`Owned: ${ownedReal} confirmed + ${ownedExtra} estimated.`);
-if (spentExtra > 0) titleParts.push(`Spent: ${spent} confirmed + ${spentExtra} estimated.`);
+if (spentExtra > 0) titleParts.push(`Planned: ${spent} confirmed + ${spentExtra} estimated.`);
 if (inactive > 0) titleParts.push(`${inactive} pt${inactive === 1 ? "" : "s"} from classes not currently selected (see the Other Classes tab).`);
 if (titleParts.length) el.spentValue.title = titleParts.join(" ");
 else el.spentValue.removeAttribute("title");
@@ -2386,7 +2386,7 @@ renderBrowse();
 }
 function renderSummary() {
 const spent = spentPoints();
-el.summaryHeader.innerHTML = `<div class="summary-meta">Classes: <b>${state.selectedClasses.map(escapeHtml).join(" / ")}</b> &middot; Character Level <b>${state.charLevel}</b> &middot; Points Spent: <b>${spent}</b></div>`;
+el.summaryHeader.innerHTML = `<div class="summary-meta">Classes: <b>${state.selectedClasses.map(escapeHtml).join(" / ")}</b> &middot; Character Level <b>${state.charLevel}</b> &middot; Points Planned: <b>${spent}</b></div>`;
 const sections = AA_CATEGORY_KEYS.map((key) => ({ key, label: shortCategoryLabel(key) }));
 let html = "";
 let anyPicked = false;
@@ -2432,7 +2432,7 @@ return `
 }).join("");
 return `
       <h3 class="summary-section-title">${escapeHtml(className)}</h3>
-      <div class="other-classes-subtotal">Not one of your current 3 classes &mdash; ${subtotal} point${subtotal === 1 ? "" : "s"} spent here still count${subtotal === 1 ? "s" : ""} toward Points Spent above.</div>
+      <div class="other-classes-subtotal">Not one of your current 3 classes &mdash; ${subtotal} point${subtotal === 1 ? "" : "s"} spent here still count${subtotal === 1 ? "s" : ""} toward Points Planned above.</div>
       <div class="browse-grid">${cards}</div>`;
 }).join("");
 }
@@ -3349,7 +3349,7 @@ const lines = [];
 lines.push("EverQuest Legends - AA Build");
 lines.push(`Classes: ${state.selectedClasses.join(" / ")}`);
 lines.push(`Points Owned: ${owned}`);
-lines.push(`Points Spent: ${spent}`);
+lines.push(`Points Planned: ${spent}`);
 lines.push(`Exported: ${new Date().toLocaleString()}`);
 lines.push("");
 AA_CATEGORY_KEYS.forEach((catKey) => {
@@ -3361,7 +3361,7 @@ spentAAs.forEach(({ aa, rank }) => lines.push(`  ${aa.name}: rank ${rank}/${aa.r
 lines.push("");
 });
 if (state.purchaseOrder.length) {
-lines.push("== Progression (click order) ==");
+lines.push("== Progression (pick order) ==");
 computeProgressionTimeline(computeProgressionSteps()).forEach((entry) => {
 if (entry.type === "divider") {
 const labelPart = entry.label ? ` · ${entry.label}` : "";
@@ -3371,12 +3371,13 @@ return;
 }
 const s = entry;
 const maxRank = s.aa ? `/${s.aa.ranks}` : "";
-const suffix = s.active ? "" : " (class not currently selected)";
+const suffix = s.active ? "" : " (not one of your current 3 classes)";
 const ownedSuffix = s.owned ? " [OWNED]" : "";
 const stepDisp = s.aa ? costDisplayScoped(s.scope, s.className, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
 const costText = stepDisp.isGuess ? stepDisp.text : s.stepCost;
+const costUnit = stepDisp.isGuess ? "pt(s)" : `pt${s.stepCost === 1 ? "" : "s"}`;
 const totalText = s.blendedCumulative !== s.cumulative ? `~${s.blendedCumulative}` : s.cumulative;
-lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costText} pt(s), ${totalText} total${suffix}${ownedSuffix}`);
+lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costText} ${costUnit}, ${totalText} total${suffix}${ownedSuffix}`);
 });
 lines.push("");
 }

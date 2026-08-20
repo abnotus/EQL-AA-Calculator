@@ -15,8 +15,8 @@
 # lighter divider line, so they're visible without switching tabs too.
 #
 # Progression's own running total is now a genuine lifetime total too,
-# identical to the topbar's Points Spent - both sides count every pick ever
-# made, active class or not.
+# identical to the topbar's Points Planned - both sides count every pick
+# ever made, active class or not.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright

@@ -1760,9 +1760,9 @@ function sumRealCost(list, store) {
 // you've ever picked, not just the 3 active slots. Walks
 // Object.keys(state.ranks.classes) directly rather than AA_CATEGORY_KEYS/
 // getList, since a class swap no longer wipes an inactive class's ranks.
-// Progression's own running total deliberately stays active-only (see
-// computeProgressionSteps' stepCost) — the two numbers are allowed to
-// diverge; renderTopbar's tooltip surfaces the split.
+// Progression's own running total counts everything the same way now
+// (computeProgressionSteps' stepCost isn't active-gated), so the two
+// numbers are provably identical, not just usually close.
 function spentPoints() {
   let total = sumRealCost(AA_DATA.general, state.ranks.general)
     + sumRealCost(AA_DATA.archetype, state.ranks.archetype)
@@ -1782,8 +1782,8 @@ function spentForClass(className) {
 
 // Sum of spentForClass across every class NOT currently active — the
 // slice of spentPoints()'s lifetime total that lives "elsewhere" right
-// now. Surfaced in the topbar tooltip and Progression's toolbar note so
-// the gap vs. Progression's active-only total is legible, not silent.
+// now. Surfaced in the topbar tooltip so it's legible which classes a
+// blended total actually spans, not just a bare number.
 function spentOnInactiveClasses() {
   return Object.keys(state.ranks.classes)
     .filter((className) => !state.selectedClasses.includes(className))
@@ -3142,29 +3142,33 @@ function renderTopbar() {
   el.levelInput.value = state.charLevel;
   const spent = spentPoints();
   const spentExtra = estimatedExtraPoints();
-  // Owned/spent, not spent alone - now that owned tracking is a first-class,
-  // always-on concept (per-build profiles, always included in exports),
-  // "how much of the plan is actually trained" is more useful up top than
-  // the plan's raw size alone, which is still the second number here. Same
-  // blended-estimate treatment as Progression's own owned/to-go summary
-  // (renderProgression) - each side colors independently since a guess can
-  // land on either (or both, or neither) of owned/spent. #spentValue kept
-  // its name despite showing both now - renaming would touch a lot of
-  // tests for a purely cosmetic gain.
+  // Owned/planned, not planned alone - now that owned tracking is a
+  // first-class, always-on concept (per-build profiles, always included in
+  // exports), "how much of the plan is actually trained" is more useful up
+  // top than the plan's raw size alone, which is still the second number
+  // here. "Planned" rather than "spent" - "spent" reads as already-done the
+  // same way "owned" does, when this side really means "what the whole plan
+  // calls for, trained or not." Same blended-estimate treatment as
+  // Progression's own owned/to-go summary (renderProgression) - each side
+  // colors independently since a guess can land on either (or both, or
+  // neither) of owned/planned. #spentValue/spentPoints() kept their names
+  // despite the label reading "Planned" now - renaming would touch a lot of
+  // call sites and tests for a purely cosmetic gain.
   const ownedReal = ownedPoints();
   const ownedExtra = estimatedExtraOwnedPoints();
   function blendedSpan(real, extra) {
     return extra > 0 ? `<span class="is-estimate">~${real + extra}</span>` : `${real}`;
   }
   el.spentValue.innerHTML = `${blendedSpan(ownedReal, ownedExtra)} / ${blendedSpan(spent, spentExtra)}`;
-  // spentPoints() is a lifetime total (see its own comment in logic.js) -
-  // when some of it comes from a class that isn't currently selected,
-  // that's another way this number can diverge from Progression's own
-  // rows. Both disclosures fold into the same tooltip.
+  // spentPoints() is a lifetime total (see its own comment in logic.js),
+  // same scope Progression's own running total now uses too - the two
+  // never diverge. When some of it comes from a class that isn't currently
+  // selected, that's surfaced here since it's not obvious from the number
+  // alone which classes it spans.
   const inactive = spentOnInactiveClasses();
   const titleParts = [];
   if (ownedExtra > 0) titleParts.push(`Owned: ${ownedReal} confirmed + ${ownedExtra} estimated.`);
-  if (spentExtra > 0) titleParts.push(`Spent: ${spent} confirmed + ${spentExtra} estimated.`);
+  if (spentExtra > 0) titleParts.push(`Planned: ${spent} confirmed + ${spentExtra} estimated.`);
   if (inactive > 0) titleParts.push(`${inactive} pt${inactive === 1 ? "" : "s"} from classes not currently selected (see the Other Classes tab).`);
   if (titleParts.length) el.spentValue.title = titleParts.join(" ");
   else el.spentValue.removeAttribute("title");
@@ -3578,7 +3582,7 @@ function renderBrowse() {
 
 function renderSummary() {
   const spent = spentPoints();
-  el.summaryHeader.innerHTML = `<div class="summary-meta">Classes: <b>${state.selectedClasses.map(escapeHtml).join(" / ")}</b> &middot; Character Level <b>${state.charLevel}</b> &middot; Points Spent: <b>${spent}</b></div>`;
+  el.summaryHeader.innerHTML = `<div class="summary-meta">Classes: <b>${state.selectedClasses.map(escapeHtml).join(" / ")}</b> &middot; Character Level <b>${state.charLevel}</b> &middot; Points Planned: <b>${spent}</b></div>`;
 
   const sections = AA_CATEGORY_KEYS.map((key) => ({ key, label: shortCategoryLabel(key) }));
 
@@ -3645,7 +3649,7 @@ function otherClassesSectionsHtml(classNames) {
     }).join("");
     return `
       <h3 class="summary-section-title">${escapeHtml(className)}</h3>
-      <div class="other-classes-subtotal">Not one of your current 3 classes &mdash; ${subtotal} point${subtotal === 1 ? "" : "s"} spent here still count${subtotal === 1 ? "s" : ""} toward Points Spent above.</div>
+      <div class="other-classes-subtotal">Not one of your current 3 classes &mdash; ${subtotal} point${subtotal === 1 ? "" : "s"} spent here still count${subtotal === 1 ? "s" : ""} toward Points Planned above.</div>
       <div class="browse-grid">${cards}</div>`;
   }).join("");
 }
@@ -5071,7 +5075,7 @@ async function buildExportText() {
   lines.push("EverQuest Legends - AA Build");
   lines.push(`Classes: ${state.selectedClasses.join(" / ")}`);
   lines.push(`Points Owned: ${owned}`);
-  lines.push(`Points Spent: ${spent}`);
+  lines.push(`Points Planned: ${spent}`);
   lines.push(`Exported: ${new Date().toLocaleString()}`);
   lines.push("");
 
@@ -5085,7 +5089,7 @@ async function buildExportText() {
   });
 
   if (state.purchaseOrder.length) {
-    lines.push("== Progression (click order) ==");
+    lines.push("== Progression (pick order) ==");
     // Reuses computeProgressionTimeline (logic.js) rather than re-deriving
     // where a waypoint's boundary falls - the readable listing should show
     // the same divider placement the Progression tab itself does, not a
@@ -5102,7 +5106,7 @@ async function buildExportText() {
       }
       const s = entry;
       const maxRank = s.aa ? `/${s.aa.ranks}` : "";
-      const suffix = s.active ? "" : " (class not currently selected)";
+      const suffix = s.active ? "" : " (not one of your current 3 classes)";
       const ownedSuffix = s.owned ? " [OWNED]" : "";
       // Mirrors the Progression tab's own row exactly: a guessed step (real
       // cost still "?") shows its "~N" estimate instead of a flat 0, and the
@@ -5112,8 +5116,12 @@ async function buildExportText() {
       // this resolves the same way for a step whose class isn't active.
       const stepDisp = s.aa ? costDisplayScoped(s.scope, s.className, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
       const costText = stepDisp.isGuess ? stepDisp.text : s.stepCost;
+      // Same conditional pluralization as the row's own cost-this pill in
+      // render.js - a guessed cost keeps the literal "pt(s)" (matching that
+      // pill), a real one properly pluralizes.
+      const costUnit = stepDisp.isGuess ? "pt(s)" : `pt${s.stepCost === 1 ? "" : "s"}`;
       const totalText = s.blendedCumulative !== s.cumulative ? `~${s.blendedCumulative}` : s.cumulative;
-      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costText} pt(s), ${totalText} total${suffix}${ownedSuffix}`);
+      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costText} ${costUnit}, ${totalText} total${suffix}${ownedSuffix}`);
     });
     lines.push("");
   }

@@ -97,7 +97,7 @@ with sync_playwright() as p:
     assert total_title == "3 confirmed + 6 estimated.", f"FAIL: unexpected breakdown tooltip: {total_title}"
     print("PASS: Progression's running total now blends the guess in the same way the topbar does, with the real/estimated split still tracked separately (spentPoints() itself untouched)")
 
-    # --- The plain-text export's "Progression (click order)" listing must
+    # --- The plain-text export's "Progression (pick order)" listing must
     # show the same "~6" per-step estimate AND the same "~9" blended
     # running total the Progression tab itself now shows - buildExportText
     # used to print the raw real stepCost/cumulative regardless of whether a

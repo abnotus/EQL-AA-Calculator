@@ -500,9 +500,9 @@ function sumRealCost(list, store) {
 // you've ever picked, not just the 3 active slots. Walks
 // Object.keys(state.ranks.classes) directly rather than AA_CATEGORY_KEYS/
 // getList, since a class swap no longer wipes an inactive class's ranks.
-// Progression's own running total deliberately stays active-only (see
-// computeProgressionSteps' stepCost) — the two numbers are allowed to
-// diverge; renderTopbar's tooltip surfaces the split.
+// Progression's own running total counts everything the same way now
+// (computeProgressionSteps' stepCost isn't active-gated), so the two
+// numbers are provably identical, not just usually close.
 export function spentPoints() {
   let total = sumRealCost(AA_DATA.general, state.ranks.general)
     + sumRealCost(AA_DATA.archetype, state.ranks.archetype)
@@ -522,8 +522,8 @@ export function spentForClass(className) {
 
 // Sum of spentForClass across every class NOT currently active — the
 // slice of spentPoints()'s lifetime total that lives "elsewhere" right
-// now. Surfaced in the topbar tooltip and Progression's toolbar note so
-// the gap vs. Progression's active-only total is legible, not silent.
+// now. Surfaced in the topbar tooltip so it's legible which classes a
+// blended total actually spans, not just a bare number.
 export function spentOnInactiveClasses() {
   return Object.keys(state.ranks.classes)
     .filter((className) => !state.selectedClasses.includes(className))
