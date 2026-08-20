@@ -64,13 +64,22 @@ with sync_playwright() as p:
 
     # Every inactive row stays read-only and full-opacity with just the
     # warning icon signaling its status (not dimmed - see the
-    # "replace dimming with a warning icon" change).
+    # "replace dimming with a warning icon" change), and still shows its
+    # class badge - a neutral pill rather than a colored one (there's no
+    # unique hue per class, only per active slot - see classBadgeClass,
+    # render.js), but still a proper badge, not plain text.
+    class_badges_seen = set()
     for i in range(inactive_count):
         row = inactive_rows.nth(i)
         assert row.locator(".step-add").get_attribute("disabled") is not None
         assert row.locator(".step-remove").get_attribute("disabled") is not None
+        cat = row.locator(".step-cat")
+        assert "step-cat-inactive" in cat.get_attribute("class")
+        class_badges_seen.add(cat.inner_text())
         warn_title = row.locator(".step-inactive-warn").get_attribute("title")
         assert warn_title and "Not one of your current 3 classes" in warn_title
+    print("class badges seen on inactive rows:", class_badges_seen)
+    assert class_badges_seen == {"Bard AA", "Shaman AA"}
     opacity_sample = inactive_rows.first.evaluate("el => getComputedStyle(el).opacity")
     print("sample inactive row opacity (should be full, not dimmed):", opacity_sample)
     assert opacity_sample == "1"

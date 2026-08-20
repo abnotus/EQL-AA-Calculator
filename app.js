@@ -2593,8 +2593,8 @@ renderProgression();
 }
 function classBadgeClass(s) {
 if (s.scope !== "class") return "";
-const slot = state.selectedClasses.indexOf(s.className);
-return slot >= 0 ? ` step-cat-slot${slot}` : "";
+if (!s.active) return " step-cat-inactive";
+return ` step-cat-slot${state.selectedClasses.indexOf(s.className)}`;
 }
 function waypointSections(timeline, totalVisible, movingStepCost) {
 const sections = [];

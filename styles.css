@@ -1245,15 +1245,20 @@ main {
 /* Which of the 3 active class slots a row's AA belongs to, at a glance -
    General/Archetype/Special keep the plain text treatment above (no
    modifier class - see classBadgeClass, render.js), a class AA gets a
-   small colored pill instead. 3 fixed hues keyed by slot index (0/1/2),
-   not the class's own identity - this only ever needs to distinguish the 3
-   CURRENTLY active classes, not build a stable color mapping for all ~24
-   possible classes. A row for a class outside the 3 slots gets no colored
-   badge at all (classBadgeClass returns "" for it) - the step-inactive-warn
-   icon already signals that case. */
+   small colored pill instead. 3 fixed hues keyed by slot index (0/1/2), not
+   the class's own identity - active-slot badges only ever need to
+   distinguish the 3 CURRENTLY active classes, not build a stable color
+   mapping for all 16 possible classes (every other hue in this app's
+   palette is already spoken for by some other meaning - red/green/amber/
+   estimate tiers/waypoint segments - so 16 more genuinely distinct, non-
+   colliding hues isn't realistic). A row for a class outside the 3 slots
+   still gets a badge (still worth labeling which class it's from), just
+   one shared neutral pill rather than a unique color - .step-cat-inactive,
+   below. */
 .step-cat.step-cat-slot0,
 .step-cat.step-cat-slot1,
-.step-cat.step-cat-slot2 {
+.step-cat.step-cat-slot2,
+.step-cat.step-cat-inactive {
   display: inline-block;
   padding: 1px 7px;
   border-radius: 9px;
@@ -1264,6 +1269,7 @@ main {
 .step-cat.step-cat-slot0 { background: rgba(217,166,61,0.14); color: #d9a63d; border-color: rgba(217,166,61,0.4); }
 .step-cat.step-cat-slot1 { background: rgba(76,159,217,0.14); color: #4c9fd9; border-color: rgba(76,159,217,0.4); }
 .step-cat.step-cat-slot2 { background: rgba(217,76,168,0.14); color: #d94ca8; border-color: rgba(217,76,168,0.4); }
+.step-cat.step-cat-inactive { background: rgba(255,255,255,0.05); color: var(--text-dim); border-color: var(--border-light); }
 
 .step-warn {
   color: #e0a83a;

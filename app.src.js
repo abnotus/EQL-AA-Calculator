@@ -3921,13 +3921,15 @@ function handleDeleteWaypoint() {
 
 // Which of the 3 active class slots a step's AA belongs to, as a CSS
 // modifier class for .step-cat - "" (no modifier, plain text) for
-// general/archetype/special, one of 3 fixed slot colors for a class AA.
-// See the .step-cat-slot* rules in styles.css for why slot index rather
-// than the class's own identity.
+// general/archetype/special, one of 3 fixed slot colors for a class AA
+// that's currently active, or a single neutral pill for a class that isn't
+// (still worth badging - see the .inactive row it sits on - just not worth
+// a 4th+ unique hue for every one of the ~16 possible classes). See the
+// .step-cat-slot*/.step-cat-inactive rules in styles.css.
 function classBadgeClass(s) {
   if (s.scope !== "class") return "";
-  const slot = state.selectedClasses.indexOf(s.className);
-  return slot >= 0 ? ` step-cat-slot${slot}` : "";
+  if (!s.active) return " step-cat-inactive";
+  return ` step-cat-slot${state.selectedClasses.indexOf(s.className)}`;
 }
 
 // One entry per waypoint (not just the row's current section - moving
