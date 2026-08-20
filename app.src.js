@@ -5066,9 +5066,11 @@ async function applySharedBuildFromUrl(localLoadResult) {
 
 async function buildExportText() {
   const spent = spentPoints();
+  const owned = ownedPoints();
   const lines = [];
   lines.push("EverQuest Legends - AA Build");
   lines.push(`Classes: ${state.selectedClasses.join(" / ")}`);
+  lines.push(`Points Owned: ${owned}`);
   lines.push(`Points Spent: ${spent}`);
   lines.push(`Exported: ${new Date().toLocaleString()}`);
   lines.push("");

@@ -2,7 +2,7 @@
 
 import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, serializeRanks, serializePurchaseOrder, payloadOwnedHasContent, adoptImportedOwnedAsNewProfile } from "./state.js";
 import { el } from "./dom.js";
-import { getList, effectiveRank, labelFor, spentPoints, computeProgressionSteps, computeProgressionTimeline, clearLastMutation, reconcilePurchaseOrderCounts, loadIssuesSuffix } from "./logic.js";
+import { getList, effectiveRank, labelFor, spentPoints, ownedPoints, computeProgressionSteps, computeProgressionTimeline, clearLastMutation, reconcilePurchaseOrderCounts, loadIssuesSuffix } from "./logic.js";
 import { clearActiveBuild, saveImportedBuild, confirmReplaceCurrentBuild, isActiveBuildTheImportedSlot } from "./builds.js";
 import { renderAll, showToast, costDisplayScoped } from "./render.js";
 import { idForKey, entryForId } from "./keys.js";
@@ -336,9 +336,11 @@ export async function applySharedBuildFromUrl(localLoadResult) {
 
 export async function buildExportText() {
   const spent = spentPoints();
+  const owned = ownedPoints();
   const lines = [];
   lines.push("EverQuest Legends - AA Build");
   lines.push(`Classes: ${state.selectedClasses.join(" / ")}`);
+  lines.push(`Points Owned: ${owned}`);
   lines.push(`Points Spent: ${spent}`);
   lines.push(`Exported: ${new Date().toLocaleString()}`);
   lines.push("");
