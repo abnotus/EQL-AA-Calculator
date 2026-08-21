@@ -1305,11 +1305,17 @@ if (byClass[c] !== undefined && byClass[c] > cap) cap = byClass[c];
 });
 return cap;
 }
+function isClassEligible(aa) {
+return !aa.eligibleClasses || state.selectedClasses.some((c) => aa.eligibleClasses.includes(c));
+}
 function effectiveDisplayRank(aa, rank) {
 return aa.classRankCap ? Math.min(rank, classRankCapFor(aa)) : rank;
 }
 function structuralLockReason(catKey, idx) {
 const aa = getList(catKey)[idx];
+if (!isClassEligible(aa)) {
+return { kind: "classEligibility", text: `Requires one of: ${aa.eligibleClasses.join(", ")}.` };
+}
 const levelReq = parseInt(aa.levelReq, 10) || 1;
 if (state.charLevel < levelReq) return { kind: "level", text: `Requires character level ${levelReq}.` };
 if (aa.classRankCap) {
@@ -1336,6 +1342,9 @@ const aa = getList(catKey)[idx];
 if (!aa || aa.auto) return null;
 const purchased = getRanksStore(catKey)[idx] || 0;
 if (purchased <= 0) return null;
+if (!isClassEligible(aa)) {
+return `requires one of: ${aa.eligibleClasses.join(", ")}, none of which are currently selected.`;
+}
 if (aa.classRankCap) {
 const cap = classRankCapFor(aa);
 if (purchased > cap) return `exceeds the rank ${cap} cap for your currently selected classes.`;
@@ -1631,6 +1640,7 @@ if (targetHeld < resolved.forRank(stepRank)) prereqWarn = true;
 }
 }
 const classCapWarn = aa && aa.classRankCap && stepRank > classRankCapFor(aa);
+const classEligibilityWarn = !!(aa && aa.eligibleClasses && !isClassEligible(aa));
 counts[key] = purchaseCount;
 const isLast = purchaseCount === totalCounts[key];
 const stepCost = aa ? costNum(aa.costs[stepRank - 1]) : 0;
@@ -1646,7 +1656,7 @@ const name = aa ? aa.name : "(unknown AA)";
 const owned = stepRank <= ownedRank(entry.scope, entry.className, entry.idx);
 return {
 index: i, aa, idx: entry.idx, scope: entry.scope, className: entry.className,
-category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, classCapWarn, label, name, isLast, owned
+category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, classCapWarn, classEligibilityWarn, label, name, isLast, owned
 };
 });
 }
@@ -2156,6 +2166,7 @@ if (aa.auto && !autoBelowLevel) node.classList.add("auto");
 else if (!aa.auto && rank >= aa.ranks) node.classList.add("maxed");
 if (locked) node.classList.add("locked");
 if (lockReason && lockReason.kind === "prereq") node.classList.add("locked-prereq");
+if (lockReason && lockReason.kind === "classEligibility") node.classList.add("locked-classlock");
 if (invalidReason) node.classList.add("invalidated");
 if (hidden) node.classList.add("hidden-aa");
 if (searching) node.classList.add(aaMatchesQuery(aa, query) ? "search-match" : "search-dim");
@@ -2195,6 +2206,12 @@ const req = document.createElement("div");
 req.className = "costtag prereq-tag";
 req.textContent = "REQ";
 node.appendChild(req);
+}
+if (lockReason && lockReason.kind === "classEligibility") {
+const cls = document.createElement("div");
+cls.className = "costtag classlock-tag";
+cls.textContent = "CLASS";
+node.appendChild(cls);
 }
 if (invalidReason) {
 const warn = document.createElement("div");
@@ -2349,11 +2366,16 @@ el.browseGrid.innerHTML = filtered.length
 ? filtered.map(({ cat, aa, catKey, idx }) => {
 const { scope, className } = scopeForBrowseLabel(cat);
 const hidden = isHiddenScoped(scope, className, idx);
+const lockReason = catKey ? structuralLockReason(catKey, idx) : null;
 let prereqInfo = "";
 if (aa.prereq) {
-const lockReason = catKey ? structuralLockReason(catKey, idx) : null;
 const warn = !!(lockReason && lockReason.kind === "prereq");
 prereqInfo = ` &middot; <span class="prereq-info${warn ? " warn" : ""}">Requires: ${escapeHtml(aa.prereq)}</span>`;
+}
+let eligibleInfo = "";
+if (aa.eligibleClasses) {
+const warn = !!(lockReason && lockReason.kind === "classEligibility");
+eligibleInfo = ` &middot; <span class="eligible-info${warn ? " warn" : ""}">Classes: ${aa.eligibleClasses.map(escapeHtml).join(", ")}</span>`;
 }
 const costList = aa.costs.map((c, i) => {
 const disp = costDisplayScoped(scope, className, idx, i, c);
@@ -2369,7 +2391,7 @@ return `
           <span class="cat">${escapeHtml(cat)}</span>
         </div>
         <div class="desc">${highlightRankValue(aa.description, null, effectLookupScoped(scope, className, idx))}</div>
-        <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${costList} &middot; Level ${escapeHtml(aa.levelReq)}+${prereqInfo}</div>
+        <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${costList} &middot; Level ${escapeHtml(aa.levelReq)}+${prereqInfo}${eligibleInfo}</div>
       </div>`;
 }).join("")
 : '<div class="empty">No AAs match your search.</div>';
@@ -2703,6 +2725,7 @@ const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCum
 const warnTitles = [];
 if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
 if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
+if (s.classEligibilityWarn) warnTitles.push(`Requires one of: ${s.aa.eligibleClasses.join(", ")}.`);
 const rowWarn = warnTitles.length > 0;
 const inactiveWarnTitle = s.active ? "" : `Not one of your current 3 classes — swap ${s.className || ""} back in to keep training this.`;
 const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${s.active ? "" : " inactive"}${segClass}" draggable="true" data-index="${s.index}">

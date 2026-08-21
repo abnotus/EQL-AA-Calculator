@@ -417,6 +417,18 @@ main {
   border-color: rgba(224,168,58,0.5);
 }
 
+/* Locked because none of your 3 selected classes can train this AA -
+   same lighter grayscale + amber border as .locked-prereq, since both
+   mean "there's a specific, non-automatic thing you'd need to do,"
+   unlike a level gate's "just keep playing." Distinguished from
+   .locked-prereq by corner position (CLASS top-left vs. REQ bottom-left),
+   not color - the amber "you need to act on this" slot already covers
+   both meanings well enough to not need a second hue. */
+.node.locked-classlock {
+  filter: grayscale(0.3);
+  border-color: rgba(224,168,58,0.5);
+}
+
 .node.invalidated {
   border-color: #e08b78;
   box-shadow: 0 0 0 2px rgba(224,139,120,0.35), 0 0 14px rgba(224,139,120,0.3);
@@ -425,6 +437,18 @@ main {
 .node .costtag.prereq-tag {
   top: auto;
   bottom: -8px;
+  left: -8px;
+  right: auto;
+  border-color: #e0a83a;
+  color: #e0a83a;
+  font-weight: 700;
+}
+
+/* top/right: -8px are inherited from the base .node .costtag rule below -
+   overriding only left/right moves this into the one open corner
+   (top-right is the cost/AUTO/Lv tag, bottom-left is REQ/invalid,
+   bottom-right is hidden). */
+.node .costtag.classlock-tag {
   left: -8px;
   right: auto;
   border-color: #e0a83a;
@@ -850,6 +874,15 @@ main {
 }
 
 .browse-card .info .prereq-info.warn {
+  color: #e08b78;
+  font-weight: 600;
+}
+
+/* Same red-orange "currently blocked" color Browse's own .prereq-info.warn
+   already uses - kept local to Browse's established choice rather than
+   importing the tree's amber, since the two views already differ on this
+   for prereq too and there's no value in unifying that here. */
+.browse-card .info .eligible-info.warn {
   color: #e08b78;
   font-weight: 600;
 }

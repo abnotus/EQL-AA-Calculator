@@ -8,8 +8,8 @@ A talent-calculator-style planner for [EverQuest Legends](https://eqlwiki.com/Al
 
 - Pick up to 3 classes (EQL's tri-class combo system) and spend points across General, Archetype, Class, and Special AAs
 - Swap classes freely — picks for a class you're not currently using stay right where they were in **Progression** (just muted and read-only) and still count toward your total Points Planned, with a dedicated **Other Classes** tab for a filtered look at just those. Switch back and everything's exactly as you left it
-- Prerequisite, level, and class-based rank-cap checks before you can spend a point, with no artificial point cap of its own. A rank that a later class swap puts out of reach is never stripped — it stays flagged until a qualifying class comes back
-- Locked AAs show *why* — a missing prerequisite looks different from a plain level gate, in both the tree and Browse All AAs
+- Prerequisite, level, class-based rank-cap, and class-eligibility checks before you can spend a point (some Archetype AAs are only trainable by certain classes), with no artificial point cap of its own. A rank that a later class swap puts out of reach is never stripped — it stays flagged until a qualifying class comes back
+- Locked AAs show *why* — a missing prerequisite, a class-eligibility restriction, and a plain level gate all look different from each other, in both the tree and Browse All AAs
 - Next-rank preview — see what the next rank upgrades to before you buy it
 - Global search, with match-count badges on every tab
 - **Browse All AAs** — a searchable reference independent of your current build

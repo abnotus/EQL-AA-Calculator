@@ -89,7 +89,11 @@ with sync_playwright() as p:
     # a manual very-low fallback to an algorithmic medium guess once
     # Stoicism became fully known, so it no longer demonstrates
     # MANUAL_GUESSES at all. Swapped to a currently-live example with the
-    # identical shape - same rank1 cost, same rank2 guess value.) ---
+    # identical shape - same rank1 cost, same rank2 guess value.) Spell
+    # Casting Subtlety is Enchanter/Magician/Necromancer/Wizard-only
+    # (class-eligibility gating), so slot 3 needs a qualifying class before
+    # it can be purchased at all. ---
+    page.select_option("#classSelect2", "Wizard")
     page.click('button[data-tab="archetype"]')
     scs = page.locator(".node", has=page.locator(".name", has_text="Spell Casting Subtlety"))
     scs.click()

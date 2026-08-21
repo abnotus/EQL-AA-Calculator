@@ -716,6 +716,16 @@ export function classRankCapFor(aa) {
   return cap;
 }
 
+// Whether ANY of the 3 currently selected classes can take this AA -
+// data.src.js's eligibleClasses: ["ClassName", ...] on archetype AAs.
+// Tri-class combines rather than switches, same "ANY of the 3" union
+// semantic as classRankCapFor. Absent eligibleClasses, every class can
+// take it - same "absent field = unrestricted" convention classRankCap
+// already uses.
+export function isClassEligible(aa) {
+  return !aa.eligibleClasses || state.selectedClasses.some((c) => aa.eligibleClasses.includes(c));
+}
+
 // The rank whose description slot should read as "your current effect" —
 // usually the held rank, but a class-capped AA held beyond today's cap
 // (Steadfast Will at rank 8 with no qualifying class) only actually grants
@@ -725,14 +735,18 @@ export function effectiveDisplayRank(aa, rank) {
   return aa.classRankCap ? Math.min(rank, classRankCapFor(aa)) : rank;
 }
 
-// Returns { kind: "level" | "classCap" | "prereq", text } rather than a bare string so callers
-// that render (not just report) a lock reason can tell a level-gate apart from a class-cap gate
-// apart from a prerequisite-gate - each needs different treatment in the tree, since "level too
-// low" is self-evidently solved by playing, "capped for your classes" needs a specific class
-// swap, and "needs another AA" requires the user to notice and go buy something specific
-// elsewhere.
+// Returns { kind: "classEligibility" | "level" | "classCap" | "prereq", text } rather than a bare
+// string so callers that render (not just report) a lock reason can tell each gate apart - each
+// needs different treatment in the tree, since "wrong classes entirely" needs a whole combo
+// swap, "level too low" is self-evidently solved by playing, "capped for your classes" needs a
+// specific class swap, and "needs another AA" requires the user to notice and go buy something
+// specific elsewhere. classEligibility is checked first, ahead of level - a level-gated AA you
+// also don't qualify for by class would misleadingly read as "just wait" if level won.
 export function structuralLockReason(catKey, idx) {
   const aa = getList(catKey)[idx];
+  if (!isClassEligible(aa)) {
+    return { kind: "classEligibility", text: `Requires one of: ${aa.eligibleClasses.join(", ")}.` };
+  }
   const levelReq = parseInt(aa.levelReq, 10) || 1;
   if (state.charLevel < levelReq) return { kind: "level", text: `Requires character level ${levelReq}.` };
   if (aa.classRankCap) {
@@ -755,18 +769,21 @@ export function structuralLockReason(catKey, idx) {
   return null;
 }
 
-// Whether a rank the user already holds still satisfies its prerequisite
-// or class-rank-cap under today's AA_DATA + current class selection.
-// Unlike structuralLockReason (checks whether the NEXT rank is
-// purchasable), this checks every rank already held, catching drift from a
-// changed prereq target or class selection. Purely a function of current
-// state + data, so it clears itself once the gap closes — never strips
-// the held rank itself.
+// Whether a rank the user already holds still satisfies its class
+// eligibility, prerequisite, or class-rank-cap under today's AA_DATA +
+// current class selection. Unlike structuralLockReason (checks whether the
+// NEXT rank is purchasable), this checks every rank already held, catching
+// drift from a changed prereq target or class selection. Purely a function
+// of current state + data, so it clears itself once the gap closes — never
+// strips the held rank itself.
 export function heldRankInvalidReason(catKey, idx) {
   const aa = getList(catKey)[idx];
   if (!aa || aa.auto) return null;
   const purchased = getRanksStore(catKey)[idx] || 0;
   if (purchased <= 0) return null;
+  if (!isClassEligible(aa)) {
+    return `requires one of: ${aa.eligibleClasses.join(", ")}, none of which are currently selected.`;
+  }
   if (aa.classRankCap) {
     // Assumes classRankCap never coexists with autoRanks — true of every
     // AA today. `purchased` excludes an autoRanks AA's free floor, so this
@@ -1214,6 +1231,12 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
     // the two conditions are unrelated (a step can be class-capped without
     // a prereq at all).
     const classCapWarn = aa && aa.classRankCap && stepRank > classRankCapFor(aa);
+    // Same reasoning as classCapWarn - binary per AA, not rank-dependent
+    // (every rank of an ineligible archetype AA warns the same, not just
+    // ranks past some threshold), and computed directly rather than
+    // through structuralLockReason since Progression reads real purchase
+    // history, not "can I buy the next rank."
+    const classEligibilityWarn = !!(aa && aa.eligibleClasses && !isClassEligible(aa));
 
     counts[key] = purchaseCount;
     const isLast = purchaseCount === totalCounts[key];
@@ -1245,7 +1268,7 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
 
     return {
       index: i, aa, idx: entry.idx, scope: entry.scope, className: entry.className,
-      category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, classCapWarn, label, name, isLast, owned
+      category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, classCapWarn, classEligibilityWarn, label, name, isLast, owned
     };
   });
 }

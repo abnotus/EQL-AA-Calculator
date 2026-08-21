@@ -43,7 +43,7 @@ an actual pending wiki rename to exercise it against.
 `test_owned_profiles.py`, `test_owned_profile_cleanup.py`,
 `test_share_code_compression.py`, `test_purchase_order_cap.py`,
 `test_progression_move_to.py`, `test_cross_class_prereq_dependency.py`,
-`test_real_world_build.py`
+`test_real_world_build.py`, `test_archetype_class_eligibility.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -88,6 +88,7 @@ python tests/test_purchase_order_cap.py
 python tests/test_progression_move_to.py
 python tests/test_cross_class_prereq_dependency.py
 python tests/test_real_world_build.py
+python tests/test_archetype_class_eligibility.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -126,7 +127,15 @@ touches either guessing feature (`wiki-sync/guess_costs.py` or
 Progression's own blended running total / the plain-text export mirroring
 it), class-rank-cap logic (`classRankCapFor`, `structuralLockReason`,
 `heldRankInvalidReason`, `effectiveDisplayRank`, `computeProgressionSteps`'s
-`classCapWarn` - `test_class_rank_cap.py`), Progression's drag-to-reorder
+`classCapWarn` - `test_class_rank_cap.py`), Archetype class-eligibility
+gating (`isClassEligible`, its own branches in `structuralLockReason`
+(`kind: "classEligibility"`)/`heldRankInvalidReason`/
+`computeProgressionSteps`'s `classEligibilityWarn`, the tree's
+`.locked-classlock`/`.costtag.classlock-tag`, or Browse's `.eligible-info`
+line in `renderBrowse` - `test_archetype_class_eligibility.py`;
+`data.src.js`'s `eligibleClasses` field itself is a hand-compiled,
+not-yet-in-game-confirmed dataset, so a mismatch there is a data fix, not
+a logic bug), Progression's drag-to-reorder
 auto-scroll (`updateAutoScroll`, `autoScrollStep`, `stopAutoScroll`, or any
 of the drop handlers wired in `renderProgression`/`wireProgressionDropZone` -
 `test_progression_autoscroll.py`), hiding AAs (`isHidden`/`isHiddenScoped`,

@@ -246,6 +246,7 @@ export function renderTree(catKey) {
     else if (!aa.auto && rank >= aa.ranks) node.classList.add("maxed");
     if (locked) node.classList.add("locked");
     if (lockReason && lockReason.kind === "prereq") node.classList.add("locked-prereq");
+    if (lockReason && lockReason.kind === "classEligibility") node.classList.add("locked-classlock");
     if (invalidReason) node.classList.add("invalidated");
     if (hidden) node.classList.add("hidden-aa");
     if (searching) node.classList.add(aaMatchesQuery(aa, query) ? "search-match" : "search-dim");
@@ -286,6 +287,12 @@ export function renderTree(catKey) {
       req.className = "costtag prereq-tag";
       req.textContent = "REQ";
       node.appendChild(req);
+    }
+    if (lockReason && lockReason.kind === "classEligibility") {
+      const cls = document.createElement("div");
+      cls.className = "costtag classlock-tag";
+      cls.textContent = "CLASS";
+      node.appendChild(cls);
     }
     if (invalidReason) {
       const warn = document.createElement("div");
@@ -467,15 +474,29 @@ export function renderBrowse() {
     ? filtered.map(({ cat, aa, catKey, idx }) => {
         const { scope, className } = scopeForBrowseLabel(cat);
         const hidden = isHiddenScoped(scope, className, idx);
+        // Shared by both info lines below, computed once per card - null
+        // for a class not in one of the 3 active slots (catKeyForBrowseLabel
+        // returns null for those), same guard both checks already need.
+        const lockReason = catKey ? structuralLockReason(catKey, idx) : null;
         let prereqInfo = "";
         if (aa.prereq) {
           // Only "requires an AA you haven't reached yet" should read as a
           // warning here - a level gate isn't a prerequisite, so it's left
           // out of this specific check (structuralLockReason still folds
           // both together, but kind lets this call out the prereq case only).
-          const lockReason = catKey ? structuralLockReason(catKey, idx) : null;
           const warn = !!(lockReason && lockReason.kind === "prereq");
           prereqInfo = ` &middot; <span class="prereq-info${warn ? " warn" : ""}">Requires: ${escapeHtml(aa.prereq)}</span>`;
+        }
+        let eligibleInfo = "";
+        if (aa.eligibleClasses) {
+          // Unlike prereq (present on only a couple of archetype AAs, so
+          // it's fine that the line only appears when relevant), every
+          // archetype AA has eligibleClasses - so this is always-visible
+          // reference text (Browse is "a searchable reference independent
+          // of your current build"), warn-styled only when the current
+          // combo doesn't qualify.
+          const warn = !!(lockReason && lockReason.kind === "classEligibility");
+          eligibleInfo = ` &middot; <span class="eligible-info${warn ? " warn" : ""}">Classes: ${aa.eligibleClasses.map(escapeHtml).join(", ")}</span>`;
         }
         const costList = aa.costs.map((c, i) => {
           const disp = costDisplayScoped(scope, className, idx, i, c);
@@ -491,7 +512,7 @@ export function renderBrowse() {
           <span class="cat">${escapeHtml(cat)}</span>
         </div>
         <div class="desc">${highlightRankValue(aa.description, null, effectLookupScoped(scope, className, idx))}</div>
-        <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${costList} &middot; Level ${escapeHtml(aa.levelReq)}+${prereqInfo}</div>
+        <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${costList} &middot; Level ${escapeHtml(aa.levelReq)}+${prereqInfo}${eligibleInfo}</div>
       </div>`;
       }).join("")
     : '<div class="empty">No AAs match your search.</div>';
@@ -1039,13 +1060,16 @@ export function renderProgression() {
     // Identical to s.cumulative until the first guessed step.
     const totalIsEstimate = s.blendedCumulative !== s.cumulative;
     const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCumulative - s.cumulative} estimated.` : "";
-    // Two independent reasons a step can warn, sharing the same visual
-    // language since both mean "this step needs attention" to the user.
-    // prereqWarn is sequence-aware; classCapWarn isn't (stepRank vs.
-    // today's cap, independent of position). Concatenated when both apply.
+    // Three independent reasons a step can warn, sharing the same visual
+    // language since all three mean "this step needs attention" to the
+    // user. prereqWarn is sequence-aware; classCapWarn and
+    // classEligibilityWarn aren't (both depend only on today's class
+    // selection, independent of position). Concatenated when more than
+    // one applies.
     const warnTitles = [];
     if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
     if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
+    if (s.classEligibilityWarn) warnTitles.push(`Requires one of: ${s.aa.eligibleClasses.join(", ")}.`);
     const rowWarn = warnTitles.length > 0;
     // A separate warning icon, not folded into warnTitles/rowWarn above -
     // "this class isn't currently selected" isn't a problem with the step

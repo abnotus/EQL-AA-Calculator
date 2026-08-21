@@ -80,7 +80,13 @@ with sync_playwright() as p:
     # very-low confidence, chosen for having several guessed ranks in a row
     # like Packrat used to). Real total climbs to 237 (235 + rank 1's real
     # 2); ranks 2-6 add nothing to spentPoints() itself but 25 combined to
-    # the blended headline (237 + 25 = 262). ---
+    # the blended headline (237 + 25 = 262). Spell Casting Subtlety is
+    # Enchanter/Magician/Necromancer/Wizard-only (class-eligibility gating),
+    # so slot 3 (Shaman in BUILD) needs to swap to a qualifying class first
+    # - done after the "95 / 235" assertion above so it doesn't disturb
+    # BUILD's own already-purchased Paladin/Monk/Shaman ranks, which are
+    # lifetime-scoped and unaffected by a later class swap. ---
+    page.select_option("#classSelect2", "Wizard")
     page.click('button[data-tab="archetype"]')
     page.wait_for_timeout(100)
     scs_node = page.locator(".node", has=page.locator(".name", has_text="Spell Casting Subtlety"))
@@ -99,7 +105,10 @@ with sync_playwright() as p:
     color = planned_span.evaluate("el => getComputedStyle(el).color")
     print("planned estimate span computed color:", color)
     assert color == "rgb(90, 169, 230)", f"FAIL: the blended planned side should render blue, got {color}"
-    assert sv.get_attribute("title") == "Planned: 237 confirmed + 25 estimated."
+    # Swapping slot 3 to Wizard (above) made Shaman inactive - BUILD already
+    # had 5 real points on Shaman, so the tooltip now also discloses that
+    # slice, same as any other class-swap-with-existing-spend scenario.
+    assert sv.get_attribute("title") == "Planned: 237 confirmed + 25 estimated. 5 pts from classes not currently selected (see the Other Classes tab)."
     print("PASS: planned side blends to ~262 in blue, full breakdown lives only in the tooltip")
 
     # --- Progression's own running total now blends the same way the
