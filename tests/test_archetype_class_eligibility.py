@@ -132,6 +132,47 @@ with sync_playwright() as p:
     page.fill("#globalSearch", "")
     page.click("#browseToggle")
 
+    # --- Check-order invariant: classEligibility must be checked BEFORE
+    # level, not after (structuralLockReason's own comment says exactly why -
+    # a level-gated AA you also don't qualify for by class shouldn't
+    # misleadingly read as "just wait"). Innate Camouflage can't exercise
+    # this - its level-40 gate is already satisfied at the default charLevel
+    # of 50, so there's no ordering to disentangle. Burst of Power
+    # (Berserker/Warrior only, levelReq 46) can: drop below level 46 under a
+    # combo that's also not Berserker/Warrior, and both gates apply at once. ---
+    page.click('button[data-tab="archetype"]')
+    page.fill("#levelInput", "30")
+    page.locator("#levelInput").press("Tab")
+    page.wait_for_timeout(100)
+    # Slots are currently Bard/Beastlord/Ranger (Ranger from unlocking
+    # Innate Camouflage above) - none Berserker or Warrior.
+    bop_node = page.locator(".node", has=page.locator(".name", has_text="Burst of Power"))
+    bop_node.click()
+    bop_block = page.locator("#sidePanel .req-line.warn").first
+    print("Burst of Power block reason, ineligible AND under level 46:", bop_block.inner_text())
+    assert bop_block.inner_text() == "Requires one of: Berserker, Warrior.", \
+        "FAIL: class-eligibility must be checked before level, not after - got the level message instead"
+    assert "locked-classlock" in bop_node.get_attribute("class")
+    print("PASS: class-eligibility wins over a simultaneous level gate, matching structuralLockReason's own stated check order")
+
+    # --- Swap in a qualifying class while still under level 46 - the
+    # eligibility check clears and the level gate takes over. Proves this is
+    # a genuine ordered fallthrough (eligibility checked first, THEN level),
+    # not a bug that happened to skip the level check entirely regardless of
+    # class. ---
+    page.select_option("#classSelect2", "Berserker")
+    page.wait_for_timeout(150)
+    bop_block2 = page.locator("#sidePanel .req-line.warn").first
+    print("Burst of Power block reason, eligible but still under level 46:", bop_block2.inner_text())
+    assert bop_block2.inner_text() == "Requires character level 46."
+    assert "locked-classlock" not in bop_node.get_attribute("class")
+    assert "locked" in bop_node.get_attribute("class")
+    print("PASS: once eligible, the level gate correctly takes over - an ordered fallthrough, not eligibility masking every other gate")
+
+    page.fill("#levelInput", "50")
+    page.locator("#levelInput").press("Tab")
+    page.wait_for_timeout(100)
+
     print("ERRORS:", errors)
     assert not errors
 
