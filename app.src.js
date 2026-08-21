@@ -447,6 +447,13 @@ function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
+    version: "1.10.0",
+    date: "2026-08-21",
+    items: [
+      "Archetype AAs are now restricted to the classes that can actually train them in-game, instead of showing every one to every combo. A class combo that doesn't qualify shows a CLASS badge in the tree and a note in Browse; a rank you already trained before a class swap made it ineligible stays exactly as it was, just flagged, the same way an out-of-reach prerequisite already works. The eligible-class list is a first pass and may need the odd correction — let us know if something looks off."
+    ]
+  },
+  {
     version: "1.9.4",
     date: "2026-08-20",
     items: [
