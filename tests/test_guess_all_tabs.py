@@ -127,11 +127,11 @@ with sync_playwright() as p:
     # current 3 slots) still renders as a Progression row - muted/read-only
     # (see .inactive, styles.css) - and also shows up in the Other Classes
     # tab (test_other_classes.py covers that tab's own content in depth).
-    # Real share link from a live Paladin/Monk/Enchanter build with Bard and
-    # Shaman history (see tests/test_real_world_build.py's own header for
-    # the pinned-to-a-live-build caveat) - Cannibalization is one of its
-    # Shaman picks, now inactive. ---
-    inactive_build = "jZLLasQwDEX_JeuzkCzLjj-hi35B8GKgQxnoA0r_nyJ7MjN9UnwCiS2HK927ZbZGxTsubJtTqKyoooY6uqKNpCQjFVLFFDMsY44VrGKNLGQlJ7KRM7nF7zzhhheKUBRNhkpGxVGpNKdVilMKpVJWSqNKZ8sY8RiKhzriFhrC0HEw1yyKsnmljNM8qm7r5r5K72yhKkUvoe1CitYmLtf3VIdU071OqOe1Rlsu0W50Fh-j01QpY62sY3AX7C9igjIGOqcpNyNuw49BDG1w3pcpsO0UvRLWDHxfaVh6S_uMeJirFg5eiAx8I4ye6E46EyaH-KnfqfIrYf2k7fjOOlLxif5jRP-Zz99ieY5jmDgi-S2AX-J3jVYE7Wvw4ophkbQtC8vdy-n9dHhaWF7fDi-Px6WzrcJyf3p4PDwfF5a348PSe_8A"
+    # Real share link from a live Paladin/Enchanter/Druid build with
+    # Bard/Monk/Rogue/Shaman/Wizard history (see tests/test_real_world_build.py's
+    # own header for the pinned-to-a-live-build caveat) - Cannibalization is
+    # one of its Shaman picks, now inactive. ---
+    inactive_build = "fZM_j9swDMW_SqH5DaJI6s_arUOnjoaHFAkOQdO7Q3A39NsXj459cZEr9LNhSbQtku9NhmnAYTM8Y5oyHBUNHZIhAlGIQzpkoAiKohhKRWkoHSrQAlWoQR1aoQ06YBkmsAJTmME6bPD7XuAKN7jDK7zBO3ygZlRBVUhRSDZIdkhuGIbhGA3VUStqQ-2oAy1DVCBiEGkzJoNBt0vgaMwqsoCgwyGxodtgIAf3lxcraszWOH6U8_2bjOEpl615xsS0CqvC5DZKFCnw_PFcWmSmssZltNvoLIRnloyF4KTyXlocraKjRxc29H-wCzmasnQk37VpRHMDFji4reflgGOFnVlhewNfRwl93DP2ZKdARCmBDQrqDjd29DPY-IB6WXCKYIE5LWl5qCSgxO4ZN5bfUZULslJuUHyl77HQ2jBqL9-G3GGd0t2gIwLvIdg9IrxsxjRtTntos_AYDfbQXRq--sxUq6NWG1FNOx_RQeGa1Qb_OKbfVP_hlUcuWXf2vpJMT0yWkb49n9_Oh0tCerkenp9OacbUM9L38_Hp8PuUkK6nIxe1C9KPX3--HF-eufz6fn29RLiLIn09XI8J6efl_ZTmef4L"
     # Fresh page (no unsaved-build prompt to fight through) rather than
     # reusing the one with Turn Summoned already bought above.
     inactive_page = browser.new_page(viewport={"width": 1400, "height": 900})

@@ -113,12 +113,14 @@ example from whichever guess table still has one - see the affected test's
 own comments for how the swap played out last time.
 
 `test_real_world_build.py` is pinned the same way, but to a whole real
-share link (a live user's actual Paladin/Monk/Enchanter build) rather than
-one AA - a wiki change affecting any of its 151 picks would shift its exact
-row/point-total assertions and need a fresh share link swapped in. The same
-build also shows up as a lighter-weight fixture in
-`test_guess_all_tabs.py` (one inactive-class row) and
-`test_progression_autoscroll.py` (reused purely for its row count).
+share link (a live user's actual Paladin/Enchanter/Druid build) rather than
+one AA - a wiki change affecting any of its 191 picks would shift its exact
+row/point-total assertions and need a fresh share link swapped in (already
+happened once - see the file's own header comment for when a refresh is
+actually worth the rework, vs. just leaving it be). The same build also
+shows up as a lighter-weight fixture in `test_guess_all_tabs.py` (one
+inactive-class row) and `test_progression_autoscroll.py` (reused purely
+for its row count).
 
 None of these are wired into CI; run them by hand after a change that
 touches either guessing feature (`wiki-sync/guess_costs.py` or
