@@ -9,35 +9,35 @@ const CLASS_LIST = [
 const AA_DATA = {
   general: [
     { name: "Adamant Will", ranks: 4, costs: ["2","4","6","9"], levelReq: "1", description: "Grants you an additional 20/40/60/80% chance to resist charm, and 15/30/45/60% chance to resist mesmerization spells." },
-    { name: "Alchemy Mastery", ranks: 3, costs: ["3","?","?"], levelReq: "1", description: "Reduces the chance of failing Alchemy recipes by 10/?/?%." },
-    { name: "Baking Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Baking recipes by 10/?/?%." },
-    { name: "Blacksmithing Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Blacksmithing recipes by 10/?/?%." },
-    { name: "Brewing Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Brewing recipes by 10/?/?%." },
+    { name: "Alchemy Mastery", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Reduces the chance of failing Alchemy recipes by 10/25/?%." },
+    { name: "Baking Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Baking recipes by 10/?/?%." },
+    { name: "Blacksmithing Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Blacksmithing recipes by 10/?/?%." },
+    { name: "Brewing Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Brewing recipes by 10/?/?%." },
     { name: "Circular Breathing", ranks: 4, costs: ["2","3","4","5"], levelReq: "1", description: "Increases your endurance regeneration by 1/2/3/4 point(s)." },
     { name: "Combat Agility", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases your melee avoidance by 2%/5%/10%." },
     { name: "Combat Fury", ranks: 4, costs: ["1","2","3","4"], levelReq: "1", description: "Increases your chance of performing a critical melee hit with all skills by 1/2/3/5%." },
     { name: "Combat Stability", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases the armor class soft cap of your class by 2/5/10%." },
-    { name: "Crafting Mastery", ranks: 6, costs: ["3","?","?","?","?","?"], levelReq: "1", description: "Allows raising 1-6 additional tradeskills from a 200 to 300 cap." },
+    { name: "Crafting Mastery", ranks: 6, costs: ["3","3","3","3","3","3"], levelReq: "1", description: "Allows raising 1-6 additional tradeskills from a 200 to 300 cap." },
     { name: "Fear Resistance", ranks: 4, costs: ["2","4","6","9"], levelReq: "1", description: "Grants you an additional 25/50/75/100% chance to resist most fear spells." },
     { name: "First Aid", ranks: 6, costs: ["1","1","1","3","?","?"], levelReq: "1", description: "Increases the maximum health you can bind wound to 80/90/100/100/100/100%, and increases bandage healing by 0/0/0/10/25/50%." },
-    { name: "Fletching Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Fletching recipes by 10/?/?%." },
+    { name: "Fletching Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Fletching recipes by 10/?/?%." },
     { name: "Foraging", ranks: 1, costs: ["3"], levelReq: "1", description: "Increases your Forage skill cap by 50 points." },
     { name: "Gather Party", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Gives everyone in your party the option of teleporting directly to your location. Automatically granted to every character — per the wiki's own General AA intro text." },
     { name: "Innate Eminence", ranks: 5, costs: ["3","3","3","3","3"], levelReq: "1", description: "Increases your strength, stamina, agility, dexterity, wisdom, intelligence, and charisma by 2/4/6/8/10 points." },
-    { name: "Innate Lung Capacity", ranks: 3, costs: ["1","1","1"], levelReq: "1", description: "Increases the amount of air you can hold in your lungs by 10/25/?%." },
-    { name: "Innate Metabolism", ranks: 3, costs: ["1","?","?"], levelReq: "1", description: "Reduces your food and drink consumption by 110/125/?%." },
-    { name: "Innate Regeneration", ranks: 7, costs: ["1","1","1","2","3","5","5"], levelReq: "1", description: "Increases your health regeneration by 1/1/1/2/3/5/5 point(s)." },
+    { name: "Innate Lung Capacity", ranks: 3, costs: ["1","1","2"], levelReq: "1", description: "Increases the amount of air you can hold in your lungs by 10/25/?%." },
+    { name: "Innate Metabolism", ranks: 3, costs: ["1","1","2"], levelReq: "1", description: "Reduces your food and drink consumption by 110/125/?%." },
+    { name: "Innate Regeneration", ranks: 7, costs: ["1","1","1","2","3","5","5"], levelReq: "1", description: "Increases your health regeneration by 1/1/1/1/1/1/1 point(s)." },
     { name: "Innate Spell Resistance", ranks: 5, costs: ["2","2","2","2","2"], levelReq: "1", description: "Improves your cold, disease, fire, magic, and poison resistances by 2/4/6/8/10 points." },
     { name: "Jewel Craft Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Jewelcrafting recipes by 10/25/50%." },
     { name: "Natural Durability", ranks: 4, costs: ["2","4","6","2"], levelReq: "1", description: "Increases your maximum base health (derived from your stamina) by 2/5/10/12%." },
     { name: "Origin", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Transports you back to your starting city. Check location with /charinfo. Automatically granted to every character — per the wiki's own General AA intro text." },
     { name: "Packrat", ranks: 10, costs: ["1","1","1","1","1","1","1","1","1","1"], levelReq: "1", description: "Reduces the weight of all equipped and carried items by 5/10/15/20/25/30/35/40/45/50%." },
     { name: "Permanent Illusion", ranks: 1, costs: ["5"], levelReq: "1", description: "Extends the duration of your beneficial illusion spells to 16.6 hours and allows persistence when zoning." },
-    { name: "Pottery Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Pottery recipes by 10/?/?%." },
+    { name: "Pottery Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Pottery recipes by 10/?/?%." },
     { name: "Quick Buff", ranks: 1, costs: ["5"], levelReq: "1", description: "Cast all currently memorized beneficial spells on all valid group and raid targets in range." },
     { name: "Steadfast Will", ranks: 8, costs: ["2","2","3","3","3","3","6","12"], levelReq: "1", classRankCap: { default: 6, byClass: { "Warrior": 8, "Paladin": 8, "Shadow Knight": 8, "Ranger": 7, "Monk": 7 } }, description: "Grants you a 15/30/50/60/70/80/90/100% chance to endure stunning melee attacks without being stunned. Only Warrior, Paladin, and Shadow Knight can train the full rank 8; Ranger and Monk can reach rank 7; every other class is capped at rank 6." },
     { name: "Stoicism", ranks: 5, costs: ["2","2","2","2","2"], levelReq: "1", description: "Reduces how far incoming melee attacks push you backward by 10%." },
-    { name: "Tailoring Mastery", ranks: 3, costs: ["2","?","?"], levelReq: "1", description: "Reduces the chance of failing Tailoring recipes by 10/?/?%." }
+    { name: "Tailoring Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Tailoring recipes by 10/?/?%." }
   ],
 
   archetype: [
@@ -73,8 +73,8 @@ const AA_DATA = {
     { name: "Spell Casting Deftness", ranks: 3, costs: ["2","4","6"], levelReq: "1", eligibleClasses: ["Bard","Beastlord","Cleric","Druid","Enchanter","Magician","Necromancer","Paladin","Ranger","Shadow Knight","Shaman","Wizard"], description: "Reduces beneficial spell cast time (3+ seconds) by 10/25/50%." },
     { name: "Spell Casting Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", eligibleClasses: ["Cleric","Druid","Enchanter","Magician","Necromancer","Shaman","Wizard"], description: "Reduces all spell mana cost by 2/5/10%." },
     { name: "Spell Casting Reinforcement", ranks: 4, costs: ["2","4","6","8"], levelReq: "1", eligibleClasses: ["Beastlord","Cleric","Druid","Enchanter","Magician","Necromancer","Paladin","Ranger","Shadow Knight","Shaman","Wizard"], description: "Increases beneficial spell duration by 5/15/30/50%." },
-    { name: "Spell Casting Subtlety", ranks: 6, costs: ["2","?","?","?","?","?"], levelReq: "1", eligibleClasses: ["Enchanter","Magician","Necromancer","Wizard"], description: "Reduces hate generated by attacks/spells by 5/?/?/?/?/?%." },
-    { name: "Thief's Intuition", ranks: 4, costs: ["3","3","3","3"], levelReq: "1", eligibleClasses: ["Bard","Rogue"], description: "Reduces Sense Traps and Disarm Traps reuse time by 1 second per rank." }
+    { name: "Spell Casting Subtlety", ranks: 6, costs: ["2","0","4","0","6","0"], levelReq: "1", eligibleClasses: ["Enchanter","Magician","Necromancer","Wizard"], description: "Reduces hate generated by attacks/spells by 5/10/20%. Disabled by default — purchase the 0-cost rank to enable it. (Refresh 0:00:01)" },
+    { name: "Thief's Intuition", ranks: 4, costs: ["3","?","?","?"], levelReq: "1", eligibleClasses: ["Bard","Rogue"], description: "Reduces Sense Traps and Disarm Traps reuse time by 1/?/?/? second(s) per rank." }
   ],
 
   special: [
@@ -84,19 +84,19 @@ const AA_DATA = {
   classes: {
     "Bard": [
       { name: "Instrument Mastery", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Further improves the instrument bonus of your songs by 20/40/60%. Impacts Brass, Percussion, String and Woodwind songs." },
-      { name: "Jam Fest", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases the effective casting level of your songs by 1/?/? level. Improves songs that scale with level, song stacking priority, and the likelihood that dispel/cure blindness/sense-disarm-pick-trap songs succeed." },
+      { name: "Jam Fest", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases the effective casting level of your songs by 1/3/5 levels. Improves songs that scale with level, song stacking priority, and the likelihood that dispel/cure blindness/sense-disarm-pick-trap songs succeed." },
       { name: "Reaching Notes", ranks: 6, costs: ["2","4","6","?","?","?"], levelReq: "1", description: "Extends the radius of your beneficial area songs by 10% per rank. Enabled/expendable ability." },
       { name: "Scribble Notes", ranks: 1, costs: ["3"], levelReq: "1", description: "Reduces the amount of time it takes you to memorize a song by 50%." },
       { name: "Singing Mastery", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Further improves the singing bonus of your songs by 20/40/60%. Impacts songs that use the Singing skill." },
       { name: "Symphonic Aura", ranks: 10, costs: ["0","0","3","0","3","0","3","0","3","0"], levelReq: "1", autoRanks: 1, description: "Enables eligible Bard songs to auto-pulse. A song is eligible if it has no mana cost, no cooldown, and is a non-targeted area of effect song; eligible songs cannot be played manually while the ability is on, and are chosen from your final spell gem working backwards. Rank 1 is auto-granted. Each additional song takes two ranks: the odd rank costs 3 and grants the slot, the following even rank enables it for free. Total 5 songs at max rank, 12 points." },
-      { name: "Unbound Versatility", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your chance to continue casting through a stun by 5/10/15%. Rank 2 requires level 30." }
+      { name: "Unbound Versatility", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your chance to continue casting through a stun by 5/10/15%. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Beastlord": [
       { name: "Frenzy of Spirit", ranks: 1, costs: ["4"], levelReq: "45", description: "Activated: increases your melee speed by 99% and attack power by 250 points for 0:00:48. (Refresh 0:12:00)" },
       { name: "Hobble of Spirits", ranks: 1, costs: ["5"], levelReq: "30", description: "Activated: grants your pet's melee attacks a chance (150% bonus) to trigger a snare that reduces its target's movement speed by 40% for 24 seconds. Permanent duration, 3 second cast time." },
       { name: "Paragon of Spirit", ranks: 1, costs: ["6"], levelReq: "1", description: "Activated: shares your natural attunement with all group members within 200 feet, increasing health regeneration by 200 points and mana regeneration by 80 points for 0:00:36. (Refresh 0:15:00)" },
       { name: "Playing Possum", ranks: 1, costs: ["6"], levelReq: "46", description: "Activated: allows you to instantly Feign Death with an 80% chance of success. (Refresh 0:00:30)" },
-      { name: "Unbound Ferocity", ranks: 3, costs: ["0","0","0"], levelReq: "1", auto: true, description: "Increases your pet's chance to flurry by 3/6/9%." }
+      { name: "Unbound Ferocity", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your pet's chance to flurry by 3/6/9%. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Berserker": [
       { name: "Blood Rune", ranks: 3, costs: ["1","2","3"], levelReq: "1", description: "Melee and ability critical hits give you 5/10/15% of the damage done as an absorption shield, up to 5/8/10% of your max hitpoints." },
@@ -110,7 +110,7 @@ const AA_DATA = {
       { name: "Bestow Divine Aura", ranks: 1, costs: ["3"], levelReq: "50", prereq: "Requires Divine Aura at level 1", description: "Activated: instantly renders your target invulnerable to most attacks but also unable to attack, and heals 5000 health every 6 seconds for 0:00:18. (Refresh 0:10:00)" },
       { name: "Purify Soul", ranks: 1, costs: ["5"], levelReq: "15", prereq: "Requires Healing Gift level 3", description: "Activated: cures a target up to 100 feet away of 72 poison, disease, and curse counters and has a 95% chance to remove up to 6 detrimental effects. (Refresh 0:30:00)" },
       { name: "Turn Undead", ranks: 1, costs: ["3"], levelReq: "40", description: "Activated: infuses your undead target with holy energy, dealing 200 damage every 6 seconds for 0:00:24, with a 10% chance to trigger a critical 1000 damage effect. (Refresh 0:02:00)" },
-      { name: "Unbound Boon", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Grants your healing spells a 2% chance per rank to score an exceptional heal, doubling the healing value of the spell." }
+      { name: "Unbound Boon", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Grants your healing spells a 2/?/?% chance to score an exceptional heal, doubling the healing value of the spell. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Druid": [
       { name: "Enhanced Root", ranks: 1, costs: ["5"], levelReq: "1", description: "Reduces the chance that an NPC target entangled by your root spells will break free when struck by a non-melee attack by 50%." },
@@ -126,7 +126,7 @@ const AA_DATA = {
       { name: "Conjurer's Efficiency", ranks: 5, costs: ["3","?","?","?","?"], levelReq: "1", description: "Prevents components used in the summoning of pets from being expended." },
       { name: "Elemental Form", ranks: 1, costs: ["3"], levelReq: "40", description: "Activated: transforms you into an Air, Earth, Fire, or Water Elemental. Increases the max your stats can be raised to by 5 points, increases spell casting level by 1, and grants a 10 point damage shield." },
       { name: "Turn Summoned", ranks: 3, costs: ["3","?","?"], levelReq: "45", description: "Activated: deals 400 damage to your elemental target, with a 5% chance to trigger a critical 32000 damage effect. (Refresh 0:05:00)" },
-      { name: "Unbound Companion", ranks: 1, costs: ["0"], levelReq: "12", auto: true, description: "Increases the chance that your pet will land a critical hit by 2%." }
+      { name: "Unbound Companion", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance that your pet will land a critical hit by 2/?/?%. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Monk": [
       { name: "Dragon Force", ranks: 1, costs: ["5"], levelReq: "15", description: "Activated: pushes your target backwards and deals 10 damage." },
@@ -140,7 +140,7 @@ const AA_DATA = {
       { name: "Fear Storm", ranks: 1, costs: ["5"], levelReq: "45", description: "Activated: strikes fear into up to 4 level 52 or lower creatures within a 35 foot radius of your target, causing them to run away for 0:00:36. (Refresh 1:12:00)" },
       { name: "Flesh to Bone", ranks: 1, costs: ["3"], levelReq: "10", description: "Activated: converts a meat or body part item you are holding into bone chips." },
       { name: "Life Burn", ranks: 1, costs: ["9"], levelReq: "45", description: "Activated: consumes 75% of your current health and deals 100% of that health as direct damage, then deals 250 damage every 6 seconds for 0:00:36 while healing you 250 every 6 seconds for 0:00:36. (Refresh 2:24:00)" },
-      { name: "Unbound Affliction", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance your damage-over-time spells deal critical damage at each tick by 2/4/6%. Rank 2 requires level 30." }
+      { name: "Unbound Affliction", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance your damage-over-time spells deal critical damage at each tick by 2/4/6%. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Paladin": [
       { name: "Act of Valor", ranks: 1, costs: ["3"], levelReq: "20", description: "Activated: allows you to sacrifice yourself in order to transfer all of your remaining health to your target. (Refresh 1:12:00)" },
@@ -148,13 +148,13 @@ const AA_DATA = {
       { name: "Holy Steed", ranks: 1, costs: ["5"], levelReq: "20", description: "Activated: summons the bridle of a very fast Holy Steed (75 Velocity)." },
       { name: "Lay on Hands", ranks: 10, costs: ["0","0","0","0","0","0","0","0","0","0"], levelReq: "6", auto: true, description: "Activated: instantly heals a friendly target (or an unfriendly target's target) for 6251 health, scaling by level. (Refresh 0:15:00)" },
       { name: "Slay Undead", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Grants your melee attacks a 2.25/2.35/2.4% chance to deal 445/850/1250% damage against undead and vampiric targets." },
-      { name: "Unbound Life", ranks: 3, costs: ["0","0","0"], levelReq: "1", auto: true, description: "Increases the healing done by your direct healing spells by 2/4/6%." },
+      { name: "Unbound Life", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the healing done by your direct healing spells by 2/4/6%. Rank 2 requires level 30, rank 3 requires level 50." },
       { name: "Valiant Steed", ranks: 1, costs: ["9"], levelReq: "50", prereq: "Requires Holy Steed at level 1", description: "Activated: summons the bridle of a very fast Valiant Unicorn." }
     ],
     "Ranger": [
       { name: "Hunter's Attack Power", ranks: 26, costs: Array(26).fill("0"), levelReq: "8", auto: true, description: "Increases your attack power by 4 points per rank." },
       { name: "Innate Called Shot", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Ranger the ability to unleash a double bow shot on stationary targets." },
-      { name: "Unbounded Strikethrough", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance you will strike through your opponent's active defenses (dodge, block, parry, riposte) by 10/20/30%." },
+      { name: "Unbounded Strikethrough", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance you will strike through your opponent's active defenses (dodge, block, parry, riposte) by 10/20/30%. Rank 2 requires level 30, rank 3 requires level 50." },
       { name: "Weapon Mastery of the Scout", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases the base damage of your archery attacks by 30/60/100%." }
     ],
     "Rogue": [
@@ -163,7 +163,7 @@ const AA_DATA = {
       { name: "Innate Sneakiness", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Rogue the ability to move while using Hide, provided sneak is also active, allowing movement unseen by most creatures." },
       { name: "Purge Poison", ranks: 1, costs: ["5"], levelReq: "15", description: "Activated: cures you of 1200 poison counters." },
       { name: "Shroud of Stealth", ranks: 1, costs: ["5"], levelReq: "35", description: "Provides a previously unheard-of level of stealth, increasing the invisibility offered by your Hide skill to tier 2, shadowing you from creatures that normally see through standard invisibility." },
-      { name: "Unbound Lethality", ranks: 3, costs: ["0","0","0"], levelReq: "1", auto: true, description: "Increases the duration of your poisons by 10/15/20% and lowers their resist value by 25/50/75." }
+      { name: "Unbound Lethality", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the duration of your poisons by 10/15/20% and lowers their resist value by 25/50/75. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Shadow Knight": [
       { name: "Unholy Steed", ranks: 1, costs: ["5"], levelReq: "20", description: "Activated: summons the bridle of a very fast Unholy Steed." },
@@ -181,7 +181,7 @@ const AA_DATA = {
       { name: "Area Taunt", ranks: 1, costs: ["5"], levelReq: "25", description: "Activated: taunts all creatures within a 40 foot radius, placing you 100 points of hate higher than their previously most hated target. (Refresh 0:05:00)" },
       { name: "Heroic Leap", ranks: 1, costs: ["0"], levelReq: "12", auto: true, description: "Activated: leap approximately 10 feet in front of your target, attracting the attention of up to 8 opponents within 40 feet, increasing their hatred for you by 1250 points. (Refresh 0:00:30)" },
       { name: "Innate Fighters Tenacity", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Warrior the ability to go into a frenzy at low health, increasing critical strike chance, and permanently mitigate 5% of all incoming melee damage. Below 35% health, the warrior goes into a berserker frenzy, gaining increased chance to hit and turning critical attacks into crippling blows that deal increased damage and can stun the target. The warrior remains in this state until their health reaches 45%." },
-      { name: "Unbound Wrath", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your melee critical hit damage by 10/20/30%." },
+      { name: "Unbound Wrath", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your melee critical hit damage by 10/20/30%. Rank 2 requires level 30, rank 3 requires level 50." },
       { name: "War Cry", ranks: 1, costs: ["3"], levelReq: "25", prereq: "Requires Fear Resistance at level 3", description: "Activated: grants all group members within 100 feet immunity to fear spells for 10 seconds. (Refresh 0:36:00)" },
       { name: "Warrior's Endurance", ranks: 1, costs: ["6"], levelReq: "30", description: "Increases your hit point regeneration by 1% per 6 seconds." }
     ],
@@ -190,7 +190,7 @@ const AA_DATA = {
       { name: "Mana Burn", ranks: 1, costs: ["5"], levelReq: "45", prereq: "Requires Mental Clarity at level 3", description: "Activated: consumes up to 3000 mana to deal 4x the consumed mana as direct damage; prevents additional Mana Burn spells from landing on that target for 0:01:00." },
       { name: "Quick Evacuation", ranks: 3, costs: ["3","?","?"], levelReq: "1", description: "Reduces the cast time of your evacuation and succor spells and abilities by 10/?/?%." },
       { name: "Strong Root", ranks: 1, costs: ["5"], levelReq: "35", description: "Activated: roots your target in place for up to 48 seconds with a 300 point resist modifier and a 2 second cast time." },
-      { name: "Unbound Destruction", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your chance to land a critical hit with your direct damage spells by 2/4/6%." }
+      { name: "Unbound Destruction", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your chance to land a critical hit with your direct damage spells by 2/4/6%. Rank 2 requires level 30, rank 3 requires level 50." }
     ]
   }
 };

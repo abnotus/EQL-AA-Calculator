@@ -18,16 +18,19 @@ with sync_playwright() as p:
 
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
-    page.click('button[data-tab="general"]')
 
-    # --- Alchemy Mastery: high-confidence guess (6) for rank 2. (This used
-    # to be Combat Stability's rank 3, before that Adamant Will's rank 4 -
-    # each got confirmed by a wiki scrape in turn since this test was first
-    # written, the same "guess resolves away" story Combat Fury's own
-    # section below already tells. Swapped to a currently-live example
-    # rather than just updating the numbers, since neither previous example
-    # has a "?" cost left at all anymore.) ---
-    am = page.locator(".node", has=page.locator(".name", has_text="Alchemy Mastery"))
+    # --- Turn Summoned (Magician): high-confidence guess (6) for rank 2.
+    # (This used to be Alchemy Mastery's rank 2, before that Combat
+    # Stability's rank 3, before that Adamant Will's rank 4 - each got
+    # confirmed by a wiki scrape in turn since this test was first written,
+    # the same "guess resolves away" story Combat Fury's own section below
+    # already tells. Every remaining high-confidence guess now lives on a
+    # per-class AA rather than a general one, so this swap also needs a
+    # class in a slot - Magician isn't one of the default slot0-2 classes,
+    # so it's selected explicitly.) ---
+    page.select_option("#classSelect0", "Magician")
+    page.click('button[data-tab="classSlot0"]')
+    am = page.locator(".node", has=page.locator(".name", has_text="Turn Summoned"))
     am.click()
     page.click("#incBtn")  # rank1 (cost 3 - real)
     page.wait_for_timeout(20)
@@ -41,7 +44,7 @@ with sync_playwright() as p:
     print("tree costtag text:", tag.inner_text(), "class:", tag.get_attribute("class"))
     assert tag.inner_text() == "~6"
     assert "is-estimate" in tag.get_attribute("class") and "tier-high" in tag.get_attribute("class")
-    print("PASS: tree node shows the high-confidence guess for Alchemy Mastery's unknown rank 2")
+    print("PASS: tree node shows the high-confidence guess for Turn Summoned's unknown rank 2")
 
     # Side panel next-rank box + pip strip.
     next_cost_b = page.locator("#sidePanel .next-rank-title b")
@@ -107,7 +110,7 @@ with sync_playwright() as p:
     page.click("#exportBtn")
     page.wait_for_timeout(300)
     export_text = page.locator("#exportText").input_value()
-    line = next(l for l in export_text.split("\n") if "Alchemy Mastery rank 2" in l)
+    line = next(l for l in export_text.split("\n") if "Turn Summoned rank 2" in l)
     print("export text line for the guessed rank 2:", line)
     assert "~6 pt(s)" in line, f"FAIL: expected the export to show the ~6 guess, got: {line}"
     assert "~9 total" in line, f"FAIL: expected the export's running total to blend to ~9 like Progression's own, got: {line}"

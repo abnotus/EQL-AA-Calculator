@@ -15,11 +15,9 @@
 // otherwise read (search, export text) - purely a display hint.
 export const EFFECT_GUESS_TABLE = {
   "archetype::burst-of-power": { "0": { "2": { value: 15, confidence: "very-low", basedOn: [], manual: true } } },
-  "archetype::spell-casting-subtlety": { "0": { "1": { value: 10, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 15, confidence: "very-low", basedOn: [], manual: true }, "3": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "4": { value: 25, confidence: "very-low", basedOn: [], manual: true }, "5": { value: 30, confidence: "very-low", basedOn: [], manual: true } } },
-  "class:Bard:jam-fest": { "0": { "1": { value: 3, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 5, confidence: "very-low", basedOn: [], manual: true } } },
   "class:Druid:quick-evacuation": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 30, confidence: "very-low", basedOn: [], manual: true } } },
   "class:Wizard:quick-evacuation": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 30, confidence: "very-low", basedOn: [], manual: true } } },
-  "general::alchemy-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
+  "general::alchemy-mastery": { "0": { "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "general::baking-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "general::blacksmithing-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "general::brewing-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },

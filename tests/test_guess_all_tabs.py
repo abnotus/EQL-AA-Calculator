@@ -33,22 +33,27 @@ with sync_playwright() as p:
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
 
-    # --- Browse view: Alchemy Mastery's rank 2 (high-confidence guess,
-    # value 6) should show as an estimate in the per-rank cost list, not a
-    # plain "?". Use the global search box to find it quickly. (This used
-    # to be Combat Stability's rank 3, before that Adamant Will's rank 4 -
-    # each got confirmed by a wiki scrape in turn since this test was first
-    # written, so neither has a "?" cost left at all; swapped to a
-    # currently-live example.) ---
+    # --- Browse view: Turn Summoned's rank 2 (high-confidence guess, value
+    # 6) should show as an estimate in the per-rank cost list, not a plain
+    # "?". Use the global search box to find it quickly - Browse lists
+    # every class regardless of the active 3 slots (see the Conjurer's
+    # Efficiency scenario just below), so no class selection is needed
+    # here. (This used to be Alchemy Mastery's rank 2, before that Combat
+    # Stability's rank 3, before that Adamant Will's rank 4 - each got
+    # confirmed by a wiki scrape in turn since this test was first written.
+    # Every remaining high-confidence guess now lives on a per-class AA
+    # rather than a general one - Turn Summoned is Magician-only and its
+    # name isn't shared with any other AA, unlike e.g. "Quick Evacuation"
+    # which exists for both Druid and Wizard.) ---
     page.click("#browseToggle")
-    page.fill("#globalSearch", "Alchemy Mastery")
+    page.fill("#globalSearch", "Turn Summoned")
     page.wait_for_timeout(100)
-    card = page.locator(".browse-card", has=page.locator(".name", has_text="Alchemy Mastery"))
+    card = page.locator(".browse-card", has=page.locator(".name", has_text="Turn Summoned"))
     info_html = card.locator(".info").inner_html()
-    print("Alchemy Mastery browse info html:", info_html)
+    print("Turn Summoned browse info html:", info_html)
     assert "~6" in info_html
     assert 'class="is-estimate tier-high"' in info_html
-    print("PASS: Browse shows Alchemy Mastery's rank-2 estimate, not a bare '?'")
+    print("PASS: Browse shows Turn Summoned's rank-2 estimate, not a bare '?'")
 
     # --- Browse view: a class NOT currently selected must still show its
     # guesses (Browse lists every class, not just the active 3). Default
@@ -69,12 +74,14 @@ with sync_playwright() as p:
     page.fill("#globalSearch", "")
     page.click("#browseToggle")
 
-    # --- Progression tab: buy Alchemy Mastery up through the guessed rank
-    # 2 and confirm the per-step cost pill shows the estimate (not '0'), the
+    # --- Progression tab: buy Turn Summoned up through the guessed rank 2
+    # and confirm the per-step cost pill shows the estimate (not '0'), the
     # running total blends it in like the topbar, and the next-rank preview
-    # also shows the estimate + confidence chip. ---
-    page.click('button[data-tab="general"]')
-    am = page.locator(".node", has=page.locator(".name", has_text="Alchemy Mastery"))
+    # also shows the estimate + confidence chip. Turn Summoned is a
+    # per-class (Magician) AA, so it needs a slot. ---
+    page.select_option("#classSelect0", "Magician")
+    page.click('button[data-tab="classSlot0"]')
+    am = page.locator(".node", has=page.locator(".name", has_text="Turn Summoned"))
     am.click()
     for _ in range(2):
         page.click("#incBtn")
@@ -126,7 +133,7 @@ with sync_playwright() as p:
     # Shaman picks, now inactive. ---
     inactive_build = "jZLLasQwDEX_JeuzkCzLjj-hi35B8GKgQxnoA0r_nyJ7MjN9UnwCiS2HK927ZbZGxTsubJtTqKyoooY6uqKNpCQjFVLFFDMsY44VrGKNLGQlJ7KRM7nF7zzhhheKUBRNhkpGxVGpNKdVilMKpVJWSqNKZ8sY8RiKhzriFhrC0HEw1yyKsnmljNM8qm7r5r5K72yhKkUvoe1CitYmLtf3VIdU071OqOe1Rlsu0W50Fh-j01QpY62sY3AX7C9igjIGOqcpNyNuw49BDG1w3pcpsO0UvRLWDHxfaVh6S_uMeJirFg5eiAx8I4ye6E46EyaH-KnfqfIrYf2k7fjOOlLxif5jRP-Zz99ieY5jmDgi-S2AX-J3jVYE7Wvw4ophkbQtC8vdy-n9dHhaWF7fDi-Px6WzrcJyf3p4PDwfF5a348PSe_8A"
     # Fresh page (no unsaved-build prompt to fight through) rather than
-    # reusing the one with Alchemy Mastery already bought above.
+    # reusing the one with Turn Summoned already bought above.
     inactive_page = browser.new_page(viewport={"width": 1400, "height": 900})
     inactive_page.on("dialog", lambda d: d.accept())
     inactive_page.goto(f"{BASE}?build={inactive_build}")

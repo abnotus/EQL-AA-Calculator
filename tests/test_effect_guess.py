@@ -7,7 +7,7 @@
 # and must never affect anything else (search, export text, real math,
 # which never looked at description text for spending purposes anyway).
 #
-# Alchemy Mastery (general) is the one live example today: "Reduces the
+# Baking Mastery (general) is the one live example today: "Reduces the
 # chance of failing Alchemy recipes by 10/?/?%." - ranks 2 and 3 each get a
 # medium-confidence guess (25 and 50) once Jewel Craft Mastery (the same
 # EFFECT_SIBLING_GROUPS crafting-Mastery family) became fully known. (This
@@ -15,7 +15,7 @@
 # since this test was first written, so it no longer has any "?" effect
 # value at all; swapped to a currently-live example. Combat Fury's own gap
 # had no sibling group and a real rank *after* it, so it got a low-
-# confidence interpolated guess instead - Alchemy Mastery's gap is
+# confidence interpolated guess instead - Baking Mastery's gap is
 # trailing, so it's sibling-matched, not interpolated, and there's no
 # rank 4 to check "stays untouched" against.)
 import os, sys, io
@@ -35,7 +35,7 @@ with sync_playwright() as p:
     page.wait_for_selector("#treeWrap .node")
     page.click('button[data-tab="general"]')
 
-    am = page.locator(".node", has=page.locator(".name", has_text="Alchemy Mastery"))
+    am = page.locator(".node", has=page.locator(".name", has_text="Baking Mastery"))
     am.click()
     page.click("#incBtn")  # rank1, real value 10
     page.wait_for_timeout(30)
@@ -58,7 +58,7 @@ with sync_playwright() as p:
     # guessed one) shows the same estimate, with a confidence chip. ---
     page.click('button[data-tab="progression"]')
     page.wait_for_timeout(100)
-    row = page.locator(".progression-row", has=page.locator(".step-name", has_text="Alchemy Mastery"))
+    row = page.locator(".progression-row", has=page.locator(".step-name", has_text="Baking Mastery"))
     row.locator(".step-expand").click()
     page.wait_for_timeout(100)
     prog_desc = page.locator(".progression-next-rank .desc").inner_html()
@@ -89,9 +89,9 @@ with sync_playwright() as p:
     # --- Browse: rank-agnostic reference view - the guess still shows, but
     # with no rank-highlight class at all (there's no "current rank" here). ---
     page.click("#browseToggle")
-    page.fill("#globalSearch", "Alchemy Mastery")
+    page.fill("#globalSearch", "Baking Mastery")
     page.wait_for_timeout(100)
-    card = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Alchemy Mastery"))
+    card = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Baking Mastery"))
     browse_html = card.locator(".desc").inner_html()
     print("Browse desc html:", browse_html)
     assert "~25" in browse_html and "~50" in browse_html and "is-estimate" in browse_html
@@ -104,33 +104,38 @@ with sync_playwright() as p:
     # hold, same guess/bold treatment as the side panel. ---
     page.click('button[data-tab="summary"]')
     page.wait_for_timeout(100)
-    summary_card = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Alchemy Mastery"))
+    summary_card = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Baking Mastery"))
     summary_html = summary_card.locator(".desc").inner_html()
     print("Summary desc html:", summary_html)
     assert "~25" in summary_html and "is-estimate" in summary_html and "rank-highlight" in summary_html
     print("PASS: Summary shows the guess, bolded (it's the currently-held rank there)")
 
-    # --- Spell Casting Subtlety: MANUAL_EFFECT_GUESSES, very-low tier - 5
-    # guessed slots in a row (ranks 2-6), each independently styled/
+    # --- Quick Evacuation (Druid): MANUAL_EFFECT_GUESSES, very-low tier -
+    # 2 guessed slots in a row (ranks 2-3), each independently styled/
     # tooltipped. Confirms the manual fallback (not just algorithmic
     # interpolation/sibling-matching) renders correctly for effects, same
-    # as it does for costs. (This used to be Packrat - a wiki scrape
-    # confirmed its whole progression since this test was first written,
-    # so it no longer has any "?" effect value at all; swapped to a
-    # currently-live example, same process as this file's own top comment
-    # describes for the Combat Fury -> Alchemy Mastery swap.) ---
-    page.click('button[data-tab="archetype"]')
-    scs = page.locator(".node", has=page.locator(".name", has_text="Spell Casting Subtlety"))
-    scs.click()
-    page.click("#incBtn")  # rank1, real value 5% - not part of what's being checked here
+    # as it does for costs. (This used to be Spell Casting Subtlety's 5
+    # guessed ranks, before that Packrat's whole progression - each got
+    # confirmed by a wiki scrape in turn since this test was first written,
+    # same process as this file's own top comment describes for the Combat
+    # Fury -> Baking Mastery swap. No live AA currently has more than 2
+    # consecutive manual very-low effect guesses. Quick Evacuation is a
+    # per-class AA (Druid here, though the identically-named Wizard version
+    # would work too), so it needs a slot rather than the shared archetype
+    # tab. ---
+    page.select_option("#classSelect0", "Druid")
+    page.click('button[data-tab="classSlot0"]')
+    qe = page.locator(".node", has=page.locator(".name", has_text="Quick Evacuation"))
+    qe.click()
+    page.click("#incBtn")  # rank1, real value 10% - not part of what's being checked here
     page.wait_for_timeout(30)
-    scs_desc = page.locator("#sidePanel .desc").first.inner_html()
-    print("Spell Casting Subtlety desc html:", scs_desc)
-    for v in ("~10", "~15", "~20", "~25", "~30"):
-        assert v in scs_desc, f"FAIL: expected {v} in Spell Casting Subtlety's description"
-    assert scs_desc.count('tier-very-low') == 5, "FAIL: expected all 5 guessed slots tagged very-low"
-    assert "hand-picked" in scs_desc
-    print("PASS: Spell Casting Subtlety's 5 manual very-low effect guesses all render correctly")
+    qe_desc = page.locator("#sidePanel .desc").first.inner_html()
+    print("Quick Evacuation desc html:", qe_desc)
+    for v in ("~20", "~30"):
+        assert v in qe_desc, f"FAIL: expected {v} in Quick Evacuation's description"
+    assert qe_desc.count('tier-very-low') == 2, "FAIL: expected both guessed slots tagged very-low"
+    assert "hand-picked" in qe_desc
+    print("PASS: Quick Evacuation's 2 manual very-low effect guesses all render correctly")
 
     print("ERRORS:", errors)
     assert not errors
