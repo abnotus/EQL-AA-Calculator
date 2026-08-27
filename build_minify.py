@@ -136,7 +136,7 @@ DATA_ENTRY_NAME = re.compile(r'name:\s*"((?:[^"\\]|\\.)*)"')
 DATA_ENTRY_AUTO = re.compile(r'\bauto:\s*true')
 
 
-MIN_EXPECTED_AA_ENTRIES = 100  # currently 136; floor with headroom for legitimate removals
+MIN_EXPECTED_AA_ENTRIES = 100  # currently 143; floor with headroom for legitimate removals
 
 
 def check_prereq_disambiguation_invariant(data_src: str):

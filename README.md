@@ -49,7 +49,7 @@ It's a diagnostic, not an auto-updater — it never touches `data.src.js`. Run i
 python wiki-sync/guess_costs.py
 ```
 
-Regenerates `src/costGuesses.js` — pattern-inferred estimates for per-rank costs the wiki hasn't documented yet (`?` in `data.src.js`). Cross-references *other* fully-known AAs with the same rank count and matching known costs, rather than trusting one AA's own progression alone — Adamant Will's `2/4/6/?` looks like a clean doubling sequence, but its real sibling Fear Resistance (same shape) is fully known at `2/4/6/9`, not 8. Confidence scales with how many independent siblings agree (see the script's own docstring for the tiers); a gap bounded by two of the AA's own known costs can still get a lower-confidence interpolated guess, since the true value is provably between them either way.
+Regenerates `src/costGuesses.js` — pattern-inferred estimates for per-rank costs the wiki hasn't documented yet (`?` in `data.src.js`). Cross-references *other* fully-known AAs with the same rank count and matching known costs, rather than trusting one AA's own progression alone — a `2/4/6/?` pattern might look like a clean doubling sequence (implying 12), but a same-shaped sibling fully known at `2/4/6/9` proves the doubling read wrong. Confidence scales with how many independent siblings agree (see the script's own docstring for the tiers); a gap bounded by two of the AA's own known costs can still get a lower-confidence interpolated guess, since the true value is provably between them either way.
 
 Rewrites `costGuesses.js` from scratch every run, so a guess that's since been confirmed (or lost its supporting evidence) just stops appearing — nothing to clean up by hand. Run it after any `data.src.js` change that could move the picture.
 
@@ -83,7 +83,7 @@ No build tools, no server — just open `index.html` in a browser.
 
 The app logic is authored as real ES modules under `src/` (`aaIds.js`, `costGuesses.js`, `effectGuesses.js`, `keys.js`, `changelogData.js`, `state.js`, `logic.js`, `builds.js`, `dom.js`, `render.js`, `exportImport.js`, `events.js`, `main.js`). Native ES modules don't work over `file://` in Chrome, and this app is deliberately built to run by just double-clicking `index.html` with no local server — so `build_minify.py` assembles the `src/` modules back into a single classic script and minifies it, which is what `index.html` actually loads.
 
-`build_minify.py` also checks a data-integrity invariant before building (see the comment on `check_prereq_disambiguation_invariant`) and fails the build with an explanation if it's violated, rather than shipping AA data that would resolve a prerequisite unpredictably. If a build fails on this, the error message says what to fix.
+`build_minify.py` also runs two data-integrity checks before building and fails with an explanation if either is violated, rather than shipping something broken: `check_prereq_disambiguation_invariant` (a repeated AA name needs exactly one non-auto occurrence for prereq resolution to stay deterministic) and `check_aa_ids_current` (every AA in `data.src.js` needs a matching entry in `src/aaIds.js`, or it silently drops out of every share link/export that includes it — run `wiki-sync/assign_aa_ids.py` to fix). If a build fails on either, the error message says what to do.
 
 ### Saved builds are keyed by AA name, not array position
 
