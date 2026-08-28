@@ -1348,15 +1348,13 @@ function aaMatchesQuery(aa, query) {
 }
 
 // Count of AAs in a category matching the current search, for tab badges.
-// Must exclude hidden AAs the same way renderTree/renderBrowse do, or a
-// hidden match would inflate a badge while the tab itself shows nothing
-// for it.
+// Shares isSuppressed with the tree and Browse, or a hidden match would
+// inflate a badge while the tab itself shows nothing for it.
 function countMatches(catKey, query) {
   if (!query || !query.trim()) return 0;
   return getList(catKey).filter((aa, idx) => {
     if (!aaMatchesQuery(aa, query)) return false;
-    if (isHidden(catKey, idx) && !state.showHidden && effectiveRank(catKey, idx) === 0) return false;
-    return true;
+    return !isSuppressed(catKey, idx);
   }).length;
 }
 
@@ -1516,6 +1514,22 @@ function setHiddenScoped(scope, className, idx, hidden) {
 function setHidden(catKey, idx, hidden) {
   const { scope, className } = categoryToScopeClassName(catKey);
   setHiddenScoped(scope, className, idx, hidden);
+}
+
+// Whether an AA should be left out of the tree, Browse, and the tab match
+// badges entirely. Hiding declutters what to look at; it never suppresses
+// real build state, so an AA you've actually spent points on always stays
+// visible. Show Hidden is the one override switch - including for search,
+// so a hidden AA is unfindable rather than merely absent from browsing.
+function isSuppressedScoped(scope, className, idx) {
+  if (!isHiddenScoped(scope, className, idx)) return false;
+  if (state.showHidden) return false;
+  return effectiveRankScoped(scope, className, idx) === 0;
+}
+
+function isSuppressed(catKey, idx) {
+  const { scope, className } = categoryToScopeClassName(catKey);
+  return isSuppressedScoped(scope, className, idx);
 }
 
 // Whether state.hiddenAAs holds anything at all, across every scope/class —
@@ -3323,14 +3337,10 @@ function renderTree(catKey) {
 
   list.forEach((aa, idx) => {
     const rank = effectiveRank(catKey, idx);
-    // A hidden AA is left out of the grid entirely unless Show Hidden is on,
-    // except one you've actually spent points on - hiding declutters what
-    // to look at, it never suppresses real build state. Runs before the
-    // search-match classing below on purpose: a hidden AA is unfindable via
-    // search too, not just absent from plain browsing - Show Hidden is
-    // meant to be the one override switch, not something search bypasses.
+    // Runs before the search-match classing below on purpose - see
+    // isSuppressed (logic.js) for the rule itself.
     const hidden = isHidden(catKey, idx);
-    if (hidden && !state.showHidden && rank === 0) return;
+    if (isSuppressed(catKey, idx)) return;
     const autoBelowLevel = aa.auto && rank < aa.ranks;
     const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
     const locked = !!lockReason || autoBelowLevel;
@@ -3557,15 +3567,11 @@ function renderBrowse() {
   }
 
   const searched = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
-  // Same hidden-declutter rule as the tree (see renderTree): left out
-  // unless Show Hidden is on, except one you've actually spent points on.
-  // Uses the scoped rank lookup, not catKey-gated, since an inactive
-  // class can still have a real nonzero rank here.
+  // Scoped rather than catKey-gated, since an inactive class can still have
+  // a real nonzero rank here - see isSuppressedScoped (logic.js).
   const filtered = searched.filter(({ cat, idx }) => {
     const { scope, className } = scopeForBrowseLabel(cat);
-    if (!isHiddenScoped(scope, className, idx)) return true;
-    if (state.showHidden) return true;
-    return effectiveRankScoped(scope, className, idx) > 0;
+    return !isSuppressedScoped(scope, className, idx);
   });
 
   el.browseGrid.innerHTML = filtered.length

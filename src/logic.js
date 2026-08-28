@@ -93,15 +93,13 @@ export function aaMatchesQuery(aa, query) {
 }
 
 // Count of AAs in a category matching the current search, for tab badges.
-// Must exclude hidden AAs the same way renderTree/renderBrowse do, or a
-// hidden match would inflate a badge while the tab itself shows nothing
-// for it.
+// Shares isSuppressed with the tree and Browse, or a hidden match would
+// inflate a badge while the tab itself shows nothing for it.
 export function countMatches(catKey, query) {
   if (!query || !query.trim()) return 0;
   return getList(catKey).filter((aa, idx) => {
     if (!aaMatchesQuery(aa, query)) return false;
-    if (isHidden(catKey, idx) && !state.showHidden && effectiveRank(catKey, idx) === 0) return false;
-    return true;
+    return !isSuppressed(catKey, idx);
   }).length;
 }
 
@@ -261,6 +259,22 @@ export function setHiddenScoped(scope, className, idx, hidden) {
 export function setHidden(catKey, idx, hidden) {
   const { scope, className } = categoryToScopeClassName(catKey);
   setHiddenScoped(scope, className, idx, hidden);
+}
+
+// Whether an AA should be left out of the tree, Browse, and the tab match
+// badges entirely. Hiding declutters what to look at; it never suppresses
+// real build state, so an AA you've actually spent points on always stays
+// visible. Show Hidden is the one override switch - including for search,
+// so a hidden AA is unfindable rather than merely absent from browsing.
+export function isSuppressedScoped(scope, className, idx) {
+  if (!isHiddenScoped(scope, className, idx)) return false;
+  if (state.showHidden) return false;
+  return effectiveRankScoped(scope, className, idx) === 0;
+}
+
+export function isSuppressed(catKey, idx) {
+  const { scope, className } = categoryToScopeClassName(catKey);
+  return isSuppressedScoped(scope, className, idx);
 }
 
 // Whether state.hiddenAAs holds anything at all, across every scope/class —

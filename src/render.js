@@ -12,6 +12,7 @@ import {
   hasAnyOwned, computeProgressionTimeline, addOrUpdateWaypoint, removeWaypoint, costGuess, costGuessScoped,
   estimatedExtraPoints, effectGuess, effectGuessScoped, guessTitle, classRankCapFor, effectiveDisplayRank,
   isHidden, isHiddenScoped, setHidden, setHiddenScoped, hasAnyHidden,
+  isSuppressed, isSuppressedScoped,
   effectiveRankScoped, countOtherClassesPicked, otherClassesWithPicks, spentForClass,
   ownedPoints, spentOnInactiveClasses, estimatedExtraOwnedPoints
 } from "./logic.js";
@@ -233,14 +234,10 @@ export function renderTree(catKey) {
 
   list.forEach((aa, idx) => {
     const rank = effectiveRank(catKey, idx);
-    // A hidden AA is left out of the grid entirely unless Show Hidden is on,
-    // except one you've actually spent points on - hiding declutters what
-    // to look at, it never suppresses real build state. Runs before the
-    // search-match classing below on purpose: a hidden AA is unfindable via
-    // search too, not just absent from plain browsing - Show Hidden is
-    // meant to be the one override switch, not something search bypasses.
+    // Runs before the search-match classing below on purpose - see
+    // isSuppressed (logic.js) for the rule itself.
     const hidden = isHidden(catKey, idx);
-    if (hidden && !state.showHidden && rank === 0) return;
+    if (isSuppressed(catKey, idx)) return;
     const autoBelowLevel = aa.auto && rank < aa.ranks;
     const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
     const locked = !!lockReason || autoBelowLevel;
@@ -467,15 +464,11 @@ export function renderBrowse() {
   }
 
   const searched = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
-  // Same hidden-declutter rule as the tree (see renderTree): left out
-  // unless Show Hidden is on, except one you've actually spent points on.
-  // Uses the scoped rank lookup, not catKey-gated, since an inactive
-  // class can still have a real nonzero rank here.
+  // Scoped rather than catKey-gated, since an inactive class can still have
+  // a real nonzero rank here - see isSuppressedScoped (logic.js).
   const filtered = searched.filter(({ cat, idx }) => {
     const { scope, className } = scopeForBrowseLabel(cat);
-    if (!isHiddenScoped(scope, className, idx)) return true;
-    if (state.showHidden) return true;
-    return effectiveRankScoped(scope, className, idx) > 0;
+    return !isSuppressedScoped(scope, className, idx);
   });
 
   el.browseGrid.innerHTML = filtered.length

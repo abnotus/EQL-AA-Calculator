@@ -927,8 +927,7 @@ function countMatches(catKey, query) {
 if (!query || !query.trim()) return 0;
 return getList(catKey).filter((aa, idx) => {
 if (!aaMatchesQuery(aa, query)) return false;
-if (isHidden(catKey, idx) && !state.showHidden && effectiveRank(catKey, idx) === 0) return false;
-return true;
+return !isSuppressed(catKey, idx);
 }).length;
 }
 function classSlotIndex(catKey) {
@@ -1028,6 +1027,15 @@ saveHidden();
 function setHidden(catKey, idx, hidden) {
 const { scope, className } = categoryToScopeClassName(catKey);
 setHiddenScoped(scope, className, idx, hidden);
+}
+function isSuppressedScoped(scope, className, idx) {
+if (!isHiddenScoped(scope, className, idx)) return false;
+if (state.showHidden) return false;
+return effectiveRankScoped(scope, className, idx) === 0;
+}
+function isSuppressed(catKey, idx) {
+const { scope, className } = categoryToScopeClassName(catKey);
+return isSuppressedScoped(scope, className, idx);
 }
 function hasAnyHidden() {
 const h = state.hiddenAAs;
@@ -2155,7 +2163,7 @@ const searching = !!query.trim();
 list.forEach((aa, idx) => {
 const rank = effectiveRank(catKey, idx);
 const hidden = isHidden(catKey, idx);
-if (hidden && !state.showHidden && rank === 0) return;
+if (isSuppressed(catKey, idx)) return;
 const autoBelowLevel = aa.auto && rank < aa.ranks;
 const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
 const locked = !!lockReason || autoBelowLevel;
@@ -2356,9 +2364,7 @@ pushList(filter, AA_DATA.classes[filter] || []);
 const searched = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
 const filtered = searched.filter(({ cat, idx }) => {
 const { scope, className } = scopeForBrowseLabel(cat);
-if (!isHiddenScoped(scope, className, idx)) return true;
-if (state.showHidden) return true;
-return effectiveRankScoped(scope, className, idx) > 0;
+return !isSuppressedScoped(scope, className, idx);
 });
 el.browseGrid.innerHTML = filtered.length
 ? filtered.map(({ cat, aa, catKey, idx }) => {
