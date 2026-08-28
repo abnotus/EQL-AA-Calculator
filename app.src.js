@@ -3281,6 +3281,22 @@ function effectLookupScoped(scope, className, idx) {
   return (progIdx, rankIdx) => effectGuessScoped(scope, className, idx, progIdx, rankIdx);
 }
 
+// The "what does the next rank get you" preview, shared by the side panel
+// and Progression's expanded row - identical markup either way, so a tweak
+// to one can't silently miss the other. `rank` is the currently-held rank;
+// the box previews rank + 1.
+function nextRankBoxHtml(catKey, idx, aa, rank, extraClass = "") {
+  const nextRank = rank + 1;
+  const disp = costDisplay(catKey, idx, rank, aa.costs[rank]);
+  const chip = disp.isGuess
+    ? ` <span class="confidence-chip tier-${disp.confidence}" title="${escapeHtml(disp.title)}">${disp.confidence}</span>`
+    : "";
+  return `<div class="next-rank-box${extraClass}${disp.isGuess ? " is-estimate" : ""}">
+        <div class="next-rank-title">Next Rank (${nextRank}/${aa.ranks}) &middot; costs <b class="${disp.isGuess ? "is-estimate" : ""}" title="${disp.isGuess ? escapeHtml(disp.title) : ""}">${disp.text}</b> pt(s)${chip}</div>
+        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, nextRank), nextRank, effectLookup(catKey, idx))}</div>
+      </div>`;
+}
+
 function renderTree(catKey) {
   const list = getList(catKey);
 
@@ -3465,15 +3481,7 @@ function renderSidePanel() {
       html += `<div class="req-line warn">Another AA depends on this rank &mdash; lower it first.</div>`;
     }
     if (nextCost !== null) {
-      const nextRank = rank + 1;
-      const nextDisp = costDisplay(sel.category, sel.idx, rank, aa.costs[rank]);
-      const chip = nextDisp.isGuess
-        ? ` <span class="confidence-chip tier-${nextDisp.confidence}" title="${escapeHtml(nextDisp.title)}">${nextDisp.confidence}</span>`
-        : "";
-      html += `<div class="next-rank-box${nextDisp.isGuess ? " is-estimate" : ""}">
-        <div class="next-rank-title">Next Rank (${nextRank}/${aa.ranks}) &middot; costs <b class="${nextDisp.isGuess ? "is-estimate" : ""}" title="${nextDisp.isGuess ? escapeHtml(nextDisp.title) : ""}">${nextDisp.text}</b> pt(s)${chip}</div>
-        <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, nextRank), nextRank, effectLookup(sel.category, sel.idx))}</div>
-      </div>`;
+      html += nextRankBoxHtml(sel.category, sel.idx, aa, rank);
     }
     html += `<div class="rank-costs">` + aa.costs.map((c, i) => {
       const disp = costDisplay(sel.category, sel.idx, i, c);
@@ -4197,20 +4205,10 @@ function renderProgression() {
       </span>
     </div>`;
     if (!expanded) return row;
-    const nextRank = s.stepRank + 1;
-    const nextRawCost = s.aa.costs[s.stepRank];
     // canExpand requires s.active, so s.category is always set here - no
     // need for costDisplayScoped's fallback the way Browse/Other Classes
     // need it.
-    const nextDisp = costDisplay(s.category, s.idx, s.stepRank, nextRawCost);
-    const nextChip = nextDisp.isGuess
-      ? ` <span class="confidence-chip tier-${nextDisp.confidence}" title="${escapeHtml(nextDisp.title)}">${nextDisp.confidence}</span>`
-      : "";
-    const nextDescLookup = effectLookup(s.category, s.idx);
-    return row + `<div class="next-rank-box progression-next-rank${nextDisp.isGuess ? " is-estimate" : ""}">
-        <div class="next-rank-title">Next Rank (${nextRank}/${s.aa.ranks}) &middot; costs <b class="${nextDisp.isGuess ? "is-estimate" : ""}" title="${nextDisp.isGuess ? escapeHtml(nextDisp.title) : ""}">${nextDisp.text}</b> pt(s)${nextChip}</div>
-        <div class="desc">${highlightRankValue(applyPerRankTotal(s.aa.description, nextRank), nextRank, nextDescLookup)}</div>
-      </div>`;
+    return row + nextRankBoxHtml(s.category, s.idx, s.aa, s.stepRank, " progression-next-rank");
   });
 
   el.progressionContent.innerHTML = htmlParts.join("");
