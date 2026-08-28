@@ -36,12 +36,6 @@ BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.htm
 MALICIOUS_ENTRY_COUNT = 1000000
 
 
-def extract_code(export_text):
-    marker = "BUILD_CODE:"
-    idx = export_text.index(marker)
-    return export_text[idx + len(marker):].strip()
-
-
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)
     page = browser.new_page(viewport={"width": 1400, "height": 900})
@@ -64,32 +58,16 @@ with sync_playwright() as p:
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
 
-    # --- Buy one real AA so there's a genuine numeric id and a real held
-    # rank to build the malicious payload around. ---
-    page.click('button[data-tab="general"]')
-    node = page.locator(".node").first
-    node.click()
-    page.click("#incBtn")
-    page.wait_for_timeout(60)
-
-    page.click("#exportBtn")
-    page.wait_for_timeout(300)
-    base_code = extract_code(page.locator("#exportText").input_value())
-    page.click("#closeExportBtn")
-    page.wait_for_timeout(80)
-
-    # --- Build a malicious compact code for the SAME AA: a real held rank
-    # of 1, but a purchaseOrder inflated to a million entries - using the
-    # browser's own Compression Streams API, the real encoding, not a
-    # hand-rolled approximation. ---
+    # --- Build a malicious compact code: a real held rank of 1 on one real
+    # AA, but a purchaseOrder inflated to a million entries pointing at it.
+    # Deliberately a v4 (JSON) payload rather than the current v5 binary
+    # one - the cap guards the decode path for EVERY format this app has
+    # ever issued, and a hostile v4 link is still a live attack surface.
+    # Built with the browser's own Compression Streams API, the real
+    # encoding, not a hand-rolled approximation. ---
+    ADAMANT_WILL_ID = 0  # "general::adamant-will" in src/aaIds.js
     malicious = page.evaluate("""
-    async ({ baseCode, count }) => {
-      function b64ToBytes(b64) {
-        const bin = atob(b64);
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        return bytes;
-      }
+    async ({ id, count }) => {
       function bytesToB64(bytes) {
         let bin = "";
         for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
@@ -99,16 +77,13 @@ with sync_playwright() as p:
         const stream = new Blob([bytes]).stream().pipeThrough(new Ctor(format));
         return new Uint8Array(await new Response(stream).arrayBuffer());
       }
-      const bytes = b64ToBytes(baseCode);
-      const jsonBytes = await pipe(bytes, DecompressionStream, "deflate-raw");
-      const arr = JSON.parse(new TextDecoder().decode(jsonBytes));
-      const id = arr[3][0][0]; // the bought AA's id (columnar r: [[ids],[ranks]])
-      const payload = [arr[0], arr[1], arr[2], [[id], [1]], new Array(count).fill(id), null, null];
+      // [v, classes, level, ranks (columnar), purchaseOrder, owned, waypoints]
+      const payload = [4, [0, 1, 2], 50, [[id], [1]], new Array(count).fill(id), null, null];
       const payloadBytes = new TextEncoder().encode(JSON.stringify(payload));
       const compressed = await pipe(payloadBytes, CompressionStream, "deflate-raw");
       return { code: bytesToB64(compressed), codeLen: bytesToB64(compressed).length };
     }
-    """, {"baseCode": base_code, "count": MALICIOUS_ENTRY_COUNT})
+    """, {"id": ADAMANT_WILL_ID, "count": MALICIOUS_ENTRY_COUNT})
     print(f"malicious code for {MALICIOUS_ENTRY_COUNT} purchaseOrder entries: {malicious['codeLen']} chars")
 
     # --- Import it through the real UI path - the actual attack surface,

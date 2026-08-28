@@ -3202,7 +3202,7 @@ renderBuildsList();
 renderTopbar();
 showToast(`Saved "${name}"`);
 }
-const BUILD_CODE_VERSION = 4;
+const BUILD_CODE_VERSION = 5;
 function pushCompactRank(ids, ranks, scope, className, key, rank) {
 const id = idForKey(scope, className, key);
 if (id != null) { ids.push(id); ranks.push(rank); }
@@ -3220,22 +3220,6 @@ const store = serialized.classes[className] || {};
 Object.keys(store).forEach((key) => pushCompactRank(ids, ranks, "class", className, key, store[key]));
 });
 return [ids, ranks];
-}
-function buildCodeArray() {
-const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
-.map((e) => idForKey(e.scope, e.className, e.key))
-.filter((id) => id != null);
-const compactOwned = compactRanksFor(state.owned);
-const waypoints = state.waypoints.map((w) => [w.pts, w.label, w.color]);
-return [
-BUILD_CODE_VERSION,
-state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
-state.charLevel,
-compactRanksFor(state.ranks),
-compactPurchaseOrder,
-compactOwned[0].length ? compactOwned : null,
-waypoints.length ? waypoints : null
-];
 }
 function expandCompactRanks(list, columnar) {
 const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
@@ -3282,6 +3266,49 @@ async function decompress(bytes, format) {
 const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format));
 return new Uint8Array(await new Response(stream).arrayBuffer());
 }
+const V5_MAGIC = 0xe5;
+const V5_BITS = {
+version: 4, idMode: 1, classSlot: 5, level: 6, id: 9, count: 9,
+rank: 5, poCount: 11, deltaCount: 8, wpCount: 8, pts: 17, color: 3, labelLen: 8
+};
+const V5_CLASS_NONE = 31;
+function bitWriter() {
+const bits = [];
+return {
+put(value, width) { bits.push((value >>> 0).toString(2).padStart(width, "0").slice(-width)); },
+putBits(str) { bits.push(str); },
+bytes() {
+let s = bits.join("");
+s += "0".repeat((8 - (s.length % 8)) % 8);
+const out = new Uint8Array(s.length / 8);
+for (let i = 0; i < out.length; i++) out[i] = parseInt(s.slice(i * 8, i * 8 + 8), 2);
+return out;
+}
+};
+}
+function bitReader(bytes, startByte) {
+let pos = startByte * 8;
+const total = bytes.length * 8;
+function bit(i) { return (bytes[i >>> 3] >>> (7 - (i & 7))) & 1; }
+return {
+take(width) {
+if (pos + width > total) throw new Error("build code truncated");
+let v = 0;
+for (let i = 0; i < width; i++) v = (v << 1) | bit(pos + i);
+pos += width;
+return v >>> 0;
+},
+alignedByteOffset() { return (pos + 7) >>> 3; }
+};
+}
+function crc16(bytes, end) {
+let crc = 0xffff;
+for (let i = 0; i < end; i++) {
+crc ^= bytes[i] << 8;
+for (let b = 0; b < 8; b++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+}
+return crc & 0xffff;
+}
 function bytesToBase64(bytes) {
 let binary = "";
 for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
@@ -3293,14 +3320,162 @@ const bytes = new Uint8Array(binary.length);
 for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 return bytes;
 }
+function indexWidth(n) {
+return Math.max(1, 32 - Math.clz32(Math.max(1, n - 1)));
+}
+function packV5(idMode) {
+const [plannedIds, plannedRanks] = compactRanksFor(state.ranks);
+const [ownedIds, ownedRanks] = compactRanksFor(state.owned);
+const planned = new Map();
+plannedIds.forEach((id, i) => planned.set(id, plannedRanks[i]));
+const owned = new Map();
+ownedIds.forEach((id, i) => owned.set(id, ownedRanks[i]));
+const ids = Array.from(planned.keys()).sort((a, b) => a - b);
+const slot = new Map();
+ids.forEach((id, i) => slot.set(id, i));
+const w = bitWriter();
+w.put(BUILD_CODE_VERSION, V5_BITS.version);
+w.put(idMode, V5_BITS.idMode);
+state.selectedClasses.forEach((name) => {
+const i = CLASS_LIST.indexOf(name);
+w.put(i < 0 ? V5_CLASS_NONE : i, V5_BITS.classSlot);
+});
+w.put(state.charLevel, V5_BITS.level);
+if (idMode === 0) {
+const hi = ids.length ? ids[ids.length - 1] : 0;
+w.put(hi, V5_BITS.id);
+const present = new Array(ids.length ? hi + 1 : 0).fill("0");
+ids.forEach((id) => { present[id] = "1"; });
+w.putBits(present.join(""));
+} else {
+w.put(ids.length, V5_BITS.count);
+ids.forEach((id) => w.put(id, V5_BITS.id));
+}
+ids.forEach((id) => w.put(planned.get(id), V5_BITS.rank));
+const po = serializePurchaseOrder(state.purchaseOrder)
+.map((e) => idForKey(e.scope, e.className, e.key))
+.filter((id) => id != null && slot.has(id));
+w.put(po.length, V5_BITS.poCount);
+const poWidth = indexWidth(ids.length);
+po.forEach((id) => w.put(slot.get(id), poWidth));
+const ownedList = ids.filter((id) => owned.has(id));
+w.putBits(ids.map((id) => (owned.has(id) ? "1" : "0")).join(""));
+const diffs = [];
+ownedList.forEach((id, i) => {
+if (owned.get(id) !== planned.get(id)) diffs.push([i, planned.get(id) - owned.get(id)]);
+});
+const diffWidth = indexWidth(ownedList.length);
+w.put(diffs.length, V5_BITS.deltaCount);
+diffs.forEach(([i, d]) => { w.put(i, diffWidth); w.put(d, V5_BITS.rank); });
+const labels = [];
+w.put(state.waypoints.length, V5_BITS.wpCount);
+state.waypoints.forEach((wp) => {
+w.put(wp.pts, V5_BITS.pts);
+const ci = WAYPOINT_COLORS.findIndex((c) => c.key === wp.color);
+w.put(ci < 0 ? 0 : ci + 1, V5_BITS.color);
+const bytes = new TextEncoder().encode(wp.label || "");
+w.put(bytes.length, V5_BITS.labelLen);
+labels.push(bytes);
+});
+const head = w.bytes();
+const labelLen = labels.reduce((n, b) => n + b.length, 0);
+const out = new Uint8Array(1 + head.length + labelLen + 2);
+out[0] = V5_MAGIC;
+out.set(head, 1);
+let at = 1 + head.length;
+labels.forEach((b) => { out.set(b, at); at += b.length; });
+const crc = crc16(out, at);
+out[at] = crc >>> 8;
+out[at + 1] = crc & 0xff;
+return out;
+}
+function expandBinaryPayload(bytes) {
+if (bytes.length < 4) throw new Error("build code truncated");
+const end = bytes.length - 2;
+const want = (bytes[end] << 8) | bytes[end + 1];
+if (crc16(bytes, end) !== want) throw new Error("build code failed its checksum");
+const r = bitReader(bytes, 1);
+const v = r.take(V5_BITS.version);
+if (v !== 5) throw new Error(`unsupported binary build code version ${v}`);
+const idMode = r.take(V5_BITS.idMode);
+const selectedClasses = [];
+for (let i = 0; i < 3; i++) {
+const ci = r.take(V5_BITS.classSlot);
+if (ci !== V5_CLASS_NONE && CLASS_LIST[ci]) selectedClasses.push(CLASS_LIST[ci]);
+}
+const charLevel = r.take(V5_BITS.level);
+let ids = [];
+if (idMode === 0) {
+const hi = r.take(V5_BITS.id);
+const width = hi + 1;
+const bits = [];
+for (let i = 0; i < width; i++) bits.push(r.take(1));
+bits.forEach((b, i) => { if (b) ids.push(i); });
+} else {
+const n = r.take(V5_BITS.count);
+for (let i = 0; i < n; i++) ids.push(r.take(V5_BITS.id));
+}
+const plannedRanks = ids.map(() => r.take(V5_BITS.rank));
+const poCount = r.take(V5_BITS.poCount);
+const poWidth = indexWidth(ids.length);
+const poIdx = [];
+for (let i = 0; i < poCount; i++) poIdx.push(r.take(poWidth));
+const ownedFlags = ids.map(() => r.take(1));
+const ownedIds = [];
+const ownedRanks = [];
+ids.forEach((id, i) => {
+if (!ownedFlags[i]) return;
+ownedIds.push(id);
+ownedRanks.push(plannedRanks[i]);
+});
+const deltaCount = r.take(V5_BITS.deltaCount);
+const diffWidth = indexWidth(ownedIds.length);
+for (let k = 0; k < deltaCount; k++) {
+const i = r.take(diffWidth);
+const d = r.take(V5_BITS.rank);
+if (i < ownedRanks.length) ownedRanks[i] -= d;
+}
+const wpCount = r.take(V5_BITS.wpCount);
+const wpMeta = [];
+for (let i = 0; i < wpCount; i++) {
+wpMeta.push({
+pts: r.take(V5_BITS.pts),
+color: r.take(V5_BITS.color),
+len: r.take(V5_BITS.labelLen)
+});
+}
+let at = r.alignedByteOffset();
+const waypoints = wpMeta.map((m) => {
+const slice = bytes.subarray(at, at + m.len);
+if (at + m.len > end) throw new Error("build code truncated");
+at += m.len;
+return [m.pts, m.len ? new TextDecoder().decode(slice) : null,
+m.color === 0 ? null : (WAYPOINT_COLORS[m.color - 1] || {}).key || null];
+});
+const purchaseOrder = poIdx.map((i) => {
+const entry = entryForId(ids[i]);
+return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
+}).filter(Boolean);
+return {
+v: SAVE_FORMAT_VERSION,
+selectedClasses,
+charLevel,
+ranks: expandCompactRanks([ids, plannedRanks], true),
+purchaseOrder,
+waypoints,
+owned: expandCompactRanks([ownedIds, ownedRanks], true)
+};
+}
 async function encodeBuildCode() {
-const bytes = new TextEncoder().encode(JSON.stringify(buildCodeArray()));
-return bytesToBase64(await compress(bytes, "deflate-raw"));
+const bitmap = packV5(0);
+const explicit = packV5(1);
+return bytesToBase64(bitmap.length <= explicit.length ? bitmap : explicit);
 }
 const GZIP_MAGIC_0 = 0x1f;
 const GZIP_MAGIC_1 = 0x8b;
 async function decodeBuildCode(code) {
 const bytes = base64ToBytes(code);
+if (bytes.length && bytes[0] === V5_MAGIC) return expandBinaryPayload(bytes);
 let jsonBytes;
 if (bytes.length >= 2 && bytes[0] === GZIP_MAGIC_0 && bytes[1] === GZIP_MAGIC_1) {
 jsonBytes = await decompress(bytes, "gzip");
@@ -3474,7 +3649,7 @@ if (m) return m[1];
 const urlMatch = trimmed.match(/[?&]build=([^&\s]+)/);
 if (urlMatch) return urlMatch[1];
 const compact = trimmed.replace(/\s+/g, "");
-if (compact.length > 20 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
+if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
 return null;
 }
 function maybeImportOwned(json) {

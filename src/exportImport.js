@@ -1,6 +1,6 @@
 // Build export/import: the text format, the share-code encoding, share links, and modal wiring.
 
-import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, serializeRanks, serializePurchaseOrder, payloadOwnedHasContent, adoptImportedOwnedAsNewProfile } from "./state.js";
+import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, serializeRanks, serializePurchaseOrder, payloadOwnedHasContent, adoptImportedOwnedAsNewProfile, WAYPOINT_COLORS } from "./state.js";
 import { el } from "./dom.js";
 import { getList, effectiveRank, labelFor, spentPoints, ownedPoints, computeProgressionSteps, computeProgressionTimeline, clearLastMutation, reconcilePurchaseOrderCounts, loadIssuesSuffix } from "./logic.js";
 import { clearActiveBuild, saveImportedBuild, confirmReplaceCurrentBuild, isActiveBuildTheImportedSlot } from "./builds.js";
@@ -10,21 +10,22 @@ import { idForKey, entryForId } from "./keys.js";
 // Wire-format version for BUILD_CODE specifically (share links, export
 // text) — independent of state.js's SAVE_FORMAT_VERSION, which governs
 // localStorage only and stays name-keyed (readable, no size pressure
-// there). BUILD_CODE trades that readability for size: numeric AA ids
-// instead of name keys, a positional array instead of a keyed object (v3+)
-// - [v, c, l, r, p, o, w] - and (v4+) r/o stored columnar - [[ids...],
-// [ranks...]] instead of [[id,rank],[id,rank],...]. Same information
-// either way; separating same-typed values into their own runs just gives
-// the compressor longer, more repetitive stretches to work with than an
-// interleaved id/rank/id/rank/... sequence does - measured ~10-15%
-// smaller on a realistic build, even after compression already ate most
-// of the naive JSON-shrink number. A future field is still safe to add
-// additively at the end (position 7, 8, ...) the same way o/w were once
-// added to v2 without a version bump - an older, shorter array just
-// destructures the new position as undefined, same as a missing object
-// key always has. v2 (keyed object) and v3 (positional, pair-shaped r/o)
-// both still decode - see expandCompactPayload/expandCompactRanks.
-const BUILD_CODE_VERSION = 4;
+// there).
+//
+// v5 (current, written by packV5) drops JSON entirely for packed bits,
+// sized per field from each value's real enforced ceiling. JSON spends
+// most of its bytes on structure - commas, brackets, and decimal digits
+// for values that need 4-9 bits - and DEFLATE can only partly recover
+// that. Measured 41-67% smaller than v4 across build sizes, ~43% on a
+// realistic one, with no field dropped or approximated.
+//
+// v2-v4 are JSON and still decode, so every link ever issued keeps
+// working: v2 is a keyed object, v3 a positional array [v,c,l,r,p,o,w],
+// v4 the same array with r/o columnar ([[ids...],[ranks...]] rather than
+// [[id,rank],...]). See expandCompactPayload/expandCompactRanks; the
+// container around them (gzip, deflate-raw, or plain) is sniffed
+// separately in decodeBuildCode.
+const BUILD_CODE_VERSION = 5;
 
 // An AA missing from aaIds.js shouldn't happen for anything currently
 // pickable (build_minify.py's invariant check + assign_aa_ids.py being run
@@ -48,38 +49,6 @@ function compactRanksFor(ranksLike) {
     Object.keys(store).forEach((key) => pushCompactRank(ids, ranks, "class", className, key, store[key]));
   });
   return [ids, ranks];
-}
-
-// owned is per-build/per-profile (state.js's ownedProfileId), so it's
-// unconditional here just like ranks/purchaseOrder/waypoints - it's this
-// build's own data, not a separate account-wide pool an export would be
-// reaching outside the plan to include. On the import side, an incoming
-// `o` field always lands in its own fresh profile rather than touching
-// the receiver's existing one - see maybeImportOwned below.
-function buildCodeArray() {
-  const compactPurchaseOrder = serializePurchaseOrder(state.purchaseOrder)
-    .map((e) => idForKey(e.scope, e.className, e.key))
-    .filter((id) => id != null);
-
-  const compactOwned = compactRanksFor(state.owned);
-  // Same unconditional treatment as owned above - plan structure ("get
-  // these by 75 pts" is a statement about this ordering), same as ranks/
-  // purchaseOrder. No AA identity involved (just a point total + label +
-  // color), so no id lookup needed the way compactRanksFor needs for
-  // ranks/owned - a bare [pts, label, color] triple per waypoint.
-  const waypoints = state.waypoints.map((w) => [w.pts, w.label, w.color]);
-
-  return [
-    BUILD_CODE_VERSION,
-    state.selectedClasses.map((name) => CLASS_LIST.indexOf(name)),
-    state.charLevel,
-    compactRanksFor(state.ranks),
-    compactPurchaseOrder,
-    // compactRanksFor always returns the 2-element [ids, ranks] pair -
-    // check the ids array itself for actual entries, not the wrapper.
-    compactOwned[0].length ? compactOwned : null,
-    waypoints.length ? waypoints : null
-  ];
 }
 
 // An id that no longer resolves (entryForId returns null - the AA was
@@ -185,6 +154,80 @@ async function decompress(bytes, format) {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
+// ---- v5 binary wire format -------------------------------------------------
+//
+// A v5 code is packed bits, uncompressed. Everything before it was JSON run
+// through DEFLATE; packed bits are already near-maximum entropy, so
+// compressing them measurably costs bytes rather than saving them. That
+// also gives up the integrity check DEFLATE was providing incidentally (a
+// truncated stream fails to inflate), which is why V5 carries its own CRC.
+//
+// Byte 0 is a magic number no earlier format can start with: every one of
+// them decodes to text beginning "[" (0x5B) or "{" (0x7B). decodeBuildCode
+// checks it before attempting any decompression, so a v5 payload can never
+// be mistaken for deflate-raw input that happens to inflate into garbage.
+const V5_MAGIC = 0xe5;
+
+// Field widths. Each is sized from the real enforced ceiling, not from
+// what today's data happens to contain:
+//   rank      - data.src.js's largest `ranks` is 26 (Ranger's Hunter's
+//               Attack Power), and setOwnedRank (logic.js) doesn't clamp
+//               on write, so 5 bits rather than the 4 a max of 10 implies.
+//   id        - aaIds.js is append-only and never reuses an id, so the
+//               ceiling grows with every wiki scrape; 9 bits leaves room.
+//   pts       - MAX_WAYPOINT_PTS is 100000.
+//   labelLen  - sanitizeWaypoints caps labels at 60 UTF-16 units, which is
+//               up to 240 UTF-8 bytes.
+const V5_BITS = {
+  version: 4, idMode: 1, classSlot: 5, level: 6, id: 9, count: 9,
+  rank: 5, poCount: 11, deltaCount: 8, wpCount: 8, pts: 17, color: 3, labelLen: 8
+};
+const V5_CLASS_NONE = 31; // CLASS_LIST.indexOf miss; applyLoaded rejects the set anyway
+
+function bitWriter() {
+  const bits = [];
+  return {
+    put(value, width) { bits.push((value >>> 0).toString(2).padStart(width, "0").slice(-width)); },
+    putBits(str) { bits.push(str); },
+    bytes() {
+      let s = bits.join("");
+      s += "0".repeat((8 - (s.length % 8)) % 8);
+      const out = new Uint8Array(s.length / 8);
+      for (let i = 0; i < out.length; i++) out[i] = parseInt(s.slice(i * 8, i * 8 + 8), 2);
+      return out;
+    }
+  };
+}
+
+// Throws on running past the end rather than returning zeros - a truncated
+// code must fail loudly, not decode into a plausible-looking short build.
+function bitReader(bytes, startByte) {
+  let pos = startByte * 8;
+  const total = bytes.length * 8;
+  function bit(i) { return (bytes[i >>> 3] >>> (7 - (i & 7))) & 1; }
+  return {
+    take(width) {
+      if (pos + width > total) throw new Error("build code truncated");
+      let v = 0;
+      for (let i = 0; i < width; i++) v = (v << 1) | bit(pos + i);
+      pos += width;
+      return v >>> 0;
+    },
+    alignedByteOffset() { return (pos + 7) >>> 3; }
+  };
+}
+
+// CRC-16/CCITT-FALSE. Small, no table, and enough to catch the truncation
+// and single-character mangling that a copy-pasted link actually suffers.
+function crc16(bytes, end) {
+  let crc = 0xffff;
+  for (let i = 0; i < end; i++) {
+    crc ^= bytes[i] << 8;
+    for (let b = 0; b < 8; b++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+  }
+  return crc & 0xffff;
+}
+
 function bytesToBase64(bytes) {
   let binary = "";
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
@@ -198,9 +241,198 @@ function base64ToBytes(b64) {
   return bytes;
 }
 
+// How many bits an index into a list of `n` needs. A 1-entry list still
+// needs 1 bit rather than 0, so the reader and writer agree on a width.
+function indexWidth(n) {
+  return Math.max(1, 32 - Math.clz32(Math.max(1, n - 1)));
+}
+
+// Packs one build. idMode 0 stores the AA ids as a bitmap over 0..highest,
+// 1 stores them as an explicit list; which one wins depends entirely on the
+// build (a handful of high-id class AAs is far cheaper explicitly than as a
+// 130-bit mostly-empty bitmap), so packV5 gets called both ways and the
+// smaller result is what ships. See encodeBuildCode.
+function packV5(idMode) {
+  const [plannedIds, plannedRanks] = compactRanksFor(state.ranks);
+  const [ownedIds, ownedRanks] = compactRanksFor(state.owned);
+  const planned = new Map();
+  plannedIds.forEach((id, i) => planned.set(id, plannedRanks[i]));
+  const owned = new Map();
+  ownedIds.forEach((id, i) => owned.set(id, ownedRanks[i]));
+
+  // Sorted so the bitmap form and the purchaseOrder indices share one
+  // canonical ordering. The order itself carries no information - ranks
+  // travel alongside their id either way.
+  const ids = Array.from(planned.keys()).sort((a, b) => a - b);
+  const slot = new Map();
+  ids.forEach((id, i) => slot.set(id, i));
+
+  const w = bitWriter();
+  w.put(BUILD_CODE_VERSION, V5_BITS.version);
+  w.put(idMode, V5_BITS.idMode);
+  state.selectedClasses.forEach((name) => {
+    const i = CLASS_LIST.indexOf(name);
+    w.put(i < 0 ? V5_CLASS_NONE : i, V5_BITS.classSlot);
+  });
+  w.put(state.charLevel, V5_BITS.level);
+
+  if (idMode === 0) {
+    const hi = ids.length ? ids[ids.length - 1] : 0;
+    w.put(hi, V5_BITS.id);
+    const present = new Array(ids.length ? hi + 1 : 0).fill("0");
+    ids.forEach((id) => { present[id] = "1"; });
+    w.putBits(present.join(""));
+  } else {
+    w.put(ids.length, V5_BITS.count);
+    ids.forEach((id) => w.put(id, V5_BITS.id));
+  }
+  ids.forEach((id) => w.put(planned.get(id), V5_BITS.rank));
+
+  // purchaseOrder entries index into this build's own id list, not the
+  // global id space - 6 bits instead of 9 on a typical build, and it's the
+  // single largest field.
+  const po = serializePurchaseOrder(state.purchaseOrder)
+    .map((e) => idForKey(e.scope, e.className, e.key))
+    .filter((id) => id != null && slot.has(id));
+  w.put(po.length, V5_BITS.poCount);
+  const poWidth = indexWidth(ids.length);
+  po.forEach((id) => w.put(slot.get(id), poWidth));
+
+  // owned is near-perfectly redundant with planned in practice (an owned
+  // rank almost always equals its planned rank - 42 of 43 on a real build),
+  // so it rides as one bit per planned AA meaning "owned at the planned
+  // rank", plus explicit (which, by how much) pairs only where the two
+  // disagree. The pair carries its own index because the flags alone can't
+  // say which owned entries differ.
+  const ownedList = ids.filter((id) => owned.has(id));
+  w.putBits(ids.map((id) => (owned.has(id) ? "1" : "0")).join(""));
+  const diffs = [];
+  ownedList.forEach((id, i) => {
+    if (owned.get(id) !== planned.get(id)) diffs.push([i, planned.get(id) - owned.get(id)]);
+  });
+  const diffWidth = indexWidth(ownedList.length);
+  w.put(diffs.length, V5_BITS.deltaCount);
+  diffs.forEach(([i, d]) => { w.put(i, diffWidth); w.put(d, V5_BITS.rank); });
+
+  const labels = [];
+  w.put(state.waypoints.length, V5_BITS.wpCount);
+  state.waypoints.forEach((wp) => {
+    w.put(wp.pts, V5_BITS.pts);
+    const ci = WAYPOINT_COLORS.findIndex((c) => c.key === wp.color);
+    w.put(ci < 0 ? 0 : ci + 1, V5_BITS.color); // 0 = no color
+    const bytes = new TextEncoder().encode(wp.label || "");
+    w.put(bytes.length, V5_BITS.labelLen);
+    labels.push(bytes);
+  });
+
+  // Labels sit after the bit region rather than inside it - they're
+  // variable-length UTF-8, and byte-aligning them keeps the reader simple.
+  const head = w.bytes();
+  const labelLen = labels.reduce((n, b) => n + b.length, 0);
+  const out = new Uint8Array(1 + head.length + labelLen + 2);
+  out[0] = V5_MAGIC;
+  out.set(head, 1);
+  let at = 1 + head.length;
+  labels.forEach((b) => { out.set(b, at); at += b.length; });
+  const crc = crc16(out, at);
+  out[at] = crc >>> 8;
+  out[at + 1] = crc & 0xff;
+  return out;
+}
+
+function expandBinaryPayload(bytes) {
+  if (bytes.length < 4) throw new Error("build code truncated");
+  const end = bytes.length - 2;
+  const want = (bytes[end] << 8) | bytes[end + 1];
+  if (crc16(bytes, end) !== want) throw new Error("build code failed its checksum");
+
+  const r = bitReader(bytes, 1);
+  const v = r.take(V5_BITS.version);
+  if (v !== 5) throw new Error(`unsupported binary build code version ${v}`);
+  const idMode = r.take(V5_BITS.idMode);
+  const selectedClasses = [];
+  for (let i = 0; i < 3; i++) {
+    const ci = r.take(V5_BITS.classSlot);
+    if (ci !== V5_CLASS_NONE && CLASS_LIST[ci]) selectedClasses.push(CLASS_LIST[ci]);
+  }
+  const charLevel = r.take(V5_BITS.level);
+
+  let ids = [];
+  if (idMode === 0) {
+    const hi = r.take(V5_BITS.id);
+    // A zero-AA build writes no bitmap at all, so there's nothing to read
+    // back - hi is 0 and the loop below would otherwise consume a stray bit.
+    const width = hi + 1;
+    const bits = [];
+    for (let i = 0; i < width; i++) bits.push(r.take(1));
+    bits.forEach((b, i) => { if (b) ids.push(i); });
+  } else {
+    const n = r.take(V5_BITS.count);
+    for (let i = 0; i < n; i++) ids.push(r.take(V5_BITS.id));
+  }
+  const plannedRanks = ids.map(() => r.take(V5_BITS.rank));
+
+  const poCount = r.take(V5_BITS.poCount);
+  const poWidth = indexWidth(ids.length);
+  const poIdx = [];
+  for (let i = 0; i < poCount; i++) poIdx.push(r.take(poWidth));
+
+  const ownedFlags = ids.map(() => r.take(1));
+  const ownedIds = [];
+  const ownedRanks = [];
+  ids.forEach((id, i) => {
+    if (!ownedFlags[i]) return;
+    ownedIds.push(id);
+    ownedRanks.push(plannedRanks[i]); // same-as-planned unless a delta says otherwise
+  });
+  const deltaCount = r.take(V5_BITS.deltaCount);
+  const diffWidth = indexWidth(ownedIds.length);
+  for (let k = 0; k < deltaCount; k++) {
+    const i = r.take(diffWidth);
+    const d = r.take(V5_BITS.rank);
+    if (i < ownedRanks.length) ownedRanks[i] -= d;
+  }
+
+  const wpCount = r.take(V5_BITS.wpCount);
+  const wpMeta = [];
+  for (let i = 0; i < wpCount; i++) {
+    wpMeta.push({
+      pts: r.take(V5_BITS.pts),
+      color: r.take(V5_BITS.color),
+      len: r.take(V5_BITS.labelLen)
+    });
+  }
+  let at = r.alignedByteOffset();
+  const waypoints = wpMeta.map((m) => {
+    const slice = bytes.subarray(at, at + m.len);
+    if (at + m.len > end) throw new Error("build code truncated");
+    at += m.len;
+    return [m.pts, m.len ? new TextDecoder().decode(slice) : null,
+      m.color === 0 ? null : (WAYPOINT_COLORS[m.color - 1] || {}).key || null];
+  });
+
+  // Reuses expandCompactRanks' id->AA resolution rather than duplicating it,
+  // by handing it the same columnar shape v4 already produces.
+  const purchaseOrder = poIdx.map((i) => {
+    const entry = entryForId(ids[i]);
+    return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
+  }).filter(Boolean);
+
+  return {
+    v: SAVE_FORMAT_VERSION,
+    selectedClasses,
+    charLevel,
+    ranks: expandCompactRanks([ids, plannedRanks], true),
+    purchaseOrder,
+    waypoints,
+    owned: expandCompactRanks([ownedIds, ownedRanks], true)
+  };
+}
+
 async function encodeBuildCode() {
-  const bytes = new TextEncoder().encode(JSON.stringify(buildCodeArray()));
-  return bytesToBase64(await compress(bytes, "deflate-raw"));
+  const bitmap = packV5(0);
+  const explicit = packV5(1);
+  return bytesToBase64(bitmap.length <= explicit.length ? bitmap : explicit);
 }
 
 // gzip's fixed 2-byte magic number - the one format this app has ever
@@ -222,6 +454,12 @@ const GZIP_MAGIC_1 = 0x8b;
 // from adds one more guaranteed-failing attempt to the common case.
 async function decodeBuildCode(code) {
   const bytes = base64ToBytes(code);
+  // v5 is packed bits, not JSON, and isn't compressed - so it has to be
+  // recognized here, ahead of both the decompression attempts and the
+  // unconditional JSON.parse below. Checking the magic byte rather than
+  // trying-and-failing also rules out raw binary that happens to be valid
+  // deflate-raw input and would otherwise inflate into garbage.
+  if (bytes.length && bytes[0] === V5_MAGIC) return expandBinaryPayload(bytes);
   let jsonBytes;
   if (bytes.length >= 2 && bytes[0] === GZIP_MAGIC_0 && bytes[1] === GZIP_MAGIC_1) {
     // An older share code/export, from when this app compressed with gzip
@@ -360,7 +598,7 @@ export async function buildExportText() {
     // where a waypoint's boundary falls - the readable listing should show
     // the same divider placement the Progression tab itself does, not a
     // second, independently-computed opinion of it. Waypoints ride the
-    // BUILD_CODE either way (unconditionally - see buildCodeArray), but
+    // BUILD_CODE either way (unconditionally - see packV5), but
     // without this a human just reading the text has no way to see them at
     // all, unlike owned's [OWNED] marker a few lines below.
     computeProgressionTimeline(computeProgressionSteps()).forEach((entry) => {
@@ -476,12 +714,15 @@ function extractBuildCode(text) {
   if (urlMatch) return urlMatch[1];
   // Maybe they pasted just the bare code, possibly line-wrapped by whatever they copied
   // it from — strip all embedded whitespace before checking if it looks like base64/base64url.
+  // The length floor only exists to stop a short scrap of prose being taken for a code;
+  // it has to stay under the smallest real one, and v5 packs a minimal build into
+  // roughly 16 characters (a v4 code for the same build was over 40).
   const compact = trimmed.replace(/\s+/g, "");
-  if (compact.length > 20 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
+  if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
   return null;
 }
 
-// Owned rides every export unconditionally (buildCodeArray), but importing
+// Owned rides every export unconditionally (packV5), but importing
 // one never touches the receiver's own owned tracking directly - an
 // incoming `o` field always lands in its own brand-new profile
 // (adoptImportedOwnedAsNewProfile) instead, silent and unconfirmed, since
