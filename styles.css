@@ -798,17 +798,12 @@ main {
 .rank-costs .pip.is-estimate.tier-very-low { border-color: var(--estimate-very-low); color: var(--estimate-very-low); background: rgba(107,100,89,0.08); }
 
 /* A rank can be both .spent (already purchased, via costNum() treating its
-   unknown real cost as 0) and .is-estimate (a guess exists for what it
-   probably really costs) at once - the estimate coloring should win
-   explicitly here, not by relying on which rule happens to load later, so
-   this combination doesn't silently flip if the stylesheet gets reordered.
-   Surfacing "you got this for 0 pts, but it's probably worth ~4" is more
-   useful than the plain spent-red styling, which would look identical to a
-   rank whose cost is genuinely fully known and confirmed. */
-.rank-costs .pip.spent.is-estimate.tier-high { border-color: var(--estimate-high); color: var(--estimate-high); background: rgba(90,169,230,0.08); }
-.rank-costs .pip.spent.is-estimate.tier-medium { border-color: var(--estimate-medium); color: var(--estimate-medium); background: rgba(166,124,217,0.08); }
-.rank-costs .pip.spent.is-estimate.tier-low { border-color: var(--estimate-low); color: var(--estimate-low); background: rgba(147,135,122,0.08); }
-.rank-costs .pip.spent.is-estimate.tier-very-low { border-color: var(--estimate-very-low); color: var(--estimate-very-low); background: rgba(107,100,89,0.08); }
+   unknown real cost as 0) and .is-estimate at once, and the estimate
+   coloring wins - surfacing "you got this for 0 pts, but it's probably
+   worth ~4" beats plain spent-red, which would look identical to a rank
+   whose cost is genuinely known. The .is-estimate.tier-* rules above are
+   already one class more specific than .spent, so that falls out of the
+   cascade on its own. */
 
 #sidePanel .empty {
   color: var(--text-faint);
