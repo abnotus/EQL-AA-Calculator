@@ -41,7 +41,8 @@ an actual pending wiki rename to exercise it against.
 `test_hidden_aas.py`, `test_other_classes.py`,
 `test_owned_inactive_classes.py`, `test_owned_legacy_migration.py`,
 `test_owned_profiles.py`, `test_owned_profile_cleanup.py`,
-`test_share_code_compression.py`, `test_purchase_order_cap.py`,
+`test_share_code_compression.py`, `test_share_code_binary.py`,
+`test_purchase_order_cap.py`,
 `test_progression_move_to.py`, `test_cross_class_prereq_dependency.py`,
 `test_real_world_build.py`, `test_archetype_class_eligibility.py`
 drive the actual app in a real Chrome instance via
@@ -84,6 +85,7 @@ python tests/test_owned_legacy_migration.py
 python tests/test_owned_profiles.py
 python tests/test_owned_profile_cleanup.py
 python tests/test_share_code_compression.py
+python tests/test_share_code_binary.py
 python tests/test_purchase_order_cap.py
 python tests/test_progression_move_to.py
 python tests/test_cross_class_prereq_dependency.py
@@ -164,11 +166,18 @@ in `state.js`; `saveBuildAs`/`loadBuild`'s profile handling,
 backward-compatibility/migration side, `test_owned_profiles.py` for
 new-build independence, Link/Merge/Split, and silent-import-profile-
 creation, and `test_owned_profile_cleanup.py` for the orphaned-profile
-sweep specifically), share-code encoding (`compress`/`decompress`,
-`encodeBuildCode`/`decodeBuildCode`'s format-fallback chain,
-`pushCompactRank`/`compactRanksFor`/`expandCompactRanks`'s columnar
-shape, or `buildCodeArray`'s unconditional owned field, in
-`exportImport.js` - `test_share_code_compression.py`), `MAX_PURCHASE_ORDER`/
+sweep specifically), share-code encoding
+(`packV5`/`expandBinaryPayload`'s bit layout, the `bitWriter`/`bitReader`
+pair, `crc16`, `indexWidth`, `encodeBuildCode`/`decodeBuildCode`'s
+format-sniffing chain, `compress`/`decompress`, or
+`compactRanksFor`/`expandCompactRanks`, in `exportImport.js` - split
+across `test_share_code_binary.py` for the current v5 binary format and
+`test_share_code_compression.py` for every historical one still decoding.
+The v5 file's property test - randomized builds through the real
+export/import path - is the load-bearing one: a wrong bit width or a
+missed read shifts every field after it and can still yield values that
+are individually in-range, which the CRC cannot catch because the encoder
+checksums its own wrong output), `MAX_PURCHASE_ORDER`/
 `deserializePurchaseOrder` in `state.js` (`test_purchase_order_cap.py`),
 rename-detection in `wiki-sync/assign_aa_ids.py` (`compute_vanished` -
 `test_assign_aa_ids.py`), or the Move To popover
