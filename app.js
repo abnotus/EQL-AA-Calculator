@@ -2836,6 +2836,9 @@ setOwnedRank(scope, className, idx, nowOwned ? rank - 1 : rank);
 renderAll();
 });
 });
+wireProgressionDragTargets();
+}
+function wireProgressionDragTargets() {
 Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((rowEl) => {
 rowEl.addEventListener("dragstart", (e) => {
 dragSrcIndex = parseInt(rowEl.getAttribute("data-index"), 10);

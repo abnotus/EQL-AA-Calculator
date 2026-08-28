@@ -4301,6 +4301,14 @@ function renderProgression() {
     });
   });
 
+  wireProgressionDragTargets();
+}
+
+// Drag-to-reorder wiring for every Progression row, expanded preview box,
+// and waypoint divider. Split out of renderProgression purely for size -
+// it closes over nothing but module-level drag state, and has to re-run on
+// every render since the elements it binds are replaced wholesale.
+function wireProgressionDragTargets() {
   Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((rowEl) => {
     rowEl.addEventListener("dragstart", (e) => {
       dragSrcIndex = parseInt(rowEl.getAttribute("data-index"), 10);
