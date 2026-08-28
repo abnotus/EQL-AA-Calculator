@@ -92,6 +92,47 @@ with sync_playwright() as p:
     assert invalid_line.inner_text() == "⚠ No longer valid: requires one of: Druid, Ranger, none of which are currently selected."
     print("PASS: the held rank persists across the class swap, flagged invalidated with a class-specific warning")
 
+    # --- Both badges at once, on separate corners. Innate Camouflage can't
+    # reach this state: it has only 1 rank, so once held it's maxed and
+    # structuralLockReason is never consulted (renderTree only asks when
+    # rank < aa.ranks). A multi-rank AA can be BOTH "next rank blocked by
+    # class" (CLASS, top-left) and "held rank now ineligible" (⚠) at the
+    # same time - they used to render stacked in the same corner. ---
+    page.select_option("#classSelect2", "Warrior")
+    page.wait_for_timeout(150)
+    bop = page.locator(".node", has=page.locator(".name", has_text="Burst of Power"))
+    bop.click()
+    page.click("#incBtn")  # rank 1 of 3, legal while Warrior is slotted
+    page.wait_for_timeout(60)
+    page.select_option("#classSelect2", "Cleric")
+    page.wait_for_timeout(200)
+    bop_classes = bop.get_attribute("class")
+    print("Burst of Power classes (held rank 1/3, no longer eligible):", bop_classes)
+    assert "locked-classlock" in bop_classes and "invalidated" in bop_classes, \
+        "FAIL: expected both the next-rank-blocked and held-rank-invalid states at once"
+    tag_boxes = []
+    for sel in (".costtag.classlock-tag", ".costtag.invalid-tag"):
+        tag = bop.locator(sel)
+        assert tag.count() == 1, f"FAIL: expected exactly one {sel}"
+        tag_boxes.append((sel, tag.bounding_box()))
+    (a_sel, a), (b_sel, b) = tag_boxes
+    print(f"  {a_sel} box: {a}")
+    print(f"  {b_sel} box: {b}")
+    overlap = not (a["x"] + a["width"] <= b["x"] or b["x"] + b["width"] <= a["x"]
+                   or a["y"] + a["height"] <= b["y"] or b["y"] + b["height"] <= a["y"])
+    assert not overlap, "FAIL: the CLASS and ⚠ badges are rendering on top of each other - check their corner overrides in styles.css"
+    print("PASS: the CLASS and ⚠ badges occupy separate corners when both apply")
+
+    # Refund it so the rest of this file sees the state it did before. The
+    # check-order section near the bottom uses Burst of Power too, and a
+    # held-but-ineligible rank would put heldRankInvalidReason's "No longer
+    # valid" line ahead of the block reason it asserts on.
+    page.click("#decBtn")
+    page.wait_for_timeout(60)
+    assert page.locator("#sidePanel .current").inner_text() == "0 / 3"
+    node.click()
+    page.wait_for_timeout(60)
+
     # --- Progression tab: the row warns with the same shared machinery
     # prereqWarn/classCapWarn already use, wording distinct from
     # .step-inactive-warn (a different concept - a whole class swapped out

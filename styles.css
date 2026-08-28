@@ -444,7 +444,7 @@ main {
   font-weight: 700;
 }
 
-/* top/right: -8px are inherited from the base .node .costtag rule below -
+/* top: -8px is inherited from the base .node .costtag rule below -
    overriding only left/right moves this into the one open corner
    (top-right is the cost/AUTO/Lv tag, bottom-left is REQ/invalid,
    bottom-right is hidden). */
@@ -456,7 +456,14 @@ main {
   font-weight: 700;
 }
 
+/* Bottom-left, same corner as REQ - the two never co-occur (prereq and
+   classEligibility are different kinds from structuralLockReason, which
+   returns only the first non-null), but this and the CLASS tag genuinely
+   can: a held rank that a class swap made ineligible is both "next rank
+   blocked" and "held rank no longer valid" at once. */
 .node .costtag.invalid-tag {
+  top: auto;
+  bottom: -8px;
   left: -8px;
   right: auto;
   border-color: #e08b78;
