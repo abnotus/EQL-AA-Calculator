@@ -128,8 +128,6 @@ MANUAL_EFFECT_GUESSES = {
     ("Fletching Mastery", 0): {1: 20, 2: 40},
     ("Pottery Mastery", 0): {1: 20, 2: 40},
     ("Tailoring Mastery", 0): {1: 20, 2: 40},
-    ("Innate Lung Capacity", 0): {2: 30},
-    ("Innate Metabolism", 0): {2: 140},
     ("Burst of Power", 0): {2: 15},
     ("Spell Casting Subtlety", 0): {1: 10, 2: 15, 3: 20, 4: 25, 5: 30},
     ("Banestrike", 0): {2: 6, 3: 8},

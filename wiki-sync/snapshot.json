@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 173653,
+  "revid": 173932,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -159,9 +159,9 @@
       "costs": [
         "1",
         "1",
-        "2"
+        "1"
       ],
-      "description": "This passive ability increases the amount of air you can hold in your lungs by 10/25/?%. Requirements: Level 1."
+      "description": "This passive ability increases the amount of air you can hold in your lungs by 10/25/50%. Requirements: Level 1."
     },
     "general::Innate Metabolism::0": {
       "ranks": "3",
@@ -170,7 +170,7 @@
         "1",
         "2"
       ],
-      "description": "This passive ability reduces your food and drink consumption by 110/125/?%. Requirements: Level 1."
+      "description": "This passive ability reduces your food and drink consumption by 110/125/150%. Requirements: Level 1."
     },
     "general::Innate Regeneration::0": {
       "ranks": "7",

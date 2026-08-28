@@ -22,8 +22,6 @@ export const EFFECT_GUESS_TABLE = {
   "general::blacksmithing-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "general::brewing-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "general::fletching-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
-  "general::innate-lung-capacity": { "0": { "2": { value: 30, confidence: "very-low", basedOn: [], manual: true } } },
-  "general::innate-metabolism": { "0": { "2": { value: 140, confidence: "very-low", basedOn: [], manual: true } } },
   "general::pottery-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "general::tailoring-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "special::banestrike": { "0": { "2": { value: 6, confidence: "very-low", basedOn: [], manual: true }, "3": { value: 8, confidence: "very-low", basedOn: [], manual: true } } }
