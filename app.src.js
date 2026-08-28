@@ -435,6 +435,14 @@ function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
+    version: "2.0.1",
+    date: "2026-08-28",
+    items: [
+      "Fixed: on an AA your class combo can't train but you'd already put points into, the CLASS badge and the warning sign drew on top of each other. They sit in separate corners now.",
+      "Fixed: hiding an AA from Browse while a search was active left the tab counts showing their old numbers until something else refreshed the page."
+    ]
+  },
+  {
     version: "2.0.0",
     date: "2026-08-21",
     items: [
