@@ -5482,10 +5482,6 @@ function wireEvents() {
     state.showHidden = !state.showHidden;
     renderAll();
   });
-
-  window.addEventListener("resize", () => {
-    if (state.activeView === "calculator") renderTree(state.activeTab);
-  });
 }
 
 // Entry point: wires everything together and boots the app on DOMContentLoaded.

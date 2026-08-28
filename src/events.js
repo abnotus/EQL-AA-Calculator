@@ -4,7 +4,7 @@ import { state, CLASS_SLOT_KEYS, DISCLAIMER_DISMISSED_KEY, saveLocal } from "./s
 import { el } from "./dom.js";
 import { clearAllOwned } from "./logic.js";
 import {
-  renderAll, showToast, renderTree, renderBrowse, undoLast,
+  renderAll, showToast, renderBrowse, undoLast,
   openChangelogModal, closeChangelogModal, wireProgressionDropZone,
   openBuildsModal, closeBuildsModal, handleBuildSave,
   openResetModal, closeResetModal, handleConfirmReset,
@@ -166,9 +166,5 @@ export function wireEvents() {
   el.showHiddenToggle.addEventListener("click", () => {
     state.showHidden = !state.showHidden;
     renderAll();
-  });
-
-  window.addEventListener("resize", () => {
-    if (state.activeView === "calculator") renderTree(state.activeTab);
   });
 }
