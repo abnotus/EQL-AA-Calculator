@@ -3614,6 +3614,10 @@ function renderBrowse() {
       const idx = parseInt(btn.getAttribute("data-idx"), 10);
       setHiddenScoped(scope, className, idx, !isHiddenScoped(scope, className, idx));
       updateShowHiddenToggle();
+      // The tab bar sits outside the view panels, so it stays visible here -
+      // and countMatches excludes hidden AAs, so a search badge goes stale
+      // without this.
+      renderTabs();
       renderBrowse();
     });
   });

@@ -118,6 +118,36 @@ with sync_playwright() as p:
     assert not toggle.is_visible(), "FAIL: toggle should disappear (and showHidden reset) once nothing's hidden"
     print("PASS: unhiding from a Browse card works, and the toggle auto-resets once nothing's left hidden")
 
+    # --- Hiding from Browse must refresh the tab bar too. countMatches
+    # excludes hidden AAs from the per-tab search badges, and the tab bar
+    # sits outside the view panels so it stays on screen in Browse - without
+    # a renderTabs() the badge silently keeps its pre-hide count until some
+    # unrelated action triggers a full render. ---
+    page.fill("#globalSearch", "mastery")
+    page.wait_for_timeout(200)
+    general_badge = page.locator('button[data-tab="general"] .search-badge')
+    before = general_badge.inner_text()
+    print("General tab search badge before hiding a match:", before)
+    alchemy_card = page.locator(".browse-card", has=page.locator(".name", has_text="Alchemy Mastery"))
+    assert alchemy_card.count() == 1
+    alchemy_card.locator(".hide-toggle-btn").first.click()
+    page.wait_for_timeout(200)
+    after = general_badge.inner_text()
+    print("General tab search badge immediately after hiding it:", after)
+    assert int(after) == int(before) - 1, \
+        f"FAIL: the tab badge went stale after hiding from Browse - expected {int(before) - 1}, got {after}"
+    print("PASS: hiding from Browse updates the tab badges immediately, matching the side panel's own hide button")
+    # Put it back so the scenarios below start from a clean slate. It's at
+    # rank 0, so with Show Hidden off its card is gone from Browse entirely -
+    # flip the toggle back on to reach it, then unhiding auto-resets it.
+    toggle.click()
+    page.wait_for_timeout(150)
+    page.locator(".browse-card", has=page.locator(".name", has_text="Alchemy Mastery")).locator(".hide-toggle-btn").first.click()
+    page.wait_for_timeout(150)
+    assert not toggle.is_visible(), "FAIL: expected the toggle to auto-reset once nothing is hidden again"
+    page.fill("#globalSearch", "")
+    page.wait_for_timeout(150)
+
     # --- Ranked exception: a hidden AA you've spent points on always stays
     # visible, even with Show Hidden off. ---
     page.click('button[data-tab="general"]')

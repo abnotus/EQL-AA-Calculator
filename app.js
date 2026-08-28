@@ -2397,6 +2397,7 @@ const className = btn.getAttribute("data-classname") || null;
 const idx = parseInt(btn.getAttribute("data-idx"), 10);
 setHiddenScoped(scope, className, idx, !isHiddenScoped(scope, className, idx));
 updateShowHiddenToggle();
+renderTabs();
 renderBrowse();
 });
 });
