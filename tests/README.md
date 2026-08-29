@@ -182,7 +182,10 @@ a rank of 26 (Hunter's Attack Power, reachable only through an imported
 payload) pins `V5_BITS.rank` at 5, since the property test's own builds
 never exceed 10; and a flipped byte in a trailing waypoint label pins the
 CRC itself, being the one corruption that lands after every bit read
-completes and so slips past `bitReader`'s bounds check),
+completes and so slips past `bitReader`'s bounds check. A third pins the
+id bitmap's low boundary, where an empty build and one holding only id 0
+(Adamant Will) both store `hi = 0` and are told apart only by the bitmap
+being written as `hi + 1` bits unconditionally),
 `MAX_PURCHASE_ORDER`/
 `deserializePurchaseOrder` in `state.js` (`test_purchase_order_cap.py`),
 rename-detection in `wiki-sync/assign_aa_ids.py` (`compute_vanished` -

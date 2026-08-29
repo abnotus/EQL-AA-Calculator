@@ -279,7 +279,10 @@ function packV5(idMode) {
   if (idMode === 0) {
     const hi = ids.length ? ids[ids.length - 1] : 0;
     w.put(hi, V5_BITS.id);
-    const present = new Array(ids.length ? hi + 1 : 0).fill("0");
+    // Always hi + 1 bits, so a zero-AA build writes a single "0" rather than
+    // nothing. Both it and a build holding only id 0 store hi = 0, so an
+    // empty bitmap would be indistinguishable from a set one bit wide.
+    const present = new Array(hi + 1).fill("0");
     ids.forEach((id) => { present[id] = "1"; });
     w.putBits(present.join(""));
   } else {
@@ -360,8 +363,6 @@ function expandBinaryPayload(bytes) {
   let ids = [];
   if (idMode === 0) {
     const hi = r.take(V5_BITS.id);
-    // A zero-AA build writes no bitmap at all, so there's nothing to read
-    // back - hi is 0 and the loop below would otherwise consume a stray bit.
     const width = hi + 1;
     const bits = [];
     for (let i = 0; i < width; i++) bits.push(r.take(1));

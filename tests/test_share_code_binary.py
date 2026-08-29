@@ -224,7 +224,50 @@ with sync_playwright() as p:
         f"FAIL: an owned rank of 26 must survive encoding - got {high_back['owned']}"
     print("PASS: a rank above 15 round-trips, pinning the 5-bit rank field")
 
-    # --- 4. Corruption must be rejected loudly, not decoded into a wrong
+    # --- 4. The id bitmap's low boundary. A build with no AAs and one
+    # holding only id 0 (Adamant Will) both store hi = 0, so the bitmap is
+    # written as hi + 1 bits unconditionally - a lone "0" for the empty
+    # build - and the two stay distinguishable. Writing nothing for the
+    # empty case instead leaves the reader a bit ahead of the writer for
+    # every field that follows, which a build of all-zero trailing fields
+    # survives by luck and a build with waypoints does not: the shift
+    # inflates wpCount and the reader runs off the end of the stream.
+    # The property test can draw an empty build but only pairs it with
+    # waypoints by chance, so both halves are pinned explicitly here. ---
+    EMPTY_RANKS = {"general": {}, "archetype": {}, "special": {}, "classes": {}}
+    ONLY_ID0 = {"general": {"adamant-will": 1}, "archetype": {}, "special": {},
+                "classes": {}}
+    WPS = [{"pts": 100 * n, "label": f"wp{n}", "color": "red"} for n in (1, 2, 3, 4)]
+    for label, ranks, order, wps, want_ranks in (
+        ("no AAs, no waypoints", EMPTY_RANKS, [], [], {}),
+        ("no AAs, four waypoints", EMPTY_RANKS, [], WPS, {}),
+        ("only id 0, four waypoints", ONLY_ID0,
+         [{"scope": "general", "className": None, "key": "adamant-will"}], WPS,
+         {"adamant-will": 1}),
+    ):
+        payload = {"v": 4, "selectedClasses": ["Bard", "Beastlord", "Berserker"],
+                   "charLevel": 42, "ranks": ranks, "purchaseOrder": order,
+                   "waypoints": wps}
+        src = new_page(payload, EMPTY_RANKS)
+        code = export_code(src)
+        src.close()
+        dst = new_page(url=f"{BASE}?build={as_url_code(code)}")
+        got = read_state(dst)
+        toast_el = dst.locator("#toast")
+        toast = toast_el.inner_text() if toast_el.count() else ""
+        dst.close()
+        want_wps = [[w["pts"], w["label"], w["color"]] for w in wps]
+        print(f"{label}: {len(code)} chars, level {got['level']}, "
+              f"{len(got['waypoints'])} waypoints back")
+        assert got["level"] == 42, \
+            f"FAIL: {label} lost the level - got {got['level']!r}, toast {toast!r}"
+        assert got["ranks"]["general"] == want_ranks, \
+            f"FAIL: {label} ranks - want {want_ranks}, got {got['ranks']['general']}"
+        assert got["waypoints"] == want_wps, \
+            f"FAIL: {label} waypoints - want {want_wps}, got {got['waypoints']}"
+    print("PASS: empty and id-0-only bitmaps stay distinct and round-trip with waypoints")
+
+    # --- 5. Corruption must be rejected loudly, not decoded into a wrong
     # build. Before v5 this came free from DEFLATE failing on a damaged
     # stream; v5 is uncompressed, so its own CRC has to do it.
     #
@@ -261,7 +304,7 @@ with sync_playwright() as p:
         assert not state_after["order"], f"FAIL: {label} code should not have applied a build"
     print("PASS: truncated and mangled codes are rejected with a clear message, nothing applied")
 
-    # --- 4. Pre-v5 links still work ---
+    # --- 6. Pre-v5 links still work ---
     pg = new_page(url=f"{BASE}?build={V4_CODE}")
     rows = pg.locator(".progression-row")
     pg.click('button[data-tab="progression"]')

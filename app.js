@@ -3344,7 +3344,7 @@ w.put(state.charLevel, V5_BITS.level);
 if (idMode === 0) {
 const hi = ids.length ? ids[ids.length - 1] : 0;
 w.put(hi, V5_BITS.id);
-const present = new Array(ids.length ? hi + 1 : 0).fill("0");
+const present = new Array(hi + 1).fill("0");
 ids.forEach((id) => { present[id] = "1"; });
 w.putBits(present.join(""));
 } else {
