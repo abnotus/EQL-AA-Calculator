@@ -13,7 +13,7 @@
 # the shipped encoder and decoder rather than a reimplementation of them.
 # The corruption and backward-compatibility cases either side of it cover
 # the two things a user can actually hit.
-import os, sys, io, json, random
+import os, sys, io, json, random, base64
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
 
@@ -180,8 +180,7 @@ with sync_playwright() as p:
     pg = new_page(url=f"{BASE}?build={V4_CODE}")
     v5 = export_code(pg)
     pg.close()
-    import base64 as b64
-    first = b64.urlsafe_b64decode(v5 + "=" * (-len(v5) % 4))[0]
+    first = base64.urlsafe_b64decode(v5 + "=" * (-len(v5) % 4))[0]
     print(f"v5 magic byte: 0x{first:02x} (expect 0xe5)")
     assert first == 0xE5, "FAIL: export is not in the v5 binary format"
     print(f"same build: v4 {len(V4_CODE)} chars -> v5 {len(v5)} chars")
@@ -189,12 +188,68 @@ with sync_playwright() as p:
         f"FAIL: expected v5 to be well under 75% of v4's size, got {len(v5)} vs {len(V4_CODE)}"
     print("PASS: export is v5 binary and materially shorter than the v4 equivalent")
 
-    # --- 3. Corruption must be rejected loudly, not decoded into a wrong
+    # --- 3. The rank field's width. V5_BITS.rank is 5 because
+    # data.src.js's largest `ranks` is 26 (Ranger's Hunter's Attack Power),
+    # and a 4-bit field would silently wrap it to 10. Nothing the UI can do
+    # reaches past 10 - auto AAs never enter the rank stores through it -
+    # but an imported payload does: clampRankValue bounds a loaded value to
+    # that AA's own `ranks`, so 26 survives into both state.ranks and
+    # state.owned and then back out through a re-export. Without this case
+    # the whole property test above tops out at 10 and the 5th bit is
+    # unpinned.
+    HIGH = {"general": {}, "archetype": {}, "special": {},
+            "classes": {"Ranger": {"hunters-attack-power": 26}}}
+    high_payload = {"v": 4, "selectedClasses": ["Ranger", "Beastlord", "Berserker"],
+                    "charLevel": 50, "ranks": HIGH, "purchaseOrder": [], "waypoints": []}
+    src = new_page(high_payload, HIGH)
+    high_code = export_code(src)
+    src.close()
+    dst = new_page(url=f"{BASE}?build={as_url_code(high_code)}")
+    high_back = dst.evaluate("""(k) => {
+        const s = JSON.parse(localStorage.getItem(k) || '{}');
+        let owned = null;
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('eql_aa_owned_') && key !== 'eql_aa_owned_legacy')
+                owned = JSON.parse(localStorage.getItem(key)).owned;
+        }
+        return { planned: (s.ranks || {}).classes, owned: (owned || {}).classes };
+    }""", STORAGE_KEY)
+    dst.close()
+    print("rank 26 round trip - planned:", json.dumps(high_back["planned"]),
+          "owned:", json.dumps(high_back["owned"]))
+    assert high_back["planned"] == {"Ranger": {"hunters-attack-power": 26}}, \
+        f"FAIL: a rank of 26 must survive encoding - got {high_back['planned']}"
+    assert high_back["owned"] == {"Ranger": {"hunters-attack-power": 26}}, \
+        f"FAIL: an owned rank of 26 must survive encoding - got {high_back['owned']}"
+    print("PASS: a rank above 15 round-trips, pinning the 5-bit rank field")
+
+    # --- 4. Corruption must be rejected loudly, not decoded into a wrong
     # build. Before v5 this came free from DEFLATE failing on a damaged
-    # stream; v5 is uncompressed, so its own CRC has to do it. ---
+    # stream; v5 is uncompressed, so its own CRC has to do it.
+    #
+    # The two damage shapes are caught by different things, and both are
+    # worth keeping: truncation trips bitReader's bounds check, but a flip
+    # in the trailing label bytes doesn't - nothing reads past those to
+    # notice, so only the CRC stands between it and a build imported with
+    # a silently wrong waypoint label. ---
+    labelled = {"v": 4, "selectedClasses": ["Bard", "Beastlord", "Berserker"],
+                "charLevel": 50,
+                "ranks": {"general": {"adamant-will": 1}, "archetype": {}, "special": {}, "classes": {}},
+                "purchaseOrder": [{"scope": "general", "className": None, "key": "adamant-will"}],
+                "waypoints": [{"pts": 40, "label": "Sky done later on", "color": "blue"}]}
+    src = new_page(labelled, {"general": {}, "archetype": {}, "special": {}, "classes": {}})
+    lab_code = export_code(src)
+    src.close()
+    lab_bytes = bytearray(base64.b64decode(lab_code + "=" * (-len(lab_code) % 4)))
+    # Third from the end: inside the UTF-8 label, ahead of the 2 CRC bytes.
+    lab_bytes[-3] ^= 0x20
+    late_flip = base64.b64encode(bytes(lab_bytes)).decode()
+
     for label, bad in [
         ("truncated", as_url_code(v5)[: len(as_url_code(v5)) // 2]),
-        ("flipped char", (lambda u: u[:20] + ("A" if u[20] != "A" else "B") + u[21:])(as_url_code(v5))),
+        ("flipped char (early)", (lambda u: u[:20] + ("A" if u[20] != "A" else "B") + u[21:])(as_url_code(v5))),
+        ("flipped byte in trailing label", as_url_code(late_flip)),
     ]:
         pg = new_page(url=f"{BASE}?build={bad}")
         toast = pg.locator("#toast")

@@ -177,7 +177,13 @@ The v5 file's property test - randomized builds through the real
 export/import path - is the load-bearing one: a wrong bit width or a
 missed read shifts every field after it and can still yield values that
 are individually in-range, which the CRC cannot catch because the encoder
-checksums its own wrong output), `MAX_PURCHASE_ORDER`/
+checksums its own wrong output. Two narrower cases sit either side of it:
+a rank of 26 (Hunter's Attack Power, reachable only through an imported
+payload) pins `V5_BITS.rank` at 5, since the property test's own builds
+never exceed 10; and a flipped byte in a trailing waypoint label pins the
+CRC itself, being the one corruption that lands after every bit read
+completes and so slips past `bitReader`'s bounds check),
+`MAX_PURCHASE_ORDER`/
 `deserializePurchaseOrder` in `state.js` (`test_purchase_order_cap.py`),
 rename-detection in `wiki-sync/assign_aa_ids.py` (`compute_vanished` -
 `test_assign_aa_ids.py`), or the Move To popover
