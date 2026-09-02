@@ -14,15 +14,7 @@
 // guess never substitutes for a real value anywhere descriptions are
 // otherwise read (search, export text) - purely a display hint.
 export const EFFECT_GUESS_TABLE = {
-  "archetype::burst-of-power": { "0": { "2": { value: 15, confidence: "very-low", basedOn: [], manual: true } } },
   "class:Druid:quick-evacuation": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 30, confidence: "very-low", basedOn: [], manual: true } } },
   "class:Wizard:quick-evacuation": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 30, confidence: "very-low", basedOn: [], manual: true } } },
-  "general::alchemy-mastery": { "0": { "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
-  "general::baking-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
-  "general::blacksmithing-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
-  "general::brewing-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
-  "general::fletching-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
-  "general::pottery-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
-  "general::tailoring-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Jewel Craft Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Jewel Craft Mastery"] } } },
   "special::banestrike": { "0": { "2": { value: 6, confidence: "very-low", basedOn: [], manual: true }, "3": { value: 8, confidence: "very-low", basedOn: [], manual: true } } }
 };

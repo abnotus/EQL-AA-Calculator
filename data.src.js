@@ -9,18 +9,18 @@ const CLASS_LIST = [
 const AA_DATA = {
   general: [
     { name: "Adamant Will", ranks: 4, costs: ["2","4","6","9"], levelReq: "1", description: "Grants you an additional 20/40/60/80% chance to resist charm, and 15/30/45/60% chance to resist mesmerization spells." },
-    { name: "Alchemy Mastery", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Reduces the chance of failing Alchemy recipes by 10/25/?%." },
-    { name: "Baking Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Baking recipes by 10/?/?%." },
-    { name: "Blacksmithing Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Blacksmithing recipes by 10/?/?%." },
-    { name: "Brewing Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Brewing recipes by 10/?/?%." },
+    { name: "Alchemy Mastery", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Reduces the chance of failing Alchemy recipes by 10/25/50%." },
+    { name: "Baking Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Baking recipes by 10/25/50%." },
+    { name: "Blacksmithing Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Blacksmithing recipes by 10/25/50%." },
+    { name: "Brewing Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Brewing recipes by 10/25/50%." },
     { name: "Circular Breathing", ranks: 4, costs: ["2","3","4","5"], levelReq: "1", description: "Increases your endurance regeneration by 1/2/3/4 point(s)." },
-    { name: "Combat Agility", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases your melee avoidance by 2%/5%/10%." },
+    { name: "Combat Agility", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases your melee avoidance by 2/5/10%." },
     { name: "Combat Fury", ranks: 4, costs: ["1","2","3","4"], levelReq: "1", description: "Increases your chance of performing a critical melee hit with all skills by 1/2/3/5%." },
     { name: "Combat Stability", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Increases the armor class soft cap of your class by 2/5/10%." },
     { name: "Crafting Mastery", ranks: 6, costs: ["3","3","3","3","3","3"], levelReq: "1", description: "Allows raising 1-6 additional tradeskills from a 200 to 300 cap." },
     { name: "Fear Resistance", ranks: 4, costs: ["2","4","6","9"], levelReq: "1", description: "Grants you an additional 25/50/75/100% chance to resist most fear spells." },
     { name: "First Aid", ranks: 6, costs: ["1","1","1","3","?","?"], levelReq: "1", description: "Increases the maximum health you can bind wound to 80/90/100/100/100/100%, and increases bandage healing by 0/0/0/10/25/50%." },
-    { name: "Fletching Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Fletching recipes by 10/?/?%." },
+    { name: "Fletching Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Fletching recipes by 10/25/50%." },
     { name: "Foraging", ranks: 1, costs: ["3"], levelReq: "1", description: "Increases your Forage skill cap by 50 points." },
     { name: "Gather Party", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Gives everyone in your party the option of teleporting directly to your location. Automatically granted to every character — per the wiki's own General AA intro text." },
     { name: "Innate Eminence", ranks: 5, costs: ["3","3","3","3","3"], levelReq: "1", description: "Increases your strength, stamina, agility, dexterity, wisdom, intelligence, and charisma by 2/4/6/8/10 points." },
@@ -33,17 +33,17 @@ const AA_DATA = {
     { name: "Origin", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Transports you back to your starting city. Check location with /charinfo. Automatically granted to every character — per the wiki's own General AA intro text." },
     { name: "Packrat", ranks: 10, costs: ["1","1","1","1","1","1","1","1","1","1"], levelReq: "1", description: "Reduces the weight of all equipped and carried items by 5/10/15/20/25/30/35/40/45/50%." },
     { name: "Permanent Illusion", ranks: 1, costs: ["5"], levelReq: "1", description: "Extends the duration of your beneficial illusion spells to 16.6 hours and allows persistence when zoning." },
-    { name: "Pottery Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Pottery recipes by 10/?/?%." },
+    { name: "Pottery Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Pottery recipes by 10/25/50%." },
     { name: "Quick Buff", ranks: 1, costs: ["5"], levelReq: "1", description: "Cast all currently memorized beneficial spells on all valid group and raid targets in range." },
     { name: "Steadfast Will", ranks: 8, costs: ["2","2","3","3","3","3","6","12"], levelReq: "1", classRankCap: { default: 6, byClass: { "Warrior": 8, "Paladin": 8, "Shadow Knight": 8, "Ranger": 7, "Monk": 7 } }, description: "Grants you a 15/30/50/60/70/80/90/100% chance to endure stunning melee attacks without being stunned. Only Warrior, Paladin, and Shadow Knight can train the full rank 8; Ranger and Monk can reach rank 7; every other class is capped at rank 6." },
-    { name: "Stoicism", ranks: 5, costs: ["2","2","2","2","2"], levelReq: "1", description: "Reduces how far incoming melee attacks push you backward by 10%." },
-    { name: "Tailoring Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Tailoring recipes by 10/?/?%." }
+    { name: "Stoicism", ranks: 5, costs: ["2","2","2","2","2"], levelReq: "1", description: "Reduces how far incoming melee attacks push you backward by 10/20/30/40/50%." },
+    { name: "Tailoring Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Tailoring recipes by 10/25/50%." }
   ],
 
   archetype: [
     { name: "Acrobatics", ranks: 3, costs: ["3","6","9"], levelReq: "1", eligibleClasses: ["Bard","Monk","Rogue"], description: "Reduces fall damage by increasing safe fall effectiveness by 10/20/30%." },
     { name: "Ambidexterity", ranks: 1, costs: ["9"], levelReq: "1", eligibleClasses: ["Bard","Beastlord","Monk","Ranger","Rogue","Warrior"], description: "Increases dual wield success chance by 32%." },
-    { name: "Burst of Power", ranks: 3, costs: ["3","6","9"], levelReq: "46", eligibleClasses: ["Berserker","Warrior"], description: "Increases flurry chance by 7/11/?%." },
+    { name: "Burst of Power", ranks: 3, costs: ["3","6","9"], levelReq: "46", eligibleClasses: ["Berserker","Warrior"], description: "Increases flurry chance by 7/11/15%." },
     { name: "Companion's Discipline", ranks: 1, costs: ["2"], levelReq: "1", eligibleClasses: ["Bard","Beastlord","Druid","Enchanter","Magician","Necromancer","Shadow Knight","Shaman","Wizard"], description: "Enables advanced pet commands (hold, greater hold, attack)." },
     { name: "Critical Affliction", ranks: 3, costs: ["3","6","9"], levelReq: "1", eligibleClasses: ["Bard","Beastlord","Cleric","Druid","Enchanter","Necromancer","Ranger","Shadow Knight","Shaman"], description: "Increases DoT critical damage chance by 3/6/9%." },
     { name: "Destructive Cascade", ranks: 3, costs: ["2","4","6"], levelReq: "1", eligibleClasses: ["Bard","Beastlord","Druid","Enchanter","Necromancer","Ranger","Shadow Knight","Shaman"], prereq: "Requires Critical Affliction rank 1/2/3", description: "Increases critical DoT damage by 125/150/175%." },
@@ -114,7 +114,7 @@ const AA_DATA = {
     ],
     "Druid": [
       { name: "Enhanced Root", ranks: 1, costs: ["5"], levelReq: "1", description: "Reduces the chance that an NPC target entangled by your root spells will break free when struck by a non-melee attack by 50%." },
-      { name: "Quick Evacuation", ranks: 3, costs: ["3","?","?"], levelReq: "1", description: "Reduces the cast time of your evacuation and succor spells and abilities by 10%/?/?." },
+      { name: "Quick Evacuation", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Reduces the cast time of your evacuation and succor spells and abilities by 10/?/?%." },
       { name: "Unbound Nature", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance that you will land a critical hit with a spell by 2/3/4%. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Enchanter": [

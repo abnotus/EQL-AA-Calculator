@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 173932,
+  "revid": 175989,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -19,7 +19,7 @@
         "6",
         "9"
       ],
-      "description": "This passive ability reduces the chance of failing Alchemy recipes by 10/25/?%. Requirements: Level 1."
+      "description": "This passive ability reduces the chance of failing Alchemy recipes by 10/25/50%. Requirements: Level 1."
     },
     "general::Baking Mastery::0": {
       "ranks": "3",
@@ -28,7 +28,7 @@
         "4",
         "6"
       ],
-      "description": "This passive ability reduces the chance of failing Baking recipes by 10/?/?%. Requirements: Level 1."
+      "description": "This passive ability reduces the chance of failing Baking recipes by 10/25/50%. Requirements: Level 1."
     },
     "general::Blacksmithing Mastery::0": {
       "ranks": "3",
@@ -37,7 +37,7 @@
         "4",
         "6"
       ],
-      "description": "This passive ability reduces the chance of failing Blacksmithing recipes by 10/?/?%. Requirements: Level 1."
+      "description": "This passive ability reduces the chance of failing Blacksmithing recipes by 10/25/50%. Requirements: Level 1."
     },
     "general::Brewing Mastery::0": {
       "ranks": "3",
@@ -46,7 +46,7 @@
         "4",
         "6"
       ],
-      "description": "This passive ability reduces the chance of failing Brewing recipes by 10/?/?%. Requirements: Level 1."
+      "description": "This passive ability reduces the chance of failing Brewing recipes by 10/25/50%. Requirements: Level 1."
     },
     "general::Circular Breathing::0": {
       "ranks": "4",
@@ -65,7 +65,7 @@
         "4",
         "6"
       ],
-      "description": "This passive ability increases your melee avoidance by 2%/5%/10%. Melee avoidance is the component of armor class that allows you to avoid incoming attacks and is derived from agility, item avoidance, and your defense skill. Requirements: Level 1."
+      "description": "This passive ability increases your melee avoidance by 2/5/10%. Melee avoidance is the component of armor class that allows you to avoid incoming attacks and is derived from agility, item avoidance, and your defense skill. Requirements: Level 1."
     },
     "general::Combat Fury::0": {
       "ranks": "4",
@@ -127,7 +127,7 @@
         "4",
         "6"
       ],
-      "description": "This passive ability reduces the chance of failing Fletching recipes by 10/?/?%. Requirements: Level 1."
+      "description": "This passive ability reduces the chance of failing Fletching recipes by 10/25/50%. Requirements: Level 1."
     },
     "general::Foraging::0": {
       "ranks": "1",
@@ -243,7 +243,7 @@
         "4",
         "6"
       ],
-      "description": "This passive ability reduces the chance of failing Pottery recipes by 10/?/?%. Requirements: Level 1."
+      "description": "This passive ability reduces the chance of failing Pottery recipes by 10/25/50%. Requirements: Level 1."
     },
     "general::Quick Buff::0": {
       "ranks": "1",
@@ -275,7 +275,7 @@
         "2",
         "2"
       ],
-      "description": "This passive ability reduces how far incoming melee attacks push you backward by 10%. Requirements: Level 1."
+      "description": "This passive ability reduces how far incoming melee attacks push you backward by 10/20/30/40/50%. Requirements: Level 1."
     },
     "general::Tailoring Mastery::0": {
       "ranks": "3",
@@ -284,7 +284,7 @@
         "4",
         "6"
       ],
-      "description": "This passive ability reduces the chance of failing Tailoring recipes by 10/?/?%. Requirements: Level 1."
+      "description": "This passive ability reduces the chance of failing Tailoring recipes by 10/25/50%. Requirements: Level 1."
     },
     "archetype::Acrobatics::0": {
       "ranks": "3",
@@ -309,7 +309,7 @@
         "6",
         "9"
       ],
-      "description": "This passive ability increases your flurry chance (up to two extra attacks after a primary slot triple attack) by 7/11/?%. Requirements: Level 46."
+      "description": "This passive ability increases your flurry chance (up to two extra attacks after a primary slot triple attack) by 7/11/15%. Requirements: Level 46."
     },
     "archetype::Companion's Discipline::0": {
       "ranks": "1",
@@ -766,8 +766,8 @@
       "ranks": "3",
       "costs": [
         "3",
-        "?",
-        "?"
+        "6",
+        "9"
       ],
       "description": "This passive ability reduces the cast time of your evacuation and succor spells and abilities by 10%. Requirements: Level 1."
     },
@@ -951,12 +951,12 @@
       ],
       "description": "Gives a passive 2/4/6% increase to your direct healing spells. Requirements: Level 12/30/50."
     },
-    "class:Paladin::Valiant Steed::0": {
+    "class:Paladin::<s>Valiant Steed</s>::0": {
       "ranks": "1",
       "costs": [
         "9"
       ],
-      "description": "Ability Activation ID: 570 - Refresh Time: 0:00:01 - Ability Timer(s): 0. This ability, when activated, summons the bridle of a very fast Valiant Unicorn. Requirements: Level 50, Holy Steed at Level 1."
+      "description": "<s>Ability Activation ID: 570 - Refresh Time: 0:00:01 - Ability Timer(s): 0. This ability, when activated, summons the bridle of a very fast Valiant Unicorn. Requirements: Level 50, Holy Steed at Level 1.</s> This AA has been removed."
     },
     "class:Ranger::Hunter's Attack Power::0": {
       "ranks": "26",
@@ -1030,12 +1030,12 @@
       ],
       "description": "Gives a passive 10/15/20% bonus to the duration of all poisons. Additionally lowers the resist value of all poisons by 25/50/75. Requirements: Level 12/30/50."
     },
-    "class:Shadow Knight::Abyssal Steed::0": {
+    "class:Shadow Knight::<s>Abyssal Steed</s>::0": {
       "ranks": "1",
       "costs": [
         "9"
       ],
-      "description": "Ability Activation ID: 571 - Refresh Time: 0:00:01 - Ability Timer(s): 0. This ability, when activated, summons the bridle of a very fast Abyssal Nightmare. Requirements: Level 50, Unholy Steed at Level 1."
+      "description": "<s>Ability Activation ID: 571 - Refresh Time: 0:00:01 - Ability Timer(s): 0. This ability, when activated, summons the bridle of a very fast Abyssal Nightmare. Requirements: Level 50, Unholy Steed at Level 1.</s> This AA has been removed."
     },
     "class:Shadow Knight::Harm Touch::0": {
       "ranks": "10",

@@ -101,18 +101,28 @@ exact scenario being tested instead of leaving it implicit in a sequence of
 clicks.
 
 Several of these tests are pinned to specific live AAs as their guessed-value
-examples (`test_effect_guess.py`'s Alchemy Mastery and Spell Casting
-Subtlety, `test_cost_guess.py`'s Alchemy Mastery and Combat Fury,
-`test_guess_all_tabs.py`'s Alchemy Mastery, `test_manual_guess.py`'s
-Crafting Mastery and Spell Casting Subtlety, `test_estimated_total.py`'s
-Spell Casting Subtlety) — a future wiki scrape confirming one of those
-specific ranks will break that test, same as it's already happened more
-than once (Adamant Will, Combat Stability, and Combat Fury's effect value,
-and Packrat's entire cost/effect progression, all resolved to real data and
-had to be swapped out for a still-live example over the course of this
+examples (`test_effect_guess.py`'s Quick Evacuation,
+`test_cost_guess.py`'s Combat Fury and Turn Summoned,
+`test_guess_all_tabs.py`'s Cannibalization, Conjurer's Efficiency and Turn
+Summoned, `test_manual_guess.py`'s First Aid and Reaching Notes,
+`test_estimated_total.py`'s Combat Agility and Reaching Notes) — a future
+wiki scrape confirming one of those specific ranks will break that test,
+same as it's already happened repeatedly (Adamant Will, Combat Stability,
+Combat Fury's effect value, Packrat's entire cost/effect progression, and
+most recently Alchemy and Baking Mastery, all resolved to real data and had
+to be swapped out for a still-live example over the course of this
 project). Regenerate `costGuesses.js`/`effectGuesses.js` first, then pick a fresh
 example from whichever guess table still has one - see the affected test's
 own comments for how the swap played out last time.
+
+Note the effect-guess tables currently hold nothing above the very-low
+(manual) tier, so `test_effect_guess.py` pins rendering rather than a
+particular confidence tier; the sibling-matching and interpolation rules
+themselves are covered data-independently by `test_guess_effects.py`.
+When picking its next example, prefer an AA a player actually spends
+points on - Banestrike is the only other AA with a guessed effect value,
+but it is free and unlocked by Slayer achievements, so a test driving it
+with `#incBtn` would be buying a rank that cannot be bought in game.
 
 `test_real_world_build.py` is pinned the same way, but to a whole real
 share link (a live user's actual Paladin/Enchanter/Druid build) rather than
