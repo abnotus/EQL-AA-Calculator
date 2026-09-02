@@ -296,6 +296,14 @@ return prog ? (prog[rankIdx] || null) : null;
 }
 const USER_CHANGELOG = [
 {
+version: "2.0.3",
+date: "2026-08-29",
+items: [
+"Valiant Steed and Abyssal Steed have been removed from the game, so they're gone from the tool too. If your plan included either one, its points are refunded and free to spend elsewhere.",
+"Data corrections from a fresh wiki scrape: the crafting Masteries (Alchemy, Baking, Blacksmithing, Brewing, Fletching, Pottery and Tailoring) now show their real 10/25/50% values instead of estimates, and so do Stoicism, Burst of Power's last rank, and Druid's Quick Evacuation costs."
+]
+},
+{
 version: "2.0.2",
 date: "2026-08-29",
 items: [
