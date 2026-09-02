@@ -142,8 +142,7 @@ classes: {
 { name: "Holy Steed", ranks: 1, costs: ["5"], levelReq: "20", description: "Activated: summons the bridle of a very fast Holy Steed (75 Velocity)." },
 { name: "Lay on Hands", ranks: 10, costs: ["0","0","0","0","0","0","0","0","0","0"], levelReq: "6", auto: true, description: "Activated: instantly heals a friendly target (or an unfriendly target's target) for 6251 health, scaling by level. (Refresh 0:15:00)" },
 { name: "Slay Undead", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Grants your melee attacks a 2.25/2.35/2.4% chance to deal 445/850/1250% damage against undead and vampiric targets." },
-{ name: "Unbound Life", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the healing done by your direct healing spells by 2/4/6%. Rank 2 requires level 30, rank 3 requires level 50." },
-{ name: "Valiant Steed", ranks: 1, costs: ["9"], levelReq: "50", prereq: "Requires Holy Steed at level 1", description: "Activated: summons the bridle of a very fast Valiant Unicorn." }
+{ name: "Unbound Life", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the healing done by your direct healing spells by 2/4/6%. Rank 2 requires level 30, rank 3 requires level 50." }
 ],
 "Ranger": [
 { name: "Hunter's Attack Power", ranks: 26, costs: Array(26).fill("0"), levelReq: "8", auto: true, description: "Increases your attack power by 4 points per rank." },
@@ -161,7 +160,6 @@ classes: {
 ],
 "Shadow Knight": [
 { name: "Unholy Steed", ranks: 1, costs: ["5"], levelReq: "20", description: "Activated: summons the bridle of a very fast Unholy Steed." },
-{ name: "Abyssal Steed", ranks: 1, costs: ["9"], levelReq: "50", prereq: "Requires Unholy Steed at level 1", description: "Activated: summons the bridle of a very fast Abyssal Nightmare." },
 { name: "Harm Touch", ranks: 10, costs: Array(10).fill("0"), levelReq: "6", auto: true, description: "Activated: grips a non-player target with agony, instantly dealing up to 751 damage based on your current level. Ranks 9 and 10 add a damage-over-time effect." },
 { name: "Leech Touch", ranks: 1, costs: ["6"], levelReq: "1", description: "Augments your Harm Touch ability with a lifetap effect." },
 { name: "Soul Abrasion", ranks: 3, costs: ["3","6","9"], levelReq: "15", description: "Increases the base damage of lifetaps triggered by Vampiric Embrace and Scream of Death by 50/100/200%." },
