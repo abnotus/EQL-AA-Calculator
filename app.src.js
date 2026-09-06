@@ -423,6 +423,14 @@ function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
+    version: "2.0.4",
+    date: "2026-08-29",
+    items: [
+      "An AA whose ranks each do something different now shows one line per rank, with the rank you're on highlighted, instead of running them together in one paragraph. Conjurer's Efficiency is the first one written this way.",
+      "Data corrections from a fresh wiki scrape: Conjurer's Efficiency's costs are all confirmed now at 3/5/6/6/6, replacing estimates, and Thief's Intuition's second rank is confirmed at 6 points for 3 seconds."
+    ]
+  },
+  {
     version: "2.0.3",
     date: "2026-08-29",
     items: [
