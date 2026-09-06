@@ -1815,12 +1815,13 @@ function sumRealCost(list, store) {
 }
 
 // A genuine lifetime total: every point ever spent, across every class
-// you've ever picked, not just the 3 active slots. Walks
+// you've ever picked, not just the 3 active slots. A class swap leaves an
+// inactive class's ranks in place, so this walks
 // Object.keys(state.ranks.classes) directly rather than AA_CATEGORY_KEYS/
-// getList, since a class swap no longer wipes an inactive class's ranks.
-// Progression's own running total counts everything the same way now
-// (computeProgressionSteps' stepCost isn't active-gated), so the two
-// numbers are provably identical, not just usually close.
+// getList, which only see the active slots. Progression's running total
+// counts the same set (computeProgressionSteps' stepCost isn't
+// active-gated), so the two numbers are provably identical, not just
+// usually close.
 function spentPoints() {
   let total = sumRealCost(AA_DATA.general, state.ranks.general)
     + sumRealCost(AA_DATA.archetype, state.ranks.archetype)
@@ -3223,11 +3224,10 @@ function renderTopbar() {
   el.levelInput.value = state.charLevel;
   const spent = spentPoints();
   const spentExtra = estimatedExtraPoints();
-  // Owned/planned, not planned alone - now that owned tracking is a
-  // first-class, always-on concept (per-build profiles, always included in
-  // exports), "how much of the plan is actually trained" is more useful up
-  // top than the plan's raw size alone, which is still the second number
-  // here. "Planned" rather than "spent" - "spent" reads as already-done the
+  // Owned/planned, not planned alone. Owned tracking is always on
+  // (per-build profiles, always included in exports), and "how much of the
+  // plan is actually trained" is more useful up top than the plan's raw
+  // size alone, which is the second number here. "Planned" rather than "spent" - "spent" reads as already-done the
   // same way "owned" does, when this side really means "what the whole plan
   // calls for, trained or not." Same blended-estimate treatment as
   // Progression's own owned/to-go summary (renderProgression) - each side
@@ -4178,14 +4178,14 @@ function renderProgression() {
     return;
   }
 
-  // Every purchaseOrder entry ever made shows up here now, active class or
-  // not - a pick for a swapped-away class renders muted and read-only (see
-  // the .inactive row class below) instead of living exclusively in the
-  // Other Classes tab.
+  // Every purchaseOrder entry shows up here, active class or not. A pick
+  // for a swapped-away class renders muted and read-only (see the
+  // .inactive row class below); the Other Classes tab groups those same
+  // picks by class, it doesn't hold them exclusively.
   const steps = computeProgressionSteps();
-  // 1-indexed position, identical to s.index + 1 now that nothing's
-  // filtered - kept as its own field so the row template, moveMenuHtml,
-  // and waypointSections don't need to read s.index + 1 everywhere instead.
+  // 1-indexed position. Nothing is filtered out of steps, so this always
+  // equals s.index + 1 - kept as its own field so the row template,
+  // moveMenuHtml, and waypointSections don't each repeat that arithmetic.
   steps.forEach((s, i) => { s.visiblePos = i + 1; });
 
   // computeProgressionTimeline tags each step with segmentColor (the color

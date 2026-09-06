@@ -549,12 +549,13 @@ function sumRealCost(list, store) {
 }
 
 // A genuine lifetime total: every point ever spent, across every class
-// you've ever picked, not just the 3 active slots. Walks
+// you've ever picked, not just the 3 active slots. A class swap leaves an
+// inactive class's ranks in place, so this walks
 // Object.keys(state.ranks.classes) directly rather than AA_CATEGORY_KEYS/
-// getList, since a class swap no longer wipes an inactive class's ranks.
-// Progression's own running total counts everything the same way now
-// (computeProgressionSteps' stepCost isn't active-gated), so the two
-// numbers are provably identical, not just usually close.
+// getList, which only see the active slots. Progression's running total
+// counts the same set (computeProgressionSteps' stepCost isn't
+// active-gated), so the two numbers are provably identical, not just
+// usually close.
 export function spentPoints() {
   let total = sumRealCost(AA_DATA.general, state.ranks.general)
     + sumRealCost(AA_DATA.archetype, state.ranks.archetype)
