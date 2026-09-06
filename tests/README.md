@@ -103,15 +103,15 @@ clicks.
 Several of these tests are pinned to specific live AAs as their guessed-value
 examples (`test_effect_guess.py`'s Quick Evacuation,
 `test_cost_guess.py`'s Combat Fury and Turn Summoned,
-`test_guess_all_tabs.py`'s Cannibalization, Conjurer's Efficiency and Turn
+`test_guess_all_tabs.py`'s Cannibalization, Quick Evacuation and Turn
 Summoned, `test_manual_guess.py`'s First Aid and Reaching Notes,
 `test_estimated_total.py`'s Combat Agility and Reaching Notes) — a future
 wiki scrape confirming one of those specific ranks will break that test,
 same as it's already happened repeatedly (Adamant Will, Combat Stability,
 Combat Fury's effect value, Packrat's entire cost/effect progression, and
-most recently Alchemy and Baking Mastery, all resolved to real data and had
-to be swapped out for a still-live example over the course of this
-project). Regenerate `costGuesses.js`/`effectGuesses.js` first, then pick a fresh
+most recently Alchemy Mastery, Baking Mastery and Conjurer's Efficiency,
+all resolved to real data and had to be swapped out for a still-live
+example over the course of this project). Regenerate `costGuesses.js`/`effectGuesses.js` first, then pick a fresh
 example from whichever guess table still has one - see the affected test's
 own comments for how the swap played out last time.
 
@@ -123,6 +123,10 @@ When picking its next example, prefer an AA a player actually spends
 points on - Banestrike is the only other AA with a guessed effect value,
 but it is free and unlocked by Slayer achievements, so a test driving it
 with `#incBtn` would be buying a rank that cannot be bought in game.
+
+The cost-guess table has likewise run out of medium-confidence entries;
+what is left is either high-confidence or manual very-low, so
+`test_guess_all_tabs.py` pins those two tiers only.
 
 `test_real_world_build.py` is pinned the same way, but to a whole real
 share link (a live user's actual Paladin/Enchanter/Druid build) rather than

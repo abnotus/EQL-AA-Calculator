@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 175989,
+  "revid": 176704,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -573,11 +573,11 @@
       "ranks": "4",
       "costs": [
         "3",
-        "?",
+        "6",
         "?",
         "?"
       ],
-      "description": "This passive ability reduces the reuse time of your Sense Traps and Disarm Traps skills by 1/?/?/? seconds. Requirements: Level 1."
+      "description": "This passive ability reduces the reuse time of your Sense Traps and Disarm Traps skills by 1/3/?/? seconds. Requirements: Level 1."
     },
     "class:Bard::Instrument Mastery::0": {
       "ranks": "3",
@@ -803,12 +803,12 @@
       "ranks": "5",
       "costs": [
         "3",
-        "?",
-        "?",
-        "?",
-        "?"
+        "5",
+        "6",
+        "6",
+        "6"
       ],
-      "description": "This passive ability prevents components used in the summoning of pets from being expended. Requirements: Level 1."
+      "description": "Rank 1: This passive ability prevents components used in the summoning of pets from being expended.<br>Rank 2: Reduces cast time of your summon item, summon pet and summon target spells by 10% and of your summon swarm pet spells and abilities by 2%.<br>Rank 3: Reduces cast time of your summon item, summon pet and summon target spells by 25% and of your summon swarm pet spells and abilities by 5%.<br>Rank 4: Reduces cast time of your summon item, summon pet and summon target spells by 50% and of your summon swarm pet spells and abilities by 10%.<br>Rank 5: Allows reclaim energy to return 95% of the base mana cost of your current pet<br><br>Requirements: Level 1."
     },
     "class:Magician::Elemental Form::0": {
       "ranks": "1",

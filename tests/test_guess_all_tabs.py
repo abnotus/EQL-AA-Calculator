@@ -9,14 +9,12 @@
 # previously-missed spots so a guess shows up consistently everywhere a
 # real cost would.
 #
-# The final scenario used to also cover an inactive-class Progression step's
-# next-rank preview (costDisplayScoped, not the catKey-based costDisplay,
-# for parity with Browse) - Progression no longer renders an inactive-class
-# step at all (it moved to its own Other Classes tab - see
-# test_other_classes.py), so that scenario now checks the row is genuinely
-# absent from Progression and shows up in Other Classes instead. The
-# underlying costGuessScoped/effectGuessScoped correctness for a class
-# outside the active 3 stays covered by the Browse scenario above.
+# The final scenario covers an inactive-class pick - one whose class is no
+# longer in the active 3. Progression renders it inline, muted and
+# read-only, rather than hiding it, so the scenario checks the row is
+# present and its controls disabled. costGuessScoped/effectGuessScoped,
+# the scoped lookups such a row depends on, are also covered by the Browse
+# scenarios above.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -55,20 +53,23 @@ with sync_playwright() as p:
     assert 'class="is-estimate tier-high"' in info_html
     print("PASS: Browse shows Turn Summoned's rank-2 estimate, not a bare '?'")
 
-    # --- Browse view: a class NOT currently selected must still show its
-    # guesses (Browse lists every class, not just the active 3). Default
+    # --- Browse view: a second class outside the active 3, to show the
+    # scoped guess lookup isn't specific to one class. Default
     # selectedClasses is Bard/Beastlord/Berserker (CLASS_LIST[0..2]), so
-    # Magician's Conjurer's Efficiency is a real example of a class outside
-    # the active 3. (Its guess used to be a manual very-low fallback; a
-    # wiki scrape confirming Innate Eminence gave it a real cross-AA match
-    # instead, medium confidence - same AA, upgraded guess, still proves
-    # the point.) ---
-    page.fill("#globalSearch", "Conjurer's Efficiency")
+    # Wizard's Quick Evacuation qualifies, as Magician's Turn Summoned
+    # above does. (This was Conjurer's Efficiency until a wiki scrape
+    # confirmed all five of its costs, leaving it with no guess to show.
+    # Every remaining cost guess is either high or manual very-low - there
+    # is no medium-confidence one left to pin here.) ---
+    page.fill("#globalSearch", "Quick Evacuation")
     page.wait_for_timeout(100)
-    ce_card = page.locator(".browse-card", has=page.locator(".name", has_text="Conjurer's Efficiency"))
+    # Druid has an identically-named AA whose costs are all confirmed, so
+    # pin the Wizard card by its own class rather than by list position.
+    ce_card = page.locator('.browse-card:has(button[data-classname="Wizard"])',
+                           has=page.locator(".name", has_text="Quick Evacuation"))
     ce_html = ce_card.locator(".info").inner_html()
-    print("Conjurer's Efficiency browse info html:", ce_html)
-    assert "~3" in ce_html and "tier-medium" in ce_html
+    print("Quick Evacuation (Wizard) browse info html:", ce_html)
+    assert "~6" in ce_html and "tier-high" in ce_html
     print("PASS: Browse shows a guess even for a class outside the active 3 slots")
 
     page.fill("#globalSearch", "")
