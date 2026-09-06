@@ -653,6 +653,16 @@ main {
   white-space: pre-line;
 }
 
+.rank-line { display: block; }
+.rank-line + .rank-line { margin-top: 4px; }
+.rank-line.is-current-rank {
+  color: var(--accent-bright);
+  font-weight: 600;
+  border-left: 2px solid var(--accent-bright);
+  padding-left: 6px;
+  margin-left: -8px;
+}
+
 .rank-highlight {
   color: var(--accent-bright);
   font-weight: 700;

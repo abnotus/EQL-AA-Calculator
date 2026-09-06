@@ -42,7 +42,7 @@ an actual pending wiki rename to exercise it against.
 `test_owned_inactive_classes.py`, `test_owned_legacy_migration.py`,
 `test_owned_profiles.py`, `test_owned_profile_cleanup.py`,
 `test_share_code_compression.py`, `test_share_code_binary.py`,
-`test_purchase_order_cap.py`,
+`test_purchase_order_cap.py`, `test_per_rank_description.py`,
 `test_progression_move_to.py`, `test_cross_class_prereq_dependency.py`,
 `test_real_world_build.py`, `test_archetype_class_eligibility.py`
 drive the actual app in a real Chrome instance via
@@ -87,6 +87,7 @@ python tests/test_owned_profile_cleanup.py
 python tests/test_share_code_compression.py
 python tests/test_share_code_binary.py
 python tests/test_purchase_order_cap.py
+python tests/test_per_rank_description.py
 python tests/test_progression_move_to.py
 python tests/test_cross_class_prereq_dependency.py
 python tests/test_real_world_build.py
@@ -202,7 +203,14 @@ id bitmap's low boundary, where an empty build and one holding only id 0
 being written as `hi + 1` bits unconditionally),
 `MAX_PURCHASE_ORDER`/
 `deserializePurchaseOrder` in `state.js` (`test_purchase_order_cap.py`),
-rename-detection in `wiki-sync/assign_aa_ids.py` (`compute_vanished` -
+per-rank descriptions (`splitPerRankLines`/`markProgressions` and
+`highlightRankValue`'s branch between them in `logic.js`, or the
+`.rank-line`/`.is-current-rank` rules in `styles.css` -
+`test_per_rank_description.py`; an AA whose ranks each do something
+different is written as consecutive "Rank N: " clauses in `data.src.js`
+and rendered one line per rank, since a slash progression would line its
+slots up against the wrong ranks), rename-detection in
+`wiki-sync/assign_aa_ids.py` (`compute_vanished` -
 `test_assign_aa_ids.py`), or the Move To popover
 (`absoluteIndexForVisiblePosition`, `moveToVisiblePosition`,
 `waypointSections`'s fit-aware section-boundary math, `moveMenuHtml`, or

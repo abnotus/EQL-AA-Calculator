@@ -893,10 +893,32 @@ if (guess.interpolated) return `Estimated (${guess.confidence} confidence) — n
 return `Estimated (${guess.confidence} confidence) from ${guess.basedOn.join(", ")} — not confirmed on the wiki.`;
 }
 function highlightRankValue(text, rank, guessLookup) {
+const lines = splitPerRankLines(text);
+if (lines) {
+let progIdx = -1;
+return lines.map(({ rank: lineRank, text: lineText }) => {
+const out = markProgressions(escapeHtml(lineText), 0, guessLookup, progIdx);
+progIdx = out.progIdx;
+const current = rank && lineRank === rank ? " is-current-rank" : "";
+return `<span class="rank-line${current}">${out.html}</span>`;
+}).join("");
+}
 const escaped = escapeHtml(text);
 if (!guessLookup && (!rank || rank < 1)) return escaped;
-let progIdx = -1;
-return escaped.replace(/\d+(?:\.\d+)?%?(?:\/(?:\d+(?:\.\d+)?%?|\?)){1,}/g, (match) => {
+return markProgressions(escaped, rank, guessLookup, -1).html;
+}
+const PER_RANK_HEAD = /^Rank (\d+):\s/;
+const PER_RANK_SPLIT = /(?=Rank \d+:\s)/;
+function splitPerRankLines(text) {
+const str = String(text == null ? "" : text);
+if (!PER_RANK_HEAD.test(str)) return null;
+const parts = str.split(PER_RANK_SPLIT).filter((p) => p.trim());
+if (parts.length < 2) return null;
+return parts.map((p) => ({ rank: parseInt(p.match(PER_RANK_HEAD)[1], 10), text: p.trim() }));
+}
+function markProgressions(escaped, rank, guessLookup, startIdx) {
+let progIdx = startIdx;
+const html = escaped.replace(/\d+(?:\.\d+)?%?(?:\/(?:\d+(?:\.\d+)?%?|\?)){1,}/g, (match) => {
 progIdx++;
 const parts = match.split("/");
 const highlightIdx = rank && rank >= 1 ? rank - 1 : -1;
@@ -910,6 +932,7 @@ return `<span class="${cls}" title="${escapeHtml(guessTitle(guess))}">~${guess.v
 return i === highlightIdx ? `<span class="rank-highlight">${part}</span>` : part;
 }).join("/");
 });
+return { html, progIdx };
 }
 function applyPerRankTotal(text, rank) {
 if (!rank || rank < 2) return text;

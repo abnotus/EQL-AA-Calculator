@@ -1308,10 +1308,47 @@ function guessTitle(guess) {
 // guess or null; progIdx counts progressions in order of appearance (a
 // description can hold more than one — see effectGuesses.js).
 function highlightRankValue(text, rank, guessLookup) {
+  const lines = splitPerRankLines(text);
+  if (lines) {
+    // Each line already belongs to one rank, so slot position carries no
+    // rank meaning inside it - pass rank 0 so nothing gets bolded by
+    // position, and mark the whole matching line instead. progIdx keeps
+    // running across lines, since effectGuesses.js indexes progressions
+    // over the description as a whole.
+    let progIdx = -1;
+    return lines.map(({ rank: lineRank, text: lineText }) => {
+      const out = markProgressions(escapeHtml(lineText), 0, guessLookup, progIdx);
+      progIdx = out.progIdx;
+      const current = rank && lineRank === rank ? " is-current-rank" : "";
+      return `<span class="rank-line${current}">${out.html}</span>`;
+    }).join("");
+  }
   const escaped = escapeHtml(text);
   if (!guessLookup && (!rank || rank < 1)) return escaped;
-  let progIdx = -1;
-  return escaped.replace(/\d+(?:\.\d+)?%?(?:\/(?:\d+(?:\.\d+)?%?|\?)){1,}/g, (match) => {
+  return markProgressions(escaped, rank, guessLookup, -1).html;
+}
+
+// Splits a description written as consecutive "Rank N: ..." clauses into one
+// entry per rank, or returns null for the ordinary single-clause kind. The
+// colon is what separates a per-rank clause from prose like "Rank 2 requires
+// level 30", which many descriptions carry and which must stay inline.
+const PER_RANK_HEAD = /^Rank (\d+):\s/;
+const PER_RANK_SPLIT = /(?=Rank \d+:\s)/;
+
+function splitPerRankLines(text) {
+  const str = String(text == null ? "" : text);
+  if (!PER_RANK_HEAD.test(str)) return null;
+  const parts = str.split(PER_RANK_SPLIT).filter((p) => p.trim());
+  if (parts.length < 2) return null;
+  return parts.map((p) => ({ rank: parseInt(p.match(PER_RANK_HEAD)[1], 10), text: p.trim() }));
+}
+
+// Marks up slash-separated progressions in already-escaped text. startIdx is
+// the last progression index used so far, so a caller walking several
+// fragments can keep one continuous count.
+function markProgressions(escaped, rank, guessLookup, startIdx) {
+  let progIdx = startIdx;
+  const html = escaped.replace(/\d+(?:\.\d+)?%?(?:\/(?:\d+(?:\.\d+)?%?|\?)){1,}/g, (match) => {
     progIdx++;
     const parts = match.split("/");
     const highlightIdx = rank && rank >= 1 ? rank - 1 : -1;
@@ -1325,6 +1362,7 @@ function highlightRankValue(text, rank, guessLookup) {
       return i === highlightIdx ? `<span class="rank-highlight">${part}</span>` : part;
     }).join("/");
   });
+  return { html, progIdx };
 }
 
 // For descriptions phrased as a flat "N per rank" (e.g. "4 points per rank"),

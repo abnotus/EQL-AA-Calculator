@@ -33,6 +33,8 @@ Each entry added to `USER_CHANGELOG` (`src/changelogData.js`) gets a matching an
 
 All AA data (costs, effects, ranks, prerequisites) lives in `data.src.js`, sourced from [eqlwiki.com/Alternate_Advancement](https://eqlwiki.com/Alternate_Advancement) and cross-checked against in-game logs/screenshots where the wiki is silent or wrong. Values marked `?` are undocumented anywhere and treated as 0 until confirmed.
 
+Most descriptions state one effect that scales, written as a slash progression (`"by 2/4/6%"`) so the value for the rank you hold can be picked out. An AA whose ranks each do something *different* is written as consecutive `"Rank N: ..."` clauses instead, and renders one line per rank with your current one marked (`splitPerRankLines` in `logic.js`). A progression can't express that shape: its slots are positional, so one covering only ranks 2-4 would line up against ranks 1-3, and a rank doing something unrelated has no slot at all. Splitting only starts at the very beginning of a description, which is what keeps a passing mention like `"Rank 2 requires level 30"` inline.
+
 ### Checking for wiki changes
 
 ```
@@ -123,7 +125,7 @@ Minting a profile has no matching cleanup on its own — deleting a build only r
 
 `src/costGuesses.js` is only ever consulted through `keys.js`'s `costGuessFor`, and only when the real `costs[rankIdx]` is exactly `"?"` — `logic.js`'s `costNum()`/`spentPoints()` never look at it, so an estimate can't affect real point totals. The moment a real number replaces `"?"` in `data.src.js`, that slot's guess (if one still exists) is simply never read again.
 
-`src/effectGuesses.js` has the same guarantee: `render.js`'s `highlightRankValue` only substitutes a guess where the description text is literally `"?"` — search, export text, and everywhere else a description is read still see the real, unmodified string.
+`src/effectGuesses.js` has the same guarantee: `logic.js`'s `highlightRankValue` only substitutes a guess where the description text is literally `"?"` — search, export text, and everywhere else a description is read still see the real, unmodified string.
 
 To make a change:
 
