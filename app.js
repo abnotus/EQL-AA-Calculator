@@ -1729,16 +1729,20 @@ const BUILDS_INDEX_KEY = "eql_aa_builds_index_v1";
 const BUILD_KEY_PREFIX = "eql_aa_build_";
 const IMPORTED_BUILD_NAME = "Imported Build";
 const ACTIVE_BUILD_KEY = "eql_aa_active_build_id";
+let cachedIndex = null;
 function loadIndex() {
+if (cachedIndex !== null) return cachedIndex;
 try {
 const raw = localStorage.getItem(BUILDS_INDEX_KEY);
 const parsed = raw ? JSON.parse(raw) : [];
-return Array.isArray(parsed) ? parsed : [];
+cachedIndex = Array.isArray(parsed) ? parsed : [];
 } catch (e) {
-return [];
+cachedIndex = [];
 }
+return cachedIndex;
 }
 function saveIndex(index) {
+cachedIndex = index;
 try {
 localStorage.setItem(BUILDS_INDEX_KEY, JSON.stringify(index));
 } catch (e) { /* storage unavailable/full - the slot data write already failed first if so */ }

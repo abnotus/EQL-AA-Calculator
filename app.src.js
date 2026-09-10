@@ -2660,17 +2660,26 @@ const IMPORTED_BUILD_NAME = "Imported Build";
 // by id against the index, not the other way around.
 const ACTIVE_BUILD_KEY = "eql_aa_active_build_id";
 
+// In-memory cache of the parsed index, avoiding a localStorage.getItem +
+// JSON.parse on every read (listBuilds() alone runs on every renderTopbar,
+// i.e. every renderAll). null means "not loaded yet"; every mutation goes
+// through saveIndex, which keeps this in lockstep with what's persisted.
+let cachedIndex = null;
+
 function loadIndex() {
+  if (cachedIndex !== null) return cachedIndex;
   try {
     const raw = localStorage.getItem(BUILDS_INDEX_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    cachedIndex = Array.isArray(parsed) ? parsed : [];
   } catch (e) {
-    return [];
+    cachedIndex = [];
   }
+  return cachedIndex;
 }
 
 function saveIndex(index) {
+  cachedIndex = index;
   try {
     localStorage.setItem(BUILDS_INDEX_KEY, JSON.stringify(index));
   } catch (e) { /* storage unavailable/full - the slot data write already failed first if so */ }
