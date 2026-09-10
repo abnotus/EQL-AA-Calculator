@@ -2538,6 +2538,8 @@ let autoScrollDir = 0;
 let autoScrollSpeed = 0;
 let autoScrollRAF = null;
 let dragBaselineWarnCount = 0;
+let dragWarnCacheToIndex = null;
+let dragWarnCacheResult = false;
 function clearDragOverMarks() {
 Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((r) => {
 r.classList.remove("drag-over-top", "drag-over-bottom", "drag-warn");
@@ -2587,12 +2589,15 @@ function dragWouldIntroduceWarn(toIndex) {
 if (dragSrcIndex === null) return false;
 let insertAt = toIndex > dragSrcIndex ? toIndex - 1 : toIndex;
 if (insertAt === dragSrcIndex) return false;
+if (dragWarnCacheToIndex === toIndex) return dragWarnCacheResult;
 const hypothetical = state.purchaseOrder.slice();
 const [entry] = hypothetical.splice(dragSrcIndex, 1);
 hypothetical.splice(insertAt, 0, entry);
 const hypoSteps = computeProgressionSteps(hypothetical);
-if (hypoSteps[insertAt].prereqWarn) return true;
-return countPrereqWarns(hypoSteps) > dragBaselineWarnCount;
+const result = hypoSteps[insertAt].prereqWarn || countPrereqWarns(hypoSteps) > dragBaselineWarnCount;
+dragWarnCacheToIndex = toIndex;
+dragWarnCacheResult = result;
+return result;
 }
 function renderWaypointChips() {
 if (!state.waypoints.length) {
@@ -2897,6 +2902,7 @@ Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((
 rowEl.addEventListener("dragstart", (e) => {
 dragSrcIndex = parseInt(rowEl.getAttribute("data-index"), 10);
 dragBaselineWarnCount = countPrereqWarns(computeProgressionSteps());
+dragWarnCacheToIndex = null;
 rowEl.classList.add("dragging");
 e.dataTransfer.effectAllowed = "move";
 e.dataTransfer.setData("text/plain", String(dragSrcIndex));

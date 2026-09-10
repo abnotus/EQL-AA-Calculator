@@ -3857,6 +3857,14 @@ let autoScrollRAF = null;
 // dragstart - the baseline dragWouldIntroduceWarn diffs hypothetical
 // arrangements against. See that function for why a baseline is needed at all.
 let dragBaselineWarnCount = 0;
+// dragover fires continuously while the cursor sits over the same insertion
+// point, and dragWouldIntroduceWarn's answer only depends on that insertion
+// point (toIndex) for a given drag - cached here so holding still, or
+// moving within the same row-half, doesn't re-run computeProgressionSteps
+// on every event. Reset at dragstart, since a new drag can revisit a
+// toIndex a previous one already cached an answer for.
+let dragWarnCacheToIndex = null;
+let dragWarnCacheResult = false;
 
 function clearDragOverMarks() {
   Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((r) => {
@@ -3941,12 +3949,15 @@ function dragWouldIntroduceWarn(toIndex) {
   if (dragSrcIndex === null) return false;
   let insertAt = toIndex > dragSrcIndex ? toIndex - 1 : toIndex;
   if (insertAt === dragSrcIndex) return false; // no-op move, nothing changes
+  if (dragWarnCacheToIndex === toIndex) return dragWarnCacheResult;
   const hypothetical = state.purchaseOrder.slice();
   const [entry] = hypothetical.splice(dragSrcIndex, 1);
   hypothetical.splice(insertAt, 0, entry);
   const hypoSteps = computeProgressionSteps(hypothetical);
-  if (hypoSteps[insertAt].prereqWarn) return true;
-  return countPrereqWarns(hypoSteps) > dragBaselineWarnCount;
+  const result = hypoSteps[insertAt].prereqWarn || countPrereqWarns(hypoSteps) > dragBaselineWarnCount;
+  dragWarnCacheToIndex = toIndex;
+  dragWarnCacheResult = result;
+  return result;
 }
 
 // Renders the waypoint chip row - one pill per state.waypoints entry
@@ -4395,6 +4406,7 @@ function wireProgressionDragTargets() {
     rowEl.addEventListener("dragstart", (e) => {
       dragSrcIndex = parseInt(rowEl.getAttribute("data-index"), 10);
       dragBaselineWarnCount = countPrereqWarns(computeProgressionSteps());
+      dragWarnCacheToIndex = null;
       rowEl.classList.add("dragging");
       e.dataTransfer.effectAllowed = "move";
       // Firefox won't start the drag at all unless setData is called.
