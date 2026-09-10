@@ -325,7 +325,7 @@ const MAX_WAYPOINTS = 200;
 // arbitrary user-chosen hex values. key is what's actually stored on a
 // waypoint and round-tripped through save/export; hex is only for the
 // swatch-picker UI (render.js) - the segment/divider tints themselves are
-// plain CSS classes keyed off it (styles.css).
+// plain CSS classes keyed off it (styles.src.css).
 export const WAYPOINT_COLORS = [
   { key: "red", hex: "#d94c4c" },
   { key: "orange", hex: "#d98a3d" },

@@ -83,7 +83,7 @@ No build tools, no server — just open `index.html` in a browser.
 
 ## Development
 
-The app logic is authored as real ES modules under `src/` (`aaIds.js`, `costGuesses.js`, `effectGuesses.js`, `keys.js`, `changelogData.js`, `state.js`, `logic.js`, `builds.js`, `dom.js`, `render.js`, `exportImport.js`, `events.js`, `main.js`). Native ES modules don't work over `file://` in Chrome, and this app is deliberately built to run by just double-clicking `index.html` with no local server — so `build_minify.py` assembles the `src/` modules back into a single classic script and minifies it, which is what `index.html` actually loads.
+The app logic is authored as real ES modules under `src/` (`aaIds.js`, `costGuesses.js`, `effectGuesses.js`, `keys.js`, `changelogData.js`, `state.js`, `logic.js`, `builds.js`, `dom.js`, `render.js`, `exportImport.js`, `events.js`, `main.js`). Native ES modules don't work over `file://` in Chrome, and this app is deliberately built to run by just double-clicking `index.html` with no local server — so `build_minify.py` assembles the `src/` modules back into a single classic script and minifies it (via [esbuild](https://esbuild.github.io/), a build-time-only dependency — see Prerequisites below), which is what `index.html` actually loads.
 
 `build_minify.py` also runs two data-integrity checks before building and fails with an explanation if either is violated, rather than shipping something broken: `check_prereq_disambiguation_invariant` (a repeated AA name needs exactly one non-auto occurrence for prereq resolution to stay deterministic) and `check_aa_ids_current` (every AA in `data.src.js` needs a matching entry in `src/aaIds.js`, or it silently drops out of every share link/export that includes it — run `wiki-sync/assign_aa_ids.py` to fix). If a build fails on either, the error message says what to do.
 
@@ -127,10 +127,12 @@ Minting a profile has no matching cleanup on its own — deleting a build only r
 
 `src/effectGuesses.js` has the same guarantee: `logic.js`'s `highlightRankValue` only substitutes a guess where the description text is literally `"?"` — search, export text, and everywhere else a description is read still see the real, unmodified string.
 
+**Prerequisites:** `npm install` once, to pull in [esbuild](https://esbuild.github.io/) (the only dependency, and build-time only — the shipped app itself still has none, no server, works from `file://`).
+
 To make a change:
 
-1. Edit files under `src/` (app logic), `data.src.js` (AA data), or `styles.css`.
-2. Run `python build_minify.py`. This regenerates `app.src.js` (assembled, readable — generated, don't edit directly), `app.js`/`data.js` (minified, what ships), and re-stamps `index.html` with a cache-busting version hash.
+1. Edit files under `src/` (app logic), `data.src.js` (AA data), or `styles.src.css`.
+2. Run `python build_minify.py`. This regenerates `app.src.js` (assembled, readable — generated, don't edit directly), `app.js`/`data.js`/`styles.css` (minified, what ships), and re-stamps `index.html` with a cache-busting version hash.
 3. Open `index.html` to test.
 
 ## Testing

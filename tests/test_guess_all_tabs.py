@@ -126,7 +126,7 @@ with sync_playwright() as p:
 
     # --- An inactive-class purchaseOrder entry (its class isn't in the
     # current 3 slots) still renders as a Progression row - muted/read-only
-    # (see .inactive, styles.css) - and also shows up in the Other Classes
+    # (see .inactive, styles.src.css) - and also shows up in the Other Classes
     # tab (test_other_classes.py covers that tab's own content in depth).
     # Real share link from a live Paladin/Enchanter/Druid build with
     # Bard/Monk/Rogue/Shaman/Wizard history (see tests/test_real_world_build.py's

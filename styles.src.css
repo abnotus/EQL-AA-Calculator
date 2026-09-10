@@ -1,0 +1,1905 @@
+:root {
+  --bg: #0a0a0b;
+  --bg-panel: #141416;
+  --bg-panel-2: #1b1b1e;
+  --border: #2b2b2f;
+  --border-light: #444448;
+  --accent: #9c2b2b;
+  --accent-bright: #d94c4c;
+  --text: #e4e4e6;
+  --text-dim: #a0a0a6;
+  --text-faint: #63636a;
+  --green: #4c8c52;
+  --node-gap: 18px;
+
+  /* Pattern-inferred cost estimates (see costGuesses.js) - distinct colors
+     per confidence tier, not one hue at different lightness, so a tier
+     reads as a genuinely different category rather than "more/less of the
+     same". None of these overlaps red (spend/accent), green
+     (afford/maxed/owned), amber (locked/warn/drag-warn), or the waypoint
+     palette's saturated hues (a different axis of meaning - which zone of
+     the plan - reusing one of those here would make a guess look like it
+     belongs to a waypoint zone). very-low is a duller, darker relative of
+     low (same muted family, one step further down) rather than an
+     unrelated hue, since it's not a new kind of evidence - it's
+     guess_costs.py's MANUAL_GUESSES, a curator's own judgment call used
+     only when even bounded interpolation found nothing at all, and the
+     color should read as strictly less certain than every algorithmic
+     tier, not just different from them. */
+  --estimate-high: #5aa9e6;
+  --estimate-medium: #a67cd9;
+  --estimate-low: #93877a;
+  --estimate-very-low: #6b6459;
+
+  /* Hide/Show Hidden AAs (see .hide-toggle-btn, #showHiddenToggle) - a
+     saturated cyan-teal, deliberately not reused from anywhere else
+     (doesn't overlap red/green/amber/estimate/waypoint meanings), so it
+     reads as its own distinct category and actually stands out against the
+     red-dominant palette instead of blending into it. */
+  --hidden-accent: #146b64;
+  --hidden-accent-bright: #2fe0d0;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", "Trebuchet MS", Arial, sans-serif;
+  height: 100%;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(156,43,43,0.05), transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(156,43,43,0.04), transparent 40%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---------- Top bar ---------- */
+header.topbar {
+  background: linear-gradient(180deg, #131315, #0a0a0b);
+  border-bottom: 2px solid var(--border-light);
+  padding: 10px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+}
+
+header.topbar h1 {
+  font-size: 18px;
+  margin: 0;
+  color: var(--accent-bright);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(217,76,76,0.25);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.control label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-faint);
+}
+
+select, input[type="number"], input[type="text"] {
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-light);
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+select:focus, input:focus {
+  outline: 1px solid var(--accent-bright);
+}
+
+.points-display {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 12px;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.points-display .label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.points-display .value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-bright);
+}
+
+/* #spentValue now shows "owned / spent", each side its own span so only
+   the side actually carrying an estimate gets colored - #spentValue's own
+   ID-selector specificity still wins over the inherited .points-display
+   .value color trivially. Same flat "guess concept" blue as the disclaimer
+   banner's own estimate callout, since a side blends however many
+   different confidence tiers are currently purchased/owned-but-unconfirmed
+   - no single tier color would mean anything here. The ~ prefix plus this
+   color are the only visual cue; the confirmed/estimated breakdown lives
+   in the title tooltip, same hover-to-disclose pattern as every other
+   estimate badge in the app. */
+#spentValue .is-estimate {
+  color: var(--estimate-high);
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.btn {
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-light);
+  color: var(--text);
+  padding: 7px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn:hover { background: #222225; border-color: var(--accent-bright); }
+
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn:disabled:hover { background: var(--bg-panel-2); border-color: var(--border-light); }
+
+a.btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn.primary {
+  background: linear-gradient(180deg, #3a1c1c, #241212);
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+.btn.primary:hover { background: linear-gradient(180deg, #4a2222, #2e1616); }
+
+.btn.danger:hover { border-color: #b23a3a; color: #e08b78; }
+
+.btn.toggle.active {
+  background: var(--accent);
+  color: #f4dcdc;
+  border-color: var(--accent-bright);
+  font-weight: 600;
+}
+
+/* ---------- Disclaimer banner ---------- */
+.disclaimer-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 18px;
+  background: #241a10;
+  border-bottom: 1px solid #4a3a20;
+  color: #d8bd8a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.disclaimer-banner a {
+  color: #f0c869;
+  text-decoration: underline;
+}
+
+/* Deliberately breaks from the banner's own amber palette - the whole
+   point is to visually echo the actual ~9-style badge this refers to (see
+   .costtag.is-estimate), so it reads as "this exact thing, over there" and
+   not just more banner text. */
+.disclaimer-banner .banner-estimate {
+  color: var(--estimate-high);
+  font-style: italic;
+}
+
+.disclaimer-banner span { flex: 1; }
+
+.disclaimer-banner button {
+  background: transparent;
+  border: none;
+  color: #d8bd8a;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.disclaimer-banner button:hover { color: #f0c869; }
+
+/* ---------- Tabs ---------- */
+nav.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 18px;
+  background: #0f0f11;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+nav.tabs button {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 10px 16px;
+  font-size: 13px;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+}
+
+nav.tabs button:hover { color: var(--text); }
+
+nav.tabs button.active {
+  color: var(--accent-bright);
+  border-bottom-color: var(--accent);
+}
+
+nav.tabs button .count {
+  color: var(--text-faint);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+nav.tabs button .search-badge {
+  display: inline-block;
+  margin-left: 6px;
+  min-width: 16px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #4a3510;
+  color: #f0c869;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+/* ---------- Global search ---------- */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #0f0f11;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-bar input[type="text"] {
+  flex: 1;
+  max-width: 420px;
+}
+
+/* Hide/Show Hidden AAs - compact button reused in 3 spots (the tree/Browse
+   toggle here, the side panel header, each Browse card's corner) at 3
+   different sizes; #showHiddenToggle below restores normal .btn sizing for
+   its spot in this row, the other two stay at this compact default. */
+.hide-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-faint);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.hide-toggle-btn:hover { border-color: var(--hidden-accent-bright); color: var(--hidden-accent-bright); }
+
+.hide-toggle-btn.active {
+  background: var(--hidden-accent);
+  border-color: var(--hidden-accent-bright);
+  color: #d7fff9;
+  font-weight: 600;
+}
+
+#showHiddenToggle {
+  padding: 7px 12px;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.search-bar #clearSearchBtn {
+  padding: 6px 10px;
+  line-height: 1;
+}
+
+
+/* ---------- Main layout ---------- */
+main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.view-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.view-panel-col {
+  flex-direction: column;
+}
+
+#treeWrap {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  padding: 30px;
+}
+
+.tree-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--node-gap) 22px;
+}
+
+.node {
+  width: 100%;
+  min-height: 92px;
+  background: linear-gradient(180deg, var(--bg-panel-2), var(--bg-panel));
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 4px;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.node:hover {
+  border-color: var(--accent-bright);
+  transform: translateY(-2px);
+}
+
+.node.selected {
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 0 2px rgba(217,76,76,0.35), 0 0 14px rgba(217,76,76,0.25);
+}
+
+.node:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+
+.node.maxed {
+  border-color: var(--green);
+  box-shadow: 0 0 10px rgba(76,140,82,0.35);
+}
+
+.node.locked {
+  opacity: 0.42;
+  filter: grayscale(0.7);
+}
+
+/* Locked specifically by a missing prerequisite AA (as opposed to a level
+   gate) gets a lighter grayscale than plain .locked so the REQ badge's amber
+   still reads - a level gate is self-evidently solved by playing, but a
+   prereq gate means there's a specific other AA to go buy, worth standing out. */
+.node.locked-prereq {
+  filter: grayscale(0.3);
+  border-color: rgba(224,168,58,0.5);
+}
+
+/* Locked because none of your 3 selected classes can train this AA -
+   same lighter grayscale + amber border as .locked-prereq, since both
+   mean "there's a specific, non-automatic thing you'd need to do,"
+   unlike a level gate's "just keep playing." Distinguished from
+   .locked-prereq by corner position (CLASS top-left vs. REQ bottom-left),
+   not color - the amber "you need to act on this" slot already covers
+   both meanings well enough to not need a second hue. */
+.node.locked-classlock {
+  filter: grayscale(0.3);
+  border-color: rgba(224,168,58,0.5);
+}
+
+.node.invalidated {
+  border-color: #e08b78;
+  box-shadow: 0 0 0 2px rgba(224,139,120,0.35), 0 0 14px rgba(224,139,120,0.3);
+}
+
+.node .costtag.prereq-tag {
+  top: auto;
+  bottom: -8px;
+  left: -8px;
+  right: auto;
+  border-color: #e0a83a;
+  color: #e0a83a;
+  font-weight: 700;
+}
+
+/* top: -8px is inherited from the base .node .costtag rule below -
+   overriding only left/right moves this into the one open corner
+   (top-right is the cost/AUTO/Lv tag, bottom-left is REQ/invalid,
+   bottom-right is hidden). */
+.node .costtag.classlock-tag {
+  left: -8px;
+  right: auto;
+  border-color: #e0a83a;
+  color: #e0a83a;
+  font-weight: 700;
+}
+
+/* Bottom-left, same corner as REQ - the two never co-occur (prereq and
+   classEligibility are different kinds from structuralLockReason, which
+   returns only the first non-null), but this and the CLASS tag genuinely
+   can: a held rank that a class swap made ineligible is both "next rank
+   blocked" and "held rank no longer valid" at once. */
+.node .costtag.invalid-tag {
+  top: auto;
+  bottom: -8px;
+  left: -8px;
+  right: auto;
+  border-color: #e08b78;
+  color: #e08b78;
+  font-weight: 700;
+}
+
+/* A hidden AA only ever renders at all when it's being shown as an
+   exception (Show Hidden is on, or you've spent points on it despite it
+   being hidden - see renderTree) - the dimming + corner tag mark that it's
+   an exception, not the normal state for this slot. Bottom-right, the one
+   corner none of the other tags (top-right cost/AUTO/Lv, bottom-left
+   REQ/invalid) already claim. */
+.node.hidden-aa { opacity: 0.55; }
+
+/* .costtag as a base is deliberate reuse, not a copy-paste starting point -
+   it earns its place here: the same absolute-positioned pill shape,
+   background-cuts-into-the-node-border look, and sizing every other corner
+   badge (AUTO/Lv/REQ/⚠) already shares. Only color/position actually change
+   below. */
+.node .costtag.hidden-tag {
+  top: auto;
+  bottom: -8px;
+  border-color: var(--hidden-accent-bright);
+  color: var(--hidden-accent-bright);
+  font-weight: 700;
+  font-size: 9px;
+}
+
+.node.search-match {
+  border-color: #e0a83a;
+  box-shadow: 0 0 0 2px rgba(224,168,58,0.35), 0 0 14px rgba(224,168,58,0.3);
+}
+
+.node.search-dim {
+  opacity: 0.25;
+}
+
+.node.auto {
+  border-color: #5a5a62;
+  background: linear-gradient(180deg, #202024, #17171a);
+}
+
+.node.auto .icon {
+  color: #b7b7bd;
+}
+
+.node .icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #2c2c30, #141416);
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-bright);
+}
+
+.node .name {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.node .rankbar {
+  width: 100%;
+  height: 5px;
+  background: #080809;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  display: flex;
+}
+
+.node .rankbar .fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5c2222, var(--accent-bright));
+}
+
+.node.maxed .rankbar .fill { background: linear-gradient(90deg, #2e6a35, var(--green)); }
+
+/* The portion of a held rank beyond the AA's current class-rank-cap (see
+   classRankCapFor) - same warning color as .node.invalidated's border, at
+   reduced opacity plus a diagonal hatch so "trained but not currently
+   reachable" reads as a distinct texture, not just a dimmer version of the
+   normal fill. */
+.node .rankbar .fill-capped {
+  height: 100%;
+  background: repeating-linear-gradient(45deg, rgba(224,139,120,0.75), rgba(224,139,120,0.75) 3px, rgba(224,139,120,0.35) 3px, rgba(224,139,120,0.35) 6px);
+}
+
+.node .ranktext {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.node .costtag {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  color: var(--accent-bright);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 10px;
+}
+
+.node .costtag.auto-tag {
+  border-color: #6b6b72;
+  color: #c9c9ce;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Pattern-inferred estimate, shown wherever the real cost is still "?" -
+   see costDisplay in render.js. .is-estimate carries the shared shape
+   (italic, distinguishing it from a real number at a glance even before
+   the color registers); the .tier-* modifier carries the confidence color. */
+.node .costtag.is-estimate {
+  font-style: italic;
+  font-weight: 600;
+}
+.node .costtag.is-estimate.tier-high { border-color: var(--estimate-high); color: var(--estimate-high); }
+.node .costtag.is-estimate.tier-medium { border-color: var(--estimate-medium); color: var(--estimate-medium); }
+.node .costtag.is-estimate.tier-low { border-color: var(--estimate-low); color: var(--estimate-low); }
+.node .costtag.is-estimate.tier-very-low { border-color: var(--estimate-very-low); color: var(--estimate-very-low); }
+
+/* Same treatment, unscoped - for the couple of spots (Browse's per-rank
+   cost list, the Progression tab's per-step cost pill) that show a guess
+   inline without a dedicated container selector of their own above. Lower
+   specificity than the scoped rules, so it only fills in where those don't
+   already apply. */
+.is-estimate { font-style: italic; }
+.is-estimate.tier-high { color: var(--estimate-high); }
+.is-estimate.tier-medium { color: var(--estimate-medium); }
+.is-estimate.tier-low { color: var(--estimate-low); }
+.is-estimate.tier-very-low { color: var(--estimate-very-low); }
+
+.auto-badge {
+  color: #c9c9ce;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ---------- Side panel ---------- */
+#sidePanel {
+  width: 320px;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  border-left: 2px solid var(--border-light);
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.sidepanel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+#sidePanel h2 {
+  color: var(--accent-bright);
+  font-size: 17px;
+  margin: 0;
+}
+
+#sidePanel .meta {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#sidePanel .desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+  white-space: pre-line;
+}
+
+.rank-line { display: block; }
+.rank-line + .rank-line { margin-top: 4px; }
+.rank-line.is-current-rank {
+  color: var(--accent-bright);
+  font-weight: 600;
+  border-left: 2px solid var(--accent-bright);
+  padding-left: 6px;
+  margin-left: -8px;
+}
+
+.rank-highlight {
+  color: var(--accent-bright);
+  font-weight: 700;
+  background: rgba(217,76,76,0.12);
+  padding: 0 3px;
+  border-radius: 3px;
+}
+
+/* An effect value can be both .rank-highlight (this is the rank being
+   viewed) and .is-estimate.tier-* (the wiki hasn't confirmed it) at once -
+   the color already resolves correctly on its own (.is-estimate.tier-* is
+   two classes, higher specificity than .rank-highlight's one, so it wins
+   regardless of source order without needing a compound override the way
+   the Progression cost pill did), but .rank-highlight's own red background
+   would otherwise clash with an estimate-colored number sitting inside it.
+   Explicit compound rule swaps the background to match instead. */
+.rank-highlight.is-estimate.tier-high { background: rgba(90,169,230,0.12); }
+.rank-highlight.is-estimate.tier-medium { background: rgba(166,124,217,0.12); }
+.rank-highlight.is-estimate.tier-low { background: rgba(147,135,122,0.12); }
+.rank-highlight.is-estimate.tier-very-low { background: rgba(107,100,89,0.12); }
+
+#sidePanel .req-line, .browse-card .req-line {
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: var(--text-dim);
+}
+
+#sidePanel .req-line b, .browse-card .req-line b { color: var(--text); }
+
+/* .browse-card .req-line.warn reused as-is by Summary's owned/held-rank
+   invalidation notice (heldRankInvalidReason) - same class, same meaning,
+   just a different container. */
+#sidePanel .req-line.warn, .browse-card .req-line.warn { color: #e08b78; }
+
+.rank-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.rank-controls button {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  background: var(--bg-panel-2);
+  color: var(--accent-bright);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.rank-controls button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: var(--border);
+  color: var(--text-faint);
+}
+
+.rank-controls button.blocked:not(:disabled) {
+  opacity: 0.55;
+  border-color: #6b2a2a;
+  color: #c98a8a;
+}
+
+.rank-controls .current {
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+}
+
+.next-rank-box {
+  margin: 4px 0 14px;
+  padding: 10px 12px;
+  border: 1px dashed var(--green);
+  border-radius: 6px;
+  background: rgba(76,140,82,0.06);
+}
+
+.next-rank-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--green);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.next-rank-box .desc {
+  margin-bottom: 0;
+}
+
+/* The next-rank box's own cost figure being a guess doesn't change its
+   green dashed framing (that already means "here's what's next", true
+   either way) - only the cost number and an added confidence chip. */
+.next-rank-title b.is-estimate {
+  font-style: italic;
+  color: var(--estimate-high);
+}
+
+.confidence-chip {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  vertical-align: middle;
+}
+.confidence-chip.tier-high { color: var(--estimate-high); }
+.confidence-chip.tier-medium { color: var(--estimate-medium); }
+.confidence-chip.tier-low { color: var(--estimate-low); }
+.confidence-chip.tier-very-low { color: var(--estimate-very-low); }
+
+.rank-costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.rank-costs .pip {
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+  color: var(--text-faint);
+}
+
+.rank-costs .pip.spent {
+  border-color: var(--accent-bright);
+  color: var(--accent-bright);
+  background: rgba(217,76,76,0.08);
+}
+
+.rank-costs .pip.is-estimate { font-style: italic; }
+.rank-costs .pip.is-estimate.tier-high { border-color: var(--estimate-high); color: var(--estimate-high); background: rgba(90,169,230,0.08); }
+.rank-costs .pip.is-estimate.tier-medium { border-color: var(--estimate-medium); color: var(--estimate-medium); background: rgba(166,124,217,0.08); }
+.rank-costs .pip.is-estimate.tier-low { border-color: var(--estimate-low); color: var(--estimate-low); background: rgba(147,135,122,0.08); }
+.rank-costs .pip.is-estimate.tier-very-low { border-color: var(--estimate-very-low); color: var(--estimate-very-low); background: rgba(107,100,89,0.08); }
+
+/* A rank can be both .spent (already purchased, via costNum() treating its
+   unknown real cost as 0) and .is-estimate at once, and the estimate
+   coloring wins - surfacing "you got this for 0 pts, but it's probably
+   worth ~4" beats plain spent-red, which would look identical to a rank
+   whose cost is genuinely known. The .is-estimate.tier-* rules above are
+   already one class more specific than .spent, so that falls out of the
+   cascade on its own. */
+
+#sidePanel .empty {
+  color: var(--text-faint);
+  font-size: 13px;
+  margin-top: 40px;
+  text-align: center;
+}
+
+/* ---------- Browse all ---------- */
+#browseWrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.browse-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.browse-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.browse-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.browse-card.hidden-aa { opacity: 0.55; }
+
+.browse-card .top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.browse-card .top .name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--accent-bright);
+  font-size: 14px;
+}
+
+.browse-card .top .cat {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.browse-card .desc {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+
+.browse-card .info {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.browse-card .info .prereq-info.warn {
+  color: #e08b78;
+  font-weight: 600;
+}
+
+/* Same red-orange "currently blocked" color Browse's own .prereq-info.warn
+   already uses - kept local to Browse's established choice rather than
+   importing the tree's amber, since the two views already differ on this
+   for prereq too and there's no value in unifying that here. */
+.browse-card .info .eligible-info.warn {
+  color: #e08b78;
+  font-weight: 600;
+}
+
+/* ---------- Summary ---------- */
+#summaryWrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  /* Unlike the tree/side-panel layout (which naturally leaves the bottom
+     corner empty), cards here pack edge-to-edge and fill the full height of
+     the view at any scroll position - a padding-bottom on the scrollable
+     content only clears the fixed .version-tag once scrolled to the very
+     end, not while scrolling through the middle. Shrinking the container
+     itself via margin-bottom leaves a permanent gap in that corner instead,
+     at every scroll position. */
+  margin-bottom: 34px;
+}
+
+.summary-meta {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-meta b { color: var(--accent-bright); }
+
+.summary-section-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-faint);
+  margin: 22px 0 10px;
+}
+
+.summary-section-title:first-child { margin-top: 0; }
+
+.summary-other-classes-divider {
+  margin: 26px 0 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+/* ---------- Other Classes ---------- */
+#otherClassesWrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  /* See #summaryWrap's own comment - margin-bottom, not padding, so the gap
+     clearing .version-tag holds at every scroll position. */
+  margin-bottom: 34px;
+}
+
+.other-classes-hint {
+  font-size: 12px;
+  color: var(--text-faint);
+  line-height: 1.5;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.other-classes-subtotal {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  font-style: italic;
+  margin: -4px 0 10px;
+}
+
+/* ---------- Progression ---------- */
+#progressionWrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  /* See #summaryWrap - margin-bottom (not padding) so the gap is there at
+     every scroll position, not just once scrolled to the end. */
+  margin-bottom: 34px;
+}
+
+.progression-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.progression-toolbar #undoLastBtn,
+.progression-toolbar #clearOwnedBtn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.progression-toolbar #clearOwnedBtn {
+  align-self: center;
+}
+
+.progression-hint {
+  font-size: 12px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+.owned-summary {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--green);
+  align-self: center;
+}
+
+/* Same blended-estimate treatment as #spentValue.is-estimate - a sum across
+   however many confidence tiers, so no single tier color applies here either. */
+.owned-summary .is-estimate {
+  color: var(--estimate-high);
+}
+
+.owned-tracking-link {
+  flex-shrink: 0;
+  white-space: nowrap;
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 11.5px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.owned-tracking-link:hover { color: var(--accent-bright); }
+
+.waypoints-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.waypoints-bar #addWaypointBtn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.waypoint-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.waypoint-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-panel-2);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.chip-label {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.waypoint-chip:hover { border-color: var(--accent); }
+
+.chip-remove {
+  border: none;
+  background: none;
+  color: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+.chip-remove:hover { opacity: 1; color: #e08b78; }
+
+/* Divider rows are non-draggable siblings of .progression-row inside
+   progressionContent - see findPrecedingRow/the drag wiring in render.js for
+   how they stay out of the dead-zone trap next-rank preview boxes already
+   solved. */
+.progression-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 12px;
+  color: var(--text-faint);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+
+.progression-divider:hover .divider-label { color: var(--text); }
+
+.progression-divider.unreached { opacity: 0.55; }
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-light);
+}
+
+.divider-label { flex-shrink: 0; white-space: nowrap; }
+
+/* Small solid dot - the chip/divider's color indicator. Reused (with the
+   swatch-picker's own sizing) for the modal's color buttons below. */
+.color-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.color-dot.color-red, .color-swatch.color-red { background: #d94c4c; }
+.color-dot.color-orange, .color-swatch.color-orange { background: #d98a3d; }
+.color-dot.color-yellow, .color-swatch.color-yellow { background: #d9c23d; }
+.color-dot.color-green, .color-swatch.color-green { background: #4c8c52; }
+.color-dot.color-teal, .color-swatch.color-teal { background: #3da6a0; }
+.color-dot.color-blue, .color-swatch.color-blue { background: #4c7fd9; }
+.color-dot.color-purple, .color-swatch.color-purple { background: #9c4cd9; }
+
+/* Background tint, not opacity or text color - composes with .inactive,
+   .dragging, .prereq-warn-row, and owned's strikethrough with no arithmetic
+   (opacity multiplies across states, e.g. the .dragging/.prereq-warn-row
+   combo rule a few lines down exists precisely because it doesn't; a plain
+   background paints underneath all of that for free). Every colored
+   waypoint's segment can be tinted at once - color coding is meant to show
+   the whole plan's zones simultaneously, not one at a time - so these are
+   independent per-color rules, not a single "selected" state. */
+.progression-row.segment-color-red { background: rgba(217, 76, 76, 0.10); }
+.progression-row.segment-color-orange { background: rgba(217, 138, 61, 0.12); }
+.progression-row.segment-color-yellow { background: rgba(217, 194, 61, 0.12); }
+.progression-row.segment-color-green { background: rgba(76, 140, 82, 0.12); }
+.progression-row.segment-color-teal { background: rgba(61, 166, 160, 0.12); }
+.progression-row.segment-color-blue { background: rgba(76, 127, 217, 0.12); }
+.progression-row.segment-color-purple { background: rgba(156, 76, 217, 0.12); }
+
+/* ---------- Waypoint modal ---------- */
+.waypoint-modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.color-swatches {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-swatch.none {
+  background: var(--bg-panel-2);
+  border-color: var(--border-light);
+  position: relative;
+}
+
+.color-swatch.none::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: var(--text-faint);
+  transform: rotate(45deg);
+}
+
+.color-swatch:hover { border-color: var(--text-dim); }
+
+.color-swatch.active { border-color: var(--text); box-shadow: 0 0 0 2px var(--bg-panel), 0 0 0 3px var(--text); }
+
+#deleteWaypointBtn:not(.hidden) { margin-right: auto; }
+
+.progression-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: grab;
+}
+
+/* Currently out of order relative to its own prerequisite (the ⚠ case).
+   Applied per-child rather than to the row itself so the ⚠ - the one thing
+   that should stay legible - isn't flattened along with everything else by
+   the parent's own opacity. A row for a class outside your current 3 slots
+   gets its own separate step-inactive-warn icon instead of any dimming -
+   see the row template in render.js. */
+.progression-row.prereq-warn-row > *:not(.step-warn) { opacity: 0.6; }
+
+/* .dragging's 0.4 is on the row itself; without this override, a warned
+   row's own child-dimming compounds with it while being dragged (0.4 × 0.6
+   = 0.24, reachable any time you grab an already-out-of-order row, and
+   near-invisible). Let .dragging's row-level dim be the only one in effect
+   while actively dragging instead. */
+.progression-row.dragging.prereq-warn-row > *:not(.step-warn) { opacity: 1; }
+
+.progression-row.dragging { opacity: 0.4; }
+
+.progression-row.drag-over-top { box-shadow: inset 0 2px 0 var(--accent-bright); }
+
+.progression-row.drag-over-bottom { box-shadow: inset 0 -2px 0 var(--accent-bright); }
+
+/* Dropping here would leave the dragged step's own prerequisite unmet at that
+   point in the sequence - same amber as the post-drop ⚠ and the tree's REQ
+   badge, so the color already means one consistent thing across the app. */
+.progression-row.drag-over-top.drag-warn { box-shadow: inset 0 2px 0 #e0a83a; }
+
+.progression-row.drag-over-bottom.drag-warn { box-shadow: inset 0 -2px 0 #e0a83a; }
+
+.drag-handle {
+  flex-shrink: 0;
+  color: var(--text-faint);
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: -2px;
+  user-select: none;
+}
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-bright);
+  flex-shrink: 0;
+}
+
+.step-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.step-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.step-name.owned {
+  text-decoration: line-through;
+  color: var(--text-faint);
+}
+
+.step-rank {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+.step-cat {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* Which of the 3 active class slots a row's AA belongs to, at a glance -
+   General/Archetype/Special keep the plain text treatment above (no
+   modifier class - see classBadgeClass, render.js), a class AA gets a
+   small colored pill instead. 3 fixed hues keyed by slot index (0/1/2), not
+   the class's own identity - active-slot badges only ever need to
+   distinguish the 3 CURRENTLY active classes, not build a stable color
+   mapping for all 16 possible classes (every other hue in this app's
+   palette is already spoken for by some other meaning - red/green/amber/
+   estimate tiers/waypoint segments - so 16 more genuinely distinct, non-
+   colliding hues isn't realistic). A row for a class outside the 3 slots
+   still gets a badge (still worth labeling which class it's from), just
+   one shared neutral pill rather than a unique color - .step-cat-inactive,
+   below. */
+.step-cat.step-cat-slot0,
+.step-cat.step-cat-slot1,
+.step-cat.step-cat-slot2,
+.step-cat.step-cat-inactive {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 9px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.step-cat.step-cat-slot0 { background: rgba(217,166,61,0.14); color: #d9a63d; border-color: rgba(217,166,61,0.4); }
+.step-cat.step-cat-slot1 { background: rgba(76,159,217,0.14); color: #4c9fd9; border-color: rgba(76,159,217,0.4); }
+.step-cat.step-cat-slot2 { background: rgba(217,76,168,0.14); color: #d94ca8; border-color: rgba(217,76,168,0.4); }
+.step-cat.step-cat-inactive { background: rgba(255,255,255,0.05); color: var(--text-dim); border-color: var(--border-light); }
+
+.step-warn {
+  color: #e0a83a;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.step-cost {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 64px;
+}
+
+.step-cost .cost-this {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-bright);
+}
+
+/* Explicit compound override, same reasoning as .rank-costs .pip.spent.is-
+   estimate.tier-* above - .step-cost .cost-this and the generic
+   .is-estimate.tier-* rule are equal specificity, so without this the red
+   "spent" color would win purely on source order, making an already-
+   purchased guessed step look identical to a real confirmed cost. */
+.step-cost .cost-this.is-estimate.tier-high { color: var(--estimate-high); }
+.step-cost .cost-this.is-estimate.tier-medium { color: var(--estimate-medium); }
+.step-cost .cost-this.is-estimate.tier-low { color: var(--estimate-low); }
+.step-cost .cost-this.is-estimate.tier-very-low { color: var(--estimate-very-low); }
+
+.step-cost .cost-total {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+/* Same flat "blends however many tiers are involved" blue as #spentValue.is-
+   estimate - this is a running SUM across possibly-several differently-
+   tiered guesses, so no single tier color would mean anything here either. */
+.step-cost .cost-total.is-estimate {
+  color: var(--estimate-high);
+  font-style: italic;
+}
+
+.step-controls {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.step-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-panel-2);
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.step-btn:hover:not(:disabled) { border-color: var(--accent-bright); color: var(--accent-bright); }
+
+.step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.step-add:not(:disabled) { color: var(--green); }
+
+.step-add:hover:not(:disabled) { border-color: var(--green); color: var(--green); background: rgba(76,140,82,0.1); }
+
+.step-remove:not(:disabled) { color: #e08b78; }
+
+.step-remove:hover:not(:disabled) { border-color: #e08b78; color: #e08b78; background: rgba(224,139,120,0.1); }
+
+.step-move.active { border-color: var(--accent-bright); color: var(--accent-bright); }
+
+/* Move To popover - anchored under its trigger button (.step-move) rather
+   than a full modal overlay, the first lightweight popover in the app
+   (see moveMenuHtml/wireProgressionDropZone's outside-click listener,
+   render.js). .move-menu-wrap gives it a positioning context scoped to
+   just this one row's button, not the whole .progression-row - a wider
+   anchor would let the menu jump around if the row's own layout ever
+   reflows (a warn badge appearing/disappearing, say). */
+.move-menu-wrap { position: relative; display: inline-flex; }
+
+.move-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 30;
+  min-width: 180px;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+  padding: 4px;
+}
+
+.move-menu-item {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.move-menu-item:hover:not(:disabled) { background: var(--bg-panel); color: var(--accent-bright); }
+
+.move-menu-item:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.move-menu-position-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 2px;
+  margin-top: 2px;
+  border-top: 1px solid var(--border);
+}
+
+.move-menu-position-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+  flex: 1;
+}
+
+.move-menu-position-input {
+  width: 52px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 3px 5px;
+}
+
+.move-menu-go {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.step-expand.active { border-color: var(--accent-bright); color: var(--accent-bright); }
+
+.step-own:hover { border-color: var(--green); color: var(--green); }
+
+.step-own.active {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(76,140,82,0.1);
+}
+
+.progression-next-rank {
+  margin: -4px 0 8px 40px;
+}
+
+/* ---------- Export modal ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  width: min(600px, 90vw);
+  max-height: 80vh;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 20px 22px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  /* Modals only ever hold wrapping prose/lists, never tabular/code content
+     that would legitimately need to scroll sideways - so instead of giving
+     any of that an overflow-x container (the pattern wide content like the
+     progression rows uses), text is just forced to wrap no matter what a
+     single token looks like. Guarantees no modal ever needs or shows
+     horizontal scrolling at any width, down to the 90vw floor above. */
+  overflow-x: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.modal h2 {
+  margin: 0 0 6px;
+  color: var(--accent-bright);
+  font-size: 16px;
+}
+
+.modal-hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--text-faint);
+  line-height: 1.4;
+}
+
+.modal textarea {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-light);
+  color: var(--text-dim);
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.modal textarea:focus { outline: 1px solid var(--accent-bright); }
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  justify-content: flex-end;
+}
+
+.share-link-row {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.share-link-row label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+
+.share-link-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 4px 0 14px;
+  cursor: pointer;
+}
+
+.modal-checkbox-row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.share-link-controls input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 11px;
+}
+
+/* ---------- Builds modal ---------- */
+.builds-save-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.builds-save-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.builds-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.build-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+
+.build-row.active { border-color: var(--accent-bright); box-shadow: 0 0 0 1px rgba(217,76,76,0.3); }
+
+.build-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.build-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.build-row.active .build-name::after {
+  content: " (current)";
+  font-weight: 400;
+  color: var(--accent-bright);
+  font-size: 11px;
+}
+
+.build-meta {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.build-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.build-actions .btn {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+/* ---------- Owned tracking modal ---------- */
+.owned-tracking-status {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+}
+
+.owned-tracking-status .shared-with { color: var(--accent-bright); font-weight: 600; }
+
+.owned-tracking-row { margin-bottom: 4px; }
+
+.owned-tracking-row select { width: 100%; }
+
+.owned-tracking-actions { margin-top: 10px; flex-wrap: wrap; }
+
+/* ---------- misc ---------- */
+.hidden { display: none !important; }
+
+.version-tag {
+  position: fixed;
+  bottom: 6px;
+  right: 10px;
+  font-size: 10px;
+  color: var(--text-faint);
+  opacity: 0.6;
+  z-index: 40;
+  background: none;
+  border: none;
+  padding: 2px 10px 2px 4px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.version-tag:hover { opacity: 1; color: var(--accent-bright); }
+
+.version-tag.unread {
+  opacity: 1;
+}
+
+.version-tag.unread::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e0a83a;
+}
+
+.changelog-content-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.changelog-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* The custom scrollbar (::-webkit-scrollbar below) is 10px and lives
+     inside this box's own width - without reserved space, it sits flush
+     against wrapped text with no gap, visually overlapping the last
+     characters of a line. .modal's width was bumped to compensate so the
+     text column doesn't end up narrower than before. */
+  padding-right: 16px;
+}
+
+/* Cues that there's more to scroll to - this app's custom scrollbar (see
+   ::-webkit-scrollbar below) is thin enough, and on some platforms hidden
+   until actively scrolling, that a cut-off entry can otherwise look like
+   the end of the list. Toggled by updateChangelogFade in render.js: hidden
+   once actually scrolled to the bottom, or if everything already fits with
+   no scrolling needed. pointer-events:none so it never blocks scrolling
+   itself. */
+.changelog-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 32px;
+  background: linear-gradient(to bottom, transparent, var(--bg-panel));
+  pointer-events: none;
+}
+
+.changelog-entry + .changelog-entry {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.changelog-version {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-bright);
+  margin-bottom: 8px;
+}
+
+.changelog-version .changelog-date {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-faint);
+  margin-left: 6px;
+}
+
+.changelog-entry ul {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.changelog-entry li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+#toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-panel-2);
+  border: 1px solid var(--accent);
+  color: var(--accent-bright);
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  z-index: 50;
+}
+
+#toast.show { opacity: 1; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+  header.topbar {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  header.topbar h1 {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .points-display {
+    border-left: none;
+  }
+
+  .topbar-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Tree + side panel stack instead of sitting side by side once there's no
+     room for a fixed 320px panel next to the AA grid. */
+  #calculatorView {
+    flex-direction: column;
+  }
+
+  #treeWrap {
+    padding: 20px 16px;
+  }
+
+  #sidePanel {
+    width: 100%;
+    max-height: 50vh;
+    border-left: none;
+    border-top: 2px solid var(--border-light);
+  }
+
+  nav.tabs button {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .search-bar input[type="text"] {
+    max-width: none;
+  }
+
+  /* Bigger touch targets than mouse-precision clicking needs. */
+  .rank-controls button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .step-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .progression-row {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .step-info {
+    min-width: 140px;
+  }
+
+  .step-controls {
+    margin-left: auto;
+  }
+
+  .modal-actions {
+    flex-wrap: wrap;
+  }
+
+  .build-row {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .builds-save-row {
+    flex-wrap: wrap;
+  }
+
+  .share-link-controls {
+    flex-direction: column;
+  }
+}

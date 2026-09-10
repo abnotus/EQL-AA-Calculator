@@ -878,7 +878,7 @@ export function handleDeleteWaypoint() {
 // that's currently active, or a single neutral pill for a class that isn't
 // (still worth badging - see the .inactive row it sits on - just not worth
 // a 4th+ unique hue for every one of the ~16 possible classes). See the
-// .step-cat-slot*/.step-cat-inactive rules in styles.css.
+// .step-cat-slot*/.step-cat-inactive rules in styles.src.css.
 function classBadgeClass(s) {
   if (s.scope !== "class") return "";
   if (!s.active) return " step-cat-inactive";

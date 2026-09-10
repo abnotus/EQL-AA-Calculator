@@ -205,7 +205,7 @@ being written as `hi + 1` bits unconditionally),
 `deserializePurchaseOrder` in `state.js` (`test_purchase_order_cap.py`),
 per-rank descriptions (`splitPerRankLines`/`markProgressions` and
 `highlightRankValue`'s branch between them in `logic.js`, or the
-`.rank-line`/`.is-current-rank` rules in `styles.css` -
+`.rank-line`/`.is-current-rank` rules in `styles.src.css` -
 `test_per_rank_description.py`; an AA whose ranks each do something
 different is written as consecutive "Rank N: " clauses in `data.src.js`
 and rendered one line per rank, since a slash progression would line its

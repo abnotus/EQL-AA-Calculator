@@ -120,7 +120,7 @@ with sync_playwright() as p:
     print(f"  {b_sel} box: {b}")
     overlap = not (a["x"] + a["width"] <= b["x"] or b["x"] + b["width"] <= a["x"]
                    or a["y"] + a["height"] <= b["y"] or b["y"] + b["height"] <= a["y"])
-    assert not overlap, "FAIL: the CLASS and ⚠ badges are rendering on top of each other - check their corner overrides in styles.css"
+    assert not overlap, "FAIL: the CLASS and ⚠ badges are rendering on top of each other - check their corner overrides in styles.src.css"
     print("PASS: the CLASS and ⚠ badges occupy separate corners when both apply")
 
     # Refund it so the rest of this file sees the state it did before. The

@@ -2,6 +2,7 @@
 """
 Build pipeline: src/*.js (real ES modules)  ->  app.src.js (generated)  ->  app.js (minified)
                 data.src.js (hand-edited)    ------------------------->  data.js (minified)
+                styles.src.css (hand-edited) ------------------------->  styles.css (minified)
 
 The app's logic is authored as genuine ES modules under src/ (see SRC_MODULE_ORDER
 below for the current file set and assembly order - not repeated here, since a list
@@ -15,19 +16,22 @@ scope and no runtime module resolution is needed), writes that to app.src.js, th
 minifies app.src.js -> app.js exactly as before. Edit files under src/, not app.src.js
 directly — it's a generated artifact now (kept committed for readability/diffing).
 
-Minification is conservative on purpose: strips full-line "//" comments, blank lines,
-and leading indentation from ordinary code lines. Any line that falls inside a
-multi-line `template literal` is passed through byte-for-byte untouched, so
-no HTML-in-JS string content is ever touched. Lines containing quote/backtick
-characters keep any trailing inline comment as-is rather than risk mismatching
-a "//" inside a string.
+Minification (app.js/data.js/styles.css) is done by esbuild - a real parser, not a
+regex/line-based stripper, so it handles template literals, strings, and comments
+correctly by construction and additionally mangles local identifiers for a real size
+win. This is the one piece of the pipeline that needs Node: `npm install` once (pulls
+just esbuild, a devDependency - the shipped app itself still has zero runtime
+dependencies and no server, exactly as before) before running this script. Edit
+data.src.js/styles.src.css directly; they're hand-authored sources, same as src/*.js.
 
 Also stamps a content-hash cache-busting query string (?v=xxxxxxxx) onto the
 app.js / data.js / styles.css references in index.html, so a normal page
 reload always picks up the latest deploy instead of a browser-cached copy.
 """
 import hashlib
+import os
 import re
+import subprocess
 import sys
 
 SRC_MODULE_ORDER = [
@@ -87,47 +91,27 @@ def assemble_app_src():
     print(f"Assembled {len(SRC_MODULE_ORDER)} src/*.js modules -> app.src.js")
 
 
-TRAILING_COMMENT_SAFE = re.compile(r"^(?P<code>[^'\"`]*?)\s*//.*$")
+ESBUILD_BIN = os.path.join("node_modules", "esbuild", "bin", "esbuild")
 
 
-def minify(src: str) -> str:
-    out_lines = []
-    in_template = False
-    for raw_line in src.split("\n"):
-        line = raw_line
-
-        if in_template:
-            # Inside a multi-line template literal: pass through untouched.
-            out_lines.append(line)
-            backtick_count = line.count("`")
-            if backtick_count % 2 == 1:
-                in_template = False
-            continue
-
-        stripped = line.strip()
-
-        # Whole-line comment -> drop entirely.
-        if stripped.startswith("//"):
-            continue
-
-        # Blank line -> drop.
-        if stripped == "":
-            continue
-
-        # Trailing comment on an otherwise quote-free line -> safe to strip.
-        m = TRAILING_COMMENT_SAFE.match(stripped)
-        if m:
-            stripped = m.group("code").rstrip()
-            if stripped == "":
-                continue
-
-        out_lines.append(stripped)
-
-        backtick_count = stripped.count("`")
-        if backtick_count % 2 == 1:
-            in_template = True
-
-    return "\n".join(out_lines) + "\n"
+def esbuild_minify(src_path: str, out_path: str):
+    """
+    Minifies src_path -> out_path via esbuild (loader picked from the file
+    extension: .js or .css). No --bundle - these files have no imports left
+    to resolve by this point (app.src.js's were already stripped by
+    strip_module_syntax; data.src.js/styles.src.css never had any) - so this
+    is a plain single-file transform, not a bundling step.
+    """
+    if not os.path.exists(ESBUILD_BIN):
+        print(f"ERROR: esbuild not found at {ESBUILD_BIN} - run `npm install` first (devDependency only; the shipped app itself has none).")
+        sys.exit(1)
+    result = subprocess.run(
+        ["node", ESBUILD_BIN, src_path, "--minify", f"--outfile={out_path}"],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        print(f"ERROR: esbuild failed on {src_path}:\n{result.stderr}")
+        sys.exit(1)
 
 
 DATA_CATEGORY_START = re.compile(r'^(general|archetype|special):\s*\[')
@@ -291,9 +275,7 @@ VERSIONED_ASSET = re.compile(r'(href|src)="(app\.js|data\.js|styles\.css)(?:\?v=
 
 
 def stamp_index_html(outputs):
-    with open("styles.css", "r", encoding="utf-8") as f:
-        css = f.read()
-    combined = (outputs["app.js"] + outputs["data.js"] + css).encode("utf-8")
+    combined = (outputs["app.js"] + outputs["data.js"] + outputs["styles.css"]).encode("utf-8")
     version = hashlib.sha1(combined).hexdigest()[:8]
 
     with open("index.html", "r", encoding="utf-8") as f:
@@ -324,16 +306,15 @@ def main():
         return 1
 
     assemble_app_src()
-    pairs = [("app.src.js", "app.js"), ("data.src.js", "data.js")]
+    pairs = [("app.src.js", "app.js"), ("data.src.js", "data.js"), ("styles.src.css", "styles.css")]
     outputs = {}
     for src_name, out_name in pairs:
         with open(src_name, "r", encoding="utf-8") as f:
-            src = f.read()
-        minified = minify(src)
-        with open(out_name, "w", encoding="utf-8", newline="\n") as f:
-            f.write(minified)
+            before = len(f.read())
+        esbuild_minify(src_name, out_name)
+        with open(out_name, "r", encoding="utf-8") as f:
+            minified = f.read()
         outputs[out_name] = minified
-        before = len(src)
         after = len(minified)
         print(f"{src_name} -> {out_name}: {before} -> {after} bytes ({100 * after // before}%)")
     stamp_index_html(outputs)
