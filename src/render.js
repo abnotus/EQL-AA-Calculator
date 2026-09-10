@@ -223,11 +223,6 @@ export function renderTree(catKey) {
   const grid = document.createElement("div");
   grid.className = "tree-grid";
 
-  function selectNode(idx) {
-    state.selectedNode = { category: catKey, idx };
-    renderAll();
-  }
-
   const query = state.browseSearch;
   const searching = !!query.trim();
 
@@ -319,12 +314,6 @@ export function renderTree(catKey) {
       tag.title = "Hidden - showing anyway because you've spent points on it, or Show Hidden is on.";
       node.appendChild(tag);
     }
-    node.addEventListener("click", () => selectNode(idx));
-    node.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
-      e.preventDefault();
-      selectNode(idx);
-    });
     grid.appendChild(node);
   });
 

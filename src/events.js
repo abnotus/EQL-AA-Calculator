@@ -144,6 +144,26 @@ export function wireEvents() {
 
   el.undoLastBtn.addEventListener("click", undoLast);
 
+  // Delegated on the never-recreated wrapper rather than per-node - renderTree
+  // tears down and rebuilds every AA node on every render, so binding here
+  // once avoids attaching (and discarding) a fresh listener per node per
+  // render. The tree only ever shows state.activeTab's list, so that's the
+  // node's category at click time.
+  el.treeWrap.addEventListener("click", (e) => {
+    const node = e.target.closest(".node");
+    if (!node) return;
+    state.selectedNode = { category: state.activeTab, idx: parseInt(node.dataset.idx, 10) };
+    renderAll();
+  });
+  el.treeWrap.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    const node = e.target.closest(".node");
+    if (!node) return;
+    e.preventDefault();
+    state.selectedNode = { category: state.activeTab, idx: parseInt(node.dataset.idx, 10) };
+    renderAll();
+  });
+
   wireProgressionDropZone();
 
   el.globalSearch.addEventListener("input", () => {

@@ -2208,10 +2208,6 @@ return;
 const hadFocusInTree = el.treeWrap.contains(document.activeElement);
 const grid = document.createElement("div");
 grid.className = "tree-grid";
-function selectNode(idx) {
-state.selectedNode = { category: catKey, idx };
-renderAll();
-}
 const query = state.browseSearch;
 const searching = !!query.trim();
 list.forEach((aa, idx) => {
@@ -2294,12 +2290,6 @@ tag.textContent = "HIDDEN";
 tag.title = "Hidden - showing anyway because you've spent points on it, or Show Hidden is on.";
 node.appendChild(tag);
 }
-node.addEventListener("click", () => selectNode(idx));
-node.addEventListener("keydown", (e) => {
-if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
-e.preventDefault();
-selectNode(idx);
-});
 grid.appendChild(node);
 });
 el.treeWrap.innerHTML = "";
@@ -3860,6 +3850,20 @@ el.disclaimerBanner.classList.add("hidden");
 try { localStorage.setItem(DISCLAIMER_DISMISSED_KEY, "1"); } catch (e) { /* storage unavailable, ignore */ }
 });
 el.undoLastBtn.addEventListener("click", undoLast);
+el.treeWrap.addEventListener("click", (e) => {
+const node = e.target.closest(".node");
+if (!node) return;
+state.selectedNode = { category: state.activeTab, idx: parseInt(node.dataset.idx, 10) };
+renderAll();
+});
+el.treeWrap.addEventListener("keydown", (e) => {
+if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+const node = e.target.closest(".node");
+if (!node) return;
+e.preventDefault();
+state.selectedNode = { category: state.activeTab, idx: parseInt(node.dataset.idx, 10) };
+renderAll();
+});
 wireProgressionDropZone();
 el.globalSearch.addEventListener("input", () => {
 state.browseSearch = el.globalSearch.value;

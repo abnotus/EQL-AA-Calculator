@@ -3409,11 +3409,6 @@ function renderTree(catKey) {
   const grid = document.createElement("div");
   grid.className = "tree-grid";
 
-  function selectNode(idx) {
-    state.selectedNode = { category: catKey, idx };
-    renderAll();
-  }
-
   const query = state.browseSearch;
   const searching = !!query.trim();
 
@@ -3505,12 +3500,6 @@ function renderTree(catKey) {
       tag.title = "Hidden - showing anyway because you've spent points on it, or Show Hidden is on.";
       node.appendChild(tag);
     }
-    node.addEventListener("click", () => selectNode(idx));
-    node.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
-      e.preventDefault();
-      selectNode(idx);
-    });
     grid.appendChild(node);
   });
 
@@ -5806,6 +5795,26 @@ function wireEvents() {
   });
 
   el.undoLastBtn.addEventListener("click", undoLast);
+
+  // Delegated on the never-recreated wrapper rather than per-node - renderTree
+  // tears down and rebuilds every AA node on every render, so binding here
+  // once avoids attaching (and discarding) a fresh listener per node per
+  // render. The tree only ever shows state.activeTab's list, so that's the
+  // node's category at click time.
+  el.treeWrap.addEventListener("click", (e) => {
+    const node = e.target.closest(".node");
+    if (!node) return;
+    state.selectedNode = { category: state.activeTab, idx: parseInt(node.dataset.idx, 10) };
+    renderAll();
+  });
+  el.treeWrap.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    const node = e.target.closest(".node");
+    if (!node) return;
+    e.preventDefault();
+    state.selectedNode = { category: state.activeTab, idx: parseInt(node.dataset.idx, 10) };
+    renderAll();
+  });
 
   wireProgressionDropZone();
 
