@@ -3865,11 +3865,16 @@ state.selectedNode = { category: state.activeTab, idx: parseInt(node.dataset.idx
 renderAll();
 });
 wireProgressionDropZone();
+let searchDebounceTimer = null;
 el.globalSearch.addEventListener("input", () => {
+clearTimeout(searchDebounceTimer);
+searchDebounceTimer = setTimeout(() => {
 state.browseSearch = el.globalSearch.value;
 renderAll();
+}, 120);
 });
 el.clearSearchBtn.addEventListener("click", () => {
+clearTimeout(searchDebounceTimer);
 state.browseSearch = "";
 el.globalSearch.value = "";
 el.globalSearch.focus();

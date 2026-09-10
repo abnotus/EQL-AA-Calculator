@@ -166,12 +166,21 @@ export function wireEvents() {
 
   wireProgressionDropZone();
 
+  // Debounced rather than firing a full renderAll (rebuilds the tree/badges/
+  // Browse from scratch) on every keystroke - short enough that typing still
+  // feels immediate, long enough to collapse a fast typist's keystrokes into
+  // one render instead of one per character.
+  let searchDebounceTimer = null;
   el.globalSearch.addEventListener("input", () => {
-    state.browseSearch = el.globalSearch.value;
-    renderAll();
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      state.browseSearch = el.globalSearch.value;
+      renderAll();
+    }, 120);
   });
 
   el.clearSearchBtn.addEventListener("click", () => {
+    clearTimeout(searchDebounceTimer);
     state.browseSearch = "";
     el.globalSearch.value = "";
     el.globalSearch.focus();
