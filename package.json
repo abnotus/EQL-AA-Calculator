@@ -1,6 +1,7 @@
 {
   "name": "eql-aa-calculator-build",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "description": "Build-only dependencies for build_minify.py - the shipped app itself has none.",
   "devDependencies": {
     "esbuild": "^0.28.2"

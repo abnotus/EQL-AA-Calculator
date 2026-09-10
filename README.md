@@ -142,3 +142,7 @@ To make a change:
 ## Deployment
 
 Hosted on GitHub Pages, served from `main` on every push.
+
+## License
+
+[CC BY-NC-SA 4.0](LICENSE) — share and adapt with attribution, non-commercial, share-alike.
