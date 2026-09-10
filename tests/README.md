@@ -44,7 +44,9 @@ an actual pending wiki rename to exercise it against.
 `test_share_code_compression.py`, `test_share_code_binary.py`,
 `test_purchase_order_cap.py`, `test_per_rank_description.py`,
 `test_progression_move_to.py`, `test_cross_class_prereq_dependency.py`,
-`test_real_world_build.py`, `test_archetype_class_eligibility.py`
+`test_real_world_build.py`, `test_archetype_class_eligibility.py`,
+`test_builds_index_cache.py`, `test_tree_click_delegation.py`,
+`test_progression_drag_warn_cache.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -92,6 +94,9 @@ python tests/test_progression_move_to.py
 python tests/test_cross_class_prereq_dependency.py
 python tests/test_real_world_build.py
 python tests/test_archetype_class_eligibility.py
+python tests/test_builds_index_cache.py
+python tests/test_tree_click_delegation.py
+python tests/test_progression_drag_warn_cache.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -219,5 +224,20 @@ just `s.index + 1` for every row, active class or not, since nothing gets
 filtered out of Progression anymore - `test_progression_move_to.py`), or
 prereq/dependency resolution
 (`resolvePrereqTarget`/`resolvePrereqTargetScoped`, `isDependedOn`,
-`tryResolvePrereq` - `test_cross_class_prereq_dependency.py`) before
-rebuilding and committing.
+`tryResolvePrereq` - `test_cross_class_prereq_dependency.py`), the saved-
+builds index cache (`cachedIndex`/`loadIndex`/`saveIndex` in `builds.js` -
+`test_builds_index_cache.py`; `saveIndex` is the only write path, and every
+caller besides `deleteBuild` mutates `loadIndex()`'s returned array in
+place before calling it, which already updates the cache by reference
+regardless of whether `saveIndex` itself reassigns `cachedIndex` - only
+`deleteBuild`'s freshly-`.filter()`'d array actually depends on that
+reassignment, so it's the one path worth testing), tree node selection
+delegation (`el.treeWrap`'s click/keydown listeners in `events.js`, which
+resolve a clicked node's category from `state.activeTab` rather than a
+per-node listener - `test_tree_click_delegation.py`; a wrong category would
+still pass on the General tab, since General is also `state.activeTab`
+there, so this specifically checks a non-default tab), or Progression's
+drag-hover warning cache (`dragWarnCacheToIndex`/`dragWouldIntroduceWarn` in
+`render.js`, reset at every `dragstart` since a new drag can revisit the
+same insertion point with a different answer - `test_progression_drag_warn_cache.py`)
+before rebuilding and committing.

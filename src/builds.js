@@ -43,6 +43,14 @@ function loadIndex() {
 }
 
 function saveIndex(index) {
+  // Load-bearing, not defensive: saveBuildAs/renameBuild both mutate the
+  // array loadIndex() just returned (the cached one, by reference) before
+  // calling this, so for them the cache already reflects the change with or
+  // without this line. deleteBuild is the one caller that builds a genuinely
+  // NEW array (loadIndex().filter(...)), so this is the only thing that
+  // repoints the cache for that path - drop it and a deleted build keeps
+  // showing in the Builds modal until the next full page load, even though
+  // localStorage is already correct (test_builds_index_cache.py pins this).
   cachedIndex = index;
   try {
     localStorage.setItem(BUILDS_INDEX_KEY, JSON.stringify(index));
