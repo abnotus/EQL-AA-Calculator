@@ -661,6 +661,14 @@ function parsePrereqText(text) {
     : { name: m[1].trim(), synced: false, rank: ranks[0] };
 }
 
+// resolvePrereqTargetScoped's result depends only on (text, scope,
+// className) plus AA_DATA, which never changes at runtime - never on
+// state.selectedClasses or anything else mutable. It's called for every
+// prereq-bearing AA on every render (tree, Progression, dependency checks),
+// re-running the same by-name scan each time - cached here since the key
+// space is tiny (one entry per distinct prereq string x scope/className).
+const prereqTargetCache = new Map();
+
 // Same resolution as resolvePrereqTarget, but by (scope, className)
 // directly rather than a catKey - lets a caller resolve a prereq for a
 // class that isn't necessarily one of the 3 active slots (isDependedOn
@@ -668,6 +676,14 @@ function parsePrereqText(text) {
 // { scope, className, idx, forRank } - scope/className identity, not a
 // catKey, since an inactive class has none.
 export function resolvePrereqTargetScoped(text, scope, className) {
+  const cacheKey = `${scope}|${className || ""}|${text}`;
+  if (prereqTargetCache.has(cacheKey)) return prereqTargetCache.get(cacheKey);
+  const result = computeResolvePrereqTargetScoped(text, scope, className);
+  prereqTargetCache.set(cacheKey, result);
+  return result;
+}
+
+function computeResolvePrereqTargetScoped(text, scope, className) {
   const parsed = parsePrereqText(text);
   if (!parsed) return null;
   // Only the source's own class/category plus the shared trees — a class

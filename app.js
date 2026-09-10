@@ -1288,7 +1288,15 @@ return ranks.length > 1
 ? { name: m[1].trim(), synced: true, ranks }
 : { name: m[1].trim(), synced: false, rank: ranks[0] };
 }
+const prereqTargetCache = new Map();
 function resolvePrereqTargetScoped(text, scope, className) {
+const cacheKey = `${scope}|${className || ""}|${text}`;
+if (prereqTargetCache.has(cacheKey)) return prereqTargetCache.get(cacheKey);
+const result = computeResolvePrereqTargetScoped(text, scope, className);
+prereqTargetCache.set(cacheKey, result);
+return result;
+}
+function computeResolvePrereqTargetScoped(text, scope, className) {
 const parsed = parsePrereqText(text);
 if (!parsed) return null;
 const candidates = [[scope, className], ["general", null], ["archetype", null], ["special", null]];
