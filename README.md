@@ -145,4 +145,4 @@ Hosted on GitHub Pages, served from `main` on every push.
 
 ## License
 
-[CC BY-NC-SA 4.0](LICENSE) — share and adapt with attribution, non-commercial, share-alike.
+[PolyForm Noncommercial 1.0.0](LICENSE) — free to use, share, and modify for any noncommercial purpose.
