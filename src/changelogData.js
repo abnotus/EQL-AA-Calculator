@@ -4,6 +4,14 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "2.0.5",
+    date: "2026-09-11",
+    items: [
+      "Fixed a rare bug where changing your character level or class selection could get silently discarded if something else on the page happened to redraw at that exact moment, leaving the old value showing instead of what you'd just entered.",
+      "Data corrections from a fresh wiki scrape: First Aid's last two ranks are confirmed at 6 and 9 points, Reaching Notes now shows its real cost pattern (every other rank is free, the same formula Symphonic Aura uses), and Unbound Boon's rank 2 exceptional-heal chance is confirmed at 4%."
+    ]
+  },
+  {
     version: "2.0.4",
     date: "2026-08-29",
     items: [
