@@ -22,7 +22,7 @@
 # single-reason-locked starting state with no level gate to disentangle.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 
@@ -202,10 +202,13 @@ with sync_playwright() as p:
     # not a bug that happened to skip the level check entirely regardless of
     # class. ---
     page.select_option("#classSelect2", "Berserker")
-    page.wait_for_timeout(150)
     bop_block2 = page.locator("#sidePanel .req-line.warn").first
+    # The class swap triggers a full renderAll (side panel included) - a
+    # fixed sleep here raced the render on a slow run (this locator briefly
+    # still showing the pre-swap eligibility-block text), so wait for the
+    # actual expected text instead of a guessed delay.
+    expect(bop_block2).to_have_text("Requires character level 46.")
     print("Burst of Power block reason, eligible but still under level 46:", bop_block2.inner_text())
-    assert bop_block2.inner_text() == "Requires character level 46."
     assert "locked-classlock" not in bop_node.get_attribute("class")
     assert "locked" in bop_node.get_attribute("class")
     print("PASS: once eligible, the level gate correctly takes over - an ordered fallthrough, not eligibility masking every other gate")
