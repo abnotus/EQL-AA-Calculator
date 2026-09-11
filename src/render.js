@@ -66,9 +66,18 @@ function updateShowHiddenToggle() {
   el.showHiddenToggle.textContent = state.showHidden ? "Hide Hidden" : "Show Hidden";
 }
 
+// Skips the write when el currently has focus, so a render landing mid-edit
+// (an unrelated tab switch/class swap elsewhere, or just a slow render
+// racing a keystroke) never discards what the user's actively typing or
+// selecting - the change handler already re-syncs the element from the
+// state it just committed once they're done with it.
+function setValueUnlessFocused(input, value) {
+  if (document.activeElement !== input) input.value = value;
+}
+
 function renderTopbar() {
   populateClassSelects();
-  el.levelInput.value = state.charLevel;
+  setValueUnlessFocused(el.levelInput, state.charLevel);
   const spent = spentPoints();
   const spentExtra = estimatedExtraPoints();
   // Owned/planned, not planned alone. Owned tracking is always on
@@ -110,7 +119,7 @@ function populateClassSelects() {
   const html = CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
   el.classSelects.forEach((sel, i) => {
     if (sel.innerHTML !== html) sel.innerHTML = html;
-    sel.value = state.selectedClasses[i];
+    setValueUnlessFocused(sel, state.selectedClasses[i]);
   });
 }
 
