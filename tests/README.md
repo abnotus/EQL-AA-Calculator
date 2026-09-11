@@ -110,16 +110,30 @@ Several of these tests are pinned to specific live AAs as their guessed-value
 examples (`test_effect_guess.py`'s Quick Evacuation,
 `test_cost_guess.py`'s Combat Fury and Turn Summoned,
 `test_guess_all_tabs.py`'s Cannibalization, Quick Evacuation and Turn
-Summoned, `test_manual_guess.py`'s First Aid and Reaching Notes,
-`test_estimated_total.py`'s Combat Agility and Reaching Notes) — a future
-wiki scrape confirming one of those specific ranks will break that test,
-same as it's already happened repeatedly (Adamant Will, Combat Stability,
-Combat Fury's effect value, Packrat's entire cost/effect progression, and
-most recently Alchemy Mastery, Baking Mastery and Conjurer's Efficiency,
-all resolved to real data and had to be swapped out for a still-live
-example over the course of this project). Regenerate `costGuesses.js`/`effectGuesses.js` first, then pick a fresh
-example from whichever guess table still has one - see the affected test's
-own comments for how the swap played out last time.
+Summoned, `test_estimated_total.py`'s Combat Agility and Quick Evacuation) —
+a future wiki scrape confirming one of those specific ranks will break that
+test, same as it's already happened repeatedly (Adamant Will, Combat
+Stability, Combat Fury's effect value, Packrat's entire cost/effect
+progression, Alchemy Mastery, Baking Mastery, Conjurer's Efficiency, and
+most recently First Aid, Unbound Boon, and Reaching Notes - the last of
+which turned out to alternate real/free ranks on confirmation, the same
+formula Symphonic Aura uses, not truly unknown - all resolved to real data
+and had to be swapped out for a still-live example over the course of this
+project). Regenerate `costGuesses.js`/`effectGuesses.js` first, then pick a
+fresh example from whichever guess table still has one - see the affected
+test's own comments for how the swap played out last time.
+
+`test_manual_guess.py` is the one exception: as of this writing there is no
+live AA with a manual (curator-judgment, very-low confidence) *cost* guess
+at all - every `MANUAL_GUESSES` entry that used to apply has since been
+confirmed by the wiki, and the one AA still carrying an unguessed cost
+(Thief's Intuition) has no sibling evidence for a real entry to be added
+without fabricating one. Rather than invent a `MANUAL_GUESSES` entry with no
+real justification just to have a live example, that test intercepts the
+`app.js` request and serves `app.src.js` (unminified, so `COST_GUESS_TABLE`'s
+name survives - real `app.js` has it mangled by esbuild) with one synthetic
+entry patched in for Thief's Intuition. If a real manual cost guess ever
+reappears, prefer swapping back to it over keeping the synthetic one.
 
 Note the effect-guess tables currently hold nothing above the very-low
 (manual) tier, so `test_effect_guess.py` pins rendering rather than a
