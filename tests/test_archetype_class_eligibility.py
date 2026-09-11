@@ -182,9 +182,15 @@ with sync_playwright() as p:
     # (Berserker/Warrior only, levelReq 46) can: drop below level 46 under a
     # combo that's also not Berserker/Warrior, and both gates apply at once. ---
     page.click('button[data-tab="archetype"]')
+    # The tab click's own renderAll can still be in flight when fill() sets
+    # the input - if it lands between fill() and the change event, it
+    # rewrites the input back to the un-committed state.charLevel (renderTopbar
+    # sets el.levelInput.value on every render), silently no-opping this
+    # whole scenario instead of actually dropping the level to 30. Assert the
+    # value actually took rather than sleeping and hoping.
     page.fill("#levelInput", "30")
     page.locator("#levelInput").press("Tab")
-    page.wait_for_timeout(100)
+    expect(page.locator("#levelInput")).to_have_value("30")
     # Slots are currently Bard/Beastlord/Ranger (Ranger from unlocking
     # Innate Camouflage above) - none Berserker or Warrior.
     bop_node = page.locator(".node", has=page.locator(".name", has_text="Burst of Power"))
