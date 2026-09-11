@@ -182,15 +182,24 @@ with sync_playwright() as p:
     # (Berserker/Warrior only, levelReq 46) can: drop below level 46 under a
     # combo that's also not Berserker/Warrior, and both gates apply at once. ---
     page.click('button[data-tab="archetype"]')
-    # The tab click's own renderAll can still be in flight when fill() sets
-    # the input - if it lands between fill() and the change event, it
-    # rewrites the input back to the un-committed state.charLevel (renderTopbar
-    # sets el.levelInput.value on every render), silently no-opping this
-    # whole scenario instead of actually dropping the level to 30. Assert the
-    # value actually took rather than sleeping and hoping.
-    page.fill("#levelInput", "30")
-    page.locator("#levelInput").press("Tab")
-    expect(page.locator("#levelInput")).to_have_value("30")
+    # A render landing between fill() and the change event used to rewrite
+    # the input back to the not-yet-committed state.charLevel (renderTopbar
+    # set el.levelInput.value unconditionally on every render), silently
+    # no-opping this whole scenario instead of actually dropping the level
+    # to 30 - fixed at the source (render.js's setValueUnlessFocused skips
+    # the write while the input has focus). Retrying the write is belt-and-
+    # braces on top of that fix, not a replacement for it: expect() alone
+    # can only detect a lost write post hoc, it can't recover one, so
+    # without the app fix this would just poll a value that's gone for good
+    # until it times out.
+    level_input = page.locator("#levelInput")
+    for _ in range(20):
+        page.fill("#levelInput", "30")
+        level_input.press("Tab")
+        page.wait_for_timeout(50)
+        if level_input.input_value() == "30":
+            break
+    expect(level_input).to_have_value("30")
     # Slots are currently Bard/Beastlord/Ranger (Ranger from unlocking
     # Innate Camouflage above) - none Berserker or Warrior.
     bop_node = page.locator(".node", has=page.locator(".name", has_text="Burst of Power"))
