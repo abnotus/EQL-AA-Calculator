@@ -3258,11 +3258,15 @@ function updateShowHiddenToggle() {
   el.showHiddenToggle.textContent = state.showHidden ? "Hide Hidden" : "Show Hidden";
 }
 
-// Skips the write when el currently has focus, so a render landing mid-edit
-// (an unrelated tab switch/class swap elsewhere, or just a slow render
-// racing a keystroke) never discards what the user's actively typing or
-// selecting - the change handler already re-syncs the element from the
-// state it just committed once they're done with it.
+// Skips the write when input currently has focus, so a render landing
+// mid-edit (an unrelated tab switch/class swap elsewhere, or just a slow
+// render racing a keystroke) never discards what the user's actively
+// typing or selecting. Trade-off, not a pure win: if the underlying state
+// changes from elsewhere while the element still has focus (a build load
+// while a class <select> is open, say), the display can sit stale until
+// something re-renders after the user moves on - there's no dedicated
+// re-sync tied to blur, only whatever the next render happens to be. The
+// alternative (clobbering their in-progress input) is worse.
 function setValueUnlessFocused(input, value) {
   if (document.activeElement !== input) input.value = value;
 }
