@@ -174,8 +174,7 @@ const AA_ID_TABLE = {
 // string is exactly "?". A guess never substitutes for a real cost in
 // spentPoints()/affordability math anywhere - purely a display hint.
 const COST_GUESS_TABLE = {
-  "class:Magician:turn-summoned": { "1": { value: 6, confidence: "high", basedOn: ["Acrobatics", "Alchemy Mastery", "Burst of Power", "Critical Affliction", "Double Riposte", "Healing Boon", "Improved Mend", "Instrument Mastery", "Jam Fest", "Quick Damage", "Quick Evacuation", "Rapid Feign", "Singing Mastery", "Slay Undead", "Soul Abrasion", "Weapon Mastery of the Scout"] }, "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Alchemy Mastery", "Burst of Power", "Critical Affliction", "Double Riposte", "Healing Boon", "Improved Mend", "Instrument Mastery", "Jam Fest", "Quick Damage", "Quick Evacuation", "Rapid Feign", "Singing Mastery", "Slay Undead", "Soul Abrasion", "Weapon Mastery of the Scout"] } },
-  "class:Wizard:quick-evacuation": { "1": { value: 6, confidence: "high", basedOn: ["Acrobatics", "Alchemy Mastery", "Burst of Power", "Critical Affliction", "Double Riposte", "Healing Boon", "Improved Mend", "Instrument Mastery", "Jam Fest", "Quick Damage", "Quick Evacuation", "Rapid Feign", "Singing Mastery", "Slay Undead", "Soul Abrasion", "Weapon Mastery of the Scout"] }, "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Alchemy Mastery", "Burst of Power", "Critical Affliction", "Double Riposte", "Healing Boon", "Improved Mend", "Instrument Mastery", "Jam Fest", "Quick Damage", "Quick Evacuation", "Rapid Feign", "Singing Mastery", "Slay Undead", "Soul Abrasion", "Weapon Mastery of the Scout"] } }
+  "class:Magician:turn-summoned": { "1": { value: 6, confidence: "high", basedOn: ["Acrobatics", "Alchemy Mastery", "Burst of Power", "Critical Affliction", "Double Riposte", "Healing Boon", "Improved Mend", "Instrument Mastery", "Jam Fest", "Quick Damage", "Quick Evacuation", "Rapid Feign", "Singing Mastery", "Slay Undead", "Soul Abrasion", "Weapon Mastery of the Scout"] }, "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Alchemy Mastery", "Burst of Power", "Critical Affliction", "Double Riposte", "Healing Boon", "Improved Mend", "Instrument Mastery", "Jam Fest", "Quick Damage", "Quick Evacuation", "Rapid Feign", "Singing Mastery", "Slay Undead", "Soul Abrasion", "Weapon Mastery of the Scout"] } }
 };
 
 // Pattern-inferred estimates for the numeric values inside AA effect
@@ -194,8 +193,7 @@ const COST_GUESS_TABLE = {
 // guess never substitutes for a real value anywhere descriptions are
 // otherwise read (search, export text) - purely a display hint.
 const EFFECT_GUESS_TABLE = {
-  "class:Druid:quick-evacuation": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 30, confidence: "very-low", basedOn: [], manual: true } } },
-  "class:Wizard:quick-evacuation": { "0": { "1": { value: 20, confidence: "very-low", basedOn: [], manual: true }, "2": { value: 30, confidence: "very-low", basedOn: [], manual: true } } },
+  "class:Druid:quick-evacuation": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Quick Evacuation"] }, "2": { value: 50, confidence: "medium", basedOn: ["Quick Evacuation"] } } },
   "special::banestrike": { "0": { "2": { value: 6, confidence: "very-low", basedOn: [], manual: true }, "3": { value: 8, confidence: "very-low", basedOn: [], manual: true } } }
 };
 

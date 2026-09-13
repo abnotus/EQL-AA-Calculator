@@ -98,8 +98,6 @@ MANUAL_GUESSES = {
     # Innate Regeneration starts flat too - a same-family pattern, stronger
     # evidence than Blood Rune's coincidental single-rank match.
     "Innate Metabolism": {1: 1, 2: 1},
-    "Spell Casting Subtlety": {1: 3, 2: 4, 3: 5, 4: 6, 5: 7},
-    "Reaching Notes": {3: 8, 4: 10, 5: 12},
     "Conjurer's Efficiency": {1: 4, 2: 5, 3: 6, 4: 7},
 }
 
