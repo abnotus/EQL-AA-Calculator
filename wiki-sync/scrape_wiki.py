@@ -20,18 +20,28 @@ if a drop that size is genuinely expected.
 
 Known checksum discrepancy: a real max-level (50), all-classes-maxed
 character reports 1172 total AA points spent (screenshot, 2026-09-13
-reddit post "Max AA is 1172"). Summing every AA's max cost across the
-whole current dataset (general+archetype+special+all 16 classes combined,
+reddit post "Max AA is 1172") - independently re-derived, not just taken on
+faith, including checking that a per-class cost variance (Steadfast Will
+is 6/7/8 depending on class) doesn't change the target, since a genuine
+completionist run would always take the higher-cost class rather than
+leave points on the table. Summing every AA's max cost across the whole
+current dataset (general+archetype+special+all 16 classes combined,
 treating Turn Summoned's two still-unconfirmed ranks as 0 since they're
 excluded from that player's total too - see below) comes to 1185, 13
 points over. Since a real player's total can only be an upper bound if our
 data has an error inflating it, not the guesses being 0 (0 is the floor,
 not the ceiling), at least one already-CONFIRMED cost elsewhere in
 data.src.js is most likely wrong by a combined 13 points - not yet
-identified. Re-check this arithmetic after any future data.src.js change
-and see if it narrows; a future max-AA report pinpointing a specific
-"can't reach rank N" case (the same way Turn Summoned's own gate was
-found) is probably the only realistic way to actually localize it.
+identified. 13 being an awkward number to reach by accumulation across
+several small errors makes a single AA the more likely culprit over a
+handful of them: either one ladder's top rank is priced 13 too high, or
+one AA has a phantom extra rank at the top of its ladder (an inflated rank
+COUNT, not just a cost, would also show up as an over-count of exactly
+that rank's own cost). Re-check this arithmetic after any future
+data.src.js change and see if it narrows; a future max-AA report
+pinpointing a specific "can't reach rank N" case (the same way Turn
+Summoned's own gate was found) is probably the only realistic way to
+actually localize it.
 
 Turn Summoned's rank 2 specifically needs level 59 per the wiki's own
 Requirements line, which is above the current level cap (50) - it is not
