@@ -34,15 +34,16 @@ with sync_playwright() as p:
     # --- Browse view: Turn Summoned's rank 2 (high-confidence guess, value
     # 6) should show as an estimate in the per-rank cost list, not a plain
     # "?". Use the global search box to find it quickly - Browse lists
-    # every class regardless of the active 3 slots (see the Conjurer's
-    # Efficiency scenario just below), so no class selection is needed
-    # here. (This used to be Alchemy Mastery's rank 2, before that Combat
-    # Stability's rank 3, before that Adamant Will's rank 4 - each got
-    # confirmed by a wiki scrape in turn since this test was first written.
-    # Every remaining high-confidence guess now lives on a per-class AA
-    # rather than a general one - Turn Summoned is Magician-only and its
-    # name isn't shared with any other AA, unlike e.g. "Quick Evacuation"
-    # which exists for both Druid and Wizard.) ---
+    # every class regardless of the active 3 slots, so no class selection is
+    # needed here. Magician isn't one of the default 3 slots (Bard/
+    # Beastlord/Berserker), so this already doubles as proof the scoped
+    # guess lookup isn't specific to an active class. (This used to be
+    # Alchemy Mastery's rank 2, before that Combat Stability's rank 3,
+    # before that Adamant Will's rank 4, before that Wizard's Quick
+    # Evacuation - each got confirmed by a wiki scrape in turn since this
+    # test was first written. Turn Summoned is currently the only AA in the
+    # whole dataset with a real cost still unconfirmed, so there's no
+    # second example left to pin alongside it.) ---
     page.click("#browseToggle")
     page.fill("#globalSearch", "Turn Summoned")
     page.wait_for_timeout(100)
@@ -51,26 +52,7 @@ with sync_playwright() as p:
     print("Turn Summoned browse info html:", info_html)
     assert "~6" in info_html
     assert 'class="is-estimate tier-high"' in info_html
-    print("PASS: Browse shows Turn Summoned's rank-2 estimate, not a bare '?'")
-
-    # --- Browse view: a second class outside the active 3, to show the
-    # scoped guess lookup isn't specific to one class. Default
-    # selectedClasses is Bard/Beastlord/Berserker (CLASS_LIST[0..2]), so
-    # Wizard's Quick Evacuation qualifies, as Magician's Turn Summoned
-    # above does. (This was Conjurer's Efficiency until a wiki scrape
-    # confirmed all five of its costs, leaving it with no guess to show.
-    # Every remaining cost guess is either high or manual very-low - there
-    # is no medium-confidence one left to pin here.) ---
-    page.fill("#globalSearch", "Quick Evacuation")
-    page.wait_for_timeout(100)
-    # Druid has an identically-named AA whose costs are all confirmed, so
-    # pin the Wizard card by its own class rather than by list position.
-    ce_card = page.locator('.browse-card:has(button[data-classname="Wizard"])',
-                           has=page.locator(".name", has_text="Quick Evacuation"))
-    ce_html = ce_card.locator(".info").inner_html()
-    print("Quick Evacuation (Wizard) browse info html:", ce_html)
-    assert "~6" in ce_html and "tier-high" in ce_html
-    print("PASS: Browse shows a guess even for a class outside the active 3 slots")
+    print("PASS: Browse shows Turn Summoned's rank-2 estimate for a class outside the active 3 slots, not a bare '?'")
 
     page.fill("#globalSearch", "")
     page.click("#browseToggle")

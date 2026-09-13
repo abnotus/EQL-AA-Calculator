@@ -8,20 +8,18 @@
 # which never looked at description text for spending purposes anyway).
 #
 # Druid's Quick Evacuation is the live example: real confirmed costs
-# (3/6/9) with "...by 10/?/?%.", so ranks 2 and 3 each carry a manual
-# very-low guess (20 and 30). It has been Baking Mastery, Combat Fury,
-# Spell Casting Subtlety and Packrat before now - each resolved on the
-# wiki in turn, which is the expected way this test breaks. Regenerate
-# effectGuesses.js, then pick whatever still has a "?" left.
+# (3/6/9) with "...by 10/?/?%.", so ranks 2 and 3 each carry a guess (25
+# and 50) - sibling-matched to Wizard's own Quick Evacuation (confirmed
+# 10/25/50%) at medium confidence, once that was a manual very-low guess
+# too. It has been Baking Mastery, Combat Fury, Spell Casting Subtlety and
+# Packrat before now - each resolved on the wiki in turn, which is the
+# expected way this test breaks. Regenerate effectGuesses.js, then pick
+# whatever still has a "?" left.
 #
-# Two things to know when picking the next one. No live AA has a
-# sibling-matched or interpolated effect guess any more, only manual
-# very-low ones, so what this file pins is the rendering rather than a
-# confidence tier; the tier-assignment rules are covered
-# data-independently by test_guess_effects.py. And prefer an AA a player
-# actually spends points on: Banestrike is the only other candidate, but
-# it is free and unlocked by Slayer achievements rather than bought, so
-# driving it with #incBtn tests a purchase that cannot happen in game.
+# One thing to know when picking the next one: prefer an AA a player
+# actually spends points on. Banestrike is the only other live candidate,
+# but it is free and unlocked by Slayer achievements rather than bought,
+# so driving it with #incBtn tests a purchase that cannot happen in game.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -54,9 +52,9 @@ with sync_playwright() as p:
     html = desc.inner_html()
     print("side panel desc (rank1 current):", html)
     assert '<span class="rank-highlight">10</span>' in html, "FAIL: the real current-rank value should still be bolded"
-    assert html.count('class="is-estimate tier-very-low" title="Estimated (very low confidence)') == 2, "FAIL: expected two independently-styled guessed ranks"
-    assert "~20" in html and "~30" in html
-    assert "hand-picked" in html, "FAIL: expected the manual-guess tooltip wording"
+    assert html.count('class="is-estimate tier-medium" title="Estimated (medium confidence)') == 2, "FAIL: expected two independently-styled guessed ranks"
+    assert "~25" in html and "~50" in html
+    assert "from Quick Evacuation" in html, "FAIL: expected the sibling-matched guess tooltip wording"
     assert html.rstrip().endswith("%."), "FAIL: description should end right after rank 3's guess"
     print("PASS: side panel shows the real current rank bolded and both guessed ranks estimate-styled, independently")
 
@@ -70,7 +68,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(100)
     prog_desc = page.locator(".progression-next-rank .desc").inner_html()
     print("Progression next-rank desc:", prog_desc)
-    assert "~20" in prog_desc and "is-estimate" in prog_desc and "tier-very-low" in prog_desc
+    assert "~25" in prog_desc and "is-estimate" in prog_desc and "tier-medium" in prog_desc
     print("PASS: Progression's next-rank preview shows the same guess")
 
     # --- Buy rank2 - now the guessed slot IS the current rank too. Combined
@@ -85,12 +83,12 @@ with sync_playwright() as p:
     span = desc2.locator("span.rank-highlight").first
     cls = span.get_attribute("class")
     print("combined rank-highlight + is-estimate class:", cls)
-    assert "is-estimate" in cls and "tier-very-low" in cls and "rank-highlight" in cls
+    assert "is-estimate" in cls and "tier-medium" in cls and "rank-highlight" in cls
     color = span.evaluate("el => getComputedStyle(el).color")
     bg = span.evaluate("el => getComputedStyle(el).backgroundColor")
     print("combined span color/background:", color, bg)
-    assert color == "rgb(107, 100, 89)", f"FAIL: expected the very-low-tier color to win, got {color}"
-    assert bg == "rgba(107, 100, 89, 0.12)", f"FAIL: expected the very-low-tier background, not the default red rank-highlight one, got {bg}"
+    assert color == "rgb(166, 124, 217)", f"FAIL: expected the medium-tier color to win, got {color}"
+    assert bg == "rgba(166, 124, 217, 0.12)", f"FAIL: expected the medium-tier background, not the default red rank-highlight one, got {bg}"
     print("PASS: a slot that's both the current rank and a guess resolves to the tier's own color and background")
 
     # --- Browse: rank-agnostic reference view - the guess still shows, but
@@ -103,7 +101,7 @@ with sync_playwright() as p:
     card = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Quick Evacuation")).first
     browse_html = card.locator(".desc").inner_html()
     print("Browse desc html:", browse_html)
-    assert "~20" in browse_html and "~30" in browse_html and "is-estimate" in browse_html
+    assert "~25" in browse_html and "~50" in browse_html and "is-estimate" in browse_html
     assert "rank-highlight" not in browse_html, "FAIL: Browse has no current rank, nothing should be bolded"
     page.fill("#globalSearch", "")
     page.click("#browseToggle")
@@ -116,7 +114,7 @@ with sync_playwright() as p:
     summary_card = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Quick Evacuation"))
     summary_html = summary_card.locator(".desc").inner_html()
     print("Summary desc html:", summary_html)
-    assert "~20" in summary_html and "is-estimate" in summary_html and "rank-highlight" in summary_html
+    assert "~25" in summary_html and "is-estimate" in summary_html and "rank-highlight" in summary_html
     print("PASS: Summary shows the guess, bolded (it's the currently-held rank there)")
 
     print("ERRORS:", errors)

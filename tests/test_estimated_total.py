@@ -22,18 +22,16 @@
 # scale and realism, but it no longer carries any unconfirmed-cost rank of
 # its own (Packrat, its last live example, got fully confirmed by a wiki
 # scrape - the eventual fate every guess on this page is built to have).
-# So the guessed-cost scenarios below buy Quick Evacuation (a Wizard class
-# AA, real rank 1 costs 3, two differently-sized guessed ranks after it:
-# 6/9) live on top of the loaded build instead, reintroducing a real
-# "differently-sized guesses in a row, never freezing" case without needing
-# a stale, hand-picked share code. (This used to be Reaching Notes, a Bard
-# AA with three real ranks and three manually-guessed ones after - a wiki
-# scrape confirmed its whole progression since this scenario was first
-# written (its costs turn out to alternate real/free ranks, the same
-# formula Symphonic Aura uses, not truly unknown), so it no longer has any
-# "?" cost left; swapped to a currently-live example. No live AA currently
-# has more than 2 consecutive guessed ranks - previously 3, back when
-# Reaching Notes was still the one carrying them.)
+# So the guessed-cost scenarios below buy Turn Summoned (a Magician class
+# AA, level 45 - comfortably under BUILD's level 50 - real rank 1 costs 3,
+# two differently-sized guessed ranks after it: 6/9) live on top of the
+# loaded build instead, reintroducing a real "differently-sized guesses in
+# a row, never freezing" case without needing a stale, hand-picked share
+# code. (This used to be Reaching Notes, then Quick Evacuation - each in
+# turn got fully confirmed by a wiki scrape since this scenario was last
+# written, so it no longer has any "?" cost left; swapped to a currently-
+# live example each time. No live AA currently has more than 2 consecutive
+# guessed ranks.)
 # Refreshed periodically to the user's current build as they keep playing -
 # BUILD_STALE is regenerated alongside it each time (decode BUILD, inject
 # "t": 1000, re-encode gzip+base64url) so both stay in sync.
@@ -82,26 +80,26 @@ with sync_playwright() as p:
     assert sv.locator(".is-estimate").count() == 0, "FAIL: a fully-confirmed build shouldn't carry estimate styling"
     assert sv.get_attribute("title") is None
 
-    # --- Buy Quick Evacuation live on top of it: rank 1 is real (cost 3),
+    # --- Buy Turn Summoned live on top of it: rank 1 is real (cost 3),
     # ranks 2-3 are each independently guessed (6/9 - high confidence,
     # cross-AA sibling match, chosen for having 2 differently-sized guessed
-    # ranks in a row like Reaching Notes used to). Real total climbs to 238
-    # (235 + rank 1's real 3); ranks 2-3 add nothing to spentPoints() itself
-    # but 15 combined to the blended headline (238 + 15 = 253). Quick
-    # Evacuation is a Wizard class AA, so slot 3 (Shaman in BUILD) needs to
-    # swap to Wizard first - done after the "95 / 235" assertion above so it
-    # doesn't disturb BUILD's own already-purchased Paladin/Monk/Shaman
-    # ranks, which are lifetime-scoped and unaffected by a later class
-    # swap. ---
-    page.select_option("#classSelect2", "Wizard")
+    # ranks in a row like Reaching Notes/Quick Evacuation used to). Real
+    # total climbs to 238 (235 + rank 1's real 3); ranks 2-3 add nothing to
+    # spentPoints() itself but 15 combined to the blended headline (238 + 15
+    # = 253). Turn Summoned is a Magician class AA, so slot 3 (Shaman in
+    # BUILD) needs to swap to Magician first - done after the "95 / 235"
+    # assertion above so it doesn't disturb BUILD's own already-purchased
+    # Paladin/Monk/Shaman ranks, which are lifetime-scoped and unaffected by
+    # a later class swap. ---
+    page.select_option("#classSelect2", "Magician")
     page.click('button[data-tab="classSlot2"]')
     page.wait_for_timeout(100)
-    qe_node = page.locator(".node", has=page.locator(".name", has_text="Quick Evacuation"))
-    qe_node.click()
+    ts_node = page.locator(".node", has=page.locator(".name", has_text="Turn Summoned"))
+    ts_node.click()
     for _ in range(3):
         page.click("#incBtn")
         page.wait_for_timeout(15)
-    print("spentValue after buying Quick Evacuation to rank 3:", sv.inner_text(), sv.get_attribute("title"))
+    print("spentValue after buying Turn Summoned to rank 3:", sv.inner_text(), sv.get_attribute("title"))
     # Owned (95) has no estimate contribution here - only the planned side
     # does, so exactly one of the two numbers gets the estimate span/color,
     # not the whole "owned / planned" pair.
@@ -112,7 +110,7 @@ with sync_playwright() as p:
     color = planned_span.evaluate("el => getComputedStyle(el).color")
     print("planned estimate span computed color:", color)
     assert color == "rgb(90, 169, 230)", f"FAIL: the blended planned side should render blue, got {color}"
-    # Swapping slot 3 to Wizard (above) made Shaman inactive - BUILD already
+    # Swapping slot 3 to Magician (above) made Shaman inactive - BUILD already
     # had 5 real points on Shaman, so the tooltip now also discloses that
     # slice, same as any other class-swap-with-existing-spend scenario.
     assert sv.get_attribute("title") == "Planned: 238 confirmed + 15 estimated. 5 pts from classes not currently selected (see the Other Classes tab)."
@@ -134,7 +132,7 @@ with sync_playwright() as p:
     assert prog_title == "238 confirmed + 15 estimated.", f"FAIL: unexpected breakdown tooltip: {prog_title}"
     print("PASS: Progression's running total blends in estimates exactly like the topbar headline does, agreeing on both the figure and its breakdown")
 
-    # --- Quick Evacuation rank-by-rank: rank 1 is real (riding on top of
+    # --- Turn Summoned rank-by-rank: rank 1 is real (riding on top of
     # BUILD's own real 235, so it renders as a PLAIN number); ranks 2-3 are
     # each independently guessed, by a DIFFERENT amount each time (6/9, not
     # a flat +1) - every one must still show a total that's exactly its own
@@ -142,9 +140,9 @@ with sync_playwright() as p:
     # blendedCumulative fix, every guessed-rank row showed the SAME frozen
     # total instead, even though each row's own pill showed a nonzero
     # estimate. ---
-    qe_rows = page.locator(".progression-row", has=page.locator(".step-name", has_text="Quick Evacuation"))
-    totals = [qe_rows.nth(i).locator(".cost-total").inner_text() for i in range(qe_rows.count())]
-    print("Quick Evacuation rank 1-3's running totals in order:", totals)
+    ts_rows = page.locator(".progression-row", has=page.locator(".step-name", has_text="Turn Summoned"))
+    totals = [ts_rows.nth(i).locator(".cost-total").inner_text() for i in range(ts_rows.count())]
+    print("Turn Summoned rank 1-3's running totals in order:", totals)
     expected = ["238 total", "~244 total", "~253 total"]
     assert totals == expected, \
         f"FAIL: the running total must climb by exactly each rank's own real-or-guessed cost - got {totals}"
@@ -153,25 +151,25 @@ with sync_playwright() as p:
     # --- Owned/to-go (ownedSummary) must blend the same way, not silently
     # drop an owned rank's estimate from either side - see
     # estimatedExtraOwnedPoints in logic.js. BUILD's own preloaded owned
-    # progress (95 real points, none of it Quick Evacuation, which was only
+    # progress (95 real points, none of it Turn Summoned, which was only
     # just bought above) starts this real-only on the owned side, with ALL
-    # 15 of Quick Evacuation's estimate still on "to go". ---
+    # 15 of Turn Summoned's estimate still on "to go". ---
     owned_summary = page.locator("#ownedSummary")
-    print("owned summary before owning any of Quick Evacuation:", owned_summary.inner_text())
+    print("owned summary before owning any of Turn Summoned:", owned_summary.inner_text())
     assert owned_summary.inner_text() == "95 pts owned, ~158 to go", \
-        f"FAIL: preloaded owned progress should read as a real 95, with all 15 of Quick Evacuation's estimate still on 'to go' - got {owned_summary.inner_text()!r}"
+        f"FAIL: preloaded owned progress should read as a real 95, with all 15 of Turn Summoned's estimate still on 'to go' - got {owned_summary.inner_text()!r}"
     togo_span0 = owned_summary.locator(".is-estimate")
     assert togo_span0.get_attribute("title") == "143 confirmed + 15 estimated.", \
         f"FAIL: unexpected 'to go' breakdown tooltip: {togo_span0.get_attribute('title')!r}"
 
-    # --- Marking Quick Evacuation owned through rank 2 (its one real rank
+    # --- Marking Turn Summoned owned through rank 2 (its one real rank
     # plus its first guessed rank) pulls part - not all - of its estimate
     # onto the owned side, so both "owned" and "to go" carry an estimate at
     # once, proving the blend isn't just an all-or-nothing move of the whole
     # AA's estimate from one side to the other. ---
-    qe_rows.nth(1).locator(".step-own").click()
+    ts_rows.nth(1).locator(".step-own").click()
     page.wait_for_timeout(150)
-    print("owned summary after marking Quick Evacuation owned through rank 2:", owned_summary.inner_text())
+    print("owned summary after marking Turn Summoned owned through rank 2:", owned_summary.inner_text())
     assert owned_summary.inner_text() == "~104 pts owned, ~149 to go", \
         f"FAIL: owned should blend in rank 2's guess (6) on top of the real 98 (95 + rank 1's real 3) - got {owned_summary.inner_text()!r}"
     owned_span = owned_summary.locator(".is-estimate").first

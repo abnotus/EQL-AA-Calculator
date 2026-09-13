@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # A real, in-use build shared by the app's own user (Paladin/Enchanter/Druid,
-# 191 total picks, with Bard/Monk/Rogue/Shaman/Wizard history from before
+# 183 total picks, with Bard/Monk/Rogue/Shaman/Wizard history from before
 # those classes were swapped out) - a scale/realism check the smaller
 # synthetic fixtures in test_other_classes.py and test_progression_move_to.py
 # don't cover: a genuinely large purchaseOrder, several ranks deep on some
@@ -17,12 +17,17 @@
 # rework only when it buys new coverage like that, not just to track
 # current progress; see the commit that did this swap for the reasoning.
 #
-# Pinned to this build's exact numbers (191 rows, 36 inactive, "537 / ~748"
+# Pinned to this build's exact numbers (183 rows, 28 inactive, "537 / 748"
 # spent) the same way test_effect_guess.py etc. are pinned to specific live
 # AAs - see tests/README.md's note on that. A future wiki scrape that
-# resolves one of this build's unconfirmed costs, or a rename/removal
-# affecting one of its AAs, would shift these numbers and need a fresh share
-# link swapped in from a still-representative real build.
+# resolves one of this build's unconfirmed costs, changes an AA's rank
+# count, or renames/removes one of its AAs, would shift these numbers and
+# need a fresh share link swapped in from a still-representative real build.
+# (Last shifted when a patch collapsed three Bard/archetype toggle AAs'
+# "disabled rank" mechanic away, trimming this build's own deep-owned Bard
+# picks down to the new lower rank caps - 8 fewer rows, all from Bard's
+# inactive count - and confirming its one remaining guessed cost, dropping
+# the "~" from the spent total.)
 #
 # This is the widest-coverage test in the suite and, because of the above,
 # also the most likely to fail for a reason that isn't a code regression -
@@ -63,14 +68,14 @@ with sync_playwright() as p:
     rows = page.locator(".progression-row")
     row_count = rows.count()
     print("Progression row count:", row_count)
-    assert row_count == 191, \
-        "FAIL: check for a wiki rename/removal affecting one of this build's AAs before assuming a code regression - see this file's header comment"
+    assert row_count == 183, \
+        "FAIL: check for a wiki rename/removal/rank-count change affecting one of this build's AAs before assuming a code regression - see this file's header comment"
 
     inactive_rows = page.locator(".progression-row.inactive")
     inactive_count = inactive_rows.count()
     print("inactive row count:", inactive_count)
-    assert inactive_count == 36, \
-        "FAIL: check for a wiki rename/removal affecting one of this build's inactive-class AAs before assuming a code regression - see this file's header comment"
+    assert inactive_count == 28, \
+        "FAIL: check for a wiki rename/removal/rank-count change affecting one of this build's inactive-class AAs before assuming a code regression - see this file's header comment"
 
     # Every inactive row stays read-only and full-opacity with just the
     # warning icon signaling its status (not dimmed - see the
@@ -93,7 +98,7 @@ with sync_playwright() as p:
     opacity_sample = inactive_rows.first.evaluate("el => getComputedStyle(el).opacity")
     print("sample inactive row opacity (should be full, not dimmed):", opacity_sample)
     assert opacity_sample == "1"
-    print("PASS: every one of the 191 picks renders, inactive ones muted-free but read-only with a warning icon")
+    print("PASS: every one of the 183 picks renders, inactive ones muted-free but read-only with a warning icon")
 
     # --- Other Classes: the same 13 inactive picks (Bard/Monk/Rogue/Shaman/
     # Wizard), grouped. ---

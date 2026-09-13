@@ -109,17 +109,21 @@ clicks.
 Several of these tests are pinned to specific live AAs as their guessed-value
 examples (`test_effect_guess.py`'s Quick Evacuation,
 `test_cost_guess.py`'s Combat Fury and Turn Summoned,
-`test_guess_all_tabs.py`'s Cannibalization, Quick Evacuation and Turn
-Summoned, `test_estimated_total.py`'s Combat Agility and Quick Evacuation) —
+`test_guess_all_tabs.py`'s Cannibalization and Turn Summoned,
+`test_estimated_total.py`'s Combat Agility and Turn Summoned) —
 a future wiki scrape confirming one of those specific ranks will break that
 test, same as it's already happened repeatedly (Adamant Will, Combat
 Stability, Combat Fury's effect value, Packrat's entire cost/effect
-progression, Alchemy Mastery, Baking Mastery, Conjurer's Efficiency, and
-most recently First Aid, Unbound Boon, and Reaching Notes - the last of
-which turned out to alternate real/free ranks on confirmation, the same
-formula Symphonic Aura uses, not truly unknown - all resolved to real data
-and had to be swapped out for a still-live example over the course of this
-project). Regenerate `costGuesses.js`/`effectGuesses.js` first, then pick a
+progression, Alchemy Mastery, Baking Mastery, Conjurer's Efficiency, First
+Aid, Unbound Boon, and most recently Thief's Intuition and Wizard's Quick
+Evacuation - Reaching Notes among them turned out to alternate real/free
+ranks on confirmation, the same formula Symphonic Aura uses, not truly
+unknown - all resolved to real data and had to be swapped out for a
+still-live example over the course of this project). Turn Summoned is
+currently the only AA left anywhere in the dataset with a real cost still
+unconfirmed, so a couple of these tests lost their second, differently-
+scoped example when Quick Evacuation resolved and now lean on Turn Summoned
+alone. Regenerate `costGuesses.js`/`effectGuesses.js` first, then pick a
 fresh example from whichever guess table still has one - see the affected
 test's own comments for how the swap played out last time.
 
@@ -127,22 +131,30 @@ test's own comments for how the swap played out last time.
 live AA with a manual (curator-judgment, very-low confidence) *cost* guess
 at all - every `MANUAL_GUESSES` entry that used to apply has since been
 confirmed by the wiki, and the one AA still carrying an unguessed cost
-(Thief's Intuition) has no sibling evidence for a real entry to be added
-without fabricating one. Rather than invent a `MANUAL_GUESSES` entry with no
-real justification just to have a live example, that test intercepts the
-`app.js` request and serves `app.src.js` (unminified, so `COST_GUESS_TABLE`'s
-name survives - real `app.js` has it mangled by esbuild) with one synthetic
-entry patched in for Thief's Intuition. If a real manual cost guess ever
-reappears, prefer swapping back to it over keeping the synthetic one.
+(Turn Summoned) already has its own real, high-confidence algorithmic guess.
+Rather than invent a `MANUAL_GUESSES` entry with no real justification just
+to have a live example, that test intercepts the `app.js` request and serves
+`app.src.js` (unminified, so `COST_GUESS_TABLE`'s name survives - real
+`app.js` has it mangled by esbuild) with Turn Summoned's real table entry
+replaced outright by a synthetic one - a plain string-prepend isn't enough
+here (unlike when this test used Thief's Intuition, which had no real entry
+to collide with), since Turn Summoned's own real entry declared later in the
+same object literal would just win over a prepended duplicate key. If a real
+manual cost guess ever reappears, prefer swapping back to it over keeping
+the synthetic one.
 
-Note the effect-guess tables currently hold nothing above the very-low
-(manual) tier, so `test_effect_guess.py` pins rendering rather than a
-particular confidence tier; the sibling-matching and interpolation rules
-themselves are covered data-independently by `test_guess_effects.py`.
-When picking its next example, prefer an AA a player actually spends
-points on - Banestrike is the only other AA with a guessed effect value,
-but it is free and unlocked by Slayer achievements, so a test driving it
-with `#incBtn` would be buying a rank that cannot be bought in game.
+`test_effect_guess.py`'s Quick Evacuation is Druid's copy - real confirmed
+costs but an unconfirmed effect percentage - which now resolves to a
+medium-confidence guess sibling-matched against Wizard's own (confirmed)
+Quick Evacuation, rather than the manual very-low guess it carried before
+Wizard's numbers were confirmed. Should every effect guess ever drop back to
+manual-only, this test would go back to pinning rendering rather than a
+particular tier; the sibling-matching and interpolation rules themselves are
+covered data-independently by `test_guess_effects.py`. When picking its next
+example, prefer an AA a player actually spends points on - Banestrike is the
+only other AA with a guessed effect value, but it is free and unlocked by
+Slayer achievements, so a test driving it with `#incBtn` would be buying a
+rank that cannot be bought in game.
 
 The cost-guess table has likewise run out of medium-confidence entries;
 what is left is either high-confidence or manual very-low, so
@@ -150,7 +162,7 @@ what is left is either high-confidence or manual very-low, so
 
 `test_real_world_build.py` is pinned the same way, but to a whole real
 share link (a live user's actual Paladin/Enchanter/Druid build) rather than
-one AA - a wiki change affecting any of its 191 picks would shift its exact
+one AA - a wiki change affecting any of its 183 picks would shift its exact
 row/point-total assertions and need a fresh share link swapped in (already
 happened once - see the file's own header comment for when a refresh is
 actually worth the rework, vs. just leaving it be). The same build also
