@@ -37,9 +37,19 @@ several small errors makes a single AA the more likely culprit over a
 handful of them: either one ladder's top rank is priced 13 too high, or
 one AA has a phantom extra rank at the top of its ladder (an inflated rank
 COUNT, not just a cost, would also show up as an over-count of exactly
-that rank's own cost). Re-check this arithmetic after any future
-data.src.js change and see if it narrows; a future max-AA report
-pinpointing a specific "can't reach rank N" case (the same way Turn
+that rank's own cost).
+
+wiki-sync/audit_costs.py hunts both of those shapes automatically (a
+confirmed cost that disagrees with high/medium sibling consensus, or a
+ladder whose last rank dropped exactly matches another AA's full shorter
+ladder) - first run found nothing at exactly 13 either way, and every
+phantom-rank candidate it did surface was manually checked and ruled out
+(not phantoms). So the culprit isn't a value contradicted by strong
+sibling evidence, nor an extra rank - most likely a genuinely unique AA
+with no comparable sibling to catch it this way, invisible to this kind of
+cross-AA heuristic. Re-check this arithmetic (and re-run audit_costs.py)
+after any future data.src.js change and see if it narrows; a future max-AA
+report pinpointing a specific "can't reach rank N" case (the same way Turn
 Summoned's own gate was found) is probably the only realistic way to
 actually localize it.
 
