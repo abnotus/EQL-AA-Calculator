@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 178057,
+  "revid": 178059,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -813,7 +813,7 @@
         "?",
         "?"
       ],
-      "description": "Ability Activation ID: 559 - Refresh Time: 0:05:00 - Ability Timer(s): 5. Turn Summoned I, when activated, deals 400 damage to your elemental target and has a 5% chance to trigger Infusion of Elemental Light I which critically deals 32000 damage. Requirements: Level 45."
+      "description": "Ability Activation ID: 559 - Refresh Time: 0:05:00 - Ability Timer(s): 5. Turn Summoned I, when activated, deals 400 damage to your elemental target and has a 5% chance to trigger Infusion of Elemental Light I which critically deals 32000 damage. Requirements: Level 45. Rank 2 requires level 59 so not reachable for now."
     },
     "class:Magician::Unbound Companion::0": {
       "ranks": "3",

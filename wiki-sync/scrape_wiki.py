@@ -18,6 +18,27 @@ than last time - both usually mean the table parser broke on a wiki markup
 change, not that abilities actually vanished. Pass --accept to save anyway
 if a drop that size is genuinely expected.
 
+Known checksum discrepancy: a real max-level (50), all-classes-maxed
+character reports 1172 total AA points spent (screenshot, 2026-09-13
+reddit post "Max AA is 1172"). Summing every AA's max cost across the
+whole current dataset (general+archetype+special+all 16 classes combined,
+treating Turn Summoned's two still-unconfirmed ranks as 0 since they're
+excluded from that player's total too - see below) comes to 1185, 13
+points over. Since a real player's total can only be an upper bound if our
+data has an error inflating it, not the guesses being 0 (0 is the floor,
+not the ceiling), at least one already-CONFIRMED cost elsewhere in
+data.src.js is most likely wrong by a combined 13 points - not yet
+identified. Re-check this arithmetic after any future data.src.js change
+and see if it narrows; a future max-AA report pinpointing a specific
+"can't reach rank N" case (the same way Turn Summoned's own gate was
+found) is probably the only realistic way to actually localize it.
+
+Turn Summoned's rank 2 specifically needs level 59 per the wiki's own
+Requirements line, which is above the current level cap (50) - it is not
+merely unconfirmed, it is currently untrainable by anyone, so its "?" cost
+is expected to never resolve through an ordinary wiki confirmation and
+isn't itself the source of the 13-point gap above.
+
 IMPORTANT: this only tracks ranks/costs/description as they appear in the
 wiki's table cells. It does NOT track prerequisites or level requirements as
 their own fields - data.src.js's `prereq`/`levelReq` are hand-derived by a
