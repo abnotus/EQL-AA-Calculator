@@ -4,6 +4,14 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "2.0.6",
+    date: "2026-09-13",
+    items: [
+      "Spell Casting Subtlety, Reaching Notes, and Symphonic Aura are now simple toggles in-game rather than needing a purchased rank to turn on and off. They show fewer total ranks to match - if you'd trained deep into one of these on an older build, it may display differently now, though the points you already spent still count the same.",
+      "Data corrections from a fresh wiki scrape: Thief's Intuition's last two ranks are confirmed at 9 and 15 points (plus a final-rank passive trap-sensing bonus), and Wizard's Quick Evacuation is confirmed at 10/25/50%."
+    ]
+  },
+  {
     version: "2.0.5",
     date: "2026-09-11",
     items: [
