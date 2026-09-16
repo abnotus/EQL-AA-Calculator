@@ -47,7 +47,7 @@ an actual pending wiki rename to exercise it against.
 `test_real_world_build.py`, `test_archetype_class_eligibility.py`,
 `test_builds_index_cache.py`, `test_tree_click_delegation.py`,
 `test_progression_drag_warn_cache.py`, `test_save_build_partial_failure.py`,
-`test_builds_cross_tab_sync.py`
+`test_builds_cross_tab_sync.py`, `test_decompression_bomb.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -100,6 +100,7 @@ python tests/test_tree_click_delegation.py
 python tests/test_progression_drag_warn_cache.py
 python tests/test_save_build_partial_failure.py
 python tests/test_builds_cross_tab_sync.py
+python tests/test_decompression_bomb.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -278,5 +279,10 @@ a false success - `test_save_build_partial_failure.py`), or cross-tab
 `cachedIndex` invalidation (the `"storage"` listener in `events.js` that
 calls `dropCachedIndex` - `cachedIndex` only tracks this tab's own writes
 otherwise, so a save from another tab could get silently clobbered by a
-save made afterward in this one - `test_builds_cross_tab_sync.py`)
+save made afterward in this one - `test_builds_cross_tab_sync.py`), or
+decodeBuildCode/decompress's size limits on a share/import code
+(`MAX_ENCODED_CODE_LENGTH`/`MAX_DECOMPRESSED_BYTES` in `exportImport.js` -
+an otherwise-valid build padded past either cap must still be rejected,
+proving the limit is what's catching it rather than some unrelated parse
+failure - `test_decompression_bomb.py`)
 before rebuilding and committing.

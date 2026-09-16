@@ -97,6 +97,16 @@ export function wireEvents() {
   el.importFile.addEventListener("change", () => {
     const file = el.importFile.files[0];
     if (!file) return;
+    // Even the most verbose legitimate export (every AA in every class,
+    // fully written out) is on the order of tens of KB - this is checked
+    // before ever reading the file into memory as a string, well ahead of
+    // decodeBuildCode's own MAX_ENCODED_CODE_LENGTH check on just the code
+    // substring within it.
+    if (file.size > 2 * 1024 * 1024) {
+      showToast("That file is too large to be a build export.");
+      el.importFile.value = "";
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       el.importText.value = String(reader.result);

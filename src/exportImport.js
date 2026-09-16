@@ -27,6 +27,17 @@ import { idForKey, entryForId } from "./keys.js";
 // separately in decodeBuildCode.
 const BUILD_CODE_VERSION = 5;
 
+// A real build's own code is tiny - the largest known real-world build
+// (183 picks) is a few hundred characters even uncompressed as v4 JSON.
+// These are generous by 100x+ over any legitimate build, not a tight
+// bound - they exist purely to reject an obviously-hostile input (a share
+// link or pasted/imported text carrying a huge blob, or a small
+// compressed payload crafted to decompress into an enormous one - a
+// "decompression bomb") before spending memory/time on it, not to
+// constrain what a real character's build can hold.
+const MAX_ENCODED_CODE_LENGTH = 262144; // chars, base64/base64url text - checked before any decoding
+const MAX_DECOMPRESSED_BYTES = 4 * 1024 * 1024; // bytes - checked while streaming out of DecompressionStream, never materialized past this
+
 // An AA missing from aaIds.js shouldn't happen for anything currently
 // pickable (build_minify.py's invariant check + assign_aa_ids.py being run
 // together keep them in sync) - degrades to "dropped" rather than guessed
@@ -149,9 +160,32 @@ async function compress(bytes, format) {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
+// Reads the decompressed stream chunk-by-chunk rather than materializing
+// it in one shot (new Response(stream).arrayBuffer(), the previous
+// approach) specifically so a decompression bomb - a small, legitimately-
+// encoded compressed input engineered to expand far past
+// MAX_DECOMPRESSED_BYTES - gets its stream cancelled the moment the running
+// total crosses that cap, instead of first fully inflating into memory and
+// only then being rejected.
 async function decompress(bytes, format) {
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  const reader = stream.getReader();
+  const chunks = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_DECOMPRESSED_BYTES) {
+      await reader.cancel();
+      throw new Error("decompressed payload exceeds the size limit");
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let offset = 0;
+  chunks.forEach((c) => { out.set(c, offset); offset += c.byteLength; });
+  return out;
 }
 
 // ---- v5 binary wire format -------------------------------------------------
@@ -454,6 +488,10 @@ const GZIP_MAGIC_1 = 0x8b;
 // growing cost otherwise, since every format this app has ever moved away
 // from adds one more guaranteed-failing attempt to the common case.
 async function decodeBuildCode(code) {
+  // Checked before base64ToBytes (which calls atob, itself an unbounded
+  // allocation) rather than after - see MAX_ENCODED_CODE_LENGTH's own
+  // comment for why this exists at all.
+  if (code.length > MAX_ENCODED_CODE_LENGTH) throw new Error("build code exceeds the size limit");
   const bytes = base64ToBytes(code);
   // v5 is packed bits, not JSON, and isn't compressed - so it has to be
   // recognized here, ahead of both the decompression attempts and the
