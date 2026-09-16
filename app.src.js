@@ -419,6 +419,14 @@ function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
+    version: "2.0.7",
+    date: "2026-09-16",
+    items: [
+      "Master of All is now a single rank costing 10 points, instead of four ranks at 5 points each. If you'd trained past rank 1 on an older build, it'll show the refund automatically.",
+      "Data corrections from a fresh wiki scrape: Turn Summoned's second rank is confirmed at 6 points (400/800 damage), and Innate Camouflage's invisibility is confirmed to sometimes wear off early - it's instant cast with just a 7-second cooldown, so easy to reapply."
+    ]
+  },
+  {
     version: "2.0.6",
     date: "2026-09-13",
     items: [
