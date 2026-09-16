@@ -4,6 +4,19 @@ Two kinds, both plain Python scripts (no pytest) — run each file directly and
 check its exit code; every one prints `ALL PASS` on success and asserts
 loudly on failure.
 
+## Running everything at once
+
+```
+python tests/run_all.py
+```
+
+Discovers every `test_*.py` in this directory, starts its own local server
+for the duration (killed again when the run ends, whether or not everything
+passed), and runs each test as its own subprocess with a timeout so one
+stalled test can't hang the whole run. Prints a pass/fail line per test plus
+a summary, and exits non-zero if anything failed or timed out. Not wired
+into CI (see below) - this is the manual-run convenience, nothing more.
+
 ## Data-independent unit tests
 
 `test_guess_costs_interpolation.py` and `test_guess_effects.py` exercise
@@ -174,8 +187,18 @@ shows up as a lighter-weight fixture in `test_guess_all_tabs.py` (one
 inactive-class row) and `test_progression_autoscroll.py` (reused purely
 for its row count).
 
-None of these are wired into CI; run them by hand after a change that
-touches either guessing feature (`wiki-sync/guess_costs.py` or
+None of these are wired into CI yet - deferred deliberately, not an
+oversight: `run_all.py` above needs to actually be the established way
+this project runs its tests first, and Chrome (not Playwright's own
+bundled browser) needs installing in whatever runs it, since every browser
+test launches with `channel="chrome"` on purpose. Revisit once the runner
+is established and the manual discipline it's meant to replace starts
+costing more than automating it would - a lighter first step, if that day
+comes, would be CI over just the 3 data-independent tests plus
+`build_minify.py`'s own prereq/id invariant checks, none of which need a
+browser at all, before taking on the full Playwright suite. Run them by
+hand after a change that touches either guessing feature
+(`wiki-sync/guess_costs.py` or
 `wiki-sync/guess_effects.py`, their consumers in `src/keys.js`/
 `src/logic.js`/`src/render.js`, the disclaimer banner, the topbar, or
 Progression's own blended running total / the plain-text export mirroring
