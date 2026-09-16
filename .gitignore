@@ -3,6 +3,12 @@ __pycache__/
 *.zip
 node_modules/
 
+# Live EverQuest Legends log files - personal account data, sometimes
+# dropped here as a source for wiki-sync/verify_from_log.py. Never
+# committed; that script's own output (log_verified.json) is the durable,
+# non-sensitive record of what they've confirmed.
+eqlog_*.txt
+
 # Local Claude Code settings and project-convention notes for AI-assisted
 # sessions - not part of the deployed app, kept out of the public repo.
 .claude/
