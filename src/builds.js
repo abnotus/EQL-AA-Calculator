@@ -11,7 +11,7 @@ import {
 } from "./state.js";
 import { spentPoints, clearLastMutation, reconcilePurchaseOrderCounts } from "./logic.js";
 
-const BUILDS_INDEX_KEY = "eql_aa_builds_index_v1";
+export const BUILDS_INDEX_KEY = "eql_aa_builds_index_v1";
 const BUILD_KEY_PREFIX = "eql_aa_build_";
 // The reuse key for an auto-imported share link is this name, not a fixed id
 // - see findImportedSlot for why an id can't serve that role once renames
@@ -27,8 +27,19 @@ const ACTIVE_BUILD_KEY = "eql_aa_active_build_id";
 // In-memory cache of the parsed index, avoiding a localStorage.getItem +
 // JSON.parse on every read (listBuilds() alone runs on every renderTopbar,
 // i.e. every renderAll). null means "not loaded yet"; every mutation goes
-// through saveIndex, which keeps this in lockstep with what's persisted.
+// through saveIndex, which keeps this in lockstep with what's persisted -
+// but only for writes made from THIS tab. Another tab saving/renaming/
+// deleting a build writes BUILDS_INDEX_KEY directly, which this cache has
+// no way to see on its own - events.js listens for the "storage" event
+// (which only ever fires in OTHER tabs, never the one that made the write)
+// and calls dropCachedIndex so the next loadIndex() here re-reads from
+// localStorage instead of writing back a now-stale copy that would clobber
+// whatever the other tab just added.
 let cachedIndex = null;
+
+export function dropCachedIndex() {
+  cachedIndex = null;
+}
 
 function loadIndex() {
   if (cachedIndex !== null) return cachedIndex;

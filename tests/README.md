@@ -46,7 +46,8 @@ an actual pending wiki rename to exercise it against.
 `test_progression_move_to.py`, `test_cross_class_prereq_dependency.py`,
 `test_real_world_build.py`, `test_archetype_class_eligibility.py`,
 `test_builds_index_cache.py`, `test_tree_click_delegation.py`,
-`test_progression_drag_warn_cache.py`, `test_save_build_partial_failure.py`
+`test_progression_drag_warn_cache.py`, `test_save_build_partial_failure.py`,
+`test_builds_cross_tab_sync.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -98,6 +99,7 @@ python tests/test_builds_index_cache.py
 python tests/test_tree_click_delegation.py
 python tests/test_progression_drag_warn_cache.py
 python tests/test_save_build_partial_failure.py
+python tests/test_builds_cross_tab_sync.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -272,5 +274,9 @@ same insertion point with a different answer - `test_progression_drag_warn_cache
 landed rather than swallowing a failure silently - a brand-new slot's
 seeded owned-profile write or the index write failing after the slot write
 itself already succeeded must still report the whole save as failed, not
-a false success - `test_save_build_partial_failure.py`)
+a false success - `test_save_build_partial_failure.py`), or cross-tab
+`cachedIndex` invalidation (the `"storage"` listener in `events.js` that
+calls `dropCachedIndex` - `cachedIndex` only tracks this tab's own writes
+otherwise, so a save from another tab could get silently clobbered by a
+save made afterward in this one - `test_builds_cross_tab_sync.py`)
 before rebuilding and committing.

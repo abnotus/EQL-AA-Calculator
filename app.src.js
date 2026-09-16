@@ -2698,8 +2698,19 @@ const ACTIVE_BUILD_KEY = "eql_aa_active_build_id";
 // In-memory cache of the parsed index, avoiding a localStorage.getItem +
 // JSON.parse on every read (listBuilds() alone runs on every renderTopbar,
 // i.e. every renderAll). null means "not loaded yet"; every mutation goes
-// through saveIndex, which keeps this in lockstep with what's persisted.
+// through saveIndex, which keeps this in lockstep with what's persisted -
+// but only for writes made from THIS tab. Another tab saving/renaming/
+// deleting a build writes BUILDS_INDEX_KEY directly, which this cache has
+// no way to see on its own - events.js listens for the "storage" event
+// (which only ever fires in OTHER tabs, never the one that made the write)
+// and calls dropCachedIndex so the next loadIndex() here re-reads from
+// localStorage instead of writing back a now-stale copy that would clobber
+// whatever the other tab just added.
 let cachedIndex = null;
+
+function dropCachedIndex() {
+  cachedIndex = null;
+}
 
 function loadIndex() {
   if (cachedIndex !== null) return cachedIndex;
@@ -5735,6 +5746,13 @@ async function doImport() {
 // All addEventListener wiring, run once from main.js after cacheDom().
 
 function wireEvents() {
+  // Another tab's own save/rename/delete writes BUILDS_INDEX_KEY directly;
+  // this only fires here (never in the tab that made the write), so it's
+  // exactly the signal this tab's own cachedIndex needs to know it's stale.
+  window.addEventListener("storage", (e) => {
+    if (e.key === BUILDS_INDEX_KEY) dropCachedIndex();
+  });
+
   el.classSelects.forEach((sel, i) => {
     sel.addEventListener("change", () => {
       const newValue = sel.value;

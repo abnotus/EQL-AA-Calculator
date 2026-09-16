@@ -17,8 +17,16 @@ import {
   openExportModal, copyExportText, copyShareLink, saveExportAsTxt, closeExportModal,
   openImportModal, closeImportModal, doImport
 } from "./exportImport.js";
+import { BUILDS_INDEX_KEY, dropCachedIndex } from "./builds.js";
 
 export function wireEvents() {
+  // Another tab's own save/rename/delete writes BUILDS_INDEX_KEY directly;
+  // this only fires here (never in the tab that made the write), so it's
+  // exactly the signal this tab's own cachedIndex needs to know it's stale.
+  window.addEventListener("storage", (e) => {
+    if (e.key === BUILDS_INDEX_KEY) dropCachedIndex();
+  });
+
   el.classSelects.forEach((sel, i) => {
     sel.addEventListener("change", () => {
       const newValue = sel.value;
