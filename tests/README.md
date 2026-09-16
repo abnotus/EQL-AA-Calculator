@@ -270,12 +270,16 @@ there, so this specifically checks a non-default tab), or Progression's
 drag-hover warning cache (`dragWarnCacheToIndex`/`dragWouldIntroduceWarn` in
 `render.js`, reset at every `dragstart` since a new drag can revisit the
 same insertion point with a different answer - `test_progression_drag_warn_cache.py`),
-`saveBuildAs`'s own multi-write success reporting (`saveOwnedProfileTo`/
-`saveIndex` in that order, both now returning whether their own write
-landed rather than swallowing a failure silently - a brand-new slot's
-seeded owned-profile write or the index write failing after the slot write
-itself already succeeded must still report the whole save as failed, not
-a false success - `test_save_build_partial_failure.py`), or cross-tab
+`saveBuildAs`'s own multi-write success reporting and `deleteBuild`'s
+failure-path consistency (`saveOwnedProfileTo`/`saveIndex` now returning
+whether their own write landed rather than swallowing a failure silently -
+a brand-new slot's seeded owned-profile write or the index write failing
+after the slot write itself already succeeded must still report the whole
+save as failed, not a false success; and a failed delete must not remove
+the slot's own data when the index write that was supposed to drop the
+reference didn't land, since that leaves a dangling reference behind
+instead of a safely-retryable no-op - `test_save_build_partial_failure.py`),
+or cross-tab
 `cachedIndex` invalidation (the `"storage"` listener in `events.js` that
 calls `dropCachedIndex` - `cachedIndex` only tracks this tab's own writes
 otherwise, so a save from another tab could get silently clobbered by a

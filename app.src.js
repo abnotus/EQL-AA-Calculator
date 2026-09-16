@@ -3118,11 +3118,21 @@ function renameBuild(id, name) {
 // Returns whether the index write persisted - the in-memory list (and thus
 // the Builds modal) drops the entry either way, but a caller should still
 // tell the user if that removal didn't survive a reload.
+//
+// The slot's own data is only removed once the index write has actually
+// succeeded - deleting it unconditionally would leave the index still
+// listing an id (on reload, once its own failed write reverts) whose
+// backing data is already gone, a dangling reference worse than just
+// leaving both sides alone. Skipping the removal on failure keeps the two
+// consistent either way: reload later and either both are gone (write
+// succeeded) or both are still there (write failed, safe to retry).
 function deleteBuild(id) {
   const persisted = saveIndex(loadIndex().filter((b) => b.id !== id));
-  try {
-    localStorage.removeItem(BUILD_KEY_PREFIX + id);
-  } catch (e) { /* ignore */ }
+  if (persisted) {
+    try {
+      localStorage.removeItem(BUILD_KEY_PREFIX + id);
+    } catch (e) { /* ignore */ }
+  }
   if (getActiveBuildId() === id) setActiveBuildId(null);
   return persisted;
 }
