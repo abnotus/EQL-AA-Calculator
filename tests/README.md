@@ -46,7 +46,7 @@ an actual pending wiki rename to exercise it against.
 `test_progression_move_to.py`, `test_cross_class_prereq_dependency.py`,
 `test_real_world_build.py`, `test_archetype_class_eligibility.py`,
 `test_builds_index_cache.py`, `test_tree_click_delegation.py`,
-`test_progression_drag_warn_cache.py`
+`test_progression_drag_warn_cache.py`, `test_save_build_partial_failure.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -97,6 +97,7 @@ python tests/test_archetype_class_eligibility.py
 python tests/test_builds_index_cache.py
 python tests/test_tree_click_delegation.py
 python tests/test_progression_drag_warn_cache.py
+python tests/test_save_build_partial_failure.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -265,5 +266,11 @@ still pass on the General tab, since General is also `state.activeTab`
 there, so this specifically checks a non-default tab), or Progression's
 drag-hover warning cache (`dragWarnCacheToIndex`/`dragWouldIntroduceWarn` in
 `render.js`, reset at every `dragstart` since a new drag can revisit the
-same insertion point with a different answer - `test_progression_drag_warn_cache.py`)
+same insertion point with a different answer - `test_progression_drag_warn_cache.py`),
+`saveBuildAs`'s own multi-write success reporting (`saveOwnedProfileTo`/
+`saveIndex` in that order, both now returning whether their own write
+landed rather than swallowing a failure silently - a brand-new slot's
+seeded owned-profile write or the index write failing after the slot write
+itself already succeeded must still report the whole save as failed, not
+a false success - `test_save_build_partial_failure.py`)
 before rebuilding and committing.

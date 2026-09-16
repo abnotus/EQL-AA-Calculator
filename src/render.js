@@ -1594,12 +1594,14 @@ function renderBuildsList() {
         if (outcome === "missing") { showToast("Couldn't rename — that build may have been removed."); return; }
         renderBuildsList();
         renderTopbar();
+        if (outcome === "failed") showToast("Renamed here, but couldn't save it — local storage may be full or unavailable.");
       } else if (action === "delete") {
         const build = builds.find((b) => b.id === id);
         if (!confirm(`Delete "${build ? build.name : "this build"}"? This can't be undone.`)) return;
-        deleteBuild(id);
+        const persisted = deleteBuild(id);
         renderBuildsList();
         renderTopbar();
+        if (!persisted) showToast("Deleted here, but couldn't save it — local storage may be full or unavailable.");
       }
     });
   });

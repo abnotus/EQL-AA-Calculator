@@ -383,11 +383,18 @@ export function saveLocal() {
 // Writes arbitrary owned-shaped data under a specific profile id, without
 // touching state.ownedProfileId itself - the primitive a brand-new saved
 // build's seeded copy (builds.js) needs, distinct from saveOwned's "persist
-// whatever the current session is showing" job below.
+// whatever the current session is showing" job below. Returns whether the
+// write actually landed - builds.js's saveBuildAs checks this for a
+// brand-new slot's seeded profile, since silently swallowing the failure
+// there would leave the new slot pointing at a profile with no data behind
+// it while still reporting a successful save.
 export function saveOwnedProfileTo(profileId, ownedLike) {
   try {
     localStorage.setItem(ownedStorageKeyFor(profileId), JSON.stringify({ v: SAVE_FORMAT_VERSION, owned: serializeRanks(ownedLike) }));
-  } catch (e) { /* storage unavailable, ignore */ }
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 // Persists the current session's owned data to whichever profile

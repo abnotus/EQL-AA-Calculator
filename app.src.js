@@ -1046,11 +1046,18 @@ function saveLocal() {
 // Writes arbitrary owned-shaped data under a specific profile id, without
 // touching state.ownedProfileId itself - the primitive a brand-new saved
 // build's seeded copy (builds.js) needs, distinct from saveOwned's "persist
-// whatever the current session is showing" job below.
+// whatever the current session is showing" job below. Returns whether the
+// write actually landed - builds.js's saveBuildAs checks this for a
+// brand-new slot's seeded profile, since silently swallowing the failure
+// there would leave the new slot pointing at a profile with no data behind
+// it while still reporting a successful save.
 function saveOwnedProfileTo(profileId, ownedLike) {
   try {
     localStorage.setItem(ownedStorageKeyFor(profileId), JSON.stringify({ v: SAVE_FORMAT_VERSION, owned: serializeRanks(ownedLike) }));
-  } catch (e) { /* storage unavailable, ignore */ }
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 // Persists the current session's owned data to whichever profile
@@ -2706,6 +2713,14 @@ function loadIndex() {
   return cachedIndex;
 }
 
+// Returns whether the write actually landed. cachedIndex is updated either
+// way (see the comment below) so the UI stays in sync with what this
+// session sees, but a caller reporting overall success to the user must
+// still check this - localStorage.setItem here is its own independent
+// write, not guaranteed to succeed just because an earlier write (e.g. the
+// slot data itself, in saveBuildAs) did. Two writes of a few KB each can
+// straddle a quota boundary either way; there's no ordering that makes one
+// of them a reliable proxy for the other.
 function saveIndex(index) {
   // Load-bearing, not defensive: saveBuildAs/renameBuild both mutate the
   // array loadIndex() just returned (the cached one, by reference) before
@@ -2718,7 +2733,10 @@ function saveIndex(index) {
   cachedIndex = index;
   try {
     localStorage.setItem(BUILDS_INDEX_KEY, JSON.stringify(index));
-  } catch (e) { /* storage unavailable/full - the slot data write already failed first if so */ }
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 // Most-recently-updated first — the one you're most likely to want is at the top.
@@ -2907,8 +2925,14 @@ function activeBuildMatchesCurrent() {
 
 // Snapshots the current build into a named slot — a new one, or an existing
 // one if id is given (the caller's "overwrite this slot" path). Returns the
-// slot's id, or null if localStorage rejected the write (full/unavailable),
-// in which case nothing was changed.
+// slot's id, or null if localStorage rejected any of this function's writes
+// (full/unavailable) - the seeded owned-profile write for a brand-new slot,
+// the slot data itself, or the index. A caller must not treat a non-null
+// id as "fully saved" unless this function itself already confirmed every
+// write it made along the way; reporting success on the strength of the
+// slot write alone (the previous behavior) let a later write's own failure
+// go unnoticed, leaving a slot that looks saved this session but is gone
+// after reload.
 //
 // A brand-new slot gets its own fresh owned profile, seeded with a copy of
 // whatever the current session is showing right now (not empty - you've
@@ -2929,7 +2953,7 @@ function saveBuildAs(name, id = null, mirrorProfileId = null) {
     payload.ownedProfileId = ownedProfileIdOfBuild(id);
   } else {
     payload.ownedProfileId = genId();
-    saveOwnedProfileTo(payload.ownedProfileId, state.owned);
+    if (!saveOwnedProfileTo(payload.ownedProfileId, state.owned)) return null;
   }
   try {
     localStorage.setItem(BUILD_KEY_PREFIX + targetId, JSON.stringify(payload));
@@ -2945,7 +2969,7 @@ function saveBuildAs(name, id = null, mirrorProfileId = null) {
   } else {
     index.push({ id: targetId, name, updatedAt });
   }
-  saveIndex(index);
+  if (!saveIndex(index)) return null;
   setActiveBuildId(targetId);
   return targetId;
 }
@@ -3065,26 +3089,31 @@ function loadBuild(id) {
   return { droppedRanks: result.droppedRanks, repaired };
 }
 
-// False on a name collision with a *different* slot, not just "not found" -
-// renameBuild doesn't merge/overwrite the other entry, so the caller needs
-// to tell the two apart and report a clash rather than treating it as
-// nothing happened.
+// "collision" on a name clash with a *different* slot, "missing" if the id
+// doesn't resolve, "failed" if the rename itself didn't persist (storage
+// full/unavailable - the in-memory list still shows the new name until
+// reload, same lockstep-cache caveat as everywhere else here), "ok"
+// otherwise. Callers need every one of these distinguished rather than
+// collapsed into a boolean, since each means a different message to the user.
 function renameBuild(id, name) {
   const index = loadIndex();
   const entry = index.find((b) => b.id === id);
   if (!entry) return "missing";
   if (index.some((b) => b.id !== id && b.name === name)) return "collision";
   entry.name = name;
-  saveIndex(index);
-  return "ok";
+  return saveIndex(index) ? "ok" : "failed";
 }
 
+// Returns whether the index write persisted - the in-memory list (and thus
+// the Builds modal) drops the entry either way, but a caller should still
+// tell the user if that removal didn't survive a reload.
 function deleteBuild(id) {
-  saveIndex(loadIndex().filter((b) => b.id !== id));
+  const persisted = saveIndex(loadIndex().filter((b) => b.id !== id));
   try {
     localStorage.removeItem(BUILD_KEY_PREFIX + id);
   } catch (e) { /* ignore */ }
   if (getActiveBuildId() === id) setActiveBuildId(null);
+  return persisted;
 }
 
 // --- Owned-tracking management (Link / Merge / Split) ----------------------
@@ -4800,12 +4829,14 @@ function renderBuildsList() {
         if (outcome === "missing") { showToast("Couldn't rename — that build may have been removed."); return; }
         renderBuildsList();
         renderTopbar();
+        if (outcome === "failed") showToast("Renamed here, but couldn't save it — local storage may be full or unavailable.");
       } else if (action === "delete") {
         const build = builds.find((b) => b.id === id);
         if (!confirm(`Delete "${build ? build.name : "this build"}"? This can't be undone.`)) return;
-        deleteBuild(id);
+        const persisted = deleteBuild(id);
         renderBuildsList();
         renderTopbar();
+        if (!persisted) showToast("Deleted here, but couldn't save it — local storage may be full or unavailable.");
       }
     });
   });
