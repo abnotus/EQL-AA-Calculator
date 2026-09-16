@@ -179,7 +179,7 @@ what is left is either high-confidence or manual very-low, so
 
 `test_real_world_build.py` is pinned the same way, but to a whole real
 share link (a live user's actual Paladin/Enchanter/Druid build) rather than
-one AA - a wiki change affecting any of its 183 picks would shift its exact
+one AA - a wiki change affecting any of its 180 picks would shift its exact
 row/point-total assertions and need a fresh share link swapped in (already
 happened once - see the file's own header comment for when a refresh is
 actually worth the rework, vs. just leaving it be). The same build also

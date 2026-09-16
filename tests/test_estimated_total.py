@@ -22,16 +22,28 @@
 # scale and realism, but it no longer carries any unconfirmed-cost rank of
 # its own (Packrat, its last live example, got fully confirmed by a wiki
 # scrape - the eventual fate every guess on this page is built to have).
-# So the guessed-cost scenarios below buy Turn Summoned (a Magician class
-# AA, level 45 - comfortably under BUILD's level 50 - real rank 1 costs 3,
-# two differently-sized guessed ranks after it: 6/9) live on top of the
-# loaded build instead, reintroducing a real "differently-sized guesses in
-# a row, never freezing" case without needing a stale, hand-picked share
-# code. (This used to be Reaching Notes, then Quick Evacuation - each in
-# turn got fully confirmed by a wiki scrape since this scenario was last
-# written, so it no longer has any "?" cost left; swapped to a currently-
-# live example each time. No live AA currently has more than 2 consecutive
-# guessed ranks.)
+# So the guessed-cost scenario below buys Turn Summoned (a Magician class
+# AA, level 45 - comfortably under BUILD's level 50 - real ranks 1-2 cost
+# 3/6, a single guessed rank 3 after them: 9) live on top of the loaded
+# build instead, reintroducing a real "guess blends into the running total,
+# never freezing" case without needing a stale, hand-picked share code.
+# (This used to be Reaching Notes, then Quick Evacuation - each in turn got
+# fully confirmed by a wiki scrape since this scenario was last written, so
+# it no longer has any "?" cost left; swapped to a currently-live example
+# each time.)
+#
+# Turn Summoned itself used to carry two consecutive guessed ranks (2 and
+# 3) - the same scrape that reworked Master of All confirmed rank 2's real
+# cost, leaving only rank 3 unconfirmed. Turn Summoned is currently the
+# only AA anywhere in the dataset with any unconfirmed cost at all, and
+# it's a single trailing rank - there is no live example left of two
+# differently-sized guesses in a row, or of a PARTIAL owned/to-go split
+# (an interior guessed rank, with real ranks still unowned after it): a
+# single trailing guess is atomic, only ever 0% or 100% owned, never
+# split. The scenario below tests the 100%-owned case instead of a partial
+# one for that reason - not a gap introduced here, just what's left
+# testable against real data right now. The guessing feature itself is
+# unaffected; this only concerns which live AA can demonstrate it.
 # Refreshed periodically to the user's current build as they keep playing -
 # BUILD_STALE is regenerated alongside it each time (decode BUILD, inject
 # "t": 1000, re-encode gzip+base64url) so both stay in sync.
@@ -80,17 +92,15 @@ with sync_playwright() as p:
     assert sv.locator(".is-estimate").count() == 0, "FAIL: a fully-confirmed build shouldn't carry estimate styling"
     assert sv.get_attribute("title") is None
 
-    # --- Buy Turn Summoned live on top of it: rank 1 is real (cost 3),
-    # ranks 2-3 are each independently guessed (6/9 - high confidence,
-    # cross-AA sibling match, chosen for having 2 differently-sized guessed
-    # ranks in a row like Reaching Notes/Quick Evacuation used to). Real
-    # total climbs to 238 (235 + rank 1's real 3); ranks 2-3 add nothing to
-    # spentPoints() itself but 15 combined to the blended headline (238 + 15
-    # = 253). Turn Summoned is a Magician class AA, so slot 3 (Shaman in
-    # BUILD) needs to swap to Magician first - done after the "95 / 235"
-    # assertion above so it doesn't disturb BUILD's own already-purchased
-    # Paladin/Monk/Shaman ranks, which are lifetime-scoped and unaffected by
-    # a later class swap. ---
+    # --- Buy Turn Summoned live on top of it: ranks 1-2 are real (costs
+    # 3/6), rank 3 is guessed (9 - high confidence, cross-AA sibling
+    # match). Real total climbs to 244 (235 + ranks 1-2's real 3+6); rank 3
+    # adds nothing to spentPoints() itself but 9 to the blended headline
+    # (244 + 9 = 253). Turn Summoned is a Magician class AA, so slot 3
+    # (Shaman in BUILD) needs to swap to Magician first - done after the
+    # "95 / 235" assertion above so it doesn't disturb BUILD's own
+    # already-purchased Paladin/Monk/Shaman ranks, which are
+    # lifetime-scoped and unaffected by a later class swap. ---
     page.select_option("#classSelect2", "Magician")
     page.click('button[data-tab="classSlot2"]')
     page.wait_for_timeout(100)
@@ -113,12 +123,12 @@ with sync_playwright() as p:
     # Swapping slot 3 to Magician (above) made Shaman inactive - BUILD already
     # had 5 real points on Shaman, so the tooltip now also discloses that
     # slice, same as any other class-swap-with-existing-spend scenario.
-    assert sv.get_attribute("title") == "Planned: 238 confirmed + 15 estimated. 5 pts from classes not currently selected (see the Other Classes tab)."
+    assert sv.get_attribute("title") == "Planned: 244 confirmed + 9 estimated. 5 pts from classes not currently selected (see the Other Classes tab)."
     print("PASS: planned side blends to ~253 in blue, full breakdown lives only in the tooltip")
 
     # --- Progression's own running total now blends the same way the
     # topbar does - the last row's total must match the headline exactly
-    # (~253), with the same "238 confirmed + 15 estimated." breakdown in its
+    # (~253), with the same "244 confirmed + 9 estimated." breakdown in its
     # own tooltip, proving the two displays agree rather than showing two
     # different numbers for the same underlying build. ---
     page.click('button[data-tab="progression"]')
@@ -129,56 +139,57 @@ with sync_playwright() as p:
     print("Progression's blended running total (must match the topbar's ~253):", prog_total, "|", prog_title)
     assert prog_total == "~253 total", f"FAIL: expected Progression's total to blend to ~253 like the topbar, got {prog_total}"
     assert "is-estimate" in prog_total_el.get_attribute("class")
-    assert prog_title == "238 confirmed + 15 estimated.", f"FAIL: unexpected breakdown tooltip: {prog_title}"
+    assert prog_title == "244 confirmed + 9 estimated.", f"FAIL: unexpected breakdown tooltip: {prog_title}"
     print("PASS: Progression's running total blends in estimates exactly like the topbar headline does, agreeing on both the figure and its breakdown")
 
-    # --- Turn Summoned rank-by-rank: rank 1 is real (riding on top of
-    # BUILD's own real 235, so it renders as a PLAIN number); ranks 2-3 are
-    # each independently guessed, by a DIFFERENT amount each time (6/9, not
-    # a flat +1) - every one must still show a total that's exactly its own
-    # guess higher than the row before it, never frozen. Before the
-    # blendedCumulative fix, every guessed-rank row showed the SAME frozen
-    # total instead, even though each row's own pill showed a nonzero
-    # estimate. ---
+    # --- Turn Summoned rank-by-rank: ranks 1-2 are real (riding on top of
+    # BUILD's own real 235, so they render as PLAIN numbers); rank 3 is
+    # guessed - its own total must be exactly its own guess higher than the
+    # row before it, never frozen. Before the blendedCumulative fix, a
+    # guessed-rank row showed the SAME frozen total as the row before it
+    # instead, even though its own pill showed a nonzero estimate. ---
     ts_rows = page.locator(".progression-row", has=page.locator(".step-name", has_text="Turn Summoned"))
     totals = [ts_rows.nth(i).locator(".cost-total").inner_text() for i in range(ts_rows.count())]
     print("Turn Summoned rank 1-3's running totals in order:", totals)
-    expected = ["238 total", "~244 total", "~253 total"]
+    expected = ["238 total", "244 total", "~253 total"]
     assert totals == expected, \
         f"FAIL: the running total must climb by exactly each rank's own real-or-guessed cost - got {totals}"
-    print("PASS: the running total climbs through both the real rank and every differently-sized guessed rank, never freezing")
+    print("PASS: the running total climbs through both real ranks and the guessed one, never freezing")
 
     # --- Owned/to-go (ownedSummary) must blend the same way, not silently
     # drop an owned rank's estimate from either side - see
     # estimatedExtraOwnedPoints in logic.js. BUILD's own preloaded owned
     # progress (95 real points, none of it Turn Summoned, which was only
     # just bought above) starts this real-only on the owned side, with ALL
-    # 15 of Turn Summoned's estimate still on "to go". ---
+    # 9 of Turn Summoned's estimate still on "to go". ---
     owned_summary = page.locator("#ownedSummary")
     print("owned summary before owning any of Turn Summoned:", owned_summary.inner_text())
     assert owned_summary.inner_text() == "95 pts owned, ~158 to go", \
-        f"FAIL: preloaded owned progress should read as a real 95, with all 15 of Turn Summoned's estimate still on 'to go' - got {owned_summary.inner_text()!r}"
+        f"FAIL: preloaded owned progress should read as a real 95, with all 9 of Turn Summoned's estimate still on 'to go' - got {owned_summary.inner_text()!r}"
     togo_span0 = owned_summary.locator(".is-estimate")
-    assert togo_span0.get_attribute("title") == "143 confirmed + 15 estimated.", \
+    assert togo_span0.get_attribute("title") == "149 confirmed + 9 estimated.", \
         f"FAIL: unexpected 'to go' breakdown tooltip: {togo_span0.get_attribute('title')!r}"
 
-    # --- Marking Turn Summoned owned through rank 2 (its one real rank
-    # plus its first guessed rank) pulls part - not all - of its estimate
-    # onto the owned side, so both "owned" and "to go" carry an estimate at
-    # once, proving the blend isn't just an all-or-nothing move of the whole
-    # AA's estimate from one side to the other. ---
-    ts_rows.nth(1).locator(".step-own").click()
+    # --- Marking Turn Summoned fully owned (through its guessed rank 3)
+    # pulls its entire estimate onto the owned side - there's no live AA
+    # left with an INTERIOR unconfirmed rank to demonstrate a partial split
+    # (see this file's own header comment), so this checks the all-owned
+    # case instead: the owned side picks up the guess (9) on top of its
+    # real 104 (95 + ranks 1-2's real 3+6), and the to-go side, with
+    # nothing guessed left unowned, drops back to a PLAIN real number - no
+    # "~", no estimate styling lingering once nothing's actually estimated
+    # anymore. ---
+    ts_rows.nth(2).locator(".step-own").click()
     page.wait_for_timeout(150)
-    print("owned summary after marking Turn Summoned owned through rank 2:", owned_summary.inner_text())
-    assert owned_summary.inner_text() == "~104 pts owned, ~149 to go", \
-        f"FAIL: owned should blend in rank 2's guess (6) on top of the real 98 (95 + rank 1's real 3) - got {owned_summary.inner_text()!r}"
-    owned_span = owned_summary.locator(".is-estimate").first
-    assert owned_span.get_attribute("title") == "98 confirmed + 6 estimated.", \
+    print("owned summary after marking Turn Summoned fully owned:", owned_summary.inner_text())
+    assert owned_summary.inner_text() == "~113 pts owned, 140 to go", \
+        f"FAIL: owned should blend in rank 3's guess (9) on top of the real 104 (95 + ranks 1-2's real 3+6), and to-go should drop to a plain real 140 - got {owned_summary.inner_text()!r}"
+    assert owned_summary.locator(".is-estimate").count() == 1, \
+        "FAIL: with nothing guessed left on the to-go side, only the owned side should carry estimate styling"
+    owned_span = owned_summary.locator(".is-estimate")
+    assert owned_span.get_attribute("title") == "104 confirmed + 9 estimated.", \
         f"FAIL: unexpected owned breakdown tooltip: {owned_span.get_attribute('title')!r}"
-    togo_span = owned_summary.locator(".is-estimate").last
-    assert togo_span.get_attribute("title") == "140 confirmed + 9 estimated.", \
-        f"FAIL: unexpected 'to go' breakdown tooltip: {togo_span.get_attribute('title')!r}"
-    print("PASS: owned/to-go blends estimates on both sides at once when only part of a guessed AA is owned, and both still sum to the blended headline")
+    print("PASS: owned/to-go blends in the guess when a guessed rank becomes owned, and to-go cleanly drops the estimate styling once nothing guessed remains unowned")
 
     print("ERRORS:", errors)
     assert not errors

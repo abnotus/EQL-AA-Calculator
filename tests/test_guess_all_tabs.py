@@ -31,33 +31,35 @@ with sync_playwright() as p:
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
 
-    # --- Browse view: Turn Summoned's rank 2 (high-confidence guess, value
-    # 6) should show as an estimate in the per-rank cost list, not a plain
+    # --- Browse view: Turn Summoned's rank 3 (high-confidence guess, value
+    # 9) should show as an estimate in the per-rank cost list, not a plain
     # "?". Use the global search box to find it quickly - Browse lists
     # every class regardless of the active 3 slots, so no class selection is
     # needed here. Magician isn't one of the default 3 slots (Bard/
     # Beastlord/Berserker), so this already doubles as proof the scoped
-    # guess lookup isn't specific to an active class. (This used to be
-    # Alchemy Mastery's rank 2, before that Combat Stability's rank 3,
-    # before that Adamant Will's rank 4, before that Wizard's Quick
-    # Evacuation - each got confirmed by a wiki scrape in turn since this
-    # test was first written. Turn Summoned is currently the only AA in the
-    # whole dataset with a real cost still unconfirmed, so there's no
-    # second example left to pin alongside it.) ---
+    # guess lookup isn't specific to an active class. (This used to be rank
+    # 2, before that Alchemy Mastery's rank 2, before that Combat
+    # Stability's rank 3, before that Adamant Will's rank 4, before that
+    # Wizard's Quick Evacuation - each got confirmed by a wiki scrape in
+    # turn since this test was first written; rank 2 here specifically was
+    # confirmed real (6) by the same scrape that pinned Master of All's
+    # rework. Turn Summoned is currently the only AA in the whole dataset
+    # with a real cost still unconfirmed, so there's no second example left
+    # to pin alongside it.) ---
     page.click("#browseToggle")
     page.fill("#globalSearch", "Turn Summoned")
     page.wait_for_timeout(100)
     card = page.locator(".browse-card", has=page.locator(".name", has_text="Turn Summoned"))
     info_html = card.locator(".info").inner_html()
     print("Turn Summoned browse info html:", info_html)
-    assert "~6" in info_html
+    assert "~9" in info_html
     assert 'class="is-estimate tier-high"' in info_html
-    print("PASS: Browse shows Turn Summoned's rank-2 estimate for a class outside the active 3 slots, not a bare '?'")
+    print("PASS: Browse shows Turn Summoned's rank-3 estimate for a class outside the active 3 slots, not a bare '?'")
 
     page.fill("#globalSearch", "")
     page.click("#browseToggle")
 
-    # --- Progression tab: buy Turn Summoned up through the guessed rank 2
+    # --- Progression tab: buy Turn Summoned up through the guessed rank 3
     # and confirm the per-step cost pill shows the estimate (not '0'), the
     # running total blends it in like the topbar, and the next-rank preview
     # also shows the estimate + confidence chip. Turn Summoned is a
@@ -66,36 +68,36 @@ with sync_playwright() as p:
     page.click('button[data-tab="classSlot0"]')
     am = page.locator(".node", has=page.locator(".name", has_text="Turn Summoned"))
     am.click()
-    for _ in range(2):
+    for _ in range(3):
         page.click("#incBtn")
         page.wait_for_timeout(20)
 
     page.click('button[data-tab="progression"]')
     page.wait_for_timeout(100)
-    row2 = page.locator(".progression-row").nth(1)
-    cost_this = row2.locator(".cost-this")
-    print("Progression row2 cost-this:", cost_this.inner_text(), cost_this.get_attribute("class"))
-    assert cost_this.inner_text().strip() == "+~6 pt(s)"
-    cls2 = cost_this.get_attribute("class")
-    assert "is-estimate" in cls2 and "tier-high" in cls2
+    row3 = page.locator(".progression-row").nth(2)
+    cost_this = row3.locator(".cost-this")
+    print("Progression row3 cost-this:", cost_this.inner_text(), cost_this.get_attribute("class"))
+    assert cost_this.inner_text().strip() == "+~9 pt(s)"
+    cls3 = cost_this.get_attribute("class")
+    assert "is-estimate" in cls3 and "tier-high" in cls3
     # Class alone isn't proof of anything on screen - .step-cost .cost-this
     # and the generic .is-estimate.tier-* rule are equal CSS specificity, so
     # without an explicit compound override the red "spent" color silently
     # wins on source order even though the class list is completely correct.
     # Check the actually-rendered color, not just the class attribute.
-    color2 = cost_this.evaluate("el => getComputedStyle(el).color")
-    print("Progression row2 cost-this computed color:", color2)
-    assert color2 == "rgb(90, 169, 230)", f"FAIL: guessed step still rendering in the real 'spent' red, got {color2}"
+    color3 = cost_this.evaluate("el => getComputedStyle(el).color")
+    print("Progression row3 cost-this computed color:", color3)
+    assert color3 == "rgb(90, 169, 230)", f"FAIL: guessed step still rendering in the real 'spent' red, got {color3}"
     print("PASS: the guessed step's cost pill actually renders in its tier color, not red")
-    cost_total = row2.locator(".cost-total")
-    print("Progression row2 cost-total (blends the guess in, like the topbar):", cost_total.inner_text(), cost_total.get_attribute("title"))
-    assert cost_total.inner_text().strip() == "~9 total", "FAIL: expected the running total to blend real 3 + guessed 6"
+    cost_total = row3.locator(".cost-total")
+    print("Progression row3 cost-total (blends the guess in, like the topbar):", cost_total.inner_text(), cost_total.get_attribute("title"))
+    assert cost_total.inner_text().strip() == "~18 total", "FAIL: expected the running total to blend real 9 + guessed 9"
     assert "is-estimate" in cost_total.get_attribute("class")
-    assert cost_total.get_attribute("title") == "3 confirmed + 6 estimated."
+    assert cost_total.get_attribute("title") == "9 confirmed + 9 estimated."
     print("PASS: Progression's per-step pill shows the estimate, and the running total blends it in the same way the topbar does")
 
-    # --- A real, fully-known step (rank 1, cost 3) must NOT get estimate
-    # styling on its cost pill. ---
+    # --- Real, fully-known steps (ranks 1-2, costs 3/6) must NOT get
+    # estimate styling on their cost pills. ---
     row1 = page.locator(".progression-row").nth(0)
     cost_this1 = row1.locator(".cost-this")
     print("Progression row1 cost-this (real cost):", cost_this1.inner_text(), cost_this1.get_attribute("class"))

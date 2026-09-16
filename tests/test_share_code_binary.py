@@ -312,7 +312,7 @@ with sync_playwright() as p:
     n = pg.locator(".progression-row").count()
     pg.close()
     print("v4 link still decodes, Progression rows:", n)
-    assert n == 183, f"FAIL: the pinned v4 build should still load its 183 rows, got {n}"
+    assert n == 180, f"FAIL: the pinned v4 build should still load its 180 rows, got {n}"
     print("PASS: v4 share links keep working unchanged")
 
     print("ERRORS:", errors)

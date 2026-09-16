@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # A real, in-use build shared by the app's own user (Paladin/Enchanter/Druid,
-# 183 total picks, with Bard/Monk/Rogue/Shaman/Wizard history from before
+# 180 total picks, with Bard/Monk/Rogue/Shaman/Wizard history from before
 # those classes were swapped out) - a scale/realism check the smaller
 # synthetic fixtures in test_other_classes.py and test_progression_move_to.py
 # don't cover: a genuinely large purchaseOrder, several ranks deep on some
@@ -17,7 +17,7 @@
 # rework only when it buys new coverage like that, not just to track
 # current progress; see the commit that did this swap for the reasoning.
 #
-# Pinned to this build's exact numbers (183 rows, 28 inactive, "537 / 748"
+# Pinned to this build's exact numbers (180 rows, 28 inactive, "527 / 738"
 # spent) the same way test_effect_guess.py etc. are pinned to specific live
 # AAs - see tests/README.md's note on that. A future wiki scrape that
 # resolves one of this build's unconfirmed costs, changes an AA's rank
@@ -27,7 +27,10 @@
 # "disabled rank" mechanic away, trimming this build's own deep-owned Bard
 # picks down to the new lower rank caps - 8 fewer rows, all from Bard's
 # inactive count - and confirming its one remaining guessed cost, dropping
-# the "~" from the spent total.)
+# the "~" from the spent total. Shifted again when Master of All went from
+# 4 ranks at 5 points each to 1 rank at 10 - this build had it maxed
+# (active, Enchanter/Druid both eligible), so 3 fewer rows and 10 fewer
+# points, all from the active portion this time.)
 #
 # This is the widest-coverage test in the suite and, because of the above,
 # also the most likely to fail for a reason that isn't a code regression -
@@ -68,7 +71,7 @@ with sync_playwright() as p:
     rows = page.locator(".progression-row")
     row_count = rows.count()
     print("Progression row count:", row_count)
-    assert row_count == 183, \
+    assert row_count == 180, \
         "FAIL: check for a wiki rename/removal/rank-count change affecting one of this build's AAs before assuming a code regression - see this file's header comment"
 
     inactive_rows = page.locator(".progression-row.inactive")
@@ -98,7 +101,7 @@ with sync_playwright() as p:
     opacity_sample = inactive_rows.first.evaluate("el => getComputedStyle(el).opacity")
     print("sample inactive row opacity (should be full, not dimmed):", opacity_sample)
     assert opacity_sample == "1"
-    print("PASS: every one of the 183 picks renders, inactive ones muted-free but read-only with a warning icon")
+    print("PASS: every one of the 180 picks renders, inactive ones muted-free but read-only with a warning icon")
 
     # --- Other Classes: the same 13 inactive picks (Bard/Monk/Rogue/Shaman/
     # Wizard), grouped. ---
