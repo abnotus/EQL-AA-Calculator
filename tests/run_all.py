@@ -19,6 +19,7 @@ Not wired into CI (see the project's own notes on why, for now) - this is
 purely the manual-run convenience the review that prompted it asked for.
 """
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -33,15 +34,40 @@ PER_TEST_TIMEOUT_SECONDS = 90
 SERVER_READY_TIMEOUT_SECONDS = 10
 
 
+def port_is_taken():
+    # A successful connect means SOMETHING is already listening there -
+    # distinct from "our own server, just not ready yet" (that's a refused
+    # connection, not an accepted one). Checked before spawning our own
+    # server specifically so a pre-existing occupant (a leftover process,
+    # a stale checkout's own server, anything) is caught as a loud failure
+    # up front, rather than the readiness poll below mistaking its answer
+    # for proof our subprocess is the one serving.
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(("127.0.0.1", int(PORT))) == 0
+
+
 def start_server():
+    if port_is_taken():
+        raise RuntimeError(
+            f"port {PORT} is already in use by something else - stop it first, "
+            f"or set AACALC_TEST_PORT to a different port and retry. Proceeding "
+            f"anyway would risk testing whatever's already answering there "
+            f"instead of this checkout's own build."
+        )
     proc = subprocess.Popen(
         [sys.executable, "-m", "http.server", PORT],
         cwd=str(REPO_ROOT),
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
     )
     deadline = time.time() + SERVER_READY_TIMEOUT_SECONDS
     while time.time() < deadline:
+        # Checked ahead of the HTTP probe on every iteration - if the
+        # subprocess has already exited, no HTTP response that follows can
+        # possibly be coming from it, no matter what it looks like.
+        if proc.poll() is not None:
+            stderr = proc.stderr.read().decode("utf-8", "replace") if proc.stderr else ""
+            raise RuntimeError(f"local test server process exited immediately (exit {proc.returncode}):\n{stderr}")
         try:
             urllib.request.urlopen(BASE_URL, timeout=1)
             return proc
