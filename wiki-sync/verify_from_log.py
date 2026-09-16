@@ -114,6 +114,17 @@ def main():
     for i, line in unparsed:
         print(f"  UNPARSED line {i}: {line}")
 
+    # "No mismatches" and "verified nothing" must never look the same on
+    # exit code - if every "at a cost of" line in the log failed to match
+    # either regex (e.g. the log's own message wording changed), events
+    # ends up empty and every count below is trivially zero, which would
+    # otherwise report success without having actually checked anything.
+    if unparsed and not events:
+        print("\nINCONCLUSIVE: cost-related lines were found but none could be parsed - "
+              "the log's message format may have changed. GAIN_RE/IMPROVE_RE need updating "
+              "before this run's silence can be trusted as a real all-clear.")
+        return 2
+
     latest = {}
     for line_no, name, rank, cost in events:
         latest[(name, rank)] = (line_no, cost)
