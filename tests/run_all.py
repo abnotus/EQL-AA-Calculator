@@ -22,6 +22,7 @@ import os
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.request
 from pathlib import Path
@@ -54,27 +55,55 @@ def start_server():
             f"anyway would risk testing whatever's already answering there "
             f"instead of this checkout's own build."
         )
+    # http.server logs every request it handles to stderr, for as long as
+    # it runs - not just at startup. stderr=subprocess.PIPE with nothing
+    # ever draining it (an earlier version of this function did exactly
+    # that, to capture a startup crash) fills the pipe's fixed OS buffer
+    # after enough requests; once full, the single-threaded server blocks
+    # on its own next log write and stops answering, which looks exactly
+    # like a hung/crashed server from the outside. A real file has no such
+    # backpressure - the OS just keeps appending - so this redirects there
+    # instead, for the server's entire lifetime, and only ever reads the
+    # file back on an actual startup failure (main() deletes it afterward
+    # either way).
+    log_file = tempfile.NamedTemporaryFile(prefix="aacalc_test_server_", suffix=".log", delete=False)
+    log_path = log_file.name
     proc = subprocess.Popen(
         [sys.executable, "-m", "http.server", PORT],
         cwd=str(REPO_ROOT),
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
+        stderr=log_file,
     )
+    # The child's own handle to the file (duplicated at process-creation
+    # time) is independent of this one - closing the parent's copy here
+    # doesn't affect the child's ability to keep writing to it.
+    log_file.close()
+
+    def fail_startup(message):
+        try:
+            log_text = Path(log_path).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            log_text = "(couldn't read server log)"
+        try:
+            os.unlink(log_path)
+        except OSError:
+            pass
+        raise RuntimeError(f"{message}\nserver log:\n{log_text}")
+
     deadline = time.time() + SERVER_READY_TIMEOUT_SECONDS
     while time.time() < deadline:
         # Checked ahead of the HTTP probe on every iteration - if the
         # subprocess has already exited, no HTTP response that follows can
         # possibly be coming from it, no matter what it looks like.
         if proc.poll() is not None:
-            stderr = proc.stderr.read().decode("utf-8", "replace") if proc.stderr else ""
-            raise RuntimeError(f"local test server process exited immediately (exit {proc.returncode}):\n{stderr}")
+            fail_startup(f"local test server process exited immediately (exit {proc.returncode})")
         try:
             urllib.request.urlopen(BASE_URL, timeout=1)
-            return proc
+            return proc, log_path
         except Exception:
             time.sleep(0.2)
     proc.terminate()
-    raise RuntimeError(f"local test server never became ready on port {PORT}")
+    fail_startup(f"local test server never became ready on port {PORT}")
 
 
 def run_one(test_path):
@@ -104,7 +133,7 @@ def main():
         return 1
 
     print(f"Discovered {len(test_files)} test file(s). Starting local server on port {PORT}...")
-    server = start_server()
+    server, log_path = start_server()
     try:
         results = []
         for i, path in enumerate(test_files, 1):
@@ -126,6 +155,10 @@ def main():
             server.wait(timeout=5)
         except subprocess.TimeoutExpired:
             server.kill()
+        try:
+            os.unlink(log_path)
+        except OSError:
+            pass
 
 
 def summarize(results):
