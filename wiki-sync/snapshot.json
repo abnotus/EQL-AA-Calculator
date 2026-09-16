@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 178059,
+  "revid": 178335,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -419,7 +419,7 @@
       "costs": [
         "5"
       ],
-      "description": "Ability Activation ID: 80 - Refresh Time: 0:00:07 - Ability Timer(s): 2. This ability, when activated, grants you standard invisibility for up to 20 minutes. Requirements: Level 40."
+      "description": "Ability Activation ID: 80 - Refresh Time: 0:00:07 - Ability Timer(s): 2. This ability, when activated, grants you standard invisibility for up to 20 minutes. Requirements: Level 40.<br>\nCan wear off in under 20 minutes, but is instant-cast and has only a 7-second cooldown."
     },
     "archetype::Innate Invis to Undead::0": {
       "ranks": "1",
@@ -443,11 +443,11 @@
       "description": "Ability Activation ID: 35 - Refresh Time: 1:12:00 - Ability Timer(s): 1. This ability, when activated, doubles the mana cost of your next spell or ability that can be affected by the Mass Group Buff and causes it to land on all allies within the spell's radius. Requirements: Level 50."
     },
     "archetype::Master of All::0": {
-      "ranks": "4",
+      "ranks": "1",
       "costs": [
-        "5"
+        "10"
       ],
-      "description": "This passive ability allows you to you gain a second specialization. Specialized schools of magic benefit from a from a reduction in mana cost and fizzle chance. After acquiring this ability, the next specialization to go over its current cap becomes your second specialization. Requirements: Level 20."
+      "description": "This passive ability allows you to increase all your specializations. Specialized schools of magic benefit from a reduction in mana cost and fizzle chance. Requirements: Level 20."
     },
     "archetype::Mastery of the Past::0": {
       "ranks": "3",
@@ -810,10 +810,10 @@
       "ranks": "3",
       "costs": [
         "3",
-        "?",
+        "6",
         "?"
       ],
-      "description": "Ability Activation ID: 559 - Refresh Time: 0:05:00 - Ability Timer(s): 5. Turn Summoned I, when activated, deals 400 damage to your elemental target and has a 5% chance to trigger Infusion of Elemental Light I which critically deals 32000 damage. Requirements: Level 45. Rank 2 requires level 59 so not reachable for now."
+      "description": "Ability Activation ID: 559 - Refresh Time: 0:05:00 - Ability Timer(s): 5. Turn Summoned I, when activated, deals 400/800/? damage to your elemental target and has a 5% chance to trigger Infusion of Elemental Light I which critically deals 32000 damage. Requirements: Level 45. Rank 2 requires level 59 so not reachable for now."
     },
     "class:Magician::Unbound Companion::0": {
       "ranks": "3",

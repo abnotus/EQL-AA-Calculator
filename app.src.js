@@ -174,7 +174,7 @@ const AA_ID_TABLE = {
 // string is exactly "?". A guess never substitutes for a real cost in
 // spentPoints()/affordability math anywhere - purely a display hint.
 const COST_GUESS_TABLE = {
-  "class:Magician:turn-summoned": { "1": { value: 6, confidence: "high", basedOn: ["Acrobatics", "Alchemy Mastery", "Burst of Power", "Critical Affliction", "Double Riposte", "Healing Boon", "Improved Mend", "Instrument Mastery", "Jam Fest", "Quick Damage", "Quick Evacuation", "Rapid Feign", "Singing Mastery", "Slay Undead", "Soul Abrasion", "Weapon Mastery of the Scout"] }, "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Alchemy Mastery", "Burst of Power", "Critical Affliction", "Double Riposte", "Healing Boon", "Improved Mend", "Instrument Mastery", "Jam Fest", "Quick Damage", "Quick Evacuation", "Rapid Feign", "Singing Mastery", "Slay Undead", "Soul Abrasion", "Weapon Mastery of the Scout"] } }
+  "class:Magician:turn-summoned": { "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Alchemy Mastery", "Burst of Power", "Critical Affliction", "Double Riposte", "Healing Boon", "Improved Mend", "Instrument Mastery", "Jam Fest", "Quick Damage", "Quick Evacuation", "Rapid Feign", "Singing Mastery", "Slay Undead", "Soul Abrasion", "Weapon Mastery of the Scout"] } }
 };
 
 // Pattern-inferred estimates for the numeric values inside AA effect
