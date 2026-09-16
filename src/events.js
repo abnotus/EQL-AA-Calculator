@@ -23,6 +23,13 @@ export function wireEvents() {
   // Another tab's own save/rename/delete writes BUILDS_INDEX_KEY directly;
   // this only fires here (never in the tab that made the write), so it's
   // exactly the signal this tab's own cachedIndex needs to know it's stale.
+  // Fixes the case where that other write happened arbitrarily long ago -
+  // without this, this tab's cache would never learn about it no matter
+  // how much later its own next save lands. Doesn't provide true mutual
+  // exclusion: two tabs saving within the same short window, before either
+  // one's event has been delivered, can still race and clobber each
+  // other - this only closes the "permanently stale, event never checked"
+  // gap, not every concurrent-write ordering.
   window.addEventListener("storage", (e) => {
     if (e.key === BUILDS_INDEX_KEY) dropCachedIndex();
   });

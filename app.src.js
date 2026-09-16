@@ -1028,6 +1028,15 @@ function sanitizeWaypoints(list) {
     .slice(0, MAX_WAYPOINTS);
 }
 
+// Still swallows its own write failure silently, unlike saveBuildAs's
+// named-save path (builds.js) - deliberately out of scope there, not an
+// oversight: this is the always-on autosave, called from nearly every
+// state-changing action in the app, with no discrete "did this specific
+// action succeed" moment a toast could attach to the way Save As has one.
+// Surfacing every failed autosave would mean a toast on almost every
+// click while storage is full/unavailable. Broader persistence-failure
+// visibility (this, saveOwned below, and the owned-tracking Link/Merge/
+// Split primitives further down) remains an open, separate piece of work.
 function saveLocal() {
   try {
     const payload = {
@@ -5797,6 +5806,13 @@ function wireEvents() {
   // Another tab's own save/rename/delete writes BUILDS_INDEX_KEY directly;
   // this only fires here (never in the tab that made the write), so it's
   // exactly the signal this tab's own cachedIndex needs to know it's stale.
+  // Fixes the case where that other write happened arbitrarily long ago -
+  // without this, this tab's cache would never learn about it no matter
+  // how much later its own next save lands. Doesn't provide true mutual
+  // exclusion: two tabs saving within the same short window, before either
+  // one's event has been delivered, can still race and clobber each
+  // other - this only closes the "permanently stale, event never checked"
+  // gap, not every concurrent-write ordering.
   window.addEventListener("storage", (e) => {
     if (e.key === BUILDS_INDEX_KEY) dropCachedIndex();
   });

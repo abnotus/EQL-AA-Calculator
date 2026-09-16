@@ -1,12 +1,23 @@
 # -*- coding: utf-8 -*-
 # cachedIndex (builds.js) only stayed in sync with THIS tab's own writes.
-# Two tabs of the app each saving a different build could have the second
-# tab's save silently clobber the first tab's addition, since the second
-# tab's own (stale) cachedIndex never learned about the first tab's write
-# before building the array it saves back. Fixed by listening for the
-# "storage" event (which only ever fires in OTHER tabs) and dropping
-# cachedIndex so the next read picks up the fresh value instead of
-# overwriting it.
+# Before this fix, a tab that had cached the index once would never learn
+# about another tab's save no matter how much later it happened - even
+# minutes afterward, its next save would still clobber the other tab's
+# addition. Fixed by listening for the "storage" event (which only ever
+# fires in OTHER tabs) and dropping cachedIndex so the next read picks up
+# the fresh value instead of overwriting it.
+#
+# What this does NOT fix: two tabs saving within the same short window,
+# before either one's "storage" event has been delivered, can still race
+# and clobber each other - the event only invalidates the cache once it
+# arrives, which is asynchronous and not instantaneous. This test proves
+# event-driven invalidation itself works (dispatch the event, then confirm
+# a subsequent save doesn't overwrite what it announced), not that true
+# concurrent writes are now impossible - that would need real cross-tab
+# mutual exclusion (e.g. the Web Locks API), which this doesn't attempt.
+# The permanently-stale-cache bug above is fixed; the inherent last-write-
+# wins race for genuinely simultaneous writes is a smaller, separate,
+# still-open gap.
 #
 # Playwright runs everything in one tab, so this simulates a second tab's
 # write directly (bypassing the app's own JS, the way an actual other tab's

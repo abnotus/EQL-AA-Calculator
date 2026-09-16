@@ -365,6 +365,15 @@ export function sanitizeWaypoints(list) {
     .slice(0, MAX_WAYPOINTS);
 }
 
+// Still swallows its own write failure silently, unlike saveBuildAs's
+// named-save path (builds.js) - deliberately out of scope there, not an
+// oversight: this is the always-on autosave, called from nearly every
+// state-changing action in the app, with no discrete "did this specific
+// action succeed" moment a toast could attach to the way Save As has one.
+// Surfacing every failed autosave would mean a toast on almost every
+// click while storage is full/unavailable. Broader persistence-failure
+// visibility (this, saveOwned below, and the owned-tracking Link/Merge/
+// Split primitives further down) remains an open, separate piece of work.
 export function saveLocal() {
   try {
     const payload = {
