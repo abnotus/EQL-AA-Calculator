@@ -123,193 +123,193 @@ than clicking through the UI to build it up live — faster, and pins the
 exact scenario being tested instead of leaving it implicit in a sequence of
 clicks.
 
-Several of these tests are pinned to specific live AAs as their guessed-value
-examples (`test_effect_guess.py`'s Quick Evacuation,
-`test_cost_guess.py`'s Combat Fury and Turn Summoned,
-`test_guess_all_tabs.py`'s Cannibalization and Turn Summoned,
-`test_estimated_total.py`'s Combat Agility and Turn Summoned) —
-a future wiki scrape confirming one of those specific ranks will break that
-test, same as it's already happened repeatedly (Adamant Will, Combat
-Stability, Combat Fury's effect value, Packrat's entire cost/effect
-progression, Alchemy Mastery, Baking Mastery, Conjurer's Efficiency, First
-Aid, Unbound Boon, and most recently Thief's Intuition and Wizard's Quick
-Evacuation - Reaching Notes among them turned out to alternate real/free
-ranks on confirmation, the same formula Symphonic Aura uses, not truly
-unknown - all resolved to real data and had to be swapped out for a
-still-live example over the course of this project). Turn Summoned is
-currently the only AA left anywhere in the dataset with a real cost still
-unconfirmed, so a couple of these tests lost their second, differently-
-scoped example when Quick Evacuation resolved and now lean on Turn Summoned
-alone. Regenerate `costGuesses.js`/`effectGuesses.js` first, then pick a
-fresh example from whichever guess table still has one - see the affected
-test's own comments for how the swap played out last time.
+## Tests pinned to live data
 
-`test_manual_guess.py` is the one exception: as of this writing there is no
-live AA with a manual (curator-judgment, very-low confidence) *cost* guess
-at all - every `MANUAL_GUESSES` entry that used to apply has since been
-confirmed by the wiki, and the one AA still carrying an unguessed cost
-(Turn Summoned) already has its own real, high-confidence algorithmic guess.
-Rather than invent a `MANUAL_GUESSES` entry with no real justification just
-to have a live example, that test intercepts the `app.js` request and serves
-`app.src.js` (unminified, so `COST_GUESS_TABLE`'s name survives - real
-`app.js` has it mangled by esbuild) with Turn Summoned's real table entry
-replaced outright by a synthetic one - a plain string-prepend isn't enough
-here (unlike when this test used Thief's Intuition, which had no real entry
-to collide with), since Turn Summoned's own real entry declared later in the
-same object literal would just win over a prepended duplicate key. If a real
-manual cost guess ever reappears, prefer swapping back to it over keeping
-the synthetic one.
+Several tests use specific live AAs as their guessed-value examples:
+`test_effect_guess.py`'s Quick Evacuation, `test_cost_guess.py`'s Combat Fury
+and Turn Summoned, `test_guess_all_tabs.py`'s Cannibalization and Turn
+Summoned, and `test_estimated_total.py`'s Combat Agility and Turn Summoned.
+A wiki scrape that confirms one of those specific ranks breaks that test.
+When that happens, regenerate `costGuesses.js`/`effectGuesses.js`, pick a
+fresh example from whichever guess table still has one, and swap it in; the
+affected test's own comments describe how the last swap went. Turn Summoned
+is currently the only AA left in the dataset with a real cost still
+unconfirmed, so a couple of these tests lean on it alone.
 
-`test_effect_guess.py`'s Quick Evacuation is Druid's copy - real confirmed
-costs but an unconfirmed effect percentage - which now resolves to a
+`test_manual_guess.py` is the exception: there is currently no live AA with a
+manual (curator-judgment, very-low confidence) *cost* guess, and the one AA
+still carrying an unguessed cost (Turn Summoned) already has its own real,
+high-confidence algorithmic guess. Rather than invent a `MANUAL_GUESSES`
+entry with no real justification, that test intercepts the `app.js` request
+and serves `app.src.js` (unminified, so `COST_GUESS_TABLE`'s name survives;
+real `app.js` has it mangled by esbuild) with Turn Summoned's real table
+entry replaced outright by a synthetic one. A plain string-prepend isn't
+enough, since Turn Summoned's own entry declared later in the same object
+literal would win over a prepended duplicate key. If a real manual cost guess
+ever reappears, prefer swapping back to it over keeping the synthetic one.
+
+`test_effect_guess.py`'s Quick Evacuation is Druid's copy: real confirmed
+costs but an unconfirmed effect percentage, which resolves to a
 medium-confidence guess sibling-matched against Wizard's own (confirmed)
-Quick Evacuation, rather than the manual very-low guess it carried before
-Wizard's numbers were confirmed. Should every effect guess ever drop back to
-manual-only, this test would go back to pinning rendering rather than a
-particular tier; the sibling-matching and interpolation rules themselves are
-covered data-independently by `test_guess_effects.py`. When picking its next
-example, prefer an AA a player actually spends points on - Banestrike is the
+Quick Evacuation. Should every effect guess ever drop back to manual-only,
+this test would go back to pinning rendering rather than a particular tier;
+the sibling-matching and interpolation rules themselves are covered
+data-independently by `test_guess_effects.py`. When picking its next
+example, prefer an AA a player actually spends points on. Banestrike is the
 only other AA with a guessed effect value, but it is free and unlocked by
 Slayer achievements, so a test driving it with `#incBtn` would be buying a
 rank that cannot be bought in game.
 
-The cost-guess table has likewise run out of medium-confidence entries;
-what is left is either high-confidence or manual very-low, so
-`test_guess_all_tabs.py` pins those two tiers only.
+The cost-guess table has run out of medium-confidence entries; what is left
+is either high-confidence or manual very-low, so `test_guess_all_tabs.py`
+pins those two tiers only.
 
-`test_real_world_build.py` is pinned the same way, but to a whole real
-share link (a live user's actual Paladin/Enchanter/Druid build) rather than
-one AA - a wiki change affecting any of its 180 picks would shift its exact
-row/point-total assertions and need a fresh share link swapped in (already
-happened once - see the file's own header comment for when a refresh is
-actually worth the rework, vs. just leaving it be). The same build also
-shows up as a lighter-weight fixture in `test_guess_all_tabs.py` (one
-inactive-class row) and `test_progression_autoscroll.py` (reused purely
-for its row count).
+`test_real_world_build.py` is pinned to a whole real share link (a live
+user's actual Paladin/Enchanter/Druid build) rather than one AA. A wiki
+change affecting any of its 180 picks would shift its exact row and
+point-total assertions and need a fresh share link swapped in; the file's own
+header comment says when a refresh is worth the rework versus leaving it be.
+The same build also shows up as a lighter-weight fixture in
+`test_guess_all_tabs.py` (one inactive-class row) and
+`test_progression_autoscroll.py` (reused purely for its row count).
 
-None of these are wired into CI yet - deferred deliberately, not an
-oversight: `run_all.py` above needs to actually be the established way
-this project runs its tests first, and Chrome (not Playwright's own
-bundled browser) needs installing in whatever runs it, since every browser
-test launches with `channel="chrome"` on purpose. Revisit once the runner
-is established and the manual discipline it's meant to replace starts
-costing more than automating it would - a lighter first step, if that day
-comes, would be CI over just the 3 data-independent tests plus
-`build_minify.py`'s own prereq/id invariant checks, none of which need a
-browser at all, before taking on the full Playwright suite. Run them by
-hand after a change that touches either guessing feature
-(`wiki-sync/guess_costs.py` or
-`wiki-sync/guess_effects.py`, their consumers in `src/keys.js`/
-`src/logic.js`/`src/render.js`, the disclaimer banner, the topbar, or
-Progression's own blended running total / the plain-text export mirroring
-it), class-rank-cap logic (`classRankCapFor`, `structuralLockReason`,
-`heldRankInvalidReason`, `effectiveDisplayRank`, `computeProgressionSteps`'s
-`classCapWarn` - `test_class_rank_cap.py`), Archetype class-eligibility
-gating (`isClassEligible`, its own branches in `structuralLockReason`
-(`kind: "classEligibility"`)/`heldRankInvalidReason`/
-`computeProgressionSteps`'s `classEligibilityWarn`, the tree's
-`.locked-classlock`/`.costtag.classlock-tag`, or Browse's `.eligible-info`
-line in `renderBrowse` - `test_archetype_class_eligibility.py`;
-`data.src.js`'s `eligibleClasses` field itself is a hand-compiled,
-not-yet-in-game-confirmed dataset, so a mismatch there is a data fix, not
-a logic bug), Progression's drag-to-reorder
-auto-scroll (`updateAutoScroll`, `autoScrollStep`, `stopAutoScroll`, or any
-of the drop handlers wired in `renderProgression`/`wireProgressionDropZone` -
-`test_progression_autoscroll.py`), hiding AAs (`isHidden`/`isHiddenScoped`,
-`setHidden`/`setHiddenScoped`, `hasAnyHidden`, the filtering in
-`renderTree`/`renderBrowse`, or `HIDDEN_STORAGE_KEY`/`loadAndApplyHidden`/
-`saveHidden` - `test_hidden_aas.py`), or a class swap's now-persistent data
-(`spentPoints`/`estimatedExtraPoints`/`ownedPoints`'s lifetime scope,
-`spentForClass`/`spentOnInactiveClasses`, `effectiveRankScoped`,
-`otherClassesWithPicks`/`countOtherClassesPicked`, the `.inactive`
-muted/read-only row treatment `renderProgression` now gives a swapped-out
-class's picks instead of hiding them, or `renderOtherClasses`/
-`renderSummary`'s shared `otherClassesSectionsHtml` helper -
-`test_other_classes.py`, `test_owned_inactive_classes.py`, and
-`test_real_world_build.py` for a large-scale real-build sanity check on the
-same behavior), per-build owned-tracking profiles
-(`ownedStorageKeyFor`, `state.ownedProfileId`, `linkOwnedProfile`/
-`splitOwnedProfile`/`mergeOwnedProfileInto`/`adoptImportedOwnedAsNewProfile`
-in `state.js`; `saveBuildAs`/`loadBuild`'s profile handling,
-`migrateLegacyOwnedProfile`/`migrateStaleBuildSlots`'s backfill,
-`linkOwnedToBuild`/`mergeOwnedFromBuild`/`splitOwnedFromCurrent`, or
-`cleanupOrphanedOwnedProfiles` in `builds.js`; `listOwnedProfileIds`/
-`removeOwnedProfile` in `state.js`; the Manage Owned Tracking modal in
-`render.js` - split across `test_owned_legacy_migration.py` for the
-backward-compatibility/migration side, `test_owned_profiles.py` for
-new-build independence, Link/Merge/Split, and silent-import-profile-
-creation, and `test_owned_profile_cleanup.py` for the orphaned-profile
-sweep specifically), share-code encoding
-(`packV5`/`expandBinaryPayload`'s bit layout, the `bitWriter`/`bitReader`
-pair, `crc16`, `indexWidth`, `encodeBuildCode`/`decodeBuildCode`'s
-format-sniffing chain, `compress`/`decompress`, or
-`compactRanksFor`/`expandCompactRanks`, in `exportImport.js` - split
-across `test_share_code_binary.py` for the current v5 binary format and
-`test_share_code_compression.py` for every historical one still decoding.
-The v5 file's property test - randomized builds through the real
-export/import path - is the load-bearing one: a wrong bit width or a
-missed read shifts every field after it and can still yield values that
-are individually in-range, which the CRC cannot catch because the encoder
-checksums its own wrong output. Two narrower cases sit either side of it:
-a rank of 26 (Hunter's Attack Power, reachable only through an imported
-payload) pins `V5_BITS.rank` at 5, since the property test's own builds
-never exceed 10; and a flipped byte in a trailing waypoint label pins the
-CRC itself, being the one corruption that lands after every bit read
-completes and so slips past `bitReader`'s bounds check. A third pins the
-id bitmap's low boundary, where an empty build and one holding only id 0
-(Adamant Will) both store `hi = 0` and are told apart only by the bitmap
-being written as `hi + 1` bits unconditionally),
-`MAX_PURCHASE_ORDER`/
-`deserializePurchaseOrder` in `state.js` (`test_purchase_order_cap.py`),
-per-rank descriptions (`splitPerRankLines`/`markProgressions` and
-`highlightRankValue`'s branch between them in `logic.js`, or the
-`.rank-line`/`.is-current-rank` rules in `styles.src.css` -
-`test_per_rank_description.py`; an AA whose ranks each do something
-different is written as consecutive "Rank N: " clauses in `data.src.js`
-and rendered one line per rank, since a slash progression would line its
-slots up against the wrong ranks), rename-detection in
-`wiki-sync/assign_aa_ids.py` (`compute_vanished` -
-`test_assign_aa_ids.py`), or the Move To popover
-(`absoluteIndexForVisiblePosition`, `moveToVisiblePosition`,
-`waypointSections`'s fit-aware section-boundary math, `moveMenuHtml`, or
-`s.visiblePos`'s role in `computeProgressionSteps`/step-num display - now
-just `s.index + 1` for every row, active class or not, since nothing gets
-filtered out of Progression anymore - `test_progression_move_to.py`), or
-prereq/dependency resolution
-(`resolvePrereqTarget`/`resolvePrereqTargetScoped`, `isDependedOn`,
-`tryResolvePrereq` - `test_cross_class_prereq_dependency.py`), the saved-
-builds index cache (`cachedIndex`/`loadIndex`/`saveIndex` in `builds.js` -
-`test_builds_index_cache.py`; `saveIndex` is the only write path, and every
-caller besides `deleteBuild` mutates `loadIndex()`'s returned array in
-place before calling it, which already updates the cache by reference
-regardless of whether `saveIndex` itself reassigns `cachedIndex` - only
-`deleteBuild`'s freshly-`.filter()`'d array actually depends on that
-reassignment, so it's the one path worth testing), tree node selection
-delegation (`el.treeWrap`'s click/keydown listeners in `events.js`, which
-resolve a clicked node's category from `state.activeTab` rather than a
-per-node listener - `test_tree_click_delegation.py`; a wrong category would
-still pass on the General tab, since General is also `state.activeTab`
-there, so this specifically checks a non-default tab), or Progression's
-drag-hover warning cache (`dragWarnCacheToIndex`/`dragWouldIntroduceWarn` in
-`render.js`, reset at every `dragstart` since a new drag can revisit the
-same insertion point with a different answer - `test_progression_drag_warn_cache.py`),
-`saveBuildAs`'s own multi-write success reporting and `deleteBuild`'s
-failure-path consistency (`saveOwnedProfileTo`/`saveIndex` now returning
-whether their own write landed rather than swallowing a failure silently -
-a brand-new slot's seeded owned-profile write or the index write failing
-after the slot write itself already succeeded must still report the whole
-save as failed, not a false success; and a failed delete must not remove
-the slot's own data when the index write that was supposed to drop the
-reference didn't land, since that leaves a dangling reference behind
-instead of a safely-retryable no-op - `test_save_build_partial_failure.py`),
-or cross-tab
-`cachedIndex` invalidation (the `"storage"` listener in `events.js` that
-calls `dropCachedIndex` - `cachedIndex` only tracks this tab's own writes
-otherwise, so a save from another tab could get silently clobbered by a
-save made afterward in this one - `test_builds_cross_tab_sync.py`), or
-decodeBuildCode/decompress's size limits on a share/import code
-(`MAX_ENCODED_CODE_LENGTH`/`MAX_DECOMPRESSED_BYTES` in `exportImport.js` -
-an otherwise-valid build padded past either cap must still be rejected,
-proving the limit is what's catching it rather than some unrelated parse
-failure - `test_decompression_bomb.py`)
-before rebuilding and committing.
+## CI
+
+None of these are wired into CI yet, deliberately, not by oversight:
+`run_all.py` above needs to actually be the established way this project runs
+its tests first, and Chrome (not Playwright's own bundled browser) needs
+installing in whatever runs it, since every browser test launches with
+`channel="chrome"` on purpose. Revisit once the runner is established and the
+manual discipline it's meant to replace starts costing more than automating
+it would. A lighter first step, if that day comes, would be CI over just the
+3 data-independent tests plus `build_minify.py`'s own prereq/id invariant
+checks, none of which need a browser at all, before taking on the full
+Playwright suite.
+
+## When to run which
+
+Run these by hand after a change that touches the areas below, before
+rebuilding and committing.
+
+- **Guessing features.** `wiki-sync/guess_costs.py` or
+  `wiki-sync/guess_effects.py`, their consumers in `src/keys.js`,
+  `src/logic.js`, and `src/render.js`, the disclaimer banner, the topbar, or
+  Progression's blended running total and the plain-text export mirroring it.
+  Run the `test_*guess*.py` files, `test_disclaimer_banner.py`, and
+  `test_estimated_total.py`.
+- **Class rank caps.** `classRankCapFor`, `structuralLockReason`,
+  `heldRankInvalidReason`, `effectiveDisplayRank`, or
+  `computeProgressionSteps`'s `classCapWarn`.
+  `test_class_rank_cap.py`.
+- **Archetype class eligibility.** `isClassEligible`, its branches in
+  `structuralLockReason` (`kind: "classEligibility"`),
+  `heldRankInvalidReason`, and `computeProgressionSteps`'s
+  `classEligibilityWarn`, the tree's `.locked-classlock` and
+  `.costtag.classlock-tag`, or Browse's `.eligible-info` line in
+  `renderBrowse`. `test_archetype_class_eligibility.py`. `data.src.js`'s
+  `eligibleClasses` field is a hand-compiled, not-yet-in-game-confirmed
+  dataset, so a mismatch there is a data fix, not a logic bug.
+- **Progression drag-to-reorder auto-scroll.** `updateAutoScroll`,
+  `autoScrollStep`, `stopAutoScroll`, or any drop handler wired in
+  `renderProgression`/`wireProgressionDropZone`.
+  `test_progression_autoscroll.py`.
+- **Hiding AAs.** `isHidden`/`isHiddenScoped`, `setHidden`/`setHiddenScoped`,
+  `hasAnyHidden`, the filtering in `renderTree`/`renderBrowse`, or
+  `HIDDEN_STORAGE_KEY`/`loadAndApplyHidden`/`saveHidden`.
+  `test_hidden_aas.py`.
+- **A class swap's persistent data.** `spentPoints`/`estimatedExtraPoints`/
+  `ownedPoints`'s lifetime scope, `spentForClass`/`spentOnInactiveClasses`,
+  `effectiveRankScoped`, `otherClassesWithPicks`/`countOtherClassesPicked`,
+  the `.inactive` muted/read-only row treatment `renderProgression` gives a
+  swapped-out class's picks, or `renderOtherClasses`/`renderSummary`'s shared
+  `otherClassesSectionsHtml` helper. `test_other_classes.py` and
+  `test_owned_inactive_classes.py`, plus `test_real_world_build.py` for a
+  large-scale real-build sanity check on the same behavior.
+- **Per-build owned-tracking profiles.** `ownedStorageKeyFor`,
+  `state.ownedProfileId`, `linkOwnedProfile`/`splitOwnedProfile`/
+  `mergeOwnedProfileInto`/`adoptImportedOwnedAsNewProfile`,
+  `listOwnedProfileIds`/`removeOwnedProfile` (all in `state.js`),
+  `saveBuildAs`/`loadBuild`'s profile handling,
+  `migrateLegacyOwnedProfile`/`migrateStaleBuildSlots`'s backfill,
+  `linkOwnedToBuild`/`mergeOwnedFromBuild`/`splitOwnedFromCurrent`,
+  `cleanupOrphanedOwnedProfiles` (in `builds.js`), or the Manage Owned
+  Tracking modal in `render.js`. Split three ways:
+  `test_owned_legacy_migration.py` for backward compatibility and migration,
+  `test_owned_profiles.py` for new-build independence, Link/Merge/Split, and
+  silent profile creation on import, and `test_owned_profile_cleanup.py` for
+  the orphaned-profile sweep.
+- **Share-code encoding.** `packV5`/`expandBinaryPayload`'s bit layout, the
+  `bitWriter`/`bitReader` pair, `crc16`, `indexWidth`,
+  `encodeBuildCode`/`decodeBuildCode`'s format-sniffing chain,
+  `compress`/`decompress`, or `compactRanksFor`/`expandCompactRanks`, all in
+  `exportImport.js`. `test_share_code_binary.py` covers the current v5
+  binary format and `test_share_code_compression.py` covers every historical
+  one still decoding. The v5 file's property test (randomized builds through
+  the real export/import path) is the load-bearing one: a wrong bit width or
+  a missed read shifts every field after it and can still yield values that
+  are individually in-range, which the CRC cannot catch because the encoder
+  checksums its own wrong output. Three narrower cases sit alongside it:
+  - a rank of 26 (Hunter's Attack Power, reachable only through an imported
+    payload) pins `V5_BITS.rank` at 5, since the property test's own builds
+    never exceed 10;
+  - a flipped byte in a trailing waypoint label pins the CRC itself, being
+    the one corruption that lands after every bit read completes and so
+    slips past `bitReader`'s bounds check;
+  - the id bitmap's low boundary: an empty build and one holding only id 0
+    (Adamant Will) both store `hi = 0` and are told apart only by the bitmap
+    being written as `hi + 1` bits unconditionally.
+- **Purchase-order ceiling.** `MAX_PURCHASE_ORDER`/`deserializePurchaseOrder`
+  in `state.js`. `test_purchase_order_cap.py`.
+- **Per-rank descriptions.** `splitPerRankLines`/`markProgressions` and
+  `highlightRankValue`'s branch between them in `logic.js`, or the
+  `.rank-line`/`.is-current-rank` rules in `styles.src.css`.
+  `test_per_rank_description.py`. An AA whose ranks each do something
+  different is written as consecutive "Rank N: " clauses in `data.src.js` and
+  rendered one line per rank, since a slash progression would line its slots
+  up against the wrong ranks.
+- **AA id rename detection.** `compute_vanished` in
+  `wiki-sync/assign_aa_ids.py`. `test_assign_aa_ids.py`.
+- **Move To popover.** `absoluteIndexForVisiblePosition`,
+  `moveToVisiblePosition`, `waypointSections`'s fit-aware section-boundary
+  math, `moveMenuHtml`, or `s.visiblePos`'s role in
+  `computeProgressionSteps`/step-num display (now just `s.index + 1` for
+  every row, active class or not, since nothing gets filtered out of
+  Progression anymore). `test_progression_move_to.py`.
+- **Prerequisite and dependency resolution.** `resolvePrereqTarget`/
+  `resolvePrereqTargetScoped`, `isDependedOn`, `tryResolvePrereq`.
+  `test_cross_class_prereq_dependency.py`.
+- **Saved-builds index cache.** `cachedIndex`/`loadIndex`/`saveIndex` in
+  `builds.js`. `test_builds_index_cache.py`. `saveIndex` is the only write
+  path, and every caller besides `deleteBuild` mutates `loadIndex()`'s
+  returned array in place before calling it, which already updates the cache
+  by reference. Only `deleteBuild`'s freshly-`.filter()`'d array depends on
+  `saveIndex` reassigning `cachedIndex`, so that's the one path worth
+  testing.
+- **Tree node selection delegation.** `el.treeWrap`'s click/keydown
+  listeners in `events.js`, which resolve a clicked node's category from
+  `state.activeTab` rather than a per-node listener.
+  `test_tree_click_delegation.py`. A wrong category would still pass on the
+  General tab, since General is also `state.activeTab` there, so this
+  specifically checks a non-default tab.
+- **Progression's drag-hover warning cache.** `dragWarnCacheToIndex`/
+  `dragWouldIntroduceWarn` in `render.js`, reset at every `dragstart` since a
+  new drag can revisit the same insertion point with a different answer.
+  `test_progression_drag_warn_cache.py`.
+- **`saveBuildAs` and `deleteBuild` failure reporting.**
+  `saveOwnedProfileTo`/`saveIndex` return whether their own write landed
+  rather than swallowing a failure. A brand-new slot's seeded owned-profile
+  write or the index write failing after the slot write already succeeded
+  must still report the whole save as failed, not a false success. A failed
+  delete must not remove the slot's own data when the index write that was
+  supposed to drop the reference didn't land, since that leaves a dangling
+  reference instead of a safely retryable no-op.
+  `test_save_build_partial_failure.py`.
+- **Cross-tab index invalidation.** The `"storage"` listener in `events.js`
+  that calls `dropCachedIndex`. `cachedIndex` otherwise only tracks this
+  tab's own writes, so a save from another tab could get silently clobbered
+  by a save made afterward in this one. `test_builds_cross_tab_sync.py`.
+- **Size limits on a share/import code.** `MAX_ENCODED_CODE_LENGTH`/
+  `MAX_DECOMPRESSED_BYTES` in `exportImport.js`. An otherwise-valid build
+  padded past either cap must still be rejected, proving the limit is what's
+  catching it rather than some unrelated parse failure.
+  `test_decompression_bomb.py`.
