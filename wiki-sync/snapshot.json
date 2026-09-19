@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 178335,
+  "revid": 178871,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -1117,7 +1117,7 @@
       "costs": [
         "6"
       ],
-      "description": "This passive ability increases your hit point regeneration by 1% per 6 seconds. Requirements: Level 30."
+      "description": "This passive ability increases your hit point regeneration rate by 1% of your maximum health per 6 seconds. Requirements: Level 30."
     },
     "class:Wizard::Improved Familiar::0": {
       "ranks": "1",

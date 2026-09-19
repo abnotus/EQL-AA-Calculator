@@ -181,7 +181,7 @@ const AA_DATA = {
       { name: "Innate Fighters Tenacity", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Warrior the ability to go into a frenzy at low health, increasing critical strike chance, and permanently mitigate 5% of all incoming melee damage. Below 35% health, the warrior goes into a berserker frenzy, gaining increased chance to hit and turning critical attacks into crippling blows that deal increased damage and can stun the target. The warrior remains in this state until their health reaches 45%." },
       { name: "Unbound Wrath", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your melee critical hit damage by 10/20/30%. Rank 2 requires level 30, rank 3 requires level 50." },
       { name: "War Cry", ranks: 1, costs: ["3"], levelReq: "25", prereq: "Requires Fear Resistance at level 3", description: "Activated: grants all group members within 100 feet immunity to fear spells for 10 seconds. (Refresh 0:36:00)" },
-      { name: "Warrior's Endurance", ranks: 1, costs: ["6"], levelReq: "30", description: "Increases your hit point regeneration by 1% per 6 seconds." }
+      { name: "Warrior's Endurance", ranks: 1, costs: ["6"], levelReq: "30", description: "Increases your hit point regeneration rate by 1% of your maximum health per 6 seconds." }
     ],
     "Wizard": [
       { name: "Improved Familiar", ranks: 1, costs: ["6"], levelReq: "45", description: "Activated: summons your familiar, increasing critical direct damage spell damage by 3%, spell casting level by 9, your cold, disease, fire, magic, and poison resistances by 25 points each, mana regeneration by 6 points, max mana by 200 points, and grants see invisible." },
