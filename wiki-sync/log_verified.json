@@ -3,6 +3,10 @@
     "maxRankVerified": 4,
     "verifiedAt": "2026-09-17"
   },
+  "Baking Mastery": {
+    "maxRankVerified": 3,
+    "verifiedAt": "2026-09-21"
+  },
   "Chaotic Stab": {
     "maxRankVerified": 1,
     "verifiedAt": "2026-09-16"
@@ -47,13 +51,21 @@
     "maxRankVerified": 1,
     "verifiedAt": "2026-09-16"
   },
+  "Fear Resistance": {
+    "maxRankVerified": 4,
+    "verifiedAt": "2026-09-21"
+  },
   "Finishing Blow": {
     "maxRankVerified": 3,
     "verifiedAt": "2026-09-16"
   },
   "First Aid": {
-    "maxRankVerified": 3,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 5,
+    "verifiedAt": "2026-09-21"
+  },
+  "Flesh to Bone": {
+    "maxRankVerified": 1,
+    "verifiedAt": "2026-09-21"
   },
   "Foraging": {
     "maxRankVerified": 1,
@@ -151,6 +163,10 @@
     "maxRankVerified": 1,
     "verifiedAt": "2026-09-17"
   },
+  "Mass Group Buff": {
+    "maxRankVerified": 1,
+    "verifiedAt": "2026-09-21"
+  },
   "Master of All": {
     "maxRankVerified": 1,
     "verifiedAt": "2026-09-16"
@@ -224,8 +240,8 @@
     "verifiedAt": "2026-09-16"
   },
   "Unbound Boon": {
-    "maxRankVerified": 2,
-    "verifiedAt": "2026-09-17"
+    "maxRankVerified": 3,
+    "verifiedAt": "2026-09-21"
   },
   "Unbound Cascade": {
     "maxRankVerified": 3,
