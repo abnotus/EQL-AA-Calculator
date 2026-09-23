@@ -117,6 +117,13 @@ def fetch_page():
 
 
 def parse_table(block):
+    # The table ends at its closing "|}" - trailing section content after
+    # that (e.g. a "[[Category:...]]" tag) isn't a row and must not leak
+    # into the last row's cells.
+    close = block.find("\n|}")
+    if close != -1:
+        block = block[:close]
+
     rows = []
     for part in re.split(r"\n\|-\s*\n", block):
         part = part.strip()
@@ -126,12 +133,19 @@ def parse_table(block):
             l for l in part.split("\n")
             if not l.startswith("{|") and not l.startswith("|}") and not l.startswith("!")
         ]
-        part = "\n".join(lines).strip()
-        if not part:
-            continue
-        if part.startswith("|"):
-            part = part[1:]
-        cells = [c.strip() for c in part.split("||")]
+        # MediaWiki allows a row's cells either "||"-joined on one line, or
+        # each on its own "|"-prefixed line. A line that doesn't start with
+        # "|" is a wrapped continuation of the previous cell's text (e.g. a
+        # description after a mid-cell "<br>"), not a new cell.
+        cells = []
+        for l in lines:
+            l = l.strip()
+            if not l:
+                continue
+            if l.startswith("|"):
+                cells.extend(c.strip() for c in l[1:].split("||"))
+            elif cells:
+                cells[-1] = (cells[-1] + "\n" + l).strip()
         if len(cells) >= 4:
             rows.append(cells[:4])
     return rows
