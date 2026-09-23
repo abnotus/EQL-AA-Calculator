@@ -94,6 +94,7 @@ python tests/test_effect_guess.py
 python tests/test_build_slot_migration.py
 python tests/test_active_build_match.py
 python tests/test_class_rank_cap.py
+python tests/test_auto_grant_class_eligibility.py
 python tests/test_progression_autoscroll.py
 python tests/test_hidden_aas.py
 python tests/test_other_classes.py
