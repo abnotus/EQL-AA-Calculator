@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 179196,
+  "revid": 179197,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -292,6 +292,13 @@
         "6"
       ],
       "description": "This passive ability reduces the chance of failing Tailoring recipes by 10/25/50%. Requirements: Level 1."
+    },
+    "general::Widened Perception::0": {
+      "ranks": "1",
+      "costs": [
+        "12"
+      ],
+      "description": "This passive ability increases your number of loadout slots by 1. Requirements: Level 25"
     },
     "archetype::Acrobatics::0": {
       "ranks": "3",

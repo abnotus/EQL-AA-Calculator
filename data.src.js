@@ -38,7 +38,8 @@ const AA_DATA = {
     { name: "Quick Buff", ranks: 1, costs: ["5"], levelReq: "1", description: "Cast all currently memorized beneficial spells on all valid group and raid targets in range." },
     { name: "Steadfast Will", ranks: 8, costs: ["2","2","3","3","3","3","6","12"], levelReq: "1", classRankCap: { default: 6, byClass: { "Warrior": 8, "Paladin": 8, "Shadow Knight": 8, "Ranger": 7, "Monk": 7 } }, description: "Grants you a 15/30/50/60/70/80/90/100% chance to endure stunning melee attacks without being stunned. Only Warrior, Paladin, and Shadow Knight can train the full rank 8; Ranger and Monk can reach rank 7; every other class is capped at rank 6." },
     { name: "Stoicism", ranks: 5, costs: ["2","2","2","2","2"], levelReq: "1", description: "Reduces how far incoming melee attacks push you backward by 10/20/30/40/50%." },
-    { name: "Tailoring Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Tailoring recipes by 10/25/50%." }
+    { name: "Tailoring Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Tailoring recipes by 10/25/50%." },
+    { name: "Widened Perception", ranks: 1, costs: ["12"], levelReq: "25", description: "Increases your number of loadout slots by 1." }
   ],
 
   archetype: [
