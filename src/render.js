@@ -14,7 +14,7 @@ import {
   isHidden, isHiddenScoped, setHidden, setHiddenScoped, hasAnyHidden,
   isSuppressed, isSuppressedScoped,
   effectiveRankScoped, countOtherClassesPicked, otherClassesWithPicks, spentForClass,
-  ownedPoints, spentOnInactiveClasses, estimatedExtraOwnedPoints
+  ownedPoints, spentOnInactiveClasses, estimatedExtraOwnedPoints, isClassEligible
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
@@ -245,9 +245,10 @@ export function renderTree(catKey) {
     // isSuppressed (logic.js) for the rule itself.
     const hidden = isHidden(catKey, idx);
     if (isSuppressed(catKey, idx)) return;
-    const autoBelowLevel = aa.auto && rank < aa.ranks;
+    const autoIneligible = aa.auto && !isClassEligible(aa);
+    const autoBelowLevel = aa.auto && !autoIneligible && rank < aa.ranks;
     const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
-    const locked = !!lockReason || autoBelowLevel;
+    const locked = !!lockReason || autoBelowLevel || autoIneligible;
     const invalidReason = rank > 0 ? heldRankInvalidReason(catKey, idx) : null;
     // A held rank beyond the current class-cap (Steadfast Will owned at
     // rank 8, then swapped away from a qualifying class) still counts
@@ -262,15 +263,16 @@ export function renderTree(catKey) {
     node.setAttribute("role", "button");
     node.setAttribute("aria-label", `${aa.name}, rank ${rank} of ${aa.ranks}`);
     node.dataset.idx = String(idx);
-    if (aa.auto && !autoBelowLevel) node.classList.add("auto");
+    if (aa.auto && !autoBelowLevel && !autoIneligible) node.classList.add("auto");
     else if (!aa.auto && rank >= aa.ranks) node.classList.add("maxed");
     if (locked) node.classList.add("locked");
     if (lockReason && lockReason.kind === "prereq") node.classList.add("locked-prereq");
-    if (lockReason && lockReason.kind === "classEligibility") node.classList.add("locked-classlock");
+    if ((lockReason && lockReason.kind === "classEligibility") || autoIneligible) node.classList.add("locked-classlock");
     if (invalidReason) node.classList.add("invalidated");
     if (hidden) node.classList.add("hidden-aa");
     if (searching) node.classList.add(aaMatchesQuery(aa, query) ? "search-match" : "search-dim");
     if (invalidReason) node.title = invalidReason;
+    else if (autoIneligible) node.title = `Requires one of: ${aa.eligibleClasses.join(", ")}.`;
     else if (autoBelowLevel) node.title = `Automatically granted at level ${aa.levelReq} — no points needed.`;
     else if (lockReason) node.title = lockReason.text;
     else if (aa.auto) node.title = "Automatically granted — no AA points needed.";
@@ -284,7 +286,12 @@ export function renderTree(catKey) {
       <div class="rankbar"><div class="fill" style="width:${(Math.min(rank, classCap) / aa.ranks) * 100}%"></div>${capExceeded ? `<div class="fill-capped" style="width:${((rank - classCap) / aa.ranks) * 100}%"></div>` : ""}</div>
       <div class="ranktext">${rank} / ${aa.ranks}</div>
     `;
-    if (aa.auto && !autoBelowLevel) {
+    if (aa.auto && autoIneligible) {
+      const tag = document.createElement("div");
+      tag.className = "costtag classlock-tag";
+      tag.textContent = "CLASS";
+      node.appendChild(tag);
+    } else if (aa.auto && !autoBelowLevel) {
       const tag = document.createElement("div");
       tag.className = "costtag auto-tag";
       tag.textContent = "AUTO";
@@ -373,7 +380,9 @@ function renderSidePanel() {
   </div>`;
   if (aa.auto) {
     const levelReq = parseInt(aa.levelReq, 10) || 1;
-    if (state.charLevel < levelReq) {
+    if (!isClassEligible(aa)) {
+      html += `<div class="req-line warn">Requires one of: ${escapeHtml(aa.eligibleClasses.join(", "))}.</div>`;
+    } else if (state.charLevel < levelReq) {
       html += `<div class="req-line warn">Automatically granted at level ${levelReq} &mdash; not yet active at level ${state.charLevel}.</div>`;
     } else {
       html += `<div class="req-line">Automatically granted &mdash; no AA points required, always active once unlocked.</div>`;

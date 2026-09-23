@@ -60,7 +60,8 @@ an actual pending wiki rename to exercise it against.
 `test_real_world_build.py`, `test_archetype_class_eligibility.py`,
 `test_builds_index_cache.py`, `test_tree_click_delegation.py`,
 `test_progression_drag_warn_cache.py`, `test_save_build_partial_failure.py`,
-`test_builds_cross_tab_sync.py`, `test_decompression_bomb.py`
+`test_builds_cross_tab_sync.py`, `test_decompression_bomb.py`,
+`test_auto_grant_class_eligibility.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -209,6 +210,11 @@ rebuilding and committing.
   `renderBrowse`. `test_archetype_class_eligibility.py`. `data.src.js`'s
   `eligibleClasses` field is a hand-compiled, not-yet-in-game-confirmed
   dataset, so a mismatch there is a data fix, not a logic bug.
+- **Auto-granted AAs with eligibleClasses.** `effectiveRankScoped`'s
+  `aa.auto` branch, and the ineligible-but-auto rendering in `renderTree`
+  (`autoIneligible`, the `.locked-classlock`/`.costtag.classlock-tag`
+  fallback in place of the `AUTO` tag) and `renderSidePanel`.
+  `test_auto_grant_class_eligibility.py`.
 - **Progression drag-to-reorder auto-scroll.** `updateAutoScroll`,
   `autoScrollStep`, `stopAutoScroll`, or any drop handler wired in
   `renderProgression`/`wireProgressionDropZone`.

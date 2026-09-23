@@ -200,7 +200,10 @@ export function effectiveRankScoped(scope, className, idx) {
   const classActive = scope !== "class" || state.selectedClasses.includes(className);
   if (aa && aa.auto) {
     const levelReq = parseInt(aa.levelReq, 10) || 1;
-    return classActive && state.charLevel >= levelReq ? aa.ranks : 0;
+    // An archetype/general auto-grant with eligibleClasses (e.g. Point Blank
+    // Fire) must still respect it - unlike a class-scoped auto AA, nothing
+    // else gates who this free rank goes to.
+    return classActive && isClassEligible(aa) && state.charLevel >= levelReq ? aa.ranks : 0;
   }
   const store = scope === "class" ? (state.ranks.classes[className] || {}) : (state.ranks[scope] || {});
   const purchased = store[idx] || 0;
