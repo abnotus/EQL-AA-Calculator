@@ -59,10 +59,18 @@ def parse_costs(raw):
     return [c.strip().strip('"') for c in raw.split(",") if c.strip()]
 
 
+def normalize_name(name):
+    """The game log drops possessive apostrophes ("Tricksters Misdirection"
+    vs. data.src.js's "Trickster's Misdirection"), so names are compared
+    with apostrophes stripped."""
+    return name.replace("'", "").replace("’", "")
+
+
 def load_data_src():
-    """name -> list of (scope, className, costs) - more than one entry
-    means the name is ambiguous across classes (e.g. Quick Evacuation),
-    which this treats the same as "not found" rather than guessing."""
+    """normalized name -> list of (scope, className, costs, canonicalName) -
+    more than one entry means the name is ambiguous across classes (e.g.
+    Quick Evacuation), which this treats the same as "not found" rather
+    than guessing."""
     by_name = {}
     for scope, className, s in iter_data_entries(DATA_SRC):
         nm = DATA_ENTRY_NAME.search(s)
@@ -75,7 +83,7 @@ def load_data_src():
         else:
             fm = FILL_RE.search(s)
             costs = ["0"] * int(fm.group(1)) if fm else []
-        by_name.setdefault(name, []).append((scope, className, costs))
+        by_name.setdefault(normalize_name(name), []).append((scope, className, costs, name))
     return by_name
 
 
@@ -131,18 +139,18 @@ def main():
 
     matched, mismatched, unmatched_name, no_data = [], [], [], []
     for (name, rank), (line_no, cost) in latest.items():
-        entries = by_name.get(name)
+        entries = by_name.get(normalize_name(name))
         if not entries or len(entries) > 1:
             unmatched_name.append((line_no, name, rank, cost))
             continue
-        _, _, costs = entries[0]
+        _, _, costs, canonical_name = entries[0]
         if rank > len(costs) or costs[rank - 1] == "?":
             no_data.append((line_no, name, rank, cost))
             continue
         if int(costs[rank - 1]) == cost:
-            matched.append((name, rank, cost))
+            matched.append((canonical_name, rank, cost))
         else:
-            mismatched.append((line_no, name, rank, cost, costs[rank - 1]))
+            mismatched.append((line_no, canonical_name, rank, cost, costs[rank - 1]))
 
     print(f"\nMatched: {len(matched)}  Mismatched: {len(mismatched)}  "
           f"Unrecognized name: {len(unmatched_name)}  No current data for that rank: {len(no_data)}")
