@@ -154,7 +154,9 @@ const AA_ID_TABLE = {
   "class:Monk:unbound-alacrity": 139,
   "class:Paladin:unbound-life": 140,
   "class:Rogue:unbound-lethality": 141,
-  "class:Shadow Knight:unbound-drain": 142
+  "class:Shadow Knight:unbound-drain": 142,
+  "general::full-potential": 143,
+  "archetype::point-blank-fire": 144
 };
 
 // Pattern-inferred cost estimates for AAs the wiki hasn't documented
