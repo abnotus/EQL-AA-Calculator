@@ -136,6 +136,13 @@
       ],
       "description": "This passive ability increases your Forage skill cap by 50 points. Requirements: Level 1."
     },
+    "general::Full Potential::0": {
+      "ranks": "1",
+      "costs": [
+        "0"
+      ],
+      "description": "This passive ability provides the following storage capacity increases. +50 Tradeskill slots, +25 Dragon's Hoard, +5 Activated Item Slots, +25 Equipment Slots, +25 Exaltation Slots. Requirements: Level 50."
+    },
     "general::Gather Party::0": {
       "ranks": "1",
       "costs": [
@@ -512,6 +519,13 @@
         "3"
       ],
       "description": "This passive ability increases your melee avoidance by 2% and your armor class soft cap by 2%. Requirements: Level 1."
+    },
+    "archetype::Point Blank Fire::0": {
+      "ranks": "1",
+      "costs": [
+        "0"
+      ],
+      "description": "This toggleable ability causes your auto attacks to prefer your ranged weapons, even in melee range. Additionally allows for double and triple attacks from ranged attacks regardless of toggle state. Requirements: Level 1"
     },
     "archetype::Quick Damage::0": {
       "ranks": "3",
@@ -1161,7 +1175,7 @@
       "costs": [
         "0"
       ],
-      "description": "This passive ability improves the base damage of your melee attacks and the power of your damaging and healing abilities by 2/4/?/?%. Complete Slayer achievements to progress this ability. Requirements: Level 1.\n\n[[Category:Character]]"
+      "description": "This passive ability improves the base damage of your melee attacks and the power of your damaging and healing abilities by 2/4/?/?%. Complete Slayer achievements to progress this ability. Requirements: Level 1."
     }
   }
 }
