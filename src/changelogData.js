@@ -4,6 +4,13 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "2.0.8",
+    date: "2026-09-23",
+    items: [
+      "Three new AAs from the latest patch are now in the calculator: Full Potential (storage capacity), Point Blank Fire (an auto-granted ranged combat toggle for Berserker, Monk, Ranger, and Rogue), and Widened Perception (+1 loadout slot)."
+    ]
+  },
+  {
     version: "2.0.7",
     date: "2026-09-16",
     items: [
