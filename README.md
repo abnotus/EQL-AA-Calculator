@@ -51,7 +51,7 @@ It's a diagnostic, not an auto-updater — it never touches `data.src.js`. Run i
 python wiki-sync/verify_from_log.py path/to/eqlog_CharName_Zone.txt
 ```
 
-A second, independent check on the costs `data.src.js` marks as confirmed. It reads the "gained the ability ... at a cost of N ability points" and "improved ... at a cost of N" lines from a player's own EverQuest Legends log and compares each against the data. Like the scrape, it's a diagnostic: it never reads the wiki and never touches `data.src.js`. Matches are recorded in `wiki-sync/log_verified.json`; a mismatch, a name the data doesn't have, or a rank the current data lacks is reported for you to look at. A log only covers what that character trained while logging, so it confirms a subset.
+A second, independent check on the costs `data.src.js` marks as confirmed. It reads the "gained the ability ... at a cost of N ability points" and "improved ... at a cost of N" lines from a player's own EverQuest Legends log and compares each against the data. Like the scrape, it's a diagnostic: it never reads the wiki and never touches `data.src.js`. Matches are recorded in `wiki-sync/log_verified.json`; a mismatch, a name the data doesn't have, or a rank the current data lacks is reported for you to look at. A log only covers what that character trained while logging, so it confirms a subset. `wiki-sync/total_verified.json` lists the owned ranks the log doesn't cover, taken from a build export whose total matched the in-game total; those are verified by that total match alone, one tier below a log match.
 
 ### Estimating undocumented costs
 
