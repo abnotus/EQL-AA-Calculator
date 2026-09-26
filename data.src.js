@@ -26,7 +26,7 @@ const AA_DATA = {
     { name: "Gather Party", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Gives everyone in your party the option of teleporting directly to your location. Automatically granted to every character — per the wiki's own General AA intro text." },
     { name: "Innate Eminence", ranks: 5, costs: ["3","3","3","3","3"], levelReq: "1", description: "Increases your strength, stamina, agility, dexterity, wisdom, intelligence, and charisma by 2/4/6/8/10 points." },
     { name: "Innate Lung Capacity", ranks: 3, costs: ["1","1","1"], levelReq: "1", description: "Increases the amount of air you can hold in your lungs by 10/25/50%." },
-    { name: "Innate Metabolism", ranks: 3, costs: ["1","1","2"], levelReq: "1", description: "Reduces your food and drink consumption by 110/125/150%." },
+    { name: "Innate Metabolism", ranks: 3, costs: ["1","1","1"], levelReq: "1", description: "Reduces your food and drink consumption by 110/125/150%." },
     { name: "Innate Regeneration", ranks: 7, costs: ["1","1","1","2","3","5","5"], levelReq: "1", description: "Increases your health regeneration by 1/1/1/1/1/1/1 point(s)." },
     { name: "Innate Spell Resistance", ranks: 5, costs: ["2","2","2","2","2"], levelReq: "1", description: "Improves your cold, disease, fire, magic, and poison resistances by 2/4/6/8/10 points." },
     { name: "Jewel Craft Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", description: "Reduces the chance of failing Jewelcrafting recipes by 10/25/50%." },
