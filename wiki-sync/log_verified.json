@@ -75,13 +75,17 @@
     "maxRankVerified": 1,
     "verifiedAt": "2026-09-16"
   },
+  "Full Potential": {
+    "maxRankVerified": 1,
+    "verifiedAt": "2026-09-26"
+  },
   "Fury of Magic": {
     "maxRankVerified": 4,
     "verifiedAt": "2026-09-16"
   },
   "Harm Touch": {
-    "maxRankVerified": 2,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 4,
+    "verifiedAt": "2026-09-26"
   },
   "Healing Adept": {
     "maxRankVerified": 3,
@@ -126,6 +130,10 @@
   "Innate Fighters Tenacity": {
     "maxRankVerified": 1,
     "verifiedAt": "2026-09-16"
+  },
+  "Innate Metabolism": {
+    "maxRankVerified": 2,
+    "verifiedAt": "2026-09-26"
   },
   "Innate Power Strike": {
     "maxRankVerified": 1,
@@ -203,6 +211,10 @@
     "maxRankVerified": 1,
     "verifiedAt": "2026-09-16"
   },
+  "Point Blank Fire": {
+    "maxRankVerified": 1,
+    "verifiedAt": "2026-09-26"
+  },
   "Purify Body": {
     "maxRankVerified": 1,
     "verifiedAt": "2026-09-23"
@@ -223,6 +235,10 @@
     "maxRankVerified": 3,
     "verifiedAt": "2026-09-16"
   },
+  "Soul Abrasion": {
+    "maxRankVerified": 3,
+    "verifiedAt": "2026-09-26"
+  },
   "Spell Casting Deftness": {
     "maxRankVerified": 3,
     "verifiedAt": "2026-09-16"
@@ -234,6 +250,10 @@
   "Spell Casting Reinforcement": {
     "maxRankVerified": 4,
     "verifiedAt": "2026-09-16"
+  },
+  "Spell Casting Subtlety": {
+    "maxRankVerified": 3,
+    "verifiedAt": "2026-09-26"
   },
   "Steadfast Will": {
     "maxRankVerified": 8,
@@ -266,6 +286,10 @@
   "Unbound Destruction": {
     "maxRankVerified": 3,
     "verifiedAt": "2026-09-16"
+  },
+  "Unbound Drain": {
+    "maxRankVerified": 1,
+    "verifiedAt": "2026-09-26"
   },
   "Unbound Life": {
     "maxRankVerified": 3,
