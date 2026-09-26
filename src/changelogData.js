@@ -7,7 +7,7 @@ export const USER_CHANGELOG = [
     version: "2.0.8",
     date: "2026-09-23",
     items: [
-      "Three new AAs from the latest patch are now in the calculator: Full Potential (storage capacity), Point Blank Fire (an auto-granted ranged combat toggle for Berserker, Monk, Ranger, and Rogue), and Widened Perception (+1 loadout slot)."
+      "Three new AAs from the latest patch are now in the calculator: Full Potential (storage capacity), Point Blank Fire (a 0-point ranged combat AA for Berserker, Monk, Ranger, and Rogue), and Widened Perception (+1 loadout slot)."
     ]
   },
   {
