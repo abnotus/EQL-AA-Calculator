@@ -236,6 +236,9 @@ function isEmptyComposite(v) {
 function deepEqualIgnoringExtraKeys(stored, current) {
   if (typeof stored !== "object" || stored === null) return false;
   return Object.keys(current).every((k) => {
+    // v is the save-format version, not part of the plan - a version bump
+    // alone shouldn't make every pre-existing save look unsaved.
+    if (k === "v") return true;
     if (stored[k] === undefined && isEmptyComposite(current[k])) return true;
     return deepEqual(stored[k], current[k]);
   });
