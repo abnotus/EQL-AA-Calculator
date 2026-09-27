@@ -836,6 +836,14 @@ main {
   flex-wrap: wrap;
 }
 
+#browseUnownedToggle:hover { border-color: var(--green); color: var(--green); }
+
+#browseUnownedToggle.active {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(76,140,82,0.1);
+}
+
 .browse-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -850,6 +858,11 @@ main {
 }
 
 .browse-card.hidden-aa { opacity: 0.55; }
+
+.browse-card.owned {
+  border-color: var(--green);
+  background: rgba(76,140,82,0.08);
+}
 
 .browse-card .top {
   display: flex;
@@ -896,6 +909,11 @@ main {
    for prereq too and there's no value in unifying that here. */
 .browse-card .info .eligible-info.warn {
   color: #e08b78;
+  font-weight: 600;
+}
+
+.browse-card .info .owned-info {
+  color: var(--green);
   font-weight: 600;
 }
 

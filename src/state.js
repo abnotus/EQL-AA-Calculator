@@ -129,7 +129,8 @@ export let state = {
   activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
   selectedNode: null, // { category, idx }
   browseSearch: "",
-  browseFilter: "all"
+  browseFilter: "all",
+  browseUnownedOnly: false
 };
 
 // --- ranks/purchaseOrder <-> persisted-shape conversion -------------------

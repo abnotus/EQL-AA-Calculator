@@ -219,6 +219,12 @@ export function wireEvents() {
     renderBrowse();
   });
 
+  el.browseUnownedToggle.addEventListener("click", () => {
+    state.browseUnownedOnly = !state.browseUnownedOnly;
+    el.browseUnownedToggle.classList.toggle("active", state.browseUnownedOnly);
+    renderBrowse();
+  });
+
   el.showHiddenToggle.addEventListener("click", () => {
     state.showHidden = !state.showHidden;
     renderAll();

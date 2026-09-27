@@ -12,7 +12,7 @@ A talent-calculator-style planner for [EverQuest Legends](https://eqlwiki.com/Al
 - Locked AAs show *why* — a missing prerequisite, a class-eligibility restriction, and a plain level gate all look different from each other, in both the tree and Browse All AAs
 - Next-rank preview — see what the next rank upgrades to before you buy it
 - Global search, with match-count badges on every tab
-- **Browse All AAs** — a searchable reference independent of your current build
+- **Browse All AAs** — a searchable reference independent of your current build, with an Unowned Only filter and owned/unowned styling on every card once you're tracking owned progress
 - **Build Summary** — everything you've picked, grouped by category, including picks for a class you've swapped away from (also on their own Other Classes tab)
 - **Progression** tab — the order you picked things in, drag-and-drop or arrow-key reorderable, with per-step and running-total cost. A "Move To" button quick-jumps a step to the top/bottom of the list or of any waypoint, or to a specific position — handy once a build gets long
 - **Waypoints** — mark a point total worth returning to (e.g. "Level 20"), and it shows up as a colored divider right where your training order crosses it. Anchored to the point total, not a list position, so reordering and Reset Build never break one
@@ -145,7 +145,7 @@ Minting a profile has no matching cleanup on its own — deleting a build only r
 
 ## Testing
 
-`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s, `wiki-sync/guess_effects.py`'s, and `wiki-sync/assign_aa_ids.py`'s core logic, plus 32 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, Archetype class-eligibility gating, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, per-build owned-tracking profiles (Link/Merge/Split, migration, orphaned-profile cleanup), share-code encoding backward-compatibility, and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them (`python tests/run_all.py` runs everything in one pass). None are wired into CI yet (deferred deliberately - see `tests/README.md`) — run the relevant ones by hand after touching whatever they cover.
+`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s, `wiki-sync/guess_effects.py`'s, and `wiki-sync/assign_aa_ids.py`'s core logic, plus 33 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, Archetype class-eligibility gating, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, per-build owned-tracking profiles (Link/Merge/Split, migration, orphaned-profile cleanup), share-code encoding backward-compatibility, and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them (`python tests/run_all.py` runs everything in one pass). None are wired into CI yet (deferred deliberately - see `tests/README.md`) — run the relevant ones by hand after touching whatever they cover.
 
 ## Deployment
 

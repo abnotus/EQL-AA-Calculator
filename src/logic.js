@@ -247,7 +247,7 @@ function getOwnedStore(scope, className) {
   return state.owned[scope];
 }
 
-function ownedRank(scope, className, idx) {
+export function ownedRank(scope, className, idx) {
   return getOwnedStore(scope, className)[idx] || 0;
 }
 

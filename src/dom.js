@@ -65,6 +65,7 @@ export function cacheDom() {
   el.clearSearchBtn = document.getElementById("clearSearchBtn");
   el.showHiddenToggle = document.getElementById("showHiddenToggle");
   el.browseFilter = document.getElementById("browseFilter");
+  el.browseUnownedToggle = document.getElementById("browseUnownedToggle");
   el.browseGrid = document.getElementById("browseGrid");
   el.toast = document.getElementById("toast");
   el.disclaimerBanner = document.getElementById("disclaimerBanner");

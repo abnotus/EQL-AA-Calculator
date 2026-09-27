@@ -837,7 +837,8 @@ let state = {
   activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
   selectedNode: null, // { category, idx }
   browseSearch: "",
-  browseFilter: "all"
+  browseFilter: "all",
+  browseUnownedOnly: false
 };
 
 // --- ranks/purchaseOrder <-> persisted-shape conversion -------------------
@@ -3314,6 +3315,7 @@ function cacheDom() {
   el.clearSearchBtn = document.getElementById("clearSearchBtn");
   el.showHiddenToggle = document.getElementById("showHiddenToggle");
   el.browseFilter = document.getElementById("browseFilter");
+  el.browseUnownedToggle = document.getElementById("browseUnownedToggle");
   el.browseGrid = document.getElementById("browseGrid");
   el.toast = document.getElementById("toast");
   el.disclaimerBanner = document.getElementById("disclaimerBanner");
@@ -3790,15 +3792,22 @@ function renderBrowse() {
 
   const searched = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
   // Scoped rather than catKey-gated, since an inactive class can still have
-  // a real nonzero rank here - see isSuppressedScoped (logic.js).
-  const filtered = searched.filter(({ cat, idx }) => {
-    const { scope, className } = scopeForBrowseLabel(cat);
-    return !isSuppressedScoped(scope, className, idx);
-  });
+  // a real nonzero rank here - see isSuppressedScoped (logic.js). owned is
+  // resolved here too, once per item, for both the unowned-only filter below
+  // and the owned/unowned styling every card gets regardless of that filter.
+  const filtered = searched
+    .map((item) => {
+      const { scope, className } = scopeForBrowseLabel(item.cat);
+      return { ...item, scope, className, owned: ownedRank(scope, className, item.idx) };
+    })
+    .filter(({ scope, className, idx, owned }) => {
+      if (isSuppressedScoped(scope, className, idx)) return false;
+      if (state.browseUnownedOnly && owned > 0) return false;
+      return true;
+    });
 
   el.browseGrid.innerHTML = filtered.length
-    ? filtered.map(({ cat, aa, catKey, idx }) => {
-        const { scope, className } = scopeForBrowseLabel(cat);
+    ? filtered.map(({ cat, aa, catKey, idx, scope, className, owned }) => {
         const hidden = isHiddenScoped(scope, className, idx);
         // Shared by both info lines below, computed once per card - null
         // for a class not in one of the 3 active slots (catKeyForBrowseLabel
@@ -3824,6 +3833,7 @@ function renderBrowse() {
           const warn = !!(lockReason && lockReason.kind === "classEligibility");
           eligibleInfo = ` &middot; <span class="eligible-info${warn ? " warn" : ""}">Classes: ${aa.eligibleClasses.map(escapeHtml).join(", ")}</span>`;
         }
+        const ownedInfo = owned > 0 ? ` &middot; <span class="owned-info">Owned: ${owned}/${aa.ranks}</span>` : "";
         const costList = aa.costs.map((c, i) => {
           const disp = costDisplayScoped(scope, className, idx, i, c);
           return disp.isGuess
@@ -3831,14 +3841,14 @@ function renderBrowse() {
             : disp.text;
         }).join(" / ");
         return `
-      <div class="browse-card${hidden ? " hidden-aa" : ""}">
+      <div class="browse-card${hidden ? " hidden-aa" : ""}${owned > 0 ? " owned" : ""}">
         <div class="top">
           <span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span>
           <button class="hide-toggle-btn${hidden ? " active" : ""}" data-scope="${scope}" data-classname="${className || ""}" data-idx="${idx}" title="${hidden ? "Unhide this AA" : "Hide this AA from the tree and Browse"}">${hidden ? "Unhide" : "Hide"}</button>
           <span class="cat">${escapeHtml(cat)}</span>
         </div>
         <div class="desc">${highlightRankValue(aa.description, null, effectLookupScoped(scope, className, idx))}</div>
-        <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${costList} &middot; Level ${escapeHtml(aa.levelReq)}+${prereqInfo}${eligibleInfo}</div>
+        <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${costList} &middot; Level ${escapeHtml(aa.levelReq)}+${prereqInfo}${eligibleInfo}${ownedInfo}</div>
       </div>`;
       }).join("")
     : '<div class="empty">No AAs match your search.</div>';
@@ -6090,6 +6100,12 @@ function wireEvents() {
 
   el.browseFilter.addEventListener("change", () => {
     state.browseFilter = el.browseFilter.value;
+    renderBrowse();
+  });
+
+  el.browseUnownedToggle.addEventListener("click", () => {
+    state.browseUnownedOnly = !state.browseUnownedOnly;
+    el.browseUnownedToggle.classList.toggle("active", state.browseUnownedOnly);
     renderBrowse();
   });
 

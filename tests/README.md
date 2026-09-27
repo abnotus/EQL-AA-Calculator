@@ -61,7 +61,8 @@ an actual pending wiki rename to exercise it against.
 `test_builds_index_cache.py`, `test_tree_click_delegation.py`,
 `test_progression_drag_warn_cache.py`, `test_save_build_partial_failure.py`,
 `test_builds_cross_tab_sync.py`, `test_decompression_bomb.py`,
-`test_auto_grant_class_eligibility.py`, `test_hostile_numeric_coercion.py`
+`test_auto_grant_class_eligibility.py`, `test_hostile_numeric_coercion.py`,
+`test_browse_unowned_filter.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -117,6 +118,7 @@ python tests/test_save_build_partial_failure.py
 python tests/test_builds_cross_tab_sync.py
 python tests/test_decompression_bomb.py
 python tests/test_hostile_numeric_coercion.py
+python tests/test_browse_unowned_filter.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -327,3 +329,7 @@ rebuilding and committing.
   become a primitive (e.g. `{"toString": null}`) must be dropped like any
   other malformed input, not thrown as an uncaught exception mid-boot.
   `test_hostile_numeric_coercion.py`.
+- **Browse's Unowned Only filter and owned/unowned card styling.**
+  `ownedRank` (`logic.js`), `state.browseUnownedOnly`, and `renderBrowse`'s
+  `.owned`/`.owned-info` treatment. Combines with the existing category
+  filter rather than replacing it. `test_browse_unowned_filter.py`.
