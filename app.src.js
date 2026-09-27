@@ -5526,7 +5526,23 @@ async function decodeBuildCode(code) {
   // version so far (2, 3, 4, ...) has stayed compact-shaped, so there's
   // been no reason yet to expect that to stop.
   const v = Array.isArray(parsed) ? parsed[0] : parsed && parsed.v;
-  return v >= 2 ? expandCompactPayload(parsed) : parsed;
+  if (v >= 2) return expandCompactPayload(parsed);
+  // A compact payload is only ever produced by expandCompactPayload, which
+  // always fills in every field, so it needs no check of its own. This
+  // legacy/verbose branch has no version marker to lean on, so a JSON value
+  // that simply doesn't carry any of a build's defining fields - e.g. the
+  // truncated-but-still-valid-JSON "{}" - gets rejected here instead of
+  // passing through as a "successfully loaded" empty build.
+  if (!looksLikeBuildPayload(parsed)) throw new Error("decoded payload isn't a recognizable build");
+  return parsed;
+}
+
+function looksLikeBuildPayload(parsed) {
+  return !!parsed && typeof parsed === "object" && !Array.isArray(parsed) && (
+    Array.isArray(parsed.selectedClasses) ||
+    (parsed.ranks && typeof parsed.ranks === "object") ||
+    Array.isArray(parsed.purchaseOrder)
+  );
 }
 
 // Standard base64 (as used in BUILD_CODE) uses +, /, and = padding, which are legal
