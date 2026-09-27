@@ -440,6 +440,15 @@ function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
+    version: "2.0.9",
+    date: "2026-09-27",
+    items: [
+      "Undo now restores the right rank after you lower an AA that comes with free ranks.",
+      "A damaged or incomplete share code now shows an error instead of loading as an empty build.",
+      "If a shared link loads but can't be saved to Builds (for example when browser storage is full), you now get a warning instead of being told it was saved. Picking an import file that can't be read now shows a message too."
+    ]
+  },
+  {
     version: "2.0.8",
     date: "2026-09-23",
     items: [
