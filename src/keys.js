@@ -130,15 +130,9 @@ function legacyEntries(scope, className) {
   return scope === "class" ? (LEGACY_AA_ORDER.classes[className] || []) : (LEGACY_AA_ORDER[scope] || []);
 }
 
-// keyForIdx/idxForKey results, cached per (scope, className) - AA_DATA never
-// changes at runtime, so this mapping is fixed for the page's whole life.
-// Built lazily on first use of a given scope/class rather than up front, so
-// a scope/class combo nothing ever saves against costs nothing. Without
-// this, every single
-// saved rank/purchaseOrder/hidden entry re-slugified and re-scanned its
-// entire scope's AA list from scratch (keyForEntryIdx/idxForEntryKey are
-// each O(n) alone, called in a loop for idxForEntryKey - O(n^2) overall) on
-// every save and load.
+// keyForIdx/idxForKey mappings, built lazily per (scope, className). Safe to
+// cache for the page's life because AA_DATA never changes at runtime, and it
+// keeps save/load from rescanning a scope's whole AA list for every entry.
 const entryKeyMapCache = {};
 function entryKeyMaps(scope, className) {
   const cacheKey = `${scope}:${className || ""}`;

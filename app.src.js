@@ -328,15 +328,9 @@ function legacyEntries(scope, className) {
   return scope === "class" ? (LEGACY_AA_ORDER.classes[className] || []) : (LEGACY_AA_ORDER[scope] || []);
 }
 
-// keyForIdx/idxForKey results, cached per (scope, className) - AA_DATA never
-// changes at runtime, so this mapping is fixed for the page's whole life.
-// Built lazily on first use of a given scope/class rather than up front, so
-// a scope/class combo nothing ever saves against costs nothing. Without
-// this, every single
-// saved rank/purchaseOrder/hidden entry re-slugified and re-scanned its
-// entire scope's AA list from scratch (keyForEntryIdx/idxForEntryKey are
-// each O(n) alone, called in a loop for idxForEntryKey - O(n^2) overall) on
-// every save and load.
+// keyForIdx/idxForKey mappings, built lazily per (scope, className). Safe to
+// cache for the page's life because AA_DATA never changes at runtime, and it
+// keeps save/load from rescanning a scope's whole AA list for every entry.
 const entryKeyMapCache = {};
 function entryKeyMaps(scope, className) {
   const cacheKey = `${scope}:${className || ""}`;
@@ -5109,11 +5103,9 @@ function expandCompactRanks(list, columnar) {
   pairs.forEach(([id, rank]) => {
     const entry = entryForId(id);
     if (!entry) return;
-    // A columnar payload's ids/ranks arrays are meant to be the same length
-    // - `rank` is only ever missing here if that's been tampered with or
-    // corrupted. Dropped the same way an unresolved id is, rather than
-    // stored as a bare `undefined` that state.js's clampRankValue would
-    // later turn into a silent, uncounted 0.
+    // A columnar payload with mismatched ids/ranks arrays is corrupt. Drop the
+    // entry like an unresolved id instead of storing an undefined rank that
+    // would later be clamped to 0.
     if (!Number.isFinite(rank)) return;
     if (entry.scope === "class") {
       ranks.classes[entry.className] = ranks.classes[entry.className] || {};
@@ -5565,12 +5557,9 @@ async function decodeBuildCode(code) {
   // been no reason yet to expect that to stop.
   const v = Array.isArray(parsed) ? parsed[0] : parsed && parsed.v;
   if (v >= 2) return expandCompactPayload(parsed);
-  // A compact payload is only ever produced by expandCompactPayload, which
-  // always fills in every field, so it needs no check of its own. This
-  // legacy/verbose branch has no version marker to lean on, so a JSON value
-  // that simply doesn't carry any of a build's defining fields - e.g. the
-  // truncated-but-still-valid-JSON "{}" - gets rejected here instead of
-  // passing through as a "successfully loaded" empty build.
+  // expandCompactPayload always fills every field, but the verbose form has
+  // no version marker, so valid JSON with none of a build's fields (such as
+  // a truncated "{}") is rejected here instead of loading as an empty build.
   if (!looksLikeBuildPayload(parsed)) throw new Error("decoded payload isn't a recognizable build");
   return parsed;
 }
