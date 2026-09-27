@@ -31,6 +31,10 @@
     "maxRankVerified": 1,
     "verifiedAt": "2026-09-16"
   },
+  "Crafting Mastery": {
+    "maxRankVerified": 6,
+    "verifiedAt": "2026-09-27"
+  },
   "Critical Affliction": {
     "maxRankVerified": 3,
     "verifiedAt": "2026-09-16"
@@ -84,8 +88,8 @@
     "verifiedAt": "2026-09-16"
   },
   "Harm Touch": {
-    "maxRankVerified": 4,
-    "verifiedAt": "2026-09-26"
+    "maxRankVerified": 7,
+    "verifiedAt": "2026-09-27"
   },
   "Healing Adept": {
     "maxRankVerified": 3,
@@ -130,6 +134,10 @@
   "Innate Fighters Tenacity": {
     "maxRankVerified": 1,
     "verifiedAt": "2026-09-16"
+  },
+  "Innate Lung Capacity": {
+    "maxRankVerified": 3,
+    "verifiedAt": "2026-09-27"
   },
   "Innate Metabolism": {
     "maxRankVerified": 3,
@@ -288,8 +296,8 @@
     "verifiedAt": "2026-09-16"
   },
   "Unbound Drain": {
-    "maxRankVerified": 1,
-    "verifiedAt": "2026-09-26"
+    "maxRankVerified": 2,
+    "verifiedAt": "2026-09-27"
   },
   "Unbound Life": {
     "maxRankVerified": 3,
@@ -302,5 +310,9 @@
   "Unbound Versatility": {
     "maxRankVerified": 3,
     "verifiedAt": "2026-09-16"
+  },
+  "Unholy Steed": {
+    "maxRankVerified": 1,
+    "verifiedAt": "2026-09-27"
   }
 }
