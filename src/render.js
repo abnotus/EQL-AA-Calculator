@@ -483,9 +483,13 @@ export function renderBrowse() {
       const { scope, className } = scopeForBrowseLabel(item.cat);
       return { ...item, scope, className, owned: ownedRank(scope, className, item.idx) };
     })
-    .filter(({ scope, className, idx, owned }) => {
+    .filter(({ scope, className, idx, owned, aa }) => {
       if (isSuppressedScoped(scope, className, idx)) return false;
-      if (state.browseUnownedOnly && owned > 0) return false;
+      // Auto-granted AAs never go through owned-tracking at all (they're
+      // never a Progression step to mark owned in the first place), so
+      // ownedRank sits at 0 forever - excluded here too, or Unowned Only
+      // would permanently list every one as still needing action.
+      if (state.browseUnownedOnly && (owned > 0 || aa.auto)) return false;
       return true;
     });
 

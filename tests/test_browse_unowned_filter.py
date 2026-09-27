@@ -6,6 +6,11 @@
 # scanning Browse for what's still missing became worth a dedicated filter.
 # Combines with the existing category filter/search rather than replacing
 # them, same as any other Browse filter dimension.
+#
+# Auto-granted AAs (aa.auto) never go through owned-tracking - they're never
+# a Progression step, so there's nothing to mark owned - which leaves
+# ownedRank permanently 0 for them. Unowned Only excludes them too, or every
+# auto AA would sit in that list forever despite needing no action at all.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -40,10 +45,12 @@ with sync_playwright() as p:
     page.wait_for_timeout(150)
 
     # --- Default view: both owned cards are styled and labeled, unowned
-    # ones aren't. ---
+    # ones aren't. auto_count is read here (not hardcoded) since which/how
+    # many General AAs are auto-granted is wiki data, not this test's concern. ---
     total_general = page.locator(".browse-card").count()
     owned_cards = page.locator(".browse-card.owned")
-    print("General cards total:", total_general, "owned:", owned_cards.count())
+    auto_count = page.locator(".browse-card .auto-badge").count()
+    print("General cards total:", total_general, "owned:", owned_cards.count(), "auto:", auto_count)
     assert owned_cards.count() == 2, f"FAIL: expected 2 owned cards, got {owned_cards.count()}"
 
     adamant_card = page.locator(".browse-card", has=page.locator(".name", has_text="Adamant Will"))
@@ -65,13 +72,22 @@ with sync_playwright() as p:
     page.wait_for_timeout(150)
     assert "active" in toggle.get_attribute("class")
     remaining = page.locator(".browse-card").count()
-    print("General cards after Unowned Only:", remaining, "(was", total_general, ")")
-    assert remaining == total_general - 2, \
-        f"FAIL: expected exactly the 2 owned cards removed, got {total_general - remaining} fewer"
+    expected = total_general - 2 - auto_count
+    print("General cards after Unowned Only:", remaining, "(was", total_general, ", expected", expected, ")")
+    assert remaining == expected, \
+        f"FAIL: expected the 2 owned cards plus {auto_count} auto card(s) removed ({expected} left), got {remaining}"
     assert page.locator(".browse-card.owned").count() == 0
     assert page.locator(".browse-card", has=page.locator(".name", has_text="Adamant Will")).count() == 0
     assert page.locator(".browse-card", has=page.locator(".name", has_text="Baking Mastery")).count() == 1
     print("PASS: Unowned Only hides every owned card and nothing else, staying scoped to the active category filter")
+
+    # --- Auto-granted General AAs (never owned-tracked - see header comment)
+    # are excluded too, not left sitting in the list forever. ---
+    for auto_name in ["Full Potential", "Gather Party", "Origin"]:
+        count = page.locator(".browse-card", has=page.locator(".name", has_text=auto_name)).count()
+        print(f"{auto_name} (auto) present under Unowned Only:", count)
+        assert count == 0, f"FAIL: auto-granted {auto_name} should be excluded from Unowned Only, never just 'still unowned'"
+    print("PASS: auto-granted AAs are excluded from Unowned Only")
 
     # --- Toggling off restores exactly the owned cards that were hidden. ---
     toggle.click()
