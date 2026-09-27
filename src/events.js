@@ -119,6 +119,7 @@ export function wireEvents() {
       el.importText.value = String(reader.result);
       doImport();
     };
+    reader.onerror = () => showToast("Couldn't read that file.");
     reader.readAsText(file);
     el.importFile.value = "";
   });
