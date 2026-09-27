@@ -4,6 +4,14 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "2.1.0",
+    date: "2026-09-28",
+    items: [
+      "Browse All AAs now has an Unowned Only filter, and every card shows your exact owned rank at a glance - handy once you've got a lot of AAs already trained. Auto-granted AAs are left out of the filter, since you never need to mark those owned.",
+      "A share link or import with a corrupted value (like a garbled character level) is now rejected safely instead of freezing the calculator."
+    ]
+  },
+  {
     version: "2.0.9",
     date: "2026-09-27",
     items: [
