@@ -1875,22 +1875,28 @@ function sumRealCost(list, store) {
   return total;
 }
 
-// A genuine lifetime total: every point ever spent, across every class
-// you've ever picked, not just the 3 active slots. A class swap leaves an
-// inactive class's ranks in place, so this walks
-// Object.keys(state.ranks.classes) directly rather than AA_CATEGORY_KEYS/
-// getList, which only see the active slots. Progression's running total
-// counts the same set (computeProgressionSteps' stepCost isn't
-// active-gated), so the two numbers are provably identical, not just
-// usually close.
-function spentPoints() {
-  let total = sumRealCost(AA_DATA.general, state.ranks.general)
-    + sumRealCost(AA_DATA.archetype, state.ranks.archetype)
-    + sumRealCost(AA_DATA.special, state.ranks.special);
-  Object.keys(state.ranks.classes).forEach((className) => {
-    total += sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className]);
+// Shared by spentPoints/ownedPoints/estimatedExtraPoints/
+// estimatedExtraOwnedPoints: walks general/archetype/special plus every
+// class ever picked - not just the 3 active slots, since a class swap
+// leaves an inactive class's ranks in place (Object.keys(root.classes)
+// rather than AA_CATEGORY_KEYS/getList, which only see active slots) -
+// summing with `summer(scope, className, list, store)` for each.
+function sumAcrossAllClasses(root, summer) {
+  let total = summer("general", null, AA_DATA.general, root.general)
+    + summer("archetype", null, AA_DATA.archetype, root.archetype)
+    + summer("special", null, AA_DATA.special, root.special);
+  Object.keys(root.classes).forEach((className) => {
+    total += summer("class", className, AA_DATA.classes[className] || [], root.classes[className]);
   });
   return total;
+}
+
+// A genuine lifetime total: every point ever spent, across every class
+// you've ever picked. Progression's running total counts the same set
+// (computeProgressionSteps' stepCost isn't active-gated), so the two
+// numbers are provably identical, not just usually close.
+function spentPoints() {
+  return sumAcrossAllClasses(state.ranks, (scope, className, list, store) => sumRealCost(list, store));
 }
 
 // Real points spent on one specific class alone, active or not — the
@@ -1916,13 +1922,7 @@ function spentOnInactiveClasses() {
 // or an AA owned on a swapped-away class would inflate "still to go"
 // despite already being trained.
 function ownedPoints() {
-  let total = sumRealCost(AA_DATA.general, state.owned.general)
-    + sumRealCost(AA_DATA.archetype, state.owned.archetype)
-    + sumRealCost(AA_DATA.special, state.owned.special);
-  Object.keys(state.owned.classes).forEach((className) => {
-    total += sumRealCost(AA_DATA.classes[className] || [], state.owned.classes[className]);
-  });
-  return total;
+  return sumAcrossAllClasses(state.owned, (scope, className, list, store) => sumRealCost(list, store));
 }
 
 // Shared by estimatedExtraPoints, same reasoning as sumRealCost above:
@@ -1949,13 +1949,7 @@ function sumEstimatedExtra(scope, className, list, store) {
 // persisted; the topbar shows it as a separate "~N incl. estimates" note.
 // Same lifetime-total scope as spentPoints() (every class ever picked).
 function estimatedExtraPoints() {
-  let extra = sumEstimatedExtra("general", null, AA_DATA.general, state.ranks.general)
-    + sumEstimatedExtra("archetype", null, AA_DATA.archetype, state.ranks.archetype)
-    + sumEstimatedExtra("special", null, AA_DATA.special, state.ranks.special);
-  Object.keys(state.ranks.classes).forEach((className) => {
-    extra += sumEstimatedExtra("class", className, AA_DATA.classes[className] || [], state.ranks.classes[className]);
-  });
-  return extra;
+  return sumAcrossAllClasses(state.ranks, sumEstimatedExtra);
 }
 
 // Same idea as estimatedExtraPoints, scoped to owned ranks instead of
@@ -1965,13 +1959,7 @@ function estimatedExtraPoints() {
 // headline and Progression's own running total already do, instead of
 // silently dropping every estimated rank from both sides.
 function estimatedExtraOwnedPoints() {
-  let extra = sumEstimatedExtra("general", null, AA_DATA.general, state.owned.general)
-    + sumEstimatedExtra("archetype", null, AA_DATA.archetype, state.owned.archetype)
-    + sumEstimatedExtra("special", null, AA_DATA.special, state.owned.special);
-  Object.keys(state.owned.classes).forEach((className) => {
-    extra += sumEstimatedExtra("class", className, AA_DATA.classes[className] || [], state.owned.classes[className]);
-  });
-  return extra;
+  return sumAcrossAllClasses(state.owned, sumEstimatedExtra);
 }
 
 // Plain "Requires X rank N" gates the whole ability behind a fixed target rank.
