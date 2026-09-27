@@ -3168,8 +3168,8 @@ function deleteBuild(id) {
     try {
       localStorage.removeItem(BUILD_KEY_PREFIX + id);
     } catch (e) { /* ignore */ }
+    if (getActiveBuildId() === id) setActiveBuildId(null);
   }
-  if (getActiveBuildId() === id) setActiveBuildId(null);
   return persisted;
 }
 
