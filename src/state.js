@@ -256,7 +256,7 @@ function deserializeHidden(saved) {
 // Mirrors saveOwned/loadAndApplyOwned - called by setHidden (logic.js)
 // whenever state.hiddenAAs changes, and once at boot from main.js. No
 // migration-from-main-payload path to worry about (unlike owned's history):
-// this feature never stored hidden anywhere else.
+// hidden has never lived anywhere but this key.
 export function saveHidden() {
   try {
     localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify({ v: SAVE_FORMAT_VERSION, hidden: serializeHidden(state.hiddenAAs) }));
@@ -530,9 +530,9 @@ export function applyLoaded(loaded) {
   //
   // Unlike ranks/purchaseOrder (left as-is if the field is simply missing),
   // waypoints always get reset here, present or not - they ARE part of
-  // "the build" being loaded. A build saved before this feature has no
-  // waypoints field at all, and loading it must actually clear whatever
-  // waypoints the previous build in memory had, not silently carry them over.
+  // "the build" being loaded. An older save with no waypoints field at all
+  // still needs its waypoints cleared here, not silently carried over from
+  // whatever build was previously in memory.
   state.waypoints = sanitizeWaypoints(loaded.waypoints);
   return { droppedRanks };
 }
@@ -543,7 +543,7 @@ export function applyLoaded(loaded) {
 // on context (the current session's own saved value, or the build slot
 // being loaded). rawMainPayload is the raw object loadLocal() returned,
 // needed for exactly one purpose: a one-time migration for saves made
-// while this feature briefly stored owned inside the main build payload
+// while owned tracking briefly lived inside the main build payload
 // instead of its own key, well before per-build profiles existed. Pass
 // null when there's no such payload to fall back to (every caller besides
 // boot). Returns { droppedOwned } in the same spirit as applyLoaded's
