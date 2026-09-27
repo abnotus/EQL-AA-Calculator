@@ -1598,6 +1598,13 @@ function getRanksStore(catKey) {
 // which slot a class currently occupies (same reasoning purchaseOrder
 // entries use; a slot key stops meaning the same class once slots are
 // rearranged).
+//
+// For writing only - creates state.owned.classes[className] if it doesn't
+// exist yet, so a caller about to assign into the returned store doesn't
+// have to check first. ownedRank (below) is a read and deliberately doesn't
+// go through this, so merely looking up a class the player has never
+// touched can't leave a persistent-state mutation behind as a side effect
+// of what render code treats as a pure query.
 function getOwnedStore(scope, className) {
   if (scope === "class") {
     if (!state.owned.classes[className]) state.owned.classes[className] = {};
@@ -1607,7 +1614,8 @@ function getOwnedStore(scope, className) {
 }
 
 function ownedRank(scope, className, idx) {
-  return getOwnedStore(scope, className)[idx] || 0;
+  const store = scope === "class" ? state.owned.classes[className] : state.owned[scope];
+  return (store && store[idx]) || 0;
 }
 
 // Pure state mutation, same spirit as changeRank/moveEntry: sets the owned
