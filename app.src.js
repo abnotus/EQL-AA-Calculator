@@ -1179,8 +1179,9 @@ function applyLoaded(loaded) {
   ) {
     state.selectedClasses = loaded.selectedClasses.slice();
   }
-  if (typeof loaded.charLevel === "number" && !isNaN(loaded.charLevel)) {
-    state.charLevel = Math.max(1, Math.min(50, loaded.charLevel));
+  const parsedLevel = parseInt(loaded.charLevel, 10);
+  if (Number.isFinite(parsedLevel)) {
+    state.charLevel = Math.max(1, Math.min(50, parsedLevel));
   }
   // v4+ saves store name keys, resolved straight against today's AA_DATA.
   // Anything older stored raw indexes against the ordering AA_DATA happened
