@@ -2954,13 +2954,9 @@ function deepEqualIgnoringExtraKeys(stored, current) {
 function activeBuildMatchesCurrent() {
   const id = getActiveBuildId();
   if (!id) return false;
-  try {
-    const raw = localStorage.getItem(BUILD_KEY_PREFIX + id);
-    if (raw == null) return false;
-    return deepEqualIgnoringExtraKeys(JSON.parse(raw), buildPayload());
-  } catch (e) {
-    return false;
-  }
+  const stored = readBuildRaw(id);
+  if (!stored) return false;
+  return deepEqualIgnoringExtraKeys(stored, buildPayload());
 }
 
 // Snapshots the current build into a named slot — a new one, or an existing
