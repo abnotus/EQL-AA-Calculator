@@ -1136,25 +1136,35 @@ export function renderProgression() {
   });
 
   el.progressionContent.innerHTML = htmlParts.join("");
-  Array.from(el.progressionContent.querySelectorAll(".step-btn[data-move]")).forEach((btn) => {
-    if (btn.disabled) return;
-    btn.addEventListener("click", () => {
-      const idx = parseInt(btn.getAttribute("data-index"), 10);
-      const dir = btn.getAttribute("data-move") === "up" ? -1 : 1;
+}
+
+// Delegated on the never-recreated #progressionContent rather than per-row/
+// per-button/per-divider - renderProgression tears down and rebuilds every
+// row on every render, so binding here once (same pattern as the tree,
+// events.js) avoids attaching and discarding a fresh listener set per
+// element per render. Called once at boot (events.js), not from
+// renderProgression.
+export function wireProgressionRowEvents() {
+  el.progressionContent.addEventListener("click", (e) => {
+    const moveBtn = e.target.closest(".step-btn[data-move]");
+    if (moveBtn) {
+      if (moveBtn.disabled) return;
+      const idx = parseInt(moveBtn.getAttribute("data-index"), 10);
+      const dir = moveBtn.getAttribute("data-move") === "up" ? -1 : 1;
       moveProgressionEntry(idx, dir);
-    });
-  });
-  Array.from(el.progressionContent.querySelectorAll(".step-expand")).forEach((btn) => {
-    if (btn.disabled) return;
-    btn.addEventListener("click", () => {
-      const key = btn.getAttribute("data-key");
+      return;
+    }
+    const expandBtn = e.target.closest(".step-expand");
+    if (expandBtn) {
+      if (expandBtn.disabled) return;
+      const key = expandBtn.getAttribute("data-key");
       if (expandedSteps.has(key)) expandedSteps.delete(key);
       else expandedSteps.add(key);
       renderProgression();
-    });
-  });
-  Array.from(el.progressionContent.querySelectorAll(".step-move")).forEach((btn) => {
-    btn.addEventListener("click", (e) => {
+      return;
+    }
+    const moveTriggerBtn = e.target.closest(".step-move");
+    if (moveTriggerBtn) {
       // Without this, the click bubbles to the document-level outside-click
       // listener (wireProgressionDropZone) AFTER renderProgression() below
       // has already replaced this button with a fresh one - e.target is a
@@ -1162,89 +1172,92 @@ export function renderProgression() {
       // finds nothing and the listener would treat the very click that
       // opened the menu as a click outside it, closing it immediately.
       e.stopPropagation();
-      const key = btn.getAttribute("data-key");
+      const key = moveTriggerBtn.getAttribute("data-key");
       openMoveMenuKey = openMoveMenuKey === key ? null : key;
       renderProgression();
-    });
-  });
-  Array.from(el.progressionContent.querySelectorAll(".move-menu-item")).forEach((btn) => {
-    if (btn.disabled) return;
-    btn.addEventListener("click", (e) => {
+      return;
+    }
+    const moveItemBtn = e.target.closest(".move-menu-item");
+    if (moveItemBtn) {
+      if (moveItemBtn.disabled) return;
       e.stopPropagation();
-      const fromIndex = parseInt(btn.getAttribute("data-from-index"), 10);
-      const targetPos = parseInt(btn.getAttribute("data-target-pos"), 10);
+      const fromIndex = parseInt(moveItemBtn.getAttribute("data-from-index"), 10);
+      const targetPos = parseInt(moveItemBtn.getAttribute("data-target-pos"), 10);
       openMoveMenuKey = null;
       moveToVisiblePosition(fromIndex, targetPos);
-    });
-  });
-  Array.from(el.progressionContent.querySelectorAll(".move-menu-go")).forEach((btn) => {
-    btn.addEventListener("click", (e) => {
+      return;
+    }
+    const moveGoBtn = e.target.closest(".move-menu-go");
+    if (moveGoBtn) {
       e.stopPropagation();
-      const fromIndex = parseInt(btn.getAttribute("data-from-index"), 10);
-      const input = btn.parentElement.querySelector(".move-menu-position-input");
+      const fromIndex = parseInt(moveGoBtn.getAttribute("data-from-index"), 10);
+      const input = moveGoBtn.parentElement.querySelector(".move-menu-position-input");
       const raw = parseInt(input.value, 10);
-      const clamped = Math.max(1, Math.min(steps.length, Number.isFinite(raw) ? raw : 1));
+      // steps.length always equals state.purchaseOrder.length (see
+      // renderProgression's visiblePos comment) - using the latter directly
+      // means this handler needs no per-render steps array captured.
+      const clamped = Math.max(1, Math.min(state.purchaseOrder.length, Number.isFinite(raw) ? raw : 1));
       openMoveMenuKey = null;
       moveToVisiblePosition(fromIndex, clamped);
-    });
-  });
-  Array.from(el.progressionContent.querySelectorAll(".step-add")).forEach((btn) => {
-    if (btn.disabled) return;
-    btn.addEventListener("click", () => {
-      const category = btn.getAttribute("data-category");
-      const idx = parseInt(btn.getAttribute("data-idx"), 10);
+      return;
+    }
+    const addBtn = e.target.closest(".step-add");
+    if (addBtn) {
+      if (addBtn.disabled) return;
+      const category = addBtn.getAttribute("data-category");
+      const idx = parseInt(addBtn.getAttribute("data-idx"), 10);
       applyAttempt(attemptIncrement(category, idx));
-    });
-  });
-  Array.from(el.progressionContent.querySelectorAll(".step-remove")).forEach((btn) => {
-    if (btn.disabled) return;
-    btn.addEventListener("click", () => {
-      const category = btn.getAttribute("data-category");
-      const idx = parseInt(btn.getAttribute("data-idx"), 10);
+      return;
+    }
+    const removeBtn = e.target.closest(".step-remove");
+    if (removeBtn) {
+      if (removeBtn.disabled) return;
+      const category = removeBtn.getAttribute("data-category");
+      const idx = parseInt(removeBtn.getAttribute("data-idx"), 10);
       applyAttempt(attemptDecrement(category, idx));
-    });
-  });
-  // Toggles the owned watermark at this step: marking an unowned step owns
-  // it and everything below it (you can't have rank 3 without ranks 1-2);
-  // unmarking an owned one drops the watermark to just below it.
-  Array.from(el.progressionContent.querySelectorAll(".step-own")).forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const scope = btn.getAttribute("data-scope");
-      const className = btn.getAttribute("data-classname") || null;
-      const idx = parseInt(btn.getAttribute("data-idx"), 10);
-      const rank = parseInt(btn.getAttribute("data-rank"), 10);
-      const nowOwned = btn.classList.contains("active");
+      return;
+    }
+    // Toggles the owned watermark at this step: marking an unowned step owns
+    // it and everything below it (you can't have rank 3 without ranks 1-2);
+    // unmarking an owned one drops the watermark to just below it.
+    const ownBtn = e.target.closest(".step-own");
+    if (ownBtn) {
+      const scope = ownBtn.getAttribute("data-scope");
+      const className = ownBtn.getAttribute("data-classname") || null;
+      const idx = parseInt(ownBtn.getAttribute("data-idx"), 10);
+      const rank = parseInt(ownBtn.getAttribute("data-rank"), 10);
+      const nowOwned = ownBtn.classList.contains("active");
       setOwnedRank(scope, className, idx, nowOwned ? rank - 1 : rank);
       renderAll();
-    });
+      return;
+    }
+    const divider = e.target.closest(".progression-divider");
+    if (divider) openWaypointModal(parseInt(divider.getAttribute("data-pts"), 10));
   });
 
-  wireProgressionDragTargets();
-}
-
-// Drag-to-reorder wiring for every Progression row, expanded preview box,
-// and waypoint divider. Split out of renderProgression purely for size -
-// it closes over nothing but module-level drag state, and has to re-run on
-// every render since the elements it binds are replaced wholesale.
-function wireProgressionDragTargets() {
-  Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((rowEl) => {
-    rowEl.addEventListener("dragstart", (e) => {
-      dragSrcIndex = parseInt(rowEl.getAttribute("data-index"), 10);
-      dragBaselineWarnCount = countPrereqWarns(computeProgressionSteps());
-      dragWarnCacheToIndex = null;
-      rowEl.classList.add("dragging");
-      e.dataTransfer.effectAllowed = "move";
-      // Firefox won't start the drag at all unless setData is called.
-      e.dataTransfer.setData("text/plain", String(dragSrcIndex));
-      e.dataTransfer.setData(PROGRESSION_DRAG_TYPE, String(dragSrcIndex));
-    });
-    rowEl.addEventListener("dragend", () => {
-      rowEl.classList.remove("dragging");
-      clearDragOverMarks();
-      dragSrcIndex = null;
-    });
-    rowEl.addEventListener("dragover", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+  el.progressionContent.addEventListener("dragstart", (e) => {
+    const rowEl = e.target.closest(".progression-row");
+    if (!rowEl) return;
+    dragSrcIndex = parseInt(rowEl.getAttribute("data-index"), 10);
+    dragBaselineWarnCount = countPrereqWarns(computeProgressionSteps());
+    dragWarnCacheToIndex = null;
+    rowEl.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    // Firefox won't start the drag at all unless setData is called.
+    e.dataTransfer.setData("text/plain", String(dragSrcIndex));
+    e.dataTransfer.setData(PROGRESSION_DRAG_TYPE, String(dragSrcIndex));
+  });
+  el.progressionContent.addEventListener("dragend", (e) => {
+    const rowEl = e.target.closest(".progression-row");
+    if (!rowEl) return;
+    rowEl.classList.remove("dragging");
+    clearDragOverMarks();
+    dragSrcIndex = null;
+  });
+  el.progressionContent.addEventListener("dragover", (e) => {
+    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+    const rowEl = e.target.closest(".progression-row");
+    if (rowEl) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       clearDragOverMarks();
@@ -1255,30 +1268,18 @@ function wireProgressionDragTargets() {
       const toIndex = before ? overIndex : overIndex + 1;
       rowEl.classList.add(before ? "drag-over-top" : "drag-over-bottom");
       if (dragWouldIntroduceWarn(toIndex)) rowEl.classList.add("drag-warn");
-    });
-    rowEl.addEventListener("drop", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
-      e.preventDefault();
-      const rect = rowEl.getBoundingClientRect();
-      const before = e.clientY - rect.top < rect.height / 2;
-      const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
-      moveProgressionEntryTo(dragSrcIndex, before ? overIndex : overIndex + 1);
-      dragSrcIndex = null;
-      stopAutoScroll();
-    });
-  });
-
-  // An expanded next-rank preview is a sibling of its row, not a descendant, and
-  // carries no drag handlers of its own - hovering/dropping on one otherwise
-  // falls into a dead zone (no row claims it, and the container-level fallback
-  // below bails because e.target is the preview box, not the container itself).
-  // Treat it as an extension of the row right above it: dropping anywhere on
-  // the preview inserts after that row.
-  Array.from(el.progressionContent.querySelectorAll(".progression-next-rank")).forEach((boxEl) => {
-    const ownerRow = boxEl.previousElementSibling;
-    if (!ownerRow || !ownerRow.classList.contains("progression-row")) return;
-    boxEl.addEventListener("dragover", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+      return;
+    }
+    // An expanded next-rank preview is a sibling of its row, not a
+    // descendant - hovering/dropping on one is otherwise a dead zone (no row
+    // claims it, and the container-level fallback in wireProgressionDropZone
+    // bails because e.target is the preview box, not the container itself).
+    // Treat it as an extension of the row right above it: dropping anywhere
+    // on the preview inserts after that row.
+    const boxEl = e.target.closest(".progression-next-rank");
+    if (boxEl) {
+      const ownerRow = boxEl.previousElementSibling;
+      if (!ownerRow || !ownerRow.classList.contains("progression-row")) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       clearDragOverMarks();
@@ -1286,33 +1287,19 @@ function wireProgressionDragTargets() {
       if (overIndex === dragSrcIndex) return;
       ownerRow.classList.add("drag-over-bottom");
       if (dragWouldIntroduceWarn(overIndex + 1)) ownerRow.classList.add("drag-warn");
-    });
-    boxEl.addEventListener("drop", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
-      e.preventDefault();
-      const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
-      moveProgressionEntryTo(dragSrcIndex, overIndex + 1);
-      dragSrcIndex = null;
-      stopAutoScroll();
-    });
-  });
-
-  // A waypoint divider is the same kind of dead zone as a next-rank preview
-  // box (a non-draggable sibling with no handlers of its own) - same fix:
-  // treat it as an extension of the row right above it, dropping anywhere on
-  // it inserts after that row. A divider with no row above it at all (its
-  // threshold is below the very first step's cumulative) maps to "insert at
-  // the very start" instead, via the first row's own top-half indicator.
-  Array.from(el.progressionContent.querySelectorAll(".progression-divider")).forEach((divEl) => {
-    const ownerRow = findPrecedingRow(divEl);
-    divEl.addEventListener("click", () => {
-      openWaypointModal(parseInt(divEl.getAttribute("data-pts"), 10));
-    });
-    divEl.addEventListener("dragover", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+      return;
+    }
+    // A waypoint divider is the same kind of dead zone as a next-rank
+    // preview box - same fix: treat it as an extension of the row right
+    // above it. A divider with no row above it at all (its threshold is
+    // below the very first step's cumulative) maps to "insert at the very
+    // start" instead, via the first row's own top-half indicator.
+    const divEl = e.target.closest(".progression-divider");
+    if (divEl) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       clearDragOverMarks();
+      const ownerRow = findPrecedingRow(divEl);
       if (!ownerRow) {
         const firstRow = el.progressionContent.querySelector(".progression-row");
         if (firstRow && parseInt(firstRow.getAttribute("data-index"), 10) !== dragSrcIndex) {
@@ -1325,15 +1312,41 @@ function wireProgressionDragTargets() {
       if (overIndex === dragSrcIndex) return;
       ownerRow.classList.add("drag-over-bottom");
       if (dragWouldIntroduceWarn(overIndex + 1)) ownerRow.classList.add("drag-warn");
-    });
-    divEl.addEventListener("drop", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+    }
+  });
+  el.progressionContent.addEventListener("drop", (e) => {
+    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+    const rowEl = e.target.closest(".progression-row");
+    if (rowEl) {
       e.preventDefault();
+      const rect = rowEl.getBoundingClientRect();
+      const before = e.clientY - rect.top < rect.height / 2;
+      const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
+      moveProgressionEntryTo(dragSrcIndex, before ? overIndex : overIndex + 1);
+      dragSrcIndex = null;
+      stopAutoScroll();
+      return;
+    }
+    const boxEl = e.target.closest(".progression-next-rank");
+    if (boxEl) {
+      const ownerRow = boxEl.previousElementSibling;
+      if (!ownerRow || !ownerRow.classList.contains("progression-row")) return;
+      e.preventDefault();
+      const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
+      moveProgressionEntryTo(dragSrcIndex, overIndex + 1);
+      dragSrcIndex = null;
+      stopAutoScroll();
+      return;
+    }
+    const divEl = e.target.closest(".progression-divider");
+    if (divEl) {
+      e.preventDefault();
+      const ownerRow = findPrecedingRow(divEl);
       const toIndex = ownerRow ? parseInt(ownerRow.getAttribute("data-index"), 10) + 1 : 0;
       moveProgressionEntryTo(dragSrcIndex, toIndex);
       dragSrcIndex = null;
       stopAutoScroll();
-    });
+    }
   });
 }
 
