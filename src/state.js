@@ -160,6 +160,16 @@ export function serializeRanks(ranks) {
   return out;
 }
 
+// parseInt implicitly stringifies a non-number/string argument, which can
+// throw - not just return NaN - for an object whose toString isn't callable
+// and whose (inherited, default) valueOf doesn't return a primitive either
+// (e.g. {toString: null}), fully reachable from a decoded share code no
+// validation has touched yet. Restricting to number/string up front avoids
+// that crash without weakening what's actually accepted.
+function safeParseInt(value) {
+  return (typeof value === "number" || typeof value === "string") ? parseInt(value, 10) : NaN;
+}
+
 // Saved rank values come from localStorage, pasted text, or a URL — none of
 // which are guaranteed to have gone through this app. Coerce to an integer
 // and clamp to the AA's real rank range so a bogus value (huge, negative,
@@ -168,7 +178,7 @@ export function serializeRanks(ranks) {
 function clampRankValue(scope, className, idx, rawValue) {
   const aa = aaAt(scope, className, idx);
   if (!aa) return 0;
-  const n = parseInt(rawValue, 10);
+  const n = safeParseInt(rawValue);
   if (!Number.isFinite(n)) return 0;
   return Math.max(0, Math.min(aa.ranks, n));
 }
@@ -352,7 +362,7 @@ export function sanitizeWaypoints(list) {
     if (Array.isArray(entry)) [rawPts, rawLabel, rawColor] = entry;
     else if (entry && typeof entry === "object") { rawPts = entry.pts; rawLabel = entry.label; rawColor = entry.color; }
     else return;
-    const pts = parseInt(rawPts, 10);
+    const pts = safeParseInt(rawPts);
     if (!Number.isFinite(pts) || pts < 0) return;
     const clamped = Math.min(pts, MAX_WAYPOINT_PTS);
     const label = typeof rawLabel === "string" && rawLabel.trim() ? rawLabel.trim().slice(0, 60) : null;
@@ -498,7 +508,7 @@ export function applyLoaded(loaded) {
   ) {
     state.selectedClasses = loaded.selectedClasses.slice();
   }
-  const parsedLevel = parseInt(loaded.charLevel, 10);
+  const parsedLevel = safeParseInt(loaded.charLevel);
   if (Number.isFinite(parsedLevel)) {
     state.charLevel = Math.max(1, Math.min(50, parsedLevel));
   }
