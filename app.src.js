@@ -5626,8 +5626,10 @@ async function applySharedBuildFromUrl(localLoadResult) {
       const ownedOutcome = maybeImportOwned(json);
       result.droppedRanks += ownedOutcome.dropped;
       saveLocal();
-      saveImportedBuild();
-      notice = `Loaded shared build from link — saved as "Imported Build" in Builds${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`;
+      const savedId = saveImportedBuild();
+      notice = savedId
+        ? `Loaded shared build from link — saved as "Imported Build" in Builds${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`
+        : `Loaded shared build from link, but couldn't save it to Builds — local storage may be full or unavailable${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`;
       applied = true;
     }
   } else {
