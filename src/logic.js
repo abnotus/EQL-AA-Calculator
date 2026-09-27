@@ -816,6 +816,7 @@ export function effectiveDisplayRank(aa, rank) {
 // also don't qualify for by class would misleadingly read as "just wait" if level won.
 export function structuralLockReason(catKey, idx) {
   const aa = getList(catKey)[idx];
+  if (!aa) return null;
   if (!isClassEligible(aa)) {
     return { kind: "classEligibility", text: `Requires one of: ${aa.eligibleClasses.join(", ")}.` };
   }
