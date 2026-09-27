@@ -1040,10 +1040,13 @@ function sanitizeWaypoints(list) {
     const color = typeof rawColor === "string" && WAYPOINT_COLOR_KEYS.has(rawColor) ? rawColor : null;
     byPts.set(clamped, { label, color });
   });
+  // Sorted ascending first so a truncation below keeps the highest-`pts`
+  // entries (typically the most meaningful, late-progression markers)
+  // rather than whichever happened to sort first.
   return Array.from(byPts.entries())
     .map(([pts, { label, color }]) => ({ pts, label, color }))
     .sort((a, b) => a.pts - b.pts)
-    .slice(0, MAX_WAYPOINTS);
+    .slice(-MAX_WAYPOINTS);
 }
 
 // Still swallows its own write failure silently, unlike saveBuildAs's
