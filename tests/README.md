@@ -61,7 +61,7 @@ an actual pending wiki rename to exercise it against.
 `test_builds_index_cache.py`, `test_tree_click_delegation.py`,
 `test_progression_drag_warn_cache.py`, `test_save_build_partial_failure.py`,
 `test_builds_cross_tab_sync.py`, `test_decompression_bomb.py`,
-`test_auto_grant_class_eligibility.py`
+`test_auto_grant_class_eligibility.py`, `test_hostile_numeric_coercion.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -116,6 +116,7 @@ python tests/test_progression_drag_warn_cache.py
 python tests/test_save_build_partial_failure.py
 python tests/test_builds_cross_tab_sync.py
 python tests/test_decompression_bomb.py
+python tests/test_hostile_numeric_coercion.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -320,3 +321,9 @@ rebuilding and committing.
   padded past either cap must still be rejected, proving the limit is what's
   catching it rather than some unrelated parse failure.
   `test_decompression_bomb.py`.
+- **Numeric coercion on decoded/untrusted values.** `safeParseInt` in
+  `state.js` and every call site routed through it (`applyLoaded`'s
+  charLevel, `clampRankValue`, `sanitizeWaypoints`). A value that can't
+  become a primitive (e.g. `{"toString": null}`) must be dropped like any
+  other malformed input, not thrown as an uncaught exception mid-boot.
+  `test_hostile_numeric_coercion.py`.

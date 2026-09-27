@@ -160,12 +160,9 @@ export function serializeRanks(ranks) {
   return out;
 }
 
-// parseInt implicitly stringifies a non-number/string argument, which can
-// throw - not just return NaN - for an object whose toString isn't callable
-// and whose (inherited, default) valueOf doesn't return a primitive either
-// (e.g. {toString: null}), fully reachable from a decoded share code no
-// validation has touched yet. Restricting to number/string up front avoids
-// that crash without weakening what's actually accepted.
+// parseInt implicitly stringifies its argument, which can throw - not just
+// return NaN - for an object like {toString: null}, reachable from a
+// decoded share code. Restricting to number/string avoids that crash.
 function safeParseInt(value) {
   return (typeof value === "number" || typeof value === "string") ? parseInt(value, 10) : NaN;
 }
