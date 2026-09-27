@@ -328,15 +328,39 @@ function legacyEntries(scope, className) {
   return scope === "class" ? (LEGACY_AA_ORDER.classes[className] || []) : (LEGACY_AA_ORDER[scope] || []);
 }
 
+// keyForIdx/idxForKey results, cached per (scope, className) - AA_DATA never
+// changes at runtime, so this mapping is fixed for the page's whole life.
+// Built lazily on first use of a given scope/class rather than up front, so
+// a scope/class combo nothing ever saves against costs nothing. Without
+// this, every single
+// saved rank/purchaseOrder/hidden entry re-slugified and re-scanned its
+// entire scope's AA list from scratch (keyForEntryIdx/idxForEntryKey are
+// each O(n) alone, called in a loop for idxForEntryKey - O(n^2) overall) on
+// every save and load.
+const entryKeyMapCache = {};
+function entryKeyMaps(scope, className) {
+  const cacheKey = `${scope}:${className || ""}`;
+  let maps = entryKeyMapCache[cacheKey];
+  if (!maps) {
+    const entries = currentEntries(scope, className);
+    const idxToKey = entries.map((_, idx) => keyForEntryIdx(entries, idx));
+    const keyToIdx = new Map();
+    idxToKey.forEach((key, idx) => { if (key != null && !keyToIdx.has(key)) keyToIdx.set(key, idx); });
+    maps = entryKeyMapCache[cacheKey] = { idxToKey, keyToIdx };
+  }
+  return maps;
+}
+
 // idx into today's AA_DATA -> stable name key, for writing new saves.
 function keyForIdx(scope, className, idx) {
-  return keyForEntryIdx(currentEntries(scope, className), idx);
+  return entryKeyMaps(scope, className).idxToKey[idx] || null;
 }
 
 // Stable name key -> idx into today's AA_DATA, for reading saves already in
 // key form. -1 if that AA no longer exists under this scope/class.
 function idxForKey(scope, className, key) {
-  return idxForEntryKey(currentEntries(scope, className), key);
+  const idx = entryKeyMaps(scope, className).keyToIdx.get(key);
+  return idx === undefined ? -1 : idx;
 }
 
 // idx captured against the frozen pre-key ordering -> idx into today's
