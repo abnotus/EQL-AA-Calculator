@@ -1167,7 +1167,10 @@ export function undoLastMutation() {
   const aa = getList(category)[m.entry.idx];
   if (!aa) return { changed: false, message: "Can't undo — that AA is no longer available." };
   const store = getRanksStore(category);
-  const cur = store[m.entry.idx] || 0;
+  // Same autoRanks special-case changeRank itself applies: a decrement that
+  // lands at or below the free floor deletes the store entry, so the raw
+  // store value alone under-reads an autoRanks AA's true current rank.
+  const cur = aa.autoRanks ? effectiveRank(category, m.entry.idx) : (store[m.entry.idx] || 0);
   if (cur >= aa.ranks) return { changed: false, message: "Can't undo — already at max rank." };
   store[m.entry.idx] = cur + 1;
   const pos = Math.min(m.position, state.purchaseOrder.length);
