@@ -76,6 +76,12 @@ function expandCompactRanks(list, columnar) {
   pairs.forEach(([id, rank]) => {
     const entry = entryForId(id);
     if (!entry) return;
+    // A columnar payload's ids/ranks arrays are meant to be the same length
+    // - `rank` is only ever missing here if that's been tampered with or
+    // corrupted. Dropped the same way an unresolved id is, rather than
+    // stored as a bare `undefined` that state.js's clampRankValue would
+    // later turn into a silent, uncounted 0.
+    if (!Number.isFinite(rank)) return;
     if (entry.scope === "class") {
       ranks.classes[entry.className] = ranks.classes[entry.className] || {};
       ranks.classes[entry.className][entry.key] = rank;
