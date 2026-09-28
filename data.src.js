@@ -113,7 +113,7 @@ const AA_DATA = {
       { name: "Bestow Divine Aura", ranks: 1, costs: ["3"], levelReq: "50", prereq: "Requires Divine Aura at level 1", description: "Activated: instantly renders your target invulnerable to most attacks but also unable to attack, and heals 5000 health every 6 seconds for 0:00:18. (Refresh 0:10:00)" },
       { name: "Purify Soul", ranks: 1, costs: ["5"], levelReq: "15", prereq: "Requires Healing Gift level 3", description: "Activated: cures a target up to 100 feet away of 72 poison, disease, and curse counters and has a 95% chance to remove up to 6 detrimental effects. (Refresh 0:30:00)" },
       { name: "Turn Undead", ranks: 1, costs: ["3"], levelReq: "40", description: "Activated: infuses your undead target with holy energy, dealing 200 damage every 6 seconds for 0:00:24, with a 10% chance to trigger a critical 1000 damage effect. (Refresh 0:02:00)" },
-      { name: "Unbound Boon", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Grants your healing spells a 2/4/?% chance to score an exceptional heal, doubling the healing value of the spell. Rank 2 requires level 30, rank 3 requires level 50." }
+      { name: "Unbound Boon", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Grants your healing spells a 2/4/6% chance to score an exceptional heal, doubling the healing value of the spell. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Druid": [
       { name: "Enhanced Root", ranks: 1, costs: ["5"], levelReq: "1", description: "Reduces the chance that an NPC target entangled by your root spells will break free when struck by a non-melee attack by 50%." },
