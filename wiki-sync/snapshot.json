@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 179478,
+  "revid": 179690,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -763,7 +763,7 @@
       "costs": [
         "0"
       ],
-      "description": "This passive ability grants your healing spells a 2/4/?% chance to score an exceptional heal. An exceptional heal doubles the healing value of the spell. Requirements: Level 12/30/50."
+      "description": "This passive ability grants your healing spells a 2/4/6% chance to score an exceptional heal. An exceptional heal doubles the healing value of the spell. Requirements: Level 12/30/50."
     },
     "class:Druid::Enhanced Root::0": {
       "ranks": "1",
@@ -996,7 +996,7 @@
         "6",
         "9"
       ],
-      "description": "Increases the base damage of your archery attacks by 30/60/100%. Requirements: Level 1."
+      "description": "Increases the base damage of your archery attacks by 20/40/60%. Requirements: Level 1."
     },
     "class:Rogue::Chaotic Stab::0": {
       "ranks": "1",
