@@ -11,6 +11,12 @@
 # a Progression step, so there's nothing to mark owned - which leaves
 # ownedRank permanently 0 for them. Unowned Only excludes them too, or every
 # auto AA would sit in that list forever despite needing no action at all.
+#
+# A partial-auto AA (aa.autoRanks, e.g. Symphonic Aura's free rank 1 of 5)
+# needs the same floor respected on its owned watermark, not just its rank
+# store: marking its one purchasable step owned then unmarking it must drop
+# owned back to 0, not the free-rank floor, or it reads as "owned" here
+# despite nothing purchased.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -97,6 +103,44 @@ with sync_playwright() as p:
     print("General cards after toggling off:", restored)
     assert restored == total_general
     print("PASS: toggling off restores the owned cards")
+
+    # --- Regression: an autoRanks AA's free floor must not read as "owned".
+    # Symphonic Aura (Bard, classSlot0) has 1 free rank plus 4 purchasable
+    # ones. Plan rank 2, mark it owned, then unmark it - the owned watermark
+    # must fall all the way back to 0, not get stuck at the free-rank floor
+    # (1), or it would silently disappear from Unowned Only despite no
+    # purchased rank being owned. ---
+    page.click('button[data-tab="classSlot0"]')
+    page.wait_for_timeout(100)
+    page.locator(".node", has=page.locator(".name", has_text="Symphonic Aura")).first.click()
+    page.click("#incBtn")
+    page.wait_for_timeout(80)
+    page.click('button[data-tab="progression"]')
+    page.wait_for_timeout(150)
+    sa_row = page.locator(".progression-row", has=page.locator(".step-name", has_text="Symphonic Aura"))
+    sa_row.locator(".step-own").click()
+    page.wait_for_timeout(80)
+    sa_row.locator(".step-own").click()
+    page.wait_for_timeout(80)
+
+    page.click("#browseToggle")
+    page.select_option("#browseFilter", "Bard")
+    page.wait_for_timeout(150)
+    sa_card = page.locator(".browse-card", has=page.locator(".name", has_text="Symphonic Aura"))
+    assert "owned" not in (sa_card.get_attribute("class") or "").split(), \
+        "FAIL: Symphonic Aura still shows as owned after mark/unmark - owned watermark stuck at the free-rank floor"
+    assert sa_card.locator(".owned-info").count() == 0, \
+        "FAIL: Symphonic Aura still shows an Owned: N/R badge after mark/unmark"
+    print("PASS: mark/unmark of an autoRanks AA's purchasable rank returns owned to 0, not the free-rank floor")
+
+    if "active" not in toggle.get_attribute("class"):
+        toggle.click()
+        page.wait_for_timeout(150)
+    assert page.locator(".browse-card", has=page.locator(".name", has_text="Symphonic Aura")).count() == 1, \
+        "FAIL: Unowned Only hid Symphonic Aura despite no purchased rank being owned"
+    print("PASS: Unowned Only still shows an autoRanks AA after a mark/unmark round trip on its purchasable rank")
+    toggle.click()
+    page.wait_for_timeout(150)
 
     print("ERRORS:", errors)
     assert not errors

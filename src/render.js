@@ -14,7 +14,8 @@ import {
   isHidden, isHiddenScoped, setHidden, setHiddenScoped, hasAnyHidden,
   isSuppressed, isSuppressedScoped,
   effectiveRankScoped, countOtherClassesPicked, otherClassesWithPicks, spentForClass,
-  ownedPoints, spentOnInactiveClasses, estimatedExtraOwnedPoints, isClassEligible, ownedRank
+  ownedPoints, spentOnInactiveClasses, estimatedExtraOwnedPoints, isClassEligible, ownedRank,
+  autoRanksOffset, autoRanksOffsetScoped
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
@@ -489,7 +490,9 @@ export function renderBrowse() {
       // never a Progression step to mark owned in the first place), so
       // ownedRank sits at 0 forever - excluded here too, or Unowned Only
       // would permanently list every one as still needing action.
-      if (state.browseUnownedOnly && (owned > 0 || aa.auto)) return false;
+      // autoRanksOffset(aa) rather than a plain 0: owned can legitimately
+      // sit at a partial AA's free-rank floor with nothing purchased.
+      if (state.browseUnownedOnly && (owned > autoRanksOffset(aa) || aa.auto)) return false;
       return true;
     });
 
@@ -1239,7 +1242,14 @@ export function wireProgressionRowEvents() {
       const idx = parseInt(ownBtn.getAttribute("data-idx"), 10);
       const rank = parseInt(ownBtn.getAttribute("data-rank"), 10);
       const nowOwned = ownBtn.classList.contains("active");
-      setOwnedRank(scope, className, idx, nowOwned ? rank - 1 : rank);
+      const newRank = nowOwned ? rank - 1 : rank;
+      // At or below the AA's free autoRanks floor isn't a real purchase -
+      // same convention changeRank and performReset already use. Without
+      // this, unmarking the one purchasable step of an autoRanks AA left
+      // owned sitting at the floor instead of 0, which then read as
+      // "owned" everywhere else (the browse view's Unowned Only filter,
+      // the owned badge) despite nothing actually being purchased.
+      setOwnedRank(scope, className, idx, newRank <= autoRanksOffsetScoped(scope, className, idx) ? 0 : newRank);
       renderAll();
       return;
     }

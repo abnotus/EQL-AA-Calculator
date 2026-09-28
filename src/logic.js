@@ -220,8 +220,16 @@ export function effectiveRankScoped(scope, className, idx) {
 // purchaseOrder counts against a held rank (how many ranks never went
 // through purchaseOrder), which can diverge from "what's currently
 // buyable" if charLevel changes after the free ranks were granted.
-function autoRanksOffset(aa) {
+export function autoRanksOffset(aa) {
   return aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+}
+
+// autoRanksOffset by (scope, className, idx) directly, for callers that only
+// have the AA's identity (e.g. the Progression toggle, off data attributes),
+// not the AA object itself.
+export function autoRanksOffsetScoped(scope, className, idx) {
+  const list = scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
+  return autoRanksOffset(list[idx]);
 }
 
 function getRanksStore(catKey) {
