@@ -199,10 +199,9 @@ def load_snapshot():
 
 
 def save_snapshot(pageid, revid, flat):
-    SNAPSHOT_PATH.write_text(
-        json.dumps({"pageid": pageid, "revid": revid, "abilities": flat}, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    # newline="\n" keeps the file LF on Windows (see assign_aa_ids.py).
+    with open(SNAPSHOT_PATH, "w", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps({"pageid": pageid, "revid": revid, "abilities": flat}, indent=2, ensure_ascii=False))
 
 
 def main():

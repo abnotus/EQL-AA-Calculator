@@ -183,7 +183,9 @@ def main():
             entry["maxRankVerified"] = rank
             entry["verifiedAt"] = today
         existing[name] = entry
-    VERIFIED_FILE.write_text(json.dumps(existing, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    # newline="\n" keeps the file LF on Windows (see assign_aa_ids.py).
+    with open(VERIFIED_FILE, "w", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(existing, indent=2, sort_keys=True) + "\n")
     print(f"\nUpdated {VERIFIED_FILE.name}: {len(existing)} AA(s) with at least one log-verified rank")
 
     return 1 if mismatched else 0
