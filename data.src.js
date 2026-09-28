@@ -157,7 +157,7 @@ const AA_DATA = {
       { name: "Hunter's Attack Power", ranks: 26, costs: Array(26).fill("0"), levelReq: "8", auto: true, description: "Increases your attack power by 4 points per rank." },
       { name: "Innate Called Shot", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Ranger the ability to unleash a double bow shot on stationary targets." },
       { name: "Unbounded Strikethrough", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance you will strike through your opponent's active defenses (dodge, block, parry, riposte) by 10/20/30%. Rank 2 requires level 30, rank 3 requires level 50." },
-      { name: "Weapon Mastery of the Scout", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases the base damage of your archery attacks by 30/60/100%." }
+      { name: "Weapon Mastery of the Scout", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Increases the base damage of your archery attacks by 20/40/60%." }
     ],
     "Rogue": [
       { name: "Chaotic Stab", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Allows your backstab attacks to deal minimal backstab damage if you are not behind your target." },
