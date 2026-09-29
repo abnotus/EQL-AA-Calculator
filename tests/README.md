@@ -14,8 +14,8 @@ Discovers every `test_*.py` in this directory, starts its own local server
 for the duration (killed again when the run ends, whether or not everything
 passed), and runs each test as its own subprocess with a timeout so one
 stalled test can't hang the whole run. Prints a pass/fail line per test plus
-a summary, and exits non-zero if anything failed or timed out. Not wired
-into CI (see below) - this is the manual-run convenience, nothing more.
+a summary, and exits non-zero if anything failed or timed out. There's no CI
+(see below).
 
 ## Data-independent unit tests
 
@@ -180,16 +180,11 @@ The same build also shows up as a lighter-weight fixture in
 
 ## CI
 
-None of these are wired into CI yet, deliberately, not by oversight:
-`run_all.py` above needs to actually be the established way this project runs
-its tests first, and Chrome (not Playwright's own bundled browser) needs
-installing in whatever runs it, since every browser test launches with
-`channel="chrome"` on purpose. Revisit once the runner is established and the
-manual discipline it's meant to replace starts costing more than automating
-it would. A lighter first step, if that day comes, would be CI over just the
-3 data-independent tests plus `build_minify.py`'s own prereq/id invariant
-checks, none of which need a browser at all, before taking on the full
-Playwright suite.
+There is none, by decision. Every push to `main` deploys the site through
+GitHub Pages' branch deploy, so a CI run would only report after the deploy;
+instead `python build_minify.py` and `python tests/run_all.py` run before
+every push, and the live site is checked after it. The browser tests launch
+with `channel="chrome"`, so any runner would need Chrome installed.
 
 ## When to run which
 
