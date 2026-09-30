@@ -101,5 +101,65 @@ with sync_playwright() as p:
 
     print("ERRORS:", errors)
     assert not errors
+
+    # --- Regression: findInvalidatedPicks (the "N picks no longer meet
+    # their requirements" notice on load) previously only walked the 3
+    # active class slots, so a broken pick sitting in an inactive class
+    # never counted toward it - the only signal the player gets for such a
+    # break, since an inactive row's own invalidReason line is deliberately
+    # not shown (see otherClassesSectionsHtml in render.js). Reuses War
+    # Cry/Fear Resistance from above; the broken state itself (War Cry held
+    # with Fear Resistance not held at all) isn't reachable through the UI -
+    # isDependedOn blocks exactly that refund - so it's written directly to
+    # localStorage, the same way a resync-broken prereq would actually
+    # arrive (an import, a share link, or the data simply changing under an
+    # existing save). ---
+    page2 = browser.new_page(viewport={"width": 1400, "height": 900})
+    errors2 = []
+    page2.on("pageerror", lambda exc: errors2.append(str(exc)))
+    page2.on("dialog", lambda d: d.accept())
+    page2.goto(BASE)
+    page2.wait_for_selector("#treeWrap .node")
+    page2.select_option("#classSelect0", "Warrior")
+    page2.wait_for_timeout(100)
+    page2.click('button[data-tab="general"]')
+    page2.locator(".node", has=page2.locator(".name", has_text="Fear Resistance")).click()
+    for _ in range(3):
+        page2.click("#incBtn")
+        page2.wait_for_timeout(15)
+    page2.click('button[data-tab="classSlot0"]')
+    page2.wait_for_timeout(100)
+    page2.locator(".node", has=page2.locator(".name", has_text="War Cry")).click()
+    page2.click("#incBtn")
+    page2.wait_for_timeout(60)
+    print("War Cry rank before seeding the broken state:", page2.locator("#sidePanel .current").inner_text())
+    war_cry_slug = page2.evaluate(
+        "() => Object.keys(JSON.parse(localStorage.getItem('eql_aa_builder_v1')).ranks.classes.Warrior)[0]"
+    )
+    print("War Cry slug:", war_cry_slug)
+
+    page2.evaluate("""(slug) => {
+        const s = JSON.parse(localStorage.getItem('eql_aa_builder_v1'));
+        s.selectedClasses = ['Bard', 'Beastlord', 'Berserker'];
+        s.ranks.general = {};
+        s.ranks.classes = { Warrior: { [slug]: 1 } };
+        s.purchaseOrder = [{ scope: 'class', className: 'Warrior', key: slug }];
+        localStorage.setItem('eql_aa_builder_v1', JSON.stringify(s));
+    }""", war_cry_slug)
+    page2.reload()
+    page2.wait_for_selector("#treeWrap .node")
+    page2.wait_for_timeout(250)
+
+    toast = page2.locator("#toast")
+    toast_text = toast.inner_text() if toast.count() and toast.is_visible() else ""
+    print("load toast:", repr(toast_text))
+    assert "1 pick" in toast_text and "no longer meet" in toast_text, \
+        f"FAIL: expected the load notice to count War Cry's broken prereq even though Warrior isn't active, got {toast_text!r}"
+    print("PASS: a broken pick in an inactive class is counted in the load-time notice")
+
+    print("ERRORS:", errors2)
+    assert not errors2
+    page2.close()
+
     browser.close()
     print("ALL PASS")

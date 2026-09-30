@@ -2221,9 +2221,21 @@ function structuralLockReason(catKey, idx) {
 // of current state + data, so it clears itself once the gap closes — never
 // strips the held rank itself.
 function heldRankInvalidReason(catKey, idx) {
-  const aa = getList(catKey)[idx];
+  const { scope, className } = categoryToScopeClassName(catKey);
+  return heldRankInvalidReasonScoped(scope, className, idx);
+}
+
+// Same check, by (scope, className) directly rather than a catKey - an
+// inactive class has no catKey at all, same reasoning as
+// effectiveRankScoped/resolvePrereqTargetScoped. Lets findInvalidatedPicks
+// check a held rank in a class that isn't one of the 3 active slots,
+// instead of silently skipping it.
+function heldRankInvalidReasonScoped(scope, className, idx) {
+  const list = scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
+  const aa = list[idx];
   if (!aa || aa.auto) return null;
-  const purchased = getRanksStore(catKey)[idx] || 0;
+  const store = scope === "class" ? (state.ranks.classes[className] || {}) : (state.ranks[scope] || {});
+  const purchased = store[idx] || 0;
   if (purchased <= 0) return null;
   if (!isClassEligible(aa)) {
     return `requires one of: ${aa.eligibleClasses.join(", ")}, none of which are currently selected.`;
@@ -2237,28 +2249,40 @@ function heldRankInvalidReason(catKey, idx) {
     if (purchased > cap) return `exceeds the rank ${cap} cap for your currently selected classes.`;
   }
   if (!aa.prereq) return null;
-  const attempt = tryResolvePrereq(aa.prereq, catKey);
-  if (!attempt.ok) return unresolvedPrereqMessage(aa.prereq, attempt);
-  const resolved = attempt.resolved;
-  const targetRank = effectiveRank(resolved.category, resolved.idx);
+  const parsed = parsePrereqText(aa.prereq);
+  if (!parsed) return unresolvedPrereqMessage(aa.prereq, { malformed: true });
+  const resolved = resolvePrereqTargetScoped(aa.prereq, scope, className);
+  if (!resolved) return unresolvedPrereqMessage(aa.prereq, { malformed: false, name: parsed.name });
+  const targetRank = effectiveRankScoped(resolved.scope, resolved.className, resolved.idx);
   for (let r = 1; r <= purchased; r++) {
     const required = resolved.forRank(r);
     if (targetRank < required) {
-      const targetAA = getList(resolved.category)[resolved.idx];
+      const targetList = resolved.scope === "class" ? (AA_DATA.classes[resolved.className] || []) : (AA_DATA[resolved.scope] || []);
+      const targetAA = targetList[resolved.idx];
       return `Rank ${r} requires ${targetAA ? targetAA.name : "a prerequisite"} rank ${required}, which you no longer have.`;
     }
   }
   return null;
 }
 
-// Every currently-held pick that fails heldRankInvalidReason, across all
-// categories — for a one-time notice on load.
+// Every currently-held pick that fails heldRankInvalidReasonScoped, across
+// general/archetype/special plus every class ever picked — not just the 3
+// active slots, same reasoning as sumAcrossAllClasses — for a one-time
+// notice on load. A pick in a swapped-out class stays flagged (per the
+// README) even though nothing renders its own invalidReason line while
+// inactive, so this is the only place that notice can come from.
 function findInvalidatedPicks() {
   const results = [];
-  AA_CATEGORY_KEYS.forEach((catKey) => {
-    getList(catKey).forEach((aa, idx) => {
-      const reason = heldRankInvalidReason(catKey, idx);
-      if (reason) results.push({ category: catKey, idx, name: aa.name, reason });
+  ["general", "archetype", "special"].forEach((scope) => {
+    (AA_DATA[scope] || []).forEach((aa, idx) => {
+      const reason = heldRankInvalidReasonScoped(scope, null, idx);
+      if (reason) results.push({ scope, className: null, idx, name: aa.name, reason });
+    });
+  });
+  Object.keys(state.ranks.classes).forEach((className) => {
+    (AA_DATA.classes[className] || []).forEach((aa, idx) => {
+      const reason = heldRankInvalidReasonScoped("class", className, idx);
+      if (reason) results.push({ scope: "class", className, idx, name: aa.name, reason });
     });
   });
   return results;
