@@ -12,12 +12,13 @@ import { idForKey, entryForId } from "./keys.js";
 // localStorage only and stays name-keyed (readable, no size pressure
 // there).
 //
-// v5 (current, written by packV5) drops JSON entirely for packed bits,
-// sized per field from each value's real enforced ceiling. JSON spends
-// most of its bytes on structure - commas, brackets, and decimal digits
-// for values that need 4-9 bits - and DEFLATE can only partly recover
-// that. Measured 41-67% smaller than v4 across build sizes, ~43% on a
-// realistic one, with no field dropped or approximated.
+// v5/v6 (v6 current, both written by packV5 - see BUILD_CODE_VERSION
+// below) drop JSON entirely for packed bits, sized per field from each
+// value's real enforced ceiling. JSON spends most of its bytes on
+// structure - commas, brackets, and decimal digits for values that need
+// 4-9 bits - and DEFLATE can only partly recover that. Measured 41-67%
+// smaller than v4 across build sizes, ~43% on a realistic one, with no
+// field dropped or approximated.
 //
 // v2-v4 are JSON and still decode, so every link ever issued keeps
 // working: v2 is a keyed object, v3 a positional array [v,c,l,r,p,o,w],
@@ -25,7 +26,16 @@ import { idForKey, entryForId } from "./keys.js";
 // [[id,rank],...]). See expandCompactPayload/expandCompactRanks; the
 // container around them (gzip, deflate-raw, or plain) is sniffed
 // separately in decodeBuildCode.
-const BUILD_CODE_VERSION = 5;
+//
+// v6 exists solely to widen the owned/planned delta field from 5 to 6
+// signed bits (V5_BITS.rankDelta) - v5's 5 bits could only hold a delta
+// in [-16, 15], one bit short of the true [-31, 31] range, silently
+// corrupting anything outside it. expandBinaryPayload still decodes v5
+// bit-for-bit as it always has (including that gap - a v5 code already
+// carrying a too-wide delta was already wrong before this, not newly so),
+// same "every link ever issued keeps working" guarantee the JSON versions
+// get. Only the writer (packV5) and new exports moved to v6.
+const BUILD_CODE_VERSION = 6;
 
 // A real build's own code is tiny - the largest known real-world build
 // (183 picks) is a few hundred characters even uncompressed as v4 JSON.
@@ -425,7 +435,7 @@ function expandBinaryPayload(bytes) {
 
   const r = bitReader(bytes, 1);
   const v = r.take(V5_BITS.version);
-  if (v !== 5) throw new Error(`unsupported binary build code version ${v}`);
+  if (v !== 5 && v !== 6) throw new Error(`unsupported binary build code version ${v}`);
   const idMode = r.take(V5_BITS.idMode);
   const selectedClasses = [];
   for (let i = 0; i < 3; i++) {
@@ -462,9 +472,14 @@ function expandBinaryPayload(bytes) {
   });
   const deltaCount = r.take(V5_BITS.deltaCount);
   const diffWidth = indexWidth(ownedIds.length);
+  // v5 wrote/read this delta as a plain 5-bit unsigned value (V5_BITS.rank) -
+  // decoded exactly that way here regardless of what today's writer does, so
+  // an already-issued v5 code keeps decoding exactly as it always did. v6
+  // widened it to 6 signed bits (V5_BITS.rankDelta) to cover the full delta
+  // range - see BUILD_CODE_VERSION's own comment.
   for (let k = 0; k < deltaCount; k++) {
     const i = r.take(diffWidth);
-    const d = r.takeSigned(V5_BITS.rankDelta);
+    const d = v >= 6 ? r.takeSigned(V5_BITS.rankDelta) : r.take(V5_BITS.rank);
     if (i < ownedRanks.length) ownedRanks[i] -= d;
   }
 
