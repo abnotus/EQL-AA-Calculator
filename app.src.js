@@ -750,6 +750,15 @@ const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
 // beyond this one constant.
 const LEGACY_OWNED_PROFILE_ID = "legacy";
 
+// Shared by every place that reads an ownedProfileId field off a possibly-
+// untrusted or pre-migration object (a saved build slot, main.js's boot
+// read of the main payload) - a missing, non-string, or empty value
+// defaults to the shared legacy profile rather than leaving state or a
+// build slot pointing at something invalid.
+function ownedProfileIdOr(rawValue) {
+  return (typeof rawValue === "string" && rawValue) || LEGACY_OWNED_PROFILE_ID;
+}
+
 // Per-build "owned profile" storage - state.ownedProfileId says which one
 // the current session is showing; each saved Build slot has its own
 // ownedProfileId field pointing at one too (builds.js). Two builds
@@ -2894,24 +2903,13 @@ function clearActiveBuild() {
 function migrateStaleBuildSlots() {
   loadIndex().forEach(({ id }) => {
     const key = BUILD_KEY_PREFIX + id;
-    let raw;
-    try {
-      raw = localStorage.getItem(key);
-    } catch (e) {
-      return;
-    }
-    if (!raw) return;
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch (e) {
-      return;
-    }
-    if (!parsed || typeof parsed !== "object") return;
+    const parsed = readJsonFromStorage(key, isObject);
+    if (!parsed) return;
     let changed = false;
     if ("totalPoints" in parsed) { delete parsed.totalPoints; changed = true; }
-    if (typeof parsed.ownedProfileId !== "string" || !parsed.ownedProfileId) {
-      parsed.ownedProfileId = LEGACY_OWNED_PROFILE_ID;
+    const validOwnedProfileId = ownedProfileIdOr(parsed.ownedProfileId);
+    if (validOwnedProfileId !== parsed.ownedProfileId) {
+      parsed.ownedProfileId = validOwnedProfileId;
       changed = true;
     }
     if (!changed) return;
@@ -2933,7 +2931,7 @@ function readBuildRaw(id) {
 // happen once migrateStaleBuildSlots has run, but cheap to be defensive).
 function ownedProfileIdOfBuild(id) {
   const raw = readBuildRaw(id);
-  return (raw && typeof raw.ownedProfileId === "string" && raw.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+  return ownedProfileIdOr(raw && raw.ownedProfileId);
 }
 
 // Owned profiles are minted freely - every brand-new Save As, every Split,
@@ -3190,7 +3188,7 @@ function loadBuild(id) {
   // two builds only show the same owned progress now if explicitly
   // linked (see linkOwnedToBuild below), not implicitly just by both
   // being builds.
-  state.ownedProfileId = (typeof parsed.ownedProfileId === "string" && parsed.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+  state.ownedProfileId = ownedProfileIdOr(parsed.ownedProfileId);
   loadAndApplyOwned(null);
   setActiveBuildId(id);
   saveLocal();
@@ -6236,7 +6234,7 @@ async function init() {
   // it and shouldn't disturb whatever's already tracking; boot is the one
   // caller that always wants to adopt the saved session's own value,
   // falling back to the shared legacy profile for a pre-migration save.
-  state.ownedProfileId = (rawLocal && typeof rawLocal.ownedProfileId === "string" && rawLocal.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+  state.ownedProfileId = ownedProfileIdOr(rawLocal && rawLocal.ownedProfileId);
   // Owned loads from that profile now, independent of whichever build ends
   // up active below (see state.js). Folded into localResult.droppedRanks
   // so the notice below and applySharedBuildFromUrl's extraRisk gate both

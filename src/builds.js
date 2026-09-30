@@ -5,9 +5,9 @@
 
 import {
   state, saveLocal, serializeRanks, serializePurchaseOrder, applyLoaded, SAVE_FORMAT_VERSION,
-  genId, LEGACY_OWNED_PROFILE_ID, loadAndApplyOwned, saveOwnedProfileTo,
+  genId, loadAndApplyOwned, saveOwnedProfileTo,
   linkOwnedProfile, splitOwnedProfile, mergeOwnedProfileInto,
-  listOwnedProfileIds, removeOwnedProfile, readJsonFromStorage, isObject
+  listOwnedProfileIds, removeOwnedProfile, readJsonFromStorage, isObject, ownedProfileIdOr
 } from "./state.js";
 import { spentPoints, clearLastMutation, reconcilePurchaseOrderCounts } from "./logic.js";
 
@@ -120,24 +120,13 @@ export function clearActiveBuild() {
 export function migrateStaleBuildSlots() {
   loadIndex().forEach(({ id }) => {
     const key = BUILD_KEY_PREFIX + id;
-    let raw;
-    try {
-      raw = localStorage.getItem(key);
-    } catch (e) {
-      return;
-    }
-    if (!raw) return;
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch (e) {
-      return;
-    }
-    if (!parsed || typeof parsed !== "object") return;
+    const parsed = readJsonFromStorage(key, isObject);
+    if (!parsed) return;
     let changed = false;
     if ("totalPoints" in parsed) { delete parsed.totalPoints; changed = true; }
-    if (typeof parsed.ownedProfileId !== "string" || !parsed.ownedProfileId) {
-      parsed.ownedProfileId = LEGACY_OWNED_PROFILE_ID;
+    const validOwnedProfileId = ownedProfileIdOr(parsed.ownedProfileId);
+    if (validOwnedProfileId !== parsed.ownedProfileId) {
+      parsed.ownedProfileId = validOwnedProfileId;
       changed = true;
     }
     if (!changed) return;
@@ -159,7 +148,7 @@ function readBuildRaw(id) {
 // happen once migrateStaleBuildSlots has run, but cheap to be defensive).
 function ownedProfileIdOfBuild(id) {
   const raw = readBuildRaw(id);
-  return (raw && typeof raw.ownedProfileId === "string" && raw.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+  return ownedProfileIdOr(raw && raw.ownedProfileId);
 }
 
 // Owned profiles are minted freely - every brand-new Save As, every Split,
@@ -416,7 +405,7 @@ export function loadBuild(id) {
   // two builds only show the same owned progress now if explicitly
   // linked (see linkOwnedToBuild below), not implicitly just by both
   // being builds.
-  state.ownedProfileId = (typeof parsed.ownedProfileId === "string" && parsed.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+  state.ownedProfileId = ownedProfileIdOr(parsed.ownedProfileId);
   loadAndApplyOwned(null);
   setActiveBuildId(id);
   saveLocal();

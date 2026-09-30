@@ -2,7 +2,7 @@
 
 import {
   state, loadLocal, applyLoaded, saveLocal, loadAndApplyOwned, loadAndApplyHidden,
-  DISCLAIMER_DISMISSED_KEY, cleanupStaleStorageKeys, migrateLegacyOwnedProfile, LEGACY_OWNED_PROFILE_ID
+  DISCLAIMER_DISMISSED_KEY, cleanupStaleStorageKeys, migrateLegacyOwnedProfile, ownedProfileIdOr
 } from "./state.js";
 import { cacheDom, el } from "./dom.js";
 import { populateStaticControls, renderAll, showToast } from "./render.js";
@@ -28,7 +28,7 @@ async function init() {
   // it and shouldn't disturb whatever's already tracking; boot is the one
   // caller that always wants to adopt the saved session's own value,
   // falling back to the shared legacy profile for a pre-migration save.
-  state.ownedProfileId = (rawLocal && typeof rawLocal.ownedProfileId === "string" && rawLocal.ownedProfileId) || LEGACY_OWNED_PROFILE_ID;
+  state.ownedProfileId = ownedProfileIdOr(rawLocal && rawLocal.ownedProfileId);
   // Owned loads from that profile now, independent of whichever build ends
   // up active below (see state.js). Folded into localResult.droppedRanks
   // so the notice below and applySharedBuildFromUrl's extraRisk gate both

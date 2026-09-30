@@ -28,6 +28,15 @@ export const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
 // beyond this one constant.
 export const LEGACY_OWNED_PROFILE_ID = "legacy";
 
+// Shared by every place that reads an ownedProfileId field off a possibly-
+// untrusted or pre-migration object (a saved build slot, main.js's boot
+// read of the main payload) - a missing, non-string, or empty value
+// defaults to the shared legacy profile rather than leaving state or a
+// build slot pointing at something invalid.
+export function ownedProfileIdOr(rawValue) {
+  return (typeof rawValue === "string" && rawValue) || LEGACY_OWNED_PROFILE_ID;
+}
+
 // Per-build "owned profile" storage - state.ownedProfileId says which one
 // the current session is showing; each saved Build slot has its own
 // ownedProfileId field pointing at one too (builds.js). Two builds
