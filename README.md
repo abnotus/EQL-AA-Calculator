@@ -139,7 +139,7 @@ Minting a profile has no matching cleanup on its own — deleting a build only r
 
 ## Testing
 
-`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s, `wiki-sync/guess_effects.py`'s, and `wiki-sync/assign_aa_ids.py`'s core logic, plus 33 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, Archetype class-eligibility gating, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, per-build owned-tracking profiles (Link/Merge/Split, migration, orphaned-profile cleanup), share-code encoding backward-compatibility, and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them (`python tests/run_all.py` runs everything in one pass). There's no CI: every push to `main` deploys the site, so the tests are run by hand before pushing.
+`tests/` has data-independent Python unit tests for `wiki-sync/guess_costs.py`'s, `wiki-sync/guess_effects.py`'s, `wiki-sync/assign_aa_ids.py`'s, and `wiki-sync/common.py`'s core logic, plus 33 Playwright browser tests that drive the actual app — cost/effect estimates, class-based rank caps, Archetype class-eligibility gating, hiding AAs, Progression's drag/auto-scroll/reorder, cross-class prereq dependencies, per-build owned-tracking profiles (Link/Merge/Split, migration, orphaned-profile cleanup), share-code encoding backward-compatibility, and the Other Classes tab, among others. See `tests/README.md` for the full list, prerequisites, and how to run them (`python tests/run_all.py` runs everything in one pass). There's no CI: every push to `main` deploys the site, so the tests are run by hand before pushing.
 
 ## Deployment
 

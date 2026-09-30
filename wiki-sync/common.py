@@ -50,7 +50,13 @@ MIN_ENTRY_FRACTION_OF_ID_TABLE = 0.9
 
 
 def slugify(name):
-    s = name.lower().replace("'", "")
+    # ‘/’ are the curly "smart quotes" a wiki CMS's auto-formatting
+    # commonly substitutes for a straight apostrophe - left unstripped, one
+    # falls into the [^a-z0-9]+ catch-all below and becomes a literal "-",
+    # so the same name slugifies differently depending only on which glyph
+    # happened to be on the page that day. src/keys.js's own slugify must
+    # be kept equivalent by hand (see this file's own docstring).
+    s = name.lower().replace("'", "").replace("‘", "").replace("’", "")
     s = re.sub(r'[^a-z0-9]+', '-', s).strip('-')
     return s
 

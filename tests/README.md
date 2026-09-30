@@ -28,6 +28,7 @@ server, no browser — just:
 python tests/test_guess_costs_interpolation.py
 python tests/test_guess_effects.py
 python tests/test_assign_aa_ids.py
+python tests/test_slugify.py
 ```
 
 This is deliberately *not* pinned to any AA's current confidence tier: the
@@ -44,6 +45,11 @@ stay true regardless of what `data.src.js` says on any given day.
 `test_assign_aa_ids.py` tests `wiki-sync/assign_aa_ids.py`'s rename-detection
 logic (`compute_vanished`) the same way — synthetic id tables, not a wait for
 an actual pending wiki rename to exercise it against.
+
+`test_slugify.py` tests `wiki-sync/common.py`'s `slugify` directly — a curly
+"smart apostrophe" must strip the same way a straight one does, or the same
+AA name slugifies differently depending only on which glyph the wiki page
+happens to use that day.
 
 ## Browser (Playwright) tests
 

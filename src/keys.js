@@ -69,10 +69,13 @@ const LEGACY_AA_ORDER = {
   }
 };
 
+// ‘/’ are the curly "smart quotes" a wiki CMS's auto-formatting
+// commonly substitutes for a straight apostrophe - must be kept equivalent
+// to wiki-sync/common.py's own slugify by hand (see that file's docstring).
 function slugify(name) {
   return String(name || "")
     .toLowerCase()
-    .replace(/'/g, "")
+    .replace(/['‘’]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
