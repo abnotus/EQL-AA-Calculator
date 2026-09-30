@@ -7,7 +7,7 @@ import {
   state, saveLocal, serializeRanks, serializePurchaseOrder, applyLoaded, SAVE_FORMAT_VERSION,
   genId, LEGACY_OWNED_PROFILE_ID, loadAndApplyOwned, saveOwnedProfileTo,
   linkOwnedProfile, splitOwnedProfile, mergeOwnedProfileInto,
-  listOwnedProfileIds, removeOwnedProfile
+  listOwnedProfileIds, removeOwnedProfile, readJsonFromStorage, isObject
 } from "./state.js";
 import { spentPoints, clearLastMutation, reconcilePurchaseOrderCounts } from "./logic.js";
 
@@ -151,12 +151,7 @@ export function migrateStaleBuildSlots() {
 }
 
 function readBuildRaw(id) {
-  try {
-    const raw = localStorage.getItem(BUILD_KEY_PREFIX + id);
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) {
-    return null;
-  }
+  return readJsonFromStorage(BUILD_KEY_PREFIX + id, isObject);
 }
 
 // A saved slot's own owned-tracking pointer, defaulting to the shared

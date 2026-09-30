@@ -412,12 +412,7 @@ export function saveOwned() {
 }
 
 function loadOwnedProfileRaw(profileId) {
-  try {
-    const raw = localStorage.getItem(ownedStorageKeyFor(profileId));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : null;
-  } catch (e) { return null; }
+  return readJsonFromStorage(ownedStorageKeyFor(profileId), isObject);
 }
 
 // Ensures the legacy global owned key's content is reachable under the
@@ -467,14 +462,28 @@ export function removeOwnedProfile(profileId) {
   } catch (e) { /* storage unavailable, ignore */ }
 }
 
-export function loadLocal() {
+// Shared "read JSON from localStorage, default on failure" shape used
+// throughout this file and builds.js - a missing key, invalid JSON, or a
+// disabled/unavailable localStorage (private browsing, quota) all
+// collapse to the same null rather than throwing. validate, when given,
+// additionally rejects a value that parsed fine but isn't the shape the
+// caller actually needs (typically "is this an object at all") - passing
+// it consistently is what keeps a hand-copied version of this check from
+// drifting into being present in some callers and not others.
+export function readJsonFromStorage(key, validate) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return null;
+    if (validate && !validate(parsed)) return null;
     return parsed;
   } catch (e) { return null; }
+}
+
+export const isObject = (v) => !!v && typeof v === "object";
+
+export function loadLocal() {
+  return readJsonFromStorage(STORAGE_KEY, isObject);
 }
 
 // Returns { droppedRanks } — how many saved rank entries had a key that no
