@@ -861,26 +861,36 @@ let state = {
 // data instead uses name keys (v4+) or, for anything saved before keys.js
 // existed, indexes against the frozen LEGACY_AA_ORDER snapshot.
 
-function serializeRanks(ranks) {
+// Shared by serializeRanks/serializeHidden: walks general/archetype/
+// special plus classes, converting each idx-keyed store entry to a
+// name-keyed one via keyForIdx, dropping an entry that no longer resolves
+// and any class left with nothing kept. toValue maps one stored value to
+// its serialized form - the only thing that actually differs between a
+// rank number (kept as-is) and a hidden flag (always true).
+function mapIdxStoreToKeyed(source, toValue) {
   const out = { general: {}, archetype: {}, special: {}, classes: {} };
   ["general", "archetype", "special"].forEach((scope) => {
-    const store = ranks[scope] || {};
+    const store = source[scope] || {};
     Object.keys(store).forEach((idxStr) => {
       const key = keyForIdx(scope, null, parseInt(idxStr, 10));
-      if (key) out[scope][key] = store[idxStr];
+      if (key) out[scope][key] = toValue(store[idxStr]);
     });
   });
-  const classes = ranks.classes || {};
+  const classes = source.classes || {};
   Object.keys(classes).forEach((className) => {
     const store = classes[className] || {};
     const outStore = {};
     Object.keys(store).forEach((idxStr) => {
       const key = keyForIdx("class", className, parseInt(idxStr, 10));
-      if (key) outStore[key] = store[idxStr];
+      if (key) outStore[key] = toValue(store[idxStr]);
     });
     if (Object.keys(outStore).length) out.classes[className] = outStore;
   });
   return out;
+}
+
+function serializeRanks(ranks) {
+  return mapIdxStoreToKeyed(ranks, (v) => v);
 }
 
 // parseInt implicitly stringifies its argument, which can throw - not just
@@ -903,22 +913,22 @@ function clampRankValue(scope, className, idx, rawValue) {
   return Math.max(0, Math.min(aa.ranks, n));
 }
 
-// Returns { ranks, dropped } — `dropped` is how many saved rank entries had a
-// key that no longer resolves to any current AA (renamed/removed since the
-// save was made). Every key here represents at least one spent point
-// (changeRank deletes a store entry the moment it hits 0), so a drop always
-// means real invested points just vanished from the build — worth telling
-// the user about instead of leaving them to notice a lower total on their own.
-function deserializeRanks(saved, resolveIdx) {
+// Shared by deserializeRanks/deserializeHidden: walks general/archetype/
+// special plus classes, resolving each name-keyed store entry back to an
+// idx via resolveIdx, dropping an entry that no longer resolves (calling
+// onDrop for it) and any class left with nothing kept. toValue maps one
+// resolved (scope, className, idx, rawValue) to its deserialized form -
+// the only thing that actually differs between a clamped rank number and
+// a hidden flag (always true, no value to validate).
+function mapKeyedStoreToIdx(saved, resolveIdx, toValue, onDrop) {
   const out = { general: {}, archetype: {}, special: {}, classes: {} };
-  let dropped = 0;
-  if (!saved || typeof saved !== "object") return { ranks: out, dropped };
+  if (!saved || typeof saved !== "object") return out;
   ["general", "archetype", "special"].forEach((scope) => {
     const store = saved[scope] || {};
     Object.keys(store).forEach((k) => {
       const idx = resolveIdx(scope, null, k);
-      if (idx >= 0) out[scope][idx] = clampRankValue(scope, null, idx, store[k]);
-      else dropped++;
+      if (idx >= 0) out[scope][idx] = toValue(scope, null, idx, store[k]);
+      else onDrop();
     });
   });
   const classes = saved.classes || {};
@@ -927,60 +937,35 @@ function deserializeRanks(saved, resolveIdx) {
     const outStore = {};
     Object.keys(store).forEach((k) => {
       const idx = resolveIdx("class", className, k);
-      if (idx >= 0) outStore[idx] = clampRankValue("class", className, idx, store[k]);
-      else dropped++;
+      if (idx >= 0) outStore[idx] = toValue("class", className, idx, store[k]);
+      else onDrop();
     });
     if (Object.keys(outStore).length) out.classes[className] = outStore;
   });
-  return { ranks: out, dropped };
+  return out;
 }
 
-// Same idx<->name-key indirection as serializeRanks/deserializeRanks, but
-// flags rather than magnitudes - a hidden AA either has an entry or it
-// doesn't, so there's no clampRankValue-style range to validate against.
+// Returns { ranks, dropped } — `dropped` is how many saved rank entries had a
+// key that no longer resolves to any current AA (renamed/removed since the
+// save was made). Every key here represents at least one spent point
+// (changeRank deletes a store entry the moment it hits 0), so a drop always
+// means real invested points just vanished from the build — worth telling
+// the user about instead of leaving them to notice a lower total on their own.
+function deserializeRanks(saved, resolveIdx) {
+  let dropped = 0;
+  const ranks = mapKeyedStoreToIdx(saved, resolveIdx, clampRankValue, () => { dropped++; });
+  return { ranks, dropped };
+}
+
 function serializeHidden(hidden) {
-  const out = { general: {}, archetype: {}, special: {}, classes: {} };
-  ["general", "archetype", "special"].forEach((scope) => {
-    const store = hidden[scope] || {};
-    Object.keys(store).forEach((idxStr) => {
-      const key = keyForIdx(scope, null, parseInt(idxStr, 10));
-      if (key) out[scope][key] = true;
-    });
-  });
-  const classes = hidden.classes || {};
-  Object.keys(classes).forEach((className) => {
-    const store = classes[className] || {};
-    const outStore = {};
-    Object.keys(store).forEach((idxStr) => {
-      const key = keyForIdx("class", className, parseInt(idxStr, 10));
-      if (key) outStore[key] = true;
-    });
-    if (Object.keys(outStore).length) out.classes[className] = outStore;
-  });
-  return out;
+  return mapIdxStoreToKeyed(hidden, () => true);
 }
 
+// A hidden entry that no longer resolves just has nothing left to hide -
+// unlike a dropped rank, there's no invested points to tell the user
+// about, so onDrop is a no-op here rather than its own counter.
 function deserializeHidden(saved) {
-  const out = { general: {}, archetype: {}, special: {}, classes: {} };
-  if (!saved || typeof saved !== "object") return out;
-  ["general", "archetype", "special"].forEach((scope) => {
-    const store = saved[scope] || {};
-    Object.keys(store).forEach((k) => {
-      const idx = idxForKey(scope, null, k);
-      if (idx >= 0) out[scope][idx] = true;
-    });
-  });
-  const classes = saved.classes || {};
-  Object.keys(classes).forEach((className) => {
-    const store = classes[className] || {};
-    const outStore = {};
-    Object.keys(store).forEach((k) => {
-      const idx = idxForKey("class", className, k);
-      if (idx >= 0) outStore[idx] = true;
-    });
-    if (Object.keys(outStore).length) out.classes[className] = outStore;
-  });
-  return out;
+  return mapKeyedStoreToIdx(saved, (scope, className, k) => idxForKey(scope, className, k), () => true, () => {});
 }
 
 // Mirrors saveOwned/loadAndApplyOwned - called by setHidden (logic.js)
