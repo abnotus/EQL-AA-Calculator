@@ -5826,7 +5826,7 @@ async function applySharedBuildFromUrl(localLoadResult) {
       clearActiveBuild();
       const repaired = reconcilePurchaseOrderCounts();
       const ownedOutcome = maybeImportOwned(json);
-      result.droppedRanks += ownedOutcome.dropped + (json.decodeDropped || 0);
+      result.droppedRanks += ownedOutcome.dropped + safeDecodeDropped(json);
       saveLocal();
       const savedId = saveImportedBuild();
       notice = savedId
@@ -6011,6 +6011,18 @@ function ownedNoticeSuffix(ownedOutcome) {
   return " — owned progress included (tracked separately from your existing progress)";
 }
 
+// decodeDropped is only ever a plain integer when this file wrote it itself
+// (expandCompactPayload/expandBinaryPayload). A legacy (v<2) payload passes
+// straight through decodeBuildCode unmodified, so a hand-crafted one can
+// carry any field under that name at all - an object like {toString: null}
+// reaching a bare `+` here throws (ToPrimitive has no string/number
+// conversion to fall back to), the same crash class safeParseInt (state.js)
+// exists to avoid elsewhere. Anything that isn't a finite number is treated
+// as "nothing was dropped" rather than trusted.
+function safeDecodeDropped(json) {
+  return typeof json.decodeDropped === "number" && Number.isFinite(json.decodeDropped) ? json.decodeDropped : 0;
+}
+
 async function importBuildFromText(text) {
   const code = extractBuildCode(text);
   if (!code) { showToast("No build code found in that text"); return false; }
@@ -6035,7 +6047,7 @@ async function importBuildFromText(text) {
     clearActiveBuild();
     const repaired = reconcilePurchaseOrderCounts();
     const ownedOutcome = maybeImportOwned(json);
-    result.droppedRanks += ownedOutcome.dropped + (json.decodeDropped || 0);
+    result.droppedRanks += ownedOutcome.dropped + safeDecodeDropped(json);
     saveLocal();
     renderAll();
     showToast(`Build imported${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`);

@@ -112,6 +112,43 @@ with sync_playwright() as p:
     assert current == "0 / 4", f"FAIL: an unparseable rank should be dropped to 0, got {current!r}"
     print("PASS: a hostile rank value no longer crashes startup, and the rank is dropped rather than kept garbage")
 
+    # --- decodeDropped: {"toString": null}, via a crafted legacy (v<2)
+    # share code. decodeDropped (exportImport.js) is normally always a
+    # plain integer this file computes itself - but a legacy payload passes
+    # straight through decodeBuildCode unmodified (no expandCompactPayload
+    # step to have produced or overwritten it), so a hand-crafted one can
+    # carry any value under that field name at all. safeDecodeDropped is
+    # the guard for this specific path, same failure mode as the other
+    # three cases above (a bare `+` on the hostile value throws instead of
+    # degrading). ---
+    errors.clear()
+    legacy_payload = {
+        "selectedClasses": ["Bard", "Beastlord", "Berserker"], "charLevel": 50,
+        "ranks": {"general": {}, "archetype": {}, "special": {}, "classes": {}},
+        "purchaseOrder": [], "waypoints": [],
+        "decodeDropped": HOSTILE
+    }
+    code = page.evaluate("""
+    async (payload) => {
+        function bytesToB64(bytes) {
+            let bin = "";
+            for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+            return btoa(bin);
+        }
+        const bytes = new TextEncoder().encode(JSON.stringify(payload));
+        const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+        return bytesToB64(new Uint8Array(await new Response(stream).arrayBuffer()));
+    }
+    """, legacy_payload)
+    url_code = code.replace("+", "-").replace("/", "_").rstrip("=")
+    page.goto(f"{BASE}?build={url_code}")
+    page.wait_for_timeout(500)
+    tree_count = page.locator("#treeWrap .node").count()
+    print(f"decodeDropped case: tree node count={tree_count}, errors={errors}")
+    assert not errors, f"FAIL: a hostile decodeDropped value threw instead of degrading gracefully: {errors}"
+    assert tree_count > 0, "FAIL: tree never rendered - startup froze on a hostile decodeDropped value"
+    print("PASS: a hostile decodeDropped value no longer crashes startup")
+
     print("ERRORS:", errors)
     assert not errors
     browser.close()
