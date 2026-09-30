@@ -1,6 +1,6 @@
 // Build export/import: the text format, the share-code encoding, share links, and modal wiring.
 
-import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, serializeRanks, serializePurchaseOrder, payloadOwnedHasContent, adoptImportedOwnedAsNewProfile, WAYPOINT_COLORS } from "./state.js";
+import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, serializeRanks, serializePurchaseOrder, payloadOwnedHasContent, adoptImportedOwnedAsNewProfile, WAYPOINT_COLORS, MAX_PURCHASE_ORDER } from "./state.js";
 import { el } from "./dom.js";
 import { getList, effectiveRank, labelFor, spentPoints, ownedPoints, computeProgressionSteps, computeProgressionTimeline, clearLastMutation, reconcilePurchaseOrderCounts, loadIssuesSuffix } from "./logic.js";
 import { clearActiveBuild, saveImportedBuild, confirmReplaceCurrentBuild, isActiveBuildTheImportedSlot } from "./builds.js";
@@ -72,7 +72,12 @@ function compactRanksFor(ranksLike) {
 function expandCompactRanks(list, columnar) {
   const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
   if (!list) return ranks;
-  const pairs = columnar ? list[0].map((id, i) => [id, list[1][i]]) : list;
+  // Capped before any per-entry work, same as MAX_PURCHASE_ORDER's own use
+  // in state.js's deserializePurchaseOrder - an untrusted array this size
+  // could otherwise cost far more processing than any real roster needs.
+  const ids = (columnar ? list[0] : list) || [];
+  const capped = ids.slice(0, MAX_PURCHASE_ORDER);
+  const pairs = columnar ? capped.map((id, i) => [id, list[1][i]]) : capped;
   pairs.forEach(([id, rank]) => {
     const entry = entryForId(id);
     if (!entry) return;
@@ -107,7 +112,7 @@ function expandCompactPayload(compact) {
     ? compact.slice(1)
     : [compact.c, compact.l, compact.r, compact.p, compact.o, compact.w];
   const columnar = v >= 4;
-  const purchaseOrder = (p || []).map((id) => {
+  const purchaseOrder = (p || []).slice(0, MAX_PURCHASE_ORDER).map((id) => {
     const entry = entryForId(id);
     return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
   }).filter(Boolean);

@@ -302,7 +302,7 @@ export function serializePurchaseOrder(purchaseOrder) {
 // input before any per-entry work, so a malicious array can't cost more
 // than this many entries' worth of processing no matter how large it claims
 // to be.
-const MAX_PURCHASE_ORDER = 2000;
+export const MAX_PURCHASE_ORDER = 2000;
 
 // Unlike deserializeRanks, a dropped purchaseOrder entry isn't its own
 // user-facing signal — reconcilePurchaseOrderCounts (logic.js) checks
