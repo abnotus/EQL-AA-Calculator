@@ -57,15 +57,22 @@ def make_build(rnd):
         order += [{"scope": "class", "className": cls, "key": slug}] * r
     rnd.shuffle(order)
 
-    # owned <= planned, which is the invariant the delta encoding leans on.
+    # "higher" (owned > planned, e.g. holding a rank in-game while planning
+    # to respec it down) exercises the delta field's negative case.
     owned = {"general": {}, "archetype": {}, "special": {}, "classes": {}}
-    mode = rnd.choice(["none", "some", "all", "lower"])
+    mode = rnd.choice(["none", "some", "all", "lower", "higher"])
+    maxrank = dict(GENERAL) | dict(ARCHETYPE)
     if mode != "none":
         for scope in ("general", "archetype"):
             for slug, r in ranks[scope].items():
                 if mode == "some" and rnd.random() < 0.5:
                     continue
-                owned[scope][slug] = r if mode != "lower" else max(1, r - 1)
+                if mode == "lower":
+                    owned[scope][slug] = max(1, r - 1)
+                elif mode == "higher":
+                    owned[scope][slug] = min(maxrank[slug], r + 1)
+                else:
+                    owned[scope][slug] = r
 
     waypoints = []
     for _ in range(rnd.choice([0, 1, 4])):

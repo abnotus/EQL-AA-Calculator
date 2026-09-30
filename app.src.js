@@ -5341,6 +5341,14 @@ function bitReader(bytes, startByte) {
       pos += width;
       return v >>> 0;
     },
+    // bitWriter.put stores a negative value's low `width` bits (two's
+    // complement), so a signed field must sign-extend on read the same way,
+    // or a negative value comes back as a large positive one.
+    takeSigned(width) {
+      const raw = this.take(width);
+      const half = 1 << (width - 1);
+      return raw >= half ? raw - (half << 1) : raw;
+    },
     alignedByteOffset() { return (pos + 7) >>> 3; }
   };
 }
@@ -5518,7 +5526,7 @@ function expandBinaryPayload(bytes) {
   const diffWidth = indexWidth(ownedIds.length);
   for (let k = 0; k < deltaCount; k++) {
     const i = r.take(diffWidth);
-    const d = r.take(V5_BITS.rank);
+    const d = r.takeSigned(V5_BITS.rank);
     if (i < ownedRanks.length) ownedRanks[i] -= d;
   }
 
