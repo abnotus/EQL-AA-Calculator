@@ -8,9 +8,11 @@ import sys, importlib.util
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO / "wiki-sync"))
 spec = importlib.util.spec_from_file_location("guess_effects", REPO / "wiki-sync" / "guess_effects.py")
 ge = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ge)
+import common  # noqa: E402 - shared by guess_costs.py/guess_effects.py, not re-exported by either
 
 # --- extract_progressions: finds every slash-progression in a description,
 # in order of appearance, splitting known/unknown slots. ---
@@ -44,12 +46,12 @@ print("PASS: a progression leading with '?' is recognized, and doesn't misalign 
 # --- interpolate_bounded_gaps: identical behavior to the cost version -
 # bounded gap gets a floor-midpoint guess, trailing gap gets nothing. ---
 known = {0: 1, 2: 5, 3: 10}
-result = ge.interpolate_bounded_gaps(known, [1])
+result = common.interpolate_bounded_gaps(known, [1])
 print("bounded gap (Combat Fury's actual shape):", result)
 assert result[1]["value"] == 3 and result[1]["confidence"] == "low" and result[1]["interpolated"] is True
 
 known2 = {0: 10}
-result2 = ge.interpolate_bounded_gaps(known2, [1, 2])
+result2 = common.interpolate_bounded_gaps(known2, [1, 2])
 print("trailing gap (a Mastery AA's actual shape):", result2)
 assert result2 == {}, "FAIL: a trailing gap past every known rank must never get an interpolated guess"
 print("PASS: interpolate_bounded_gaps only fills a gap boxed in on both sides, same as costs")

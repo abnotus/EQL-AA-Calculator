@@ -69,9 +69,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (  # noqa: E402
     DATA_SRC, AA_IDS_SRC,
     DATA_ENTRY_NAME, DATA_ENTRY_AUTO, DATA_ENTRY_AUTORANKS,
-    HIGH_MIN_SIBLINGS, MEDIUM_MAJORITY, LOW_MAJORITY,
     iter_data_entries, check_parse_sanity, slug_key_for, id_key, js_string,
-    interpolate_bounded_gaps,
+    vote_guesses, guess_to_js_literal,
 )
 
 HERE = Path(__file__).resolve().parent
@@ -154,8 +153,8 @@ def guess_for_entry(entry, reference_pool):
     # anchor against - with zero known ranks, `all(...)` over the empty
     # known.items() below would be vacuously true and every sibling in the
     # pool would "match", exactly the ungrounded guess this script exists to
-    # avoid. Only MANUAL_GUESSES (further down) can reach a rank when known
-    # is empty - that's the extreme case it exists for.
+    # avoid. Only MANUAL_GUESSES (via vote_guesses) can reach a rank when
+    # known is empty - that's the extreme case it exists for.
     matching = []
     if known:
         # Non-monotonic siblings (Natural Durability's real 2/4/6/2, a cost
@@ -167,76 +166,15 @@ def guess_for_entry(entry, reference_pool):
         same_rank_siblings = [r for r in reference_pool if r["ranks"] == ranks and r["monotonic"]]
         matching = [r for r in same_rank_siblings if all(r["values"][i] == v for i, v in known.items())]
 
-    result = {}
-    for i in unknown:
-        confidence = None
-        top_value = None
-        based_on = []
-
-        if matching:
-            votes = Counter(r["values"][i] for r in matching)
-            top_value, top_count = votes.most_common(1)[0]
-            share = top_count / len(matching)
-            if len(matching) >= HIGH_MIN_SIBLINGS and top_count == len(matching):
-                confidence = "high"
-            elif len(matching) == 1 or share >= MEDIUM_MAJORITY:
-                confidence = "medium"
-            elif share > LOW_MAJORITY:
-                confidence = "low"
-            # else: exact tie or worse - sibling evidence doesn't clear the
-            # bar, fall through to the interpolation attempt below instead
-            # of giving up on this rank entirely.
-            if confidence:
-                based_on = sorted({r["name"] for r in matching if r["values"][i] == top_value})
-
-        if confidence is None:
-            interp = interpolate_bounded_gaps(known, [i]).get(i)
-            if interp:
-                top_value, confidence = interp["value"], interp["confidence"]
-
-        manual_entry = False
-        if confidence is None:
-            manual = MANUAL_GUESSES.get(entry.get("name"), {})
-            if i in manual:
-                top_value, confidence = manual[i], "very-low"
-                manual_entry = True
-
-        if confidence is None:
-            continue
-
-        # A guess must not contradict this AA's own already-known shape:
-        # never below the previous rank's (known or already-guessed) value,
-        # never above the next rank's if that one's already known.
-        prev_val = known.get(i - 1, result.get(i - 1, {}).get("value"))
-        next_val = known.get(i + 1)
-        if prev_val is not None and top_value < prev_val:
-            continue
-        if next_val is not None and top_value > next_val:
-            continue
-
-        entry_out = {"value": top_value, "confidence": confidence, "basedOn": based_on}
-        if not based_on and confidence == "low":
-            entry_out["interpolated"] = True
-        if manual_entry:
-            entry_out["manual"] = True
-        result[i] = entry_out
-    return result
+    manual = MANUAL_GUESSES.get(entry.get("name"), {})
+    return vote_guesses(known, unknown, matching, lambda i: manual.get(i))
 
 
 def write_output(table):
     lines = []
     for idk in sorted(table.keys()):
         guesses = table[idk]
-        parts = []
-        for rank_idx in sorted(guesses.keys()):
-            g = guesses[rank_idx]
-            based_on = ", ".join(js_string(n) for n in g["basedOn"])
-            interp = ", interpolated: true" if g.get("interpolated") else ""
-            manual = ", manual: true" if g.get("manual") else ""
-            parts.append(
-                f'"{rank_idx}": {{ value: {g["value"]}, confidence: {js_string(g["confidence"])}, '
-                f'basedOn: [{based_on}]{interp}{manual} }}'
-            )
+        parts = [guess_to_js_literal(rank_idx, guesses[rank_idx]) for rank_idx in sorted(guesses.keys())]
         lines.append(f'  {js_string(idk)}: {{ {", ".join(parts)} }}')
     body = ",\n".join(lines)
     content = (

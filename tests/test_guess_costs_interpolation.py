@@ -8,14 +8,16 @@ import sys, importlib.util
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO / "wiki-sync"))
 spec = importlib.util.spec_from_file_location("guess_costs", REPO / "wiki-sync" / "guess_costs.py")
 gc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gc)
+import common  # noqa: E402 - shared by guess_costs.py/guess_effects.py, not re-exported by either
 
 # --- interpolate_bounded_gaps: bounded gap gets a floor-midpoint guess,
 # unbounded (trailing) gap gets nothing at all. ---
 known = {0: 1, 2: 4, 3: 6}
-result = gc.interpolate_bounded_gaps(known, [1])
+result = common.interpolate_bounded_gaps(known, [1])
 print("bounded gap (Combat Fury's actual shape):", result)
 assert result[1]["value"] == 2
 assert result[1]["confidence"] == "low"
@@ -23,7 +25,7 @@ assert result[1]["interpolated"] is True
 assert result[1]["basedOn"] == []
 
 known2 = {0: 2, 1: 4, 2: 6}
-result2 = gc.interpolate_bounded_gaps(known2, [3])
+result2 = common.interpolate_bounded_gaps(known2, [3])
 print("trailing/unbounded gap (Adamant Will's actual shape):", result2)
 assert result2 == {}, "FAIL: a trailing gap past every known rank must never get an interpolated guess"
 print("PASS: interpolate_bounded_gaps only fills a gap boxed in on both sides, never a trailing one")

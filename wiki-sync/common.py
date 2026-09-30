@@ -29,6 +29,7 @@ import json
 import math
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -180,3 +181,92 @@ def interpolate_bounded_gaps(known, unknown):
             "interpolated": True,
         }
     return result
+
+
+def vote_guesses(known, unknown, matching, manual_lookup):
+    """Shared confidence-tier voting, bounded-interpolation fallback,
+    manual-fallback, and own-shape sanity check behind both guess_costs.py's
+    guess_for_entry and guess_effects.py's guess_for_progression - identical
+    in both except where/how the last-resort MANUAL_GUESSES-style fallback
+    is keyed (an AA name alone for costs; (AA name, progression index) for
+    effects, since a description can hold more than one independent
+    progression) - manual_lookup(rank_idx) -> value or None abstracts that
+    one difference away.
+
+    known: {rank_idx: value}, already known/real for this entry. unknown:
+    [rank_idx, ...] still needing a guess. matching: list of {"name": str,
+    "values": [value, ...]} for every sibling whose own known slots already
+    agree with `known` - already filtered (same rank/slot count, monotonic
+    where that applies) by the caller, since what counts as a valid sibling
+    differs between costs and effects. Returns {rank_idx: {"value",
+    "confidence", "basedOn", ["interpolated"], ["manual"]}} for whichever
+    unknown ranks got a confident-enough guess."""
+    result = {}
+    for i in unknown:
+        confidence = None
+        top_value = None
+        based_on = []
+
+        if matching:
+            votes = Counter(r["values"][i] for r in matching)
+            top_value, top_count = votes.most_common(1)[0]
+            share = top_count / len(matching)
+            if len(matching) >= HIGH_MIN_SIBLINGS and top_count == len(matching):
+                confidence = "high"
+            elif len(matching) == 1 or share >= MEDIUM_MAJORITY:
+                confidence = "medium"
+            elif share > LOW_MAJORITY:
+                confidence = "low"
+            # else: exact tie or worse - sibling evidence doesn't clear the
+            # bar, fall through to the interpolation attempt below instead
+            # of giving up on this rank entirely.
+            if confidence:
+                based_on = sorted({r["name"] for r in matching if r["values"][i] == top_value})
+
+        if confidence is None:
+            interp = interpolate_bounded_gaps(known, [i]).get(i)
+            if interp:
+                top_value, confidence = interp["value"], interp["confidence"]
+
+        manual_entry = False
+        if confidence is None:
+            manual_value = manual_lookup(i)
+            if manual_value is not None:
+                top_value, confidence = manual_value, "very-low"
+                manual_entry = True
+
+        if confidence is None:
+            continue
+
+        # A guess must not contradict this entry's own already-known shape:
+        # never below the previous rank's (known or already-guessed) value,
+        # never above the next rank's if that one's already known.
+        prev_val = known.get(i - 1, result.get(i - 1, {}).get("value"))
+        next_val = known.get(i + 1)
+        if prev_val is not None and top_value < prev_val:
+            continue
+        if next_val is not None and top_value > next_val:
+            continue
+
+        entry_out = {"value": top_value, "confidence": confidence, "basedOn": based_on}
+        if not based_on and confidence == "low":
+            entry_out["interpolated"] = True
+        if manual_entry:
+            entry_out["manual"] = True
+        result[i] = entry_out
+    return result
+
+
+def guess_to_js_literal(rank_idx, g):
+    """One rank's guess -> its JS object literal, e.g.
+    '"2": { value: 40, confidence: "medium", basedOn: ["Sib A"] }' - shared
+    by guess_costs.py's and guess_effects.py's write_output, which nest
+    this identically except effects has an extra progression-index layer
+    of keys between the AA and its ranks."""
+    based_on = ", ".join(js_string(n) for n in g["basedOn"])
+    interp = ", interpolated: true" if g.get("interpolated") else ""
+    manual = ", manual: true" if g.get("manual") else ""
+    return (
+        f'"{rank_idx}": {{ value: {g["value"]}, confidence: {js_string(g["confidence"])}, '
+        f'basedOn: [{based_on}]{interp}{manual} }}'
+    )

@@ -68,9 +68,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (  # noqa: E402
     DATA_SRC, AA_IDS_SRC,
     DATA_ENTRY_NAME, DATA_ENTRY_AUTO, DATA_ENTRY_AUTORANKS,
-    HIGH_MIN_SIBLINGS, MEDIUM_MAJORITY, LOW_MAJORITY,
     iter_data_entries, check_parse_sanity, slug_key_for, id_key, js_string,
-    interpolate_bounded_gaps,
+    vote_guesses, guess_to_js_literal,
 )
 
 HERE = Path(__file__).resolve().parent
@@ -202,57 +201,8 @@ def guess_for_progression(name, prog_idx, prog, sibling_progressions):
     if known:
         matching = [r for r in sibling_progressions if all(r["values"][i] == v for i, v in known.items())]
 
-    result = {}
-    for i in unknown:
-        confidence = None
-        top_value = None
-        based_on = []
-
-        if matching:
-            votes = Counter(r["values"][i] for r in matching)
-            top_value, top_count = votes.most_common(1)[0]
-            share = top_count / len(matching)
-            if len(matching) >= HIGH_MIN_SIBLINGS and top_count == len(matching):
-                confidence = "high"
-            elif len(matching) == 1 or share >= MEDIUM_MAJORITY:
-                confidence = "medium"
-            elif share > LOW_MAJORITY:
-                confidence = "low"
-            if confidence:
-                based_on = sorted({r["name"] for r in matching if r["values"][i] == top_value})
-
-        if confidence is None:
-            interp = interpolate_bounded_gaps(known, [i]).get(i)
-            if interp:
-                top_value, confidence = interp["value"], interp["confidence"]
-
-        manual_entry = False
-        if confidence is None:
-            manual = MANUAL_EFFECT_GUESSES.get((name, prog_idx), {})
-            if i in manual:
-                top_value, confidence = manual[i], "very-low"
-                manual_entry = True
-
-        if confidence is None:
-            continue
-
-        # Same own-shape sanity check as costs: never below the previous
-        # rank's value, never above the next rank's, using known or
-        # already-guessed neighbors.
-        prev_val = known.get(i - 1, result.get(i - 1, {}).get("value"))
-        next_val = known.get(i + 1)
-        if prev_val is not None and top_value < prev_val:
-            continue
-        if next_val is not None and top_value > next_val:
-            continue
-
-        entry_out = {"value": top_value, "confidence": confidence, "basedOn": based_on}
-        if not based_on and confidence == "low":
-            entry_out["interpolated"] = True
-        if manual_entry:
-            entry_out["manual"] = True
-        result[i] = entry_out
-    return result
+    manual = MANUAL_EFFECT_GUESSES.get((name, prog_idx), {})
+    return vote_guesses(known, unknown, matching, lambda i: manual.get(i))
 
 
 def write_output(table):
@@ -262,16 +212,7 @@ def write_output(table):
         prog_parts = []
         for prog_idx in sorted(by_prog.keys()):
             guesses = by_prog[prog_idx]
-            rank_parts = []
-            for rank_idx in sorted(guesses.keys()):
-                g = guesses[rank_idx]
-                based_on = ", ".join(js_string(n) for n in g["basedOn"])
-                interp = ", interpolated: true" if g.get("interpolated") else ""
-                manual = ", manual: true" if g.get("manual") else ""
-                rank_parts.append(
-                    f'"{rank_idx}": {{ value: {js_string(g["value"])}, confidence: {js_string(g["confidence"])}, '
-                    f'basedOn: [{based_on}]{interp}{manual} }}'
-                )
+            rank_parts = [guess_to_js_literal(rank_idx, guesses[rank_idx]) for rank_idx in sorted(guesses.keys())]
             prog_parts.append(f'"{prog_idx}": {{ {", ".join(rank_parts)} }}')
         lines.append(f'  {js_string(idk)}: {{ {", ".join(prog_parts)} }}')
     body = ",\n".join(lines)
