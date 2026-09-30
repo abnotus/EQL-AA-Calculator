@@ -14,10 +14,11 @@ founding rule as wiki-sync/guess_costs.py (see that script's own docstring)
 effect MAGNITUDES. Two real differences from the cost version:
 
 1. A description can hold more than one independent progression in the same
-   sentence (Adamant Will: "20/40/?/?% chance to resist charm, and 15/30/?/?%
-   chance to resist mesmerization spells." is TWO separate progressions).
-   Every guess is keyed by (AA, progression index in order of appearance,
-   rank index), not just (AA, rank index).
+   sentence (Adamant Will: "20/40/60/80% chance to resist charm, and
+   15/30/45/60% chance to resist mesmerization spells." is TWO separate
+   progressions - either one could carry its own "?" slot independently of
+   the other). Every guess is keyed by (AA, progression index in order of
+   appearance, rank index), not just (AA, rank index).
 
 2. Cost-guessing's sibling pool was every OTHER AA with a matching rank
    count - a cost curve recurring by coincidence across genuinely unrelated

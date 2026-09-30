@@ -150,15 +150,14 @@ def interpolate_bounded_gaps(known, unknown):
     """A DIFFERENT, weaker kind of evidence than sibling matching: for an
     unknown rank strictly between two ranks THIS SAME AA already has real
     numbers for, linearly interpolate against those two anchors and floor
-    to an integer - e.g. Combat Fury's cost curve (1, ?, 4, 6) has no
-    ranks=4 sibling starting at 1 to corroborate against, but rank 2 is
-    still boxed in on both sides by real numbers (1 and 4),
-    floor(1 + (4-1)*0.5) = 2.
+    to an integer - e.g. a cost curve (1, ?, 4, 6) with no same-rank-count
+    sibling to corroborate against still has rank 2 boxed in on both sides
+    by real numbers (1 and 4), floor(1 + (4-1)*0.5) = 2.
 
     Deliberately only for a gap with a known value on BOTH sides - bounded
     interpolation and open-ended extrapolation are not the same risk. A
-    gap with nothing after it to bound it (e.g. Adamant Will's cost curve
-    2/4/6/?) is left alone here - guessing from an AA's own trailing trend
+    gap with nothing after it to bound it (e.g. Turn Summoned's cost curve
+    3/6/?) is left alone here - guessing from an AA's own trailing trend
     alone is exactly the mistake both guess scripts exist to avoid (see
     their own docstrings) - only sibling matching (or nothing) applies to
     a trailing gap. Never returns a confidence above "low": zero external

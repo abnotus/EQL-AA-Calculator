@@ -10,11 +10,11 @@ For each AA with at least one undocumented cost, this cross-references
 OTHER fully-known AAs (same rank count, exact cost match at every rank this
 AA already has a real number for) rather than ever extrapolating a single
 AA's own progression alone — one AA's own numbers can look like a clean
-arithmetic sequence and still be wrong (see the docstring below on why
-Adamant Will's own 2/4/6/? pattern is a worse guide than its sibling Fear
-Resistance's fully-known 2/4/6/9). Confidence is a direct function of how
-many independent siblings corroborate the same value, never a stylistic
-guess:
+arithmetic sequence and still be wrong. Extrapolating a 2/4/6/? pattern to
+8 or 9 by eye is exactly the guess this script refuses to make on its own;
+it only trusts a real sibling AA that already confirms the actual next
+value. Confidence is a direct function of how many independent siblings
+corroborate the same value, never a stylistic guess:
 
     high    2+ matching siblings, unanimous agreement
     medium  exactly 1 matching sibling, OR 2+ with a clear (>=66%) majority
