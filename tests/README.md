@@ -29,6 +29,7 @@ python tests/test_guess_costs_interpolation.py
 python tests/test_guess_effects.py
 python tests/test_assign_aa_ids.py
 python tests/test_slugify.py
+python tests/test_verify_from_log.py
 ```
 
 This is deliberately *not* pinned to any AA's current confidence tier: the
@@ -50,6 +51,11 @@ an actual pending wiki rename to exercise it against.
 "smart apostrophe" must strip the same way a straight one does, or the same
 AA name slugifies differently depending only on which glyph the wiki page
 happens to use that day.
+
+`test_verify_from_log.py` tests `wiki-sync/verify_from_log.py`'s
+`classify_cost` directly — a malformed rank of 0 (or negative) must be
+reported as having no current data, not silently wrap to the last rank's
+cost via Python's negative indexing.
 
 ## Browser (Playwright) tests
 

@@ -106,6 +106,19 @@ def parse_log(log_path):
     return events, unparsed
 
 
+def classify_cost(rank, cost, costs):
+    """Compares a log-reported cost against data.src.js's costs for that
+    rank. Returns ("no-data", None) when this rank has nothing current to
+    compare against - out of range, "?", or a malformed rank <= 0 (Python's
+    negative indexing would otherwise silently read costs[-1], the LAST
+    rank, for rank 0 instead of correctly finding nothing) - else
+    ("matched"|"mismatched", the real cost)."""
+    if rank <= 0 or rank > len(costs) or costs[rank - 1] == "?":
+        return ("no-data", None)
+    real = int(costs[rank - 1])
+    return ("matched", real) if real == cost else ("mismatched", real)
+
+
 def main():
     if len(sys.argv) != 2:
         print("usage: python wiki-sync/verify_from_log.py path/to/eqlog_file.txt")
@@ -144,13 +157,13 @@ def main():
             unmatched_name.append((line_no, name, rank, cost))
             continue
         _, _, costs, canonical_name = entries[0]
-        if rank > len(costs) or costs[rank - 1] == "?":
+        outcome, real = classify_cost(rank, cost, costs)
+        if outcome == "no-data":
             no_data.append((line_no, name, rank, cost))
-            continue
-        if int(costs[rank - 1]) == cost:
+        elif outcome == "matched":
             matched.append((canonical_name, rank, cost))
         else:
-            mismatched.append((line_no, canonical_name, rank, cost, costs[rank - 1]))
+            mismatched.append((line_no, canonical_name, rank, cost, real))
 
     print(f"\nMatched: {len(matched)}  Mismatched: {len(mismatched)}  "
           f"Unrecognized name: {len(unmatched_name)}  No current data for that rank: {len(no_data)}")
