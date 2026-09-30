@@ -478,5 +478,59 @@ with sync_playwright() as p:
     assert not errors6
     page6.close()
 
+    # --- Regression: moving a row into a section from ABOVE it must shift
+    # the insertion point down by one, since the dragged row itself is
+    # removed from above the section first - previously this used the
+    # anchor's pre-removal position unadjusted, landing one row too late
+    # (absoluteIndexForVisiblePosition's anchored case). Four AAs bought in
+    # order P,Q,R,S; a waypoint dropped right after Q makes R,S the section,
+    # leaving P not adjacent to it (Q sits between). Moving P to "Section —
+    # top" must land it immediately before R, not immediately after it. ---
+    page7 = browser.new_page(viewport={"width": 1400, "height": 900})
+    errors7 = []
+    page7.on("pageerror", lambda exc: errors7.append(str(exc)))
+    page7.on("dialog", lambda d: d.accept())
+    page7.goto(BASE)
+    page7.wait_for_selector("#treeWrap .node")
+    page7.click('button[data-tab="general"]')
+    gnodes7 = page7.locator(".node")
+    for i in range(4):
+        gnodes7.nth(i).click()
+        page7.click("#incBtn")
+        page7.wait_for_timeout(60)
+
+    page7.click('button[data-tab="progression"]')
+    page7.wait_for_timeout(150)
+    rows7 = page7.locator(".progression-row")
+    p_name, q_name, r_name, s_name = [rows7.nth(i).locator(".step-name").inner_text() for i in range(4)]
+    q_cumulative = int(rows7.nth(1).locator(".cost-total").inner_text().split()[0].lstrip("~"))
+    print(f"P={p_name} Q={q_name} R={r_name} S={s_name}, divider set at Q's cumulative={q_cumulative}")
+
+    page7.click("#addWaypointBtn")
+    page7.wait_for_timeout(80)
+    page7.fill("#waypointPtsInput", str(q_cumulative))
+    page7.fill("#waypointLabelInput", "Section")
+    page7.click("#saveWaypointBtn")
+    page7.wait_for_timeout(150)
+
+    p_row = page7.locator(".progression-row").filter(has=page7.locator(".step-name", has_text=p_name)).first
+    p_row.locator(".step-move").click()
+    page7.wait_for_timeout(80)
+    section_top7 = p_row.locator(".move-menu-item", has_text="Section — top")
+    assert section_top7.get_attribute("disabled") is None, \
+        "FAIL: test setup should always let P fit at Section's own top slot (no later divider bounds it)"
+    section_top7.click()
+    page7.wait_for_timeout(100)
+
+    names7 = [page7.locator(".progression-row").nth(i).locator(".step-name").inner_text() for i in range(4)]
+    print("order after moving P into 'Section — top':", names7)
+    assert names7 == [q_name, p_name, r_name, s_name], \
+        f"FAIL: expected P to land immediately before R (Section's top), got {names7}"
+    print("PASS: moving into a section from above it lands at the section's actual top, not one row late")
+
+    print("ERRORS:", errors7)
+    assert not errors7
+    page7.close()
+
     browser.close()
     print("ALL PASS")

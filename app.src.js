@@ -4307,24 +4307,32 @@ function waypointSections(timeline, totalVisible, movingStepCost) {
     let bottomSlot = 0;
     for (let k = 0; k < fits.length; k++) { if (fits[k]) bottomSlot = k; else break; }
 
+    // anchored: whether pos is another existing row's current visible
+    // position (insert relative to it - needs the same post-removal shift
+    // moveProgressionEntryTo applies for a drag target) versus a boundary
+    // past every real step, which is already an absolute final position.
     function slotToVisiblePos(slot) {
-      if (slot < sectionSteps.length) return sectionSteps[slot].visiblePos;
+      if (slot < sectionSteps.length) return { pos: sectionSteps[slot].visiblePos, anchored: true };
       // Past this section's last step - land wherever the next real step
       // (anywhere later in the timeline) sits, or past the end of the
       // whole list if nothing follows at all.
       for (let j = i + 1; j < timeline.length; j++) {
-        if (timeline[j].type === "step") return timeline[j].visiblePos;
+        if (timeline[j].type === "step") return { pos: timeline[j].visiblePos, anchored: true };
       }
-      return totalVisible + 1;
+      return { pos: totalVisible + 1, anchored: false };
     }
 
     const notFitTitle = topFits ? "" : "This step's own cost is more than this section's remaining range allows.";
+    const top = topFits ? slotToVisiblePos(0) : null;
+    const bottom = topFits ? slotToVisiblePos(bottomSlot) : null;
     sections.push({
       label: entry.label || `${entry.pts} pts`,
       topFits,
-      topVisiblePos: topFits ? slotToVisiblePos(0) : null,
+      topVisiblePos: top ? top.pos : null,
+      topAnchored: top ? top.anchored : false,
       bottomFits: topFits,
-      bottomVisiblePos: topFits ? slotToVisiblePos(bottomSlot) : null,
+      bottomVisiblePos: bottom ? bottom.pos : null,
+      bottomAnchored: bottom ? bottom.anchored : false,
       notFitTitle
     });
   }
@@ -4337,18 +4345,24 @@ function waypointSections(timeline, totalVisible, movingStepCost) {
 // wired below need only one generic case rather than a type switch.
 // Section options are computed fresh per row since fit depends on this
 // row's own s.stepCost - see waypointSections.
+//
+// anchored marks a target derived from another existing row's current
+// position (a waypoint section's top/bottom) versus an absolute final
+// position (top/bottom of the whole list, the typed position field) -
+// absoluteIndexForVisiblePosition only needs the post-removal shift for
+// the former.
 function moveMenuHtml(s, timeline, totalVisible) {
   const sections = waypointSections(timeline, totalVisible, s.stepCost);
   const items = [
-    { label: "Top of list", pos: 1, fits: true },
-    { label: "Bottom of list", pos: totalVisible, fits: true }
+    { label: "Top of list", pos: 1, fits: true, anchored: false },
+    { label: "Bottom of list", pos: totalVisible, fits: true, anchored: false }
   ];
   sections.forEach((sec) => {
-    items.push({ label: `${sec.label} — top`, pos: sec.topVisiblePos, fits: sec.topFits, title: sec.notFitTitle });
-    items.push({ label: `${sec.label} — bottom`, pos: sec.bottomVisiblePos, fits: sec.bottomFits, title: sec.notFitTitle });
+    items.push({ label: `${sec.label} — top`, pos: sec.topVisiblePos, fits: sec.topFits, title: sec.notFitTitle, anchored: sec.topAnchored });
+    items.push({ label: `${sec.label} — bottom`, pos: sec.bottomVisiblePos, fits: sec.bottomFits, title: sec.notFitTitle, anchored: sec.bottomAnchored });
   });
   const itemsHtml = items.map((item) =>
-    `<button type="button" class="move-menu-item" data-from-index="${s.index}" data-target-pos="${item.fits ? item.pos : ""}" ${item.fits ? "" : "disabled"} title="${escapeHtml(item.title || "")}">${escapeHtml(item.label)}</button>`
+    `<button type="button" class="move-menu-item" data-from-index="${s.index}" data-target-pos="${item.fits ? item.pos : ""}" data-anchored="${item.anchored ? 1 : 0}" ${item.fits ? "" : "disabled"} title="${escapeHtml(item.title || "")}">${escapeHtml(item.label)}</button>`
   ).join("");
   return `<div class="move-menu" data-key="${expandKey(s)}">
       ${itemsHtml}
@@ -4538,8 +4552,9 @@ function wireProgressionRowEvents() {
       e.stopPropagation();
       const fromIndex = parseInt(moveItemBtn.getAttribute("data-from-index"), 10);
       const targetPos = parseInt(moveItemBtn.getAttribute("data-target-pos"), 10);
+      const anchored = moveItemBtn.getAttribute("data-anchored") === "1";
       openMoveMenuKey = null;
-      moveToVisiblePosition(fromIndex, targetPos);
+      moveToVisiblePosition(fromIndex, targetPos, anchored);
       return;
     }
     const moveGoBtn = e.target.closest(".move-menu-go");
@@ -4553,7 +4568,7 @@ function wireProgressionRowEvents() {
       // means this handler needs no per-render steps array captured.
       const clamped = Math.max(1, Math.min(state.purchaseOrder.length, Number.isFinite(raw) ? raw : 1));
       openMoveMenuKey = null;
-      moveToVisiblePosition(fromIndex, clamped);
+      moveToVisiblePosition(fromIndex, clamped, false);
       return;
     }
     const addBtn = e.target.closest(".step-add");
@@ -4755,17 +4770,19 @@ function moveProgressionEntryTo(fromIndex, toIndex) {
 // (1-indexed, matching s.visiblePos) and hands it here.
 //
 // Returns a POST-removal absolute index, directly usable as moveEntry's
-// toIdx. Every entry counts toward "position" now (nothing's filtered), so
-// removing any one entry always shortens the array by exactly 1 regardless
-// of which entry it was - the result depends only on targetVisiblePos and
-// the total count, not on which row is being moved.
-function absoluteIndexForVisiblePosition(targetVisiblePos) {
-  if (targetVisiblePos <= 1) return 0;
-  return Math.min(targetVisiblePos - 1, state.purchaseOrder.length - 1);
+// toIdx. anchored (moveMenuHtml) says whether targetVisiblePos is another
+// existing row's current position - if so it needs the same post-removal
+// shift moveProgressionEntryTo applies for a drag target, since removing
+// fromIndex from above that row changes its position by one. An absolute
+// final position (top/bottom of the whole list, the typed field) needs no
+// such shift - it already names where the moved row should end up.
+function absoluteIndexForVisiblePosition(targetVisiblePos, fromIndex, anchored) {
+  const raw = targetVisiblePos <= 1 ? 0 : Math.min(targetVisiblePos - 1, state.purchaseOrder.length - 1);
+  return anchored && raw > fromIndex ? raw - 1 : raw;
 }
 
-function moveToVisiblePosition(fromIndex, targetVisiblePos) {
-  const toIdx = absoluteIndexForVisiblePosition(targetVisiblePos);
+function moveToVisiblePosition(fromIndex, targetVisiblePos, anchored) {
+  const toIdx = absoluteIndexForVisiblePosition(targetVisiblePos, fromIndex, anchored);
   if (toIdx === fromIndex) return;
   moveEntry(fromIndex, toIdx);
   renderProgression();
