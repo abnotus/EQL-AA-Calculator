@@ -6,6 +6,7 @@ import { clearAllOwned } from "./logic.js";
 import {
   renderAll, showToast, renderBrowse, undoLast,
   openChangelogModal, closeChangelogModal, wireProgressionDropZone, wireProgressionRowEvents,
+  wireBrowseClickDelegation,
   openBuildsModal, closeBuildsModal, handleBuildSave,
   openResetModal, closeResetModal, handleConfirmReset,
   openWaypointModal, closeWaypointModal, handleSaveWaypoint, handleDeleteWaypoint,
@@ -192,6 +193,7 @@ export function wireEvents() {
 
   wireProgressionDropZone();
   wireProgressionRowEvents();
+  wireBrowseClickDelegation();
 
   // Debounced rather than firing a full renderAll (rebuilds the tree/badges/
   // Browse from scratch) on every keystroke - short enough that typing still

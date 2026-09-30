@@ -3907,20 +3907,27 @@ function renderBrowse() {
       </div>`;
       }).join("")
     : '<div class="empty">No AAs match your search.</div>';
+}
 
-  Array.from(el.browseGrid.querySelectorAll(".hide-toggle-btn")).forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const scope = btn.getAttribute("data-scope");
-      const className = btn.getAttribute("data-classname") || null;
-      const idx = parseInt(btn.getAttribute("data-idx"), 10);
-      setHiddenScoped(scope, className, idx, !isHiddenScoped(scope, className, idx));
-      updateShowHiddenToggle();
-      // The tab bar sits outside the view panels, so it stays visible here -
-      // and countMatches excludes hidden AAs, so a search badge goes stale
-      // without this.
-      renderTabs();
-      renderBrowse();
-    });
+// One-time wiring (called from wireEvents), matching wireProgressionRowEvents'
+// reasoning - renderBrowse tears down and rebuilds every card on every
+// render (a search keystroke, a filter change), so binding here once on
+// the never-recreated grid avoids attaching (and discarding) a fresh
+// listener per card per render.
+function wireBrowseClickDelegation() {
+  el.browseGrid.addEventListener("click", (e) => {
+    const btn = e.target.closest(".hide-toggle-btn");
+    if (!btn) return;
+    const scope = btn.getAttribute("data-scope");
+    const className = btn.getAttribute("data-classname") || null;
+    const idx = parseInt(btn.getAttribute("data-idx"), 10);
+    setHiddenScoped(scope, className, idx, !isHiddenScoped(scope, className, idx));
+    updateShowHiddenToggle();
+    // The tab bar sits outside the view panels, so it stays visible here -
+    // and countMatches excludes hidden AAs, so a search badge goes stale
+    // without this.
+    renderTabs();
+    renderBrowse();
   });
 }
 
@@ -6188,6 +6195,7 @@ function wireEvents() {
 
   wireProgressionDropZone();
   wireProgressionRowEvents();
+  wireBrowseClickDelegation();
 
   // Debounced rather than firing a full renderAll (rebuilds the tree/badges/
   // Browse from scratch) on every keystroke - short enough that typing still
