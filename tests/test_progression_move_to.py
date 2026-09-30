@@ -161,20 +161,18 @@ with sync_playwright() as p:
     print("6-row order with 2 waypoints set:", rows2_names0)
 
     # Move the very last row (currently in/after "Late") into "Early"'s
-    # section instead - a section it did NOT start in. Early's own first
-    # step isn't necessarily position 1 overall (AA costs vary, so its
-    # pts threshold may already be crossed by more than one step) - the
-    # real invariant to check is "lands immediately before whatever was
-    # Early's first step before the move", not "becomes step 1".
-    early_first_name = page2.evaluate("""
-        () => {
-            const dividers = Array.from(document.querySelectorAll('.progression-divider'));
-            const earlyDivider = dividers.find((d) => d.textContent.includes('Early'));
-            const nextRow = earlyDivider.nextElementSibling;
-            return nextRow ? nextRow.querySelector('.step-name').textContent : null;
-        }
-    """)
-    print("Early section's first step before the move:", early_first_name)
+    # section instead - a section it did NOT start in. The real invariant
+    # is "lands genuinely inside Early - somewhere between its divider and
+    # Late's", not "ends up list-adjacent to whatever Early's first step
+    # used to be": that step's own pre-move position doesn't account for
+    # the moved row's cost possibly landing it exactly ON Early's own
+    # threshold rather than past it (computeProgressionTimeline's divider
+    # placement is pts < cumulative, strict), in which case "top" degrades
+    # to the next slot that actually clears the threshold - same
+    # "best-fitting slot, not necessarily the literal first" degrade
+    # "bottom" already does, now also true of "top". Same reasoning as the
+    # anchored-section regression test below, just the opposite drag
+    # direction (from below a section, not above it).
 
     last_row2 = page2.locator(".progression-row").last
     last_name2 = last_row2.locator(".step-name").inner_text()
@@ -186,12 +184,20 @@ with sync_playwright() as p:
     last_row2.locator(".move-menu-item", has_text="Early — top").click()
     page2.wait_for_timeout(100)
 
-    rows2_names1 = [page2.locator(".progression-row").nth(i).locator(".step-name").inner_text() for i in range(6)]
-    print("order after moving the last row into 'Early — top':", rows2_names1)
-    moved_idx = rows2_names1.index(last_name2)
-    assert rows2_names1[moved_idx + 1] == early_first_name, \
-        "FAIL: expected the row to land immediately before Early section's previous first step"
-    print("PASS: moving into a non-current waypoint section works")
+    order2 = page2.evaluate("""() => {
+        return Array.from(document.querySelectorAll('#progressionContent > *')).map((el) => {
+            if (el.classList.contains('progression-divider')) return 'DIVIDER:' + el.textContent.trim();
+            const name = el.querySelector('.step-name');
+            return name ? name.textContent.trim() : null;
+        });
+    }""")
+    print("full DOM order (rows + dividers) after moving the last row into 'Early — top':", order2)
+    early_divider_idx = next(i for i, v in enumerate(order2) if v.startswith("DIVIDER:") and "Early" in v)
+    late_divider_idx = next(i for i, v in enumerate(order2) if v.startswith("DIVIDER:") and "Late" in v)
+    moved_idx2 = next(i for i, v in enumerate(order2) if v == last_name2)
+    assert early_divider_idx < moved_idx2 < late_divider_idx, \
+        f"FAIL: expected the moved row genuinely between the Early and Late dividers, got {order2}"
+    print("PASS: moving into a non-current waypoint section lands genuinely inside it, not just list-adjacent to its old first step")
 
     print("ERRORS:", errors2)
     assert not errors2
@@ -478,14 +484,15 @@ with sync_playwright() as p:
     assert not errors6
     page6.close()
 
-    # --- Regression: moving a row into a section from ABOVE it must shift
-    # the insertion point down by one, since the dragged row itself is
-    # removed from above the section first - previously this used the
-    # anchor's pre-removal position unadjusted, landing one row too late
-    # (absoluteIndexForVisiblePosition's anchored case). Four AAs bought in
-    # order P,Q,R,S; a waypoint dropped right after Q makes R,S the section,
-    # leaving P not adjacent to it (Q sits between). Moving P to "Section —
-    # top" must land it immediately before R, not immediately after it. ---
+    # --- Regression (two layered bugs, same fixture): moving a row into a
+    # section from ABOVE it must shift the insertion point down by one,
+    # since the dragged row itself is removed from above the section first
+    # - previously this used the anchor's pre-removal position unadjusted,
+    # landing one row too late (absoluteIndexForVisiblePosition's anchored
+    # case). Four AAs bought in order P,Q,R,S; a waypoint dropped right
+    # after Q makes R,S the section, leaving P not adjacent to it (Q sits
+    # between). See the second assertion below for the other bug this same
+    # setup exposes once the first is fixed. ---
     page7 = browser.new_page(viewport={"width": 1400, "height": 900})
     errors7 = []
     page7.on("pageerror", lambda exc: errors7.append(str(exc)))
@@ -524,9 +531,36 @@ with sync_playwright() as p:
 
     names7 = [page7.locator(".progression-row").nth(i).locator(".step-name").inner_text() for i in range(4)]
     print("order after moving P into 'Section — top':", names7)
-    assert names7 == [q_name, p_name, r_name, s_name], \
-        f"FAIL: expected P to land immediately before R (Section's top), got {names7}"
-    print("PASS: moving into a section from above it lands at the section's actual top, not one row late")
+    assert names7 == [q_name, r_name, p_name, s_name], \
+        f"FAIL: expected P to land after R, got {names7}"
+    print("PASS: moving into a section from above it no longer lands one row late (the anchored off-by-one)")
+
+    # --- Second regression, layered on the same fixture: the waypoint's
+    # threshold sits at EXACTLY P+Q's combined cost, so simply inserting P
+    # "immediately before R" (R's own pre-move top-of-section slot) would
+    # give P a resulting cumulative that lands exactly ON the threshold,
+    # not past it - computeProgressionTimeline's divider placement is
+    # pts < cumulative (strict), so that still renders BEFORE the divider,
+    # leaving P outside the very section "Section — top" was supposed to
+    # put it in. Removing P from above also drops R's own cumulative below
+    # the threshold (R no longer benefits from P's contribution) - R
+    # legitimately falls out of the section as a result, which is why R
+    # ends up above the divider here instead of P landing before it. The
+    # real invariant to check is where the divider itself renders relative
+    # to P, not just the AA name order above. ---
+    divider_order = page7.evaluate("""() => {
+        return Array.from(document.querySelectorAll('#progressionContent > *')).map((el) => {
+            if (el.classList.contains('progression-divider')) return 'DIVIDER';
+            const name = el.querySelector('.step-name');
+            return name ? name.textContent.trim() : null;
+        }).filter((x) => x !== null || true);
+    }""")
+    print("full DOM order (rows + divider):", divider_order)
+    divider_idx = divider_order.index("DIVIDER")
+    p_idx = next(i for i, v in enumerate(divider_order) if v and p_name in v)
+    assert p_idx == divider_idx + 1, \
+        f"FAIL: expected P immediately after the divider (the section's actual top), got {divider_order}"
+    print("PASS: P lands immediately after the divider - genuinely inside Section, not just list-adjacent to R")
 
     print("ERRORS:", errors7)
     assert not errors7
