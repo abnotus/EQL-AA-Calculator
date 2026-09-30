@@ -5200,9 +5200,16 @@ function compactRanksFor(ranksLike) {
 // [[ids...],[ranks...]]) or the older array-of-pairs shape (v2/v3,
 // [[id,rank],[id,rank],...]) - columnar says which to expect, decided by
 // expandCompactPayload from the code's own version number.
+// Returns { ranks, dropped } rather than just ranks - dropped is an id
+// that no longer resolves (entryForId returns null), mirroring state.js's
+// deserializeRanks so a caller can fold both into the same "N picks no
+// longer exist" notice (loadIssuesSuffix). Without this, an id dropped
+// here vanishes before deserializeRanks ever runs on the result, so its
+// own dropped count stays 0 and the drop goes unreported.
 function expandCompactRanks(list, columnar) {
   const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
-  if (!list) return ranks;
+  let dropped = 0;
+  if (!list) return { ranks, dropped };
   // Capped before any per-entry work, same as MAX_PURCHASE_ORDER's own use
   // in state.js's deserializePurchaseOrder - an untrusted array this size
   // could otherwise cost far more processing than any real roster needs.
@@ -5211,10 +5218,11 @@ function expandCompactRanks(list, columnar) {
   const pairs = columnar ? capped.map((id, i) => [id, list[1][i]]) : capped;
   pairs.forEach(([id, rank]) => {
     const entry = entryForId(id);
-    if (!entry) return;
+    if (!entry) { dropped++; return; }
     // A columnar payload with mismatched ids/ranks arrays is corrupt. Drop the
     // entry like an unresolved id instead of storing an undefined rank that
-    // would later be clamped to 0.
+    // would later be clamped to 0. Not counted toward `dropped` - it's
+    // malformed data, not a pick that no longer exists.
     if (!Number.isFinite(rank)) return;
     if (entry.scope === "class") {
       ranks.classes[entry.className] = ranks.classes[entry.className] || {};
@@ -5223,7 +5231,7 @@ function expandCompactRanks(list, columnar) {
       ranks[entry.scope][entry.key] = rank;
     }
   });
-  return ranks;
+  return { ranks, dropped };
 }
 
 // Reconstructs the verbose, name-keyed shape applyLoaded already understands
@@ -5247,6 +5255,8 @@ function expandCompactPayload(compact) {
     const entry = entryForId(id);
     return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
   }).filter(Boolean);
+  const rankResult = expandCompactRanks(r, columnar);
+  const ownedResult = expandCompactRanks(o, columnar);
   return {
     v: SAVE_FORMAT_VERSION,
     selectedClasses: (c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
@@ -5254,7 +5264,7 @@ function expandCompactPayload(compact) {
     // An older share code/link may still carry a `t` (totalPoints) field,
     // from before the point cap was removed - simply never read into
     // anything here, same graceful-ignore as any unrecognized field.
-    ranks: expandCompactRanks(r, columnar),
+    ranks: rankResult.ranks,
     purchaseOrder,
     // Raw [pts, label] pairs, or absent/null on an older link/build
     // predating this field - either way applyLoaded's sanitizeWaypoints
@@ -5267,7 +5277,12 @@ function expandCompactPayload(compact) {
     // part of "the build" it applies); the import layer inspects it
     // separately via payloadOwnedHasContent before deciding whether to
     // create a fresh profile for it (see maybeImportOwned).
-    owned: expandCompactRanks(o, columnar)
+    owned: ownedResult.ranks,
+    // Not part of the build shape applyLoaded understands - read separately
+    // by the import/share-link callers and folded into their own
+    // droppedRanks count, since an id unresolved here never reaches
+    // deserializeRanks (state.js) to be counted there.
+    decodeDropped: rankResult.dropped + ownedResult.dropped
   };
 }
 
@@ -5601,14 +5616,21 @@ function expandBinaryPayload(bytes) {
     return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
   }).filter(Boolean);
 
+  const rankResult = expandCompactRanks([ids, plannedRanks], true);
+  const ownedResult = expandCompactRanks([ownedIds, ownedRanks], true);
   return {
     v: SAVE_FORMAT_VERSION,
     selectedClasses,
     charLevel,
-    ranks: expandCompactRanks([ids, plannedRanks], true),
+    ranks: rankResult.ranks,
     purchaseOrder,
     waypoints,
-    owned: expandCompactRanks([ownedIds, ownedRanks], true)
+    owned: ownedResult.ranks,
+    // See expandCompactPayload's own decodeDropped - same reasoning, an
+    // unresolved id here (an AA removed since encoding, or a crafted id
+    // that never existed but still passes the CRC) never reaches
+    // deserializeRanks to be counted.
+    decodeDropped: rankResult.dropped + ownedResult.dropped
   };
 }
 
@@ -5756,7 +5778,7 @@ async function applySharedBuildFromUrl(localLoadResult) {
       clearActiveBuild();
       const repaired = reconcilePurchaseOrderCounts();
       const ownedOutcome = maybeImportOwned(json);
-      result.droppedRanks += ownedOutcome.dropped;
+      result.droppedRanks += ownedOutcome.dropped + (json.decodeDropped || 0);
       saveLocal();
       const savedId = saveImportedBuild();
       notice = savedId
@@ -5965,7 +5987,7 @@ async function importBuildFromText(text) {
     clearActiveBuild();
     const repaired = reconcilePurchaseOrderCounts();
     const ownedOutcome = maybeImportOwned(json);
-    result.droppedRanks += ownedOutcome.dropped;
+    result.droppedRanks += ownedOutcome.dropped + (json.decodeDropped || 0);
     saveLocal();
     renderAll();
     showToast(`Build imported${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`);

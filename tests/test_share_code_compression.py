@@ -144,6 +144,51 @@ with sync_playwright() as p:
         f"got {len(current_code)} vs {len(codes['v4Deflate'])}")
     print("PASS: the current v5 encoding is shorter than the v4 equivalent for the same content")
 
+    # --- Regression: an id that never resolves (out of range, or one that
+    # simply was never assigned - a crafted id still passes the CRC/format
+    # checks, since neither knows the real id range) must be reported via
+    # the same "N picks no longer exist" notice a genuinely-removed AA
+    # gets, not dropped silently. expandCompactRanks produces the already-
+    # resolved verbose shape deserializeRanks (state.js) works from, so an
+    # id it drops never reaches deserializeRanks's own drop-counting -
+    # decodeDropped (exportImport.js) exists to carry that count back out
+    # to the import/share-link callers instead. ---
+    BOGUS_ID = 999999
+    bogus_payload = [4, [0, 1, 2], 50, [[0, BOGUS_ID], [1, 1]], [0], None, None]
+    bogus_code = page.evaluate("""
+    async (payload) => {
+        function bytesToB64(bytes) {
+            let bin = "";
+            for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+            return btoa(bin);
+        }
+        const bytes = new TextEncoder().encode(JSON.stringify(payload));
+        const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+        return bytesToB64(new Uint8Array(await new Response(stream).arrayBuffer()));
+    }
+    """, bogus_payload)
+
+    page.click("#importBtn")
+    page.wait_for_timeout(100)
+    page.fill("#importText", bogus_code)
+    page.click("#doImportBtn")
+    page.wait_for_selector("#importModal", state="hidden", timeout=10000)
+    page.wait_for_timeout(200)
+    toast = page.locator("#toast")
+    toast_text = toast.inner_text() if toast.count() and toast.is_visible() else ""
+    print("toast after importing a payload with one unresolved id:", repr(toast_text))
+    assert "1 pick" in toast_text and "no longer exist" in toast_text, \
+        f"FAIL: expected the unresolved id to be reported as a dropped pick, got {toast_text!r}"
+
+    page.click('button[data-tab="progression"]')
+    page.wait_for_timeout(150)
+    rows = page.locator(".progression-row")
+    names = [rows.nth(i).locator(".step-name").inner_text() for i in range(rows.count())]
+    print("Progression rows after import:", names)
+    assert names == ["Adamant Will rank 1"], \
+        f"FAIL: expected only the resolvable AA to survive, got {names}"
+    print("PASS: an id that never resolves is reported, not silently dropped")
+
     print("ERRORS:", errors)
     assert not errors
     browser.close()
