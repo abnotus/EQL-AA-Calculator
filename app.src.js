@@ -3374,8 +3374,25 @@ function cacheDom() {
 
 // All DOM rendering. Reads from `state` and the logic layer, writes to `el.*`.
 
+// Shared by renderTopbar/renderSummary/renderProgression, each of which
+// needs some subset of these same 4 lifetime totals (all four walk the
+// whole roster via sumAcrossAllClasses). renderTopbar runs unconditionally
+// on every renderAll, alongside exactly one of renderSummary/
+// renderProgression (activeView is mutually exclusive) - computed once
+// here and passed down instead of each independently re-walking the
+// roster a second time.
+function computePointTotals() {
+  return {
+    spent: spentPoints(),
+    spentExtra: estimatedExtraPoints(),
+    ownedReal: ownedPoints(),
+    ownedExtra: estimatedExtraOwnedPoints()
+  };
+}
+
 function renderAll() {
-  renderTopbar();
+  const totals = computePointTotals();
+  renderTopbar(totals);
   renderTabs();
   updateShowHiddenToggle();
   el.calculatorView.classList.add("hidden");
@@ -3388,10 +3405,10 @@ function renderAll() {
     renderBrowse();
   } else if (state.activeView === "summary") {
     el.summaryView.classList.remove("hidden");
-    renderSummary();
+    renderSummary(totals);
   } else if (state.activeView === "progression") {
     el.progressionView.classList.remove("hidden");
-    renderProgression();
+    renderProgression(totals);
   } else if (state.activeView === "otherClasses") {
     el.otherClassesView.classList.remove("hidden");
     renderOtherClasses();
@@ -3431,11 +3448,9 @@ function setValueUnlessFocused(input, value) {
   if (document.activeElement !== input) input.value = value;
 }
 
-function renderTopbar() {
+function renderTopbar(totals) {
   populateClassSelects();
   setValueUnlessFocused(el.levelInput, state.charLevel);
-  const spent = spentPoints();
-  const spentExtra = estimatedExtraPoints();
   // Owned/planned, not planned alone. Owned tracking is always on
   // (per-build profiles, always included in exports), and "how much of the
   // plan is actually trained" is more useful up top than the plan's raw
@@ -3447,8 +3462,7 @@ function renderTopbar() {
   // neither) of owned/planned. #spentValue/spentPoints() kept their names
   // despite the label reading "Planned" now - renaming would touch a lot of
   // call sites and tests for a purely cosmetic gain.
-  const ownedReal = ownedPoints();
-  const ownedExtra = estimatedExtraOwnedPoints();
+  const { spent, spentExtra, ownedReal, ownedExtra } = totals || computePointTotals();
   function blendedSpan(real, extra) {
     return extra > 0 ? `<span class="is-estimate">~${real + extra}</span>` : `${real}`;
   }
@@ -3910,8 +3924,8 @@ function renderBrowse() {
   });
 }
 
-function renderSummary() {
-  const spent = spentPoints();
+function renderSummary(totals) {
+  const { spent } = totals || computePointTotals();
   el.summaryHeader.innerHTML = `<div class="summary-meta">Classes: <b>${state.selectedClasses.map(escapeHtml).join(" / ")}</b> &middot; Character Level <b>${state.charLevel}</b> &middot; Points Planned: <b>${spent}</b></div>`;
 
   const sections = AA_CATEGORY_KEYS.map((key) => ({ key, label: shortCategoryLabel(key) }));
@@ -4386,7 +4400,7 @@ function moveMenuHtml(s, timeline, totalVisible) {
     </div>`;
 }
 
-function renderProgression() {
+function renderProgression(totals) {
   el.undoLastBtn.disabled = !canUndo();
   // hasAnyOwned checks state.owned globally, not just the current
   // progression list, so this is set before (and independent of) the
@@ -4401,15 +4415,13 @@ function renderProgression() {
   // estimatedExtraOwnedPoints) - without this, an owned rank with an
   // unconfirmed cost silently vanished from both "owned" and "to go",
   // making the two figures fall short of the topbar's own blended total.
-  const ownedReal = ownedPoints();
-  const ownedExtra = estimatedExtraOwnedPoints();
-  const spentExtra = estimatedExtraPoints();
+  const { spent, spentExtra, ownedReal, ownedExtra } = totals || computePointTotals();
   // Owned isn't capped to the current plan (a refund can drop a rank below
   // its own owned watermark on purpose - owned is real-world truth,
   // untouched by changeRank), so owned can exceed spent for an AA that's
   // been refunded below what's already been trained. Clamped to 0 rather
   // than showing a negative "to go" in that case.
-  const togoReal = Math.max(0, spentPoints() - ownedReal);
+  const togoReal = Math.max(0, spent - ownedReal);
   const togoExtra = Math.max(0, spentExtra - ownedExtra);
   function blendedFigure(real, extra) {
     return extra > 0
