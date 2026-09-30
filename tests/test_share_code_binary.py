@@ -231,6 +231,42 @@ with sync_playwright() as p:
         f"FAIL: an owned rank of 26 must survive encoding - got {high_back['owned']}"
     print("PASS: a rank above 15 round-trips, pinning the 5-bit rank field")
 
+    # --- 3b. The owned/planned delta field's width. The delta rides as
+    # planned - owned (V5_BITS.rankDelta, signed), separate from V5_BITS.rank
+    # itself - it needs its own extra bit since unlike an absolute rank it
+    # can be negative, and its true magnitude range is the same as rank's
+    # (0-31) in EITHER direction. A build with owned far below planned on a
+    # high-rank AA (Hunter's Attack Power, max 26) pins a delta magnitude
+    # (25) that doesn't fit in rank's own 5-bit signed range (-16..15) at
+    # all, unlike the property test's random builds, which only ever nudge
+    # owned a couple of ranks off from planned. ---
+    HIGH_LOW_OWNED = {"general": {}, "archetype": {}, "special": {},
+                       "classes": {"Ranger": {"hunters-attack-power": 1}}}
+    delta_payload = {"v": 4, "selectedClasses": ["Ranger", "Beastlord", "Berserker"],
+                      "charLevel": 50, "ranks": HIGH, "purchaseOrder": [], "waypoints": []}
+    src = new_page(delta_payload, HIGH_LOW_OWNED)
+    delta_code = export_code(src)
+    src.close()
+    dst = new_page(url=f"{BASE}?build={as_url_code(delta_code)}")
+    delta_back = dst.evaluate("""(k) => {
+        const s = JSON.parse(localStorage.getItem(k) || '{}');
+        let owned = null;
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('eql_aa_owned_') && key !== 'eql_aa_owned_legacy')
+                owned = JSON.parse(localStorage.getItem(key)).owned;
+        }
+        return { planned: (s.ranks || {}).classes, owned: (owned || {}).classes };
+    }""", STORAGE_KEY)
+    dst.close()
+    print("large owned/planned delta round trip - planned:", json.dumps(delta_back["planned"]),
+          "owned:", json.dumps(delta_back["owned"]))
+    assert delta_back["planned"] == {"Ranger": {"hunters-attack-power": 26}}, \
+        f"FAIL: planned rank 26 must survive encoding - got {delta_back['planned']}"
+    assert delta_back["owned"] == {"Ranger": {"hunters-attack-power": 1}}, \
+        f"FAIL: owned rank 1 (a delta of 25 from planned) must survive encoding - got {delta_back['owned']}"
+    print("PASS: a delta magnitude above 15 round-trips, pinning the 6-bit signed rankDelta field")
+
     # --- 4. The id bitmap's low boundary. A build with no AAs and one
     # holding only id 0 (Adamant Will) both store hi = 0, so the bitmap is
     # written as hi + 1 bits unconditionally - a lone "0" for the empty

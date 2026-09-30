@@ -4324,7 +4324,19 @@ function classBadgeClass(s) {
 // negative), so if the top slot doesn't fit, none do - topFits and
 // bottomFits are therefore always equal, doubling as "does this step fit
 // in this section at all".
-function waypointSections(timeline, totalVisible, movingStepCost) {
+function waypointSections(timeline, totalVisible, movingStepCost, movingIndex) {
+  // A step at or after the dragged row's own current position had its
+  // cumulative computed WITH the dragged row's cost already folded in -
+  // removing the row from there (to reinsert it elsewhere) drops every
+  // one of those cumulatives by movingStepCost. A step before the dragged
+  // row's position is untouched by its removal. Without this, "top of
+  // section" for a row dragged from above a section can compute a baseline
+  // that still (wrongly) counts the row's own cost against itself, landing
+  // it exactly on the section's own threshold instead of past it -
+  // computeProgressionTimeline's divider placement is pts < cumulative
+  // (strict), so landing exactly on the threshold renders BEFORE the
+  // divider, not inside the section "top" was supposed to mean.
+  const adjustedCumulative = (step) => step.index >= movingIndex ? step.cumulative - movingStepCost : step.cumulative;
   const sections = [];
   for (let i = 0; i < timeline.length; i++) {
     const entry = timeline[i];
@@ -4335,7 +4347,7 @@ function waypointSections(timeline, totalVisible, movingStepCost) {
     }
     let baselineBeforeSection = 0;
     for (let j = i - 1; j >= 0; j--) {
-      if (timeline[j].type === "step") { baselineBeforeSection = timeline[j].cumulative; break; }
+      if (timeline[j].type === "step") { baselineBeforeSection = adjustedCumulative(timeline[j]); break; }
     }
     let highPts = Infinity;
     for (let j = i + 1; j < timeline.length; j++) {
@@ -4345,11 +4357,21 @@ function waypointSections(timeline, totalVisible, movingStepCost) {
     // (before sectionSteps[k]); the last entry is "after the section's
     // last step" - one baseline per possible insertion point, top to
     // bottom, monotonically non-decreasing.
-    const slotBaselines = [baselineBeforeSection, ...sectionSteps.map((st) => st.cumulative)];
-    const fits = slotBaselines.map((b) => b + movingStepCost <= highPts);
-    const topFits = fits[0];
-    let bottomSlot = 0;
-    for (let k = 0; k < fits.length; k++) { if (fits[k]) bottomSlot = k; else break; }
+    const slotBaselines = [baselineBeforeSection, ...sectionSteps.map((st) => adjustedCumulative(st))];
+    const upperFits = slotBaselines.map((b) => b + movingStepCost <= highPts);
+    // The earliest slot whose resulting cumulative actually clears THIS
+    // section's own starting threshold - landing exactly on entry.pts still
+    // renders before the divider (computeProgressionTimeline's divider
+    // placement is pts < cumulative, strict), so "top" needs the first slot
+    // that lands past it, not simply the shallowest slot in the section.
+    // Slot baselines only grow deeper into the section, so once one clears
+    // it every later one does too - topSlot is never slotBaselines.length
+    // unless nothing in the section does.
+    let topSlot = slotBaselines.findIndex((b) => b + movingStepCost > entry.pts);
+    if (topSlot < 0) topSlot = slotBaselines.length;
+    const topFits = topSlot < slotBaselines.length && upperFits[topSlot];
+    let bottomSlot = topSlot;
+    for (let k = topSlot; k < upperFits.length; k++) { if (upperFits[k]) bottomSlot = k; else break; }
 
     // anchored: whether pos is another existing row's current visible
     // position (insert relative to it - needs the same post-removal shift
@@ -4366,8 +4388,8 @@ function waypointSections(timeline, totalVisible, movingStepCost) {
       return { pos: totalVisible + 1, anchored: false };
     }
 
-    const notFitTitle = topFits ? "" : "This step's own cost is more than this section's remaining range allows.";
-    const top = topFits ? slotToVisiblePos(0) : null;
+    const notFitTitle = topFits ? "" : "This step doesn't fit anywhere in this section's points range.";
+    const top = topFits ? slotToVisiblePos(topSlot) : null;
     const bottom = topFits ? slotToVisiblePos(bottomSlot) : null;
     sections.push({
       label: entry.label || `${entry.pts} pts`,
@@ -4396,7 +4418,7 @@ function waypointSections(timeline, totalVisible, movingStepCost) {
 // absoluteIndexForVisiblePosition only needs the post-removal shift for
 // the former.
 function moveMenuHtml(s, timeline, totalVisible) {
-  const sections = waypointSections(timeline, totalVisible, s.stepCost);
+  const sections = waypointSections(timeline, totalVisible, s.stepCost, s.index);
   const items = [
     { label: "Top of list", pos: 1, fits: true, anchored: false },
     { label: "Bottom of list", pos: totalVisible, fits: true, anchored: false }
@@ -5380,6 +5402,14 @@ const V5_MAGIC = 0xe5;
 //   rank      - data.src.js's largest `ranks` is 26 (Ranger's Hunter's
 //               Attack Power), and setOwnedRank (logic.js) doesn't clamp
 //               on write, so 5 bits rather than the 4 a max of 10 implies.
+//   rankDelta - an owned/planned diff pair's delta (planned - owned), two's
+//               complement signed (bitReader.takeSigned). Both sides are
+//               independently bounded to [0, rank's own 5-bit range], so
+//               the delta's true range is [-31, 31] - one bit wider than
+//               `rank` itself, since unlike an absolute rank it can be
+//               negative (owned exceeding planned - a real, supported
+//               refund case, not just a theoretical one) and needs room
+//               for the full magnitude either direction, not half of it.
 //   id        - aaIds.js is append-only and never reuses an id, so the
 //               ceiling grows with every wiki scrape; 9 bits leaves room.
 //   pts       - MAX_WAYPOINT_PTS is 100000.
@@ -5387,7 +5417,7 @@ const V5_MAGIC = 0xe5;
 //               up to 240 UTF-8 bytes.
 const V5_BITS = {
   version: 4, idMode: 1, classSlot: 5, level: 6, id: 9, count: 9,
-  rank: 5, poCount: 11, deltaCount: 8, wpCount: 8, pts: 17, color: 3, labelLen: 8
+  rank: 5, rankDelta: 6, poCount: 11, deltaCount: 8, wpCount: 8, pts: 17, color: 3, labelLen: 8
 };
 const V5_CLASS_NONE = 31; // CLASS_LIST.indexOf miss; applyLoaded rejects the set anyway
 
@@ -5530,7 +5560,7 @@ function packV5(idMode) {
   });
   const diffWidth = indexWidth(ownedList.length);
   w.put(diffs.length, V5_BITS.deltaCount);
-  diffs.forEach(([i, d]) => { w.put(i, diffWidth); w.put(d, V5_BITS.rank); });
+  diffs.forEach(([i, d]) => { w.put(i, diffWidth); w.put(d, V5_BITS.rankDelta); });
 
   const labels = [];
   w.put(state.waypoints.length, V5_BITS.wpCount);
@@ -5605,7 +5635,7 @@ function expandBinaryPayload(bytes) {
   const diffWidth = indexWidth(ownedIds.length);
   for (let k = 0; k < deltaCount; k++) {
     const i = r.take(diffWidth);
-    const d = r.takeSigned(V5_BITS.rank);
+    const d = r.takeSigned(V5_BITS.rankDelta);
     if (i < ownedRanks.length) ownedRanks[i] -= d;
   }
 

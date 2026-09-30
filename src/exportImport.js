@@ -231,6 +231,14 @@ const V5_MAGIC = 0xe5;
 //   rank      - data.src.js's largest `ranks` is 26 (Ranger's Hunter's
 //               Attack Power), and setOwnedRank (logic.js) doesn't clamp
 //               on write, so 5 bits rather than the 4 a max of 10 implies.
+//   rankDelta - an owned/planned diff pair's delta (planned - owned), two's
+//               complement signed (bitReader.takeSigned). Both sides are
+//               independently bounded to [0, rank's own 5-bit range], so
+//               the delta's true range is [-31, 31] - one bit wider than
+//               `rank` itself, since unlike an absolute rank it can be
+//               negative (owned exceeding planned - a real, supported
+//               refund case, not just a theoretical one) and needs room
+//               for the full magnitude either direction, not half of it.
 //   id        - aaIds.js is append-only and never reuses an id, so the
 //               ceiling grows with every wiki scrape; 9 bits leaves room.
 //   pts       - MAX_WAYPOINT_PTS is 100000.
@@ -238,7 +246,7 @@ const V5_MAGIC = 0xe5;
 //               up to 240 UTF-8 bytes.
 const V5_BITS = {
   version: 4, idMode: 1, classSlot: 5, level: 6, id: 9, count: 9,
-  rank: 5, poCount: 11, deltaCount: 8, wpCount: 8, pts: 17, color: 3, labelLen: 8
+  rank: 5, rankDelta: 6, poCount: 11, deltaCount: 8, wpCount: 8, pts: 17, color: 3, labelLen: 8
 };
 const V5_CLASS_NONE = 31; // CLASS_LIST.indexOf miss; applyLoaded rejects the set anyway
 
@@ -381,7 +389,7 @@ function packV5(idMode) {
   });
   const diffWidth = indexWidth(ownedList.length);
   w.put(diffs.length, V5_BITS.deltaCount);
-  diffs.forEach(([i, d]) => { w.put(i, diffWidth); w.put(d, V5_BITS.rank); });
+  diffs.forEach(([i, d]) => { w.put(i, diffWidth); w.put(d, V5_BITS.rankDelta); });
 
   const labels = [];
   w.put(state.waypoints.length, V5_BITS.wpCount);
@@ -456,7 +464,7 @@ function expandBinaryPayload(bytes) {
   const diffWidth = indexWidth(ownedIds.length);
   for (let k = 0; k < deltaCount; k++) {
     const i = r.take(diffWidth);
-    const d = r.takeSigned(V5_BITS.rank);
+    const d = r.takeSigned(V5_BITS.rankDelta);
     if (i < ownedRanks.length) ownedRanks[i] -= d;
   }
 
