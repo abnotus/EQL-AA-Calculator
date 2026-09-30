@@ -34,6 +34,9 @@ import re
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "wiki-sync"))
+from common import slug_key_for  # noqa: E402
+
 SRC_MODULE_ORDER = [
     "src/aaIds.js",
     "src/costGuesses.js",
@@ -212,7 +215,7 @@ def check_aa_ids_current(data_src: str):
     import json as _json
 
     current_cat = None
-    buckets = {}
+    entries = []
     for line in data_src.split("\n"):
         s = line.strip()
         m = DATA_CATEGORY_START.match(s)
@@ -228,27 +231,18 @@ def check_aa_ids_current(data_src: str):
         nm = DATA_ENTRY_NAME.search(s)
         if not nm or not current_cat:
             continue
-        buckets.setdefault(current_cat, []).append((nm.group(1), bool(DATA_ENTRY_AUTO.search(s))))
+        scope, class_name = current_cat
+        entries.append({
+            "scope": scope, "className": class_name,
+            "name": nm.group(1), "auto": bool(DATA_ENTRY_AUTO.search(s)),
+        })
 
-    # Same disambiguation as keys.js's keyForEntryIdx / assign_aa_ids.py.
-    def slugify(name):
-        s = name.lower().replace("'", "")
-        return re.sub(r"[^a-z0-9]+", "-", s).strip("-")
-
-    expected_id_keys = []
-    for (scope, class_name), entries in buckets.items():
-        slugs = [slugify(n) for n, _ in entries]
-        autos = [a for _, a in entries]
-        for pos in range(len(entries)):
-            base = slugs[pos]
-            same = [j for j in range(len(entries)) if slugs[j] == base]
-            if len(same) <= 1 or not autos[pos]:
-                key = base
-            else:
-                auto_siblings = [j for j in same if autos[j]]
-                auto_pos = auto_siblings.index(pos)
-                key = f"{base}-auto" if auto_pos == 0 else f"{base}-auto-{auto_pos + 1}"
-            expected_id_keys.append(f"{scope}:{class_name or ''}:{key}")
+    # Same identity keys.js's keyForEntryIdx / assign_aa_ids.py compute -
+    # shared here via slug_key_for rather than a 4th reimplementation.
+    expected_id_keys = [
+        f"{e['scope']}:{e['className'] or ''}:{slug_key_for(entries, i)}"
+        for i, e in enumerate(entries)
+    ]
 
     ids_path = "src/aaIds.js"
     try:
