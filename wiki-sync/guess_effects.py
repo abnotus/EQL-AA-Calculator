@@ -90,7 +90,7 @@ DATA_ENTRY_DESC = re.compile(r'description:\s*"((?:[^"\\]|\\.)*)"')
 # own comment) - if that ever changes, this comment is the reminder that
 # progression indices depend on the two parsers agreeing on more than just
 # their regex source.
-PROGRESSION_RE = re.compile(r'\d+(?:\.\d+)?%?(?:/(?:\d+(?:\.\d+)?%?|\?)){1,}')
+PROGRESSION_RE = re.compile(r'(?:\d+(?:\.\d+)?%?|\?)(?:/(?:\d+(?:\.\d+)?%?|\?)){1,}')
 
 # Explicit, hand-verified groups of AAs whose descriptions are genuinely the
 # same underlying formula (confirmed by reading them, not detected by text

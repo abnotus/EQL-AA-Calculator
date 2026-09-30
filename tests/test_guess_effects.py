@@ -29,6 +29,18 @@ progs3 = ge.extract_progressions("No progression here at all.")
 assert progs3 == []
 print("PASS: a description with no slash-progression yields nothing to guess")
 
+# --- Regression: a progression whose own FIRST rank is unknown
+# ("?/40/60%") must still be recognized, not silently skipped - and
+# skipping it would also shift every later progression in the same
+# description down by one index, corrupting their guesses too. ---
+progs4 = ge.extract_progressions("Grants ?/40/60% resist, and 5/10/?% haste.")
+assert len(progs4) == 2, f"FAIL: expected 2 progressions even with the first one leading with '?', got {len(progs4)}"
+assert progs4[0]["known"] == {1: 40, 2: 60} and progs4[0]["unknown"] == [0], \
+    f"FAIL: a leading '?' should be unknown slot 0, got {progs4[0]}"
+assert progs4[1]["known"] == {0: 5, 1: 10} and progs4[1]["unknown"] == [2], \
+    f"FAIL: the second progression's index shifted - got {progs4[1]}"
+print("PASS: a progression leading with '?' is recognized, and doesn't misalign later ones")
+
 # --- interpolate_bounded_gaps: identical behavior to the cost version -
 # bounded gap gets a floor-midpoint guess, trailing gap gets nothing. ---
 known = {0: 1, 2: 5, 3: 10}

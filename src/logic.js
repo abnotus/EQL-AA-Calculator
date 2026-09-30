@@ -82,7 +82,7 @@ function splitPerRankLines(text) {
 // fragments can keep one continuous count.
 function markProgressions(escaped, rank, guessLookup, startIdx) {
   let progIdx = startIdx;
-  const html = escaped.replace(/\d+(?:\.\d+)?%?(?:\/(?:\d+(?:\.\d+)?%?|\?)){1,}/g, (match) => {
+  const html = escaped.replace(/(?:\d+(?:\.\d+)?%?|\?)(?:\/(?:\d+(?:\.\d+)?%?|\?)){1,}/g, (match) => {
     progIdx++;
     const parts = match.split("/");
     const highlightIdx = rank && rank >= 1 ? rank - 1 : -1;
