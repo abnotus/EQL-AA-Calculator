@@ -566,5 +566,69 @@ with sync_playwright() as p:
     assert not errors7
     page7.close()
 
+    # --- Third regression, a simpler fixture (3 AAs, not 4): slotToVisiblePos's
+    # "past this section's last step" branch searched forward from right
+    # after the DIVIDER (i + 1), which lands on the section's own FIRST
+    # member again (sectionSteps[0] sits immediately after the divider) -
+    # not genuinely past the section. Reachable whenever topSlot needs to
+    # skip past every existing section member to clear the lower-bound
+    # threshold (the case above always had a second section member, R,
+    # still short-circuiting the search before this ever mattered).
+    # Adamant(2) + Alchemy(3) + Baking(2) bought in that order, waypoint at
+    # exactly 5 (Alchemy's own cumulative) makes Baking alone the section;
+    # moving Adamant to "Section — top" must clear 5, which only Adamant's
+    # own cost landing AFTER Baking (5 + 2 = 7) can do - landing before
+    # Baking (3 + 2 = 5) doesn't. ---
+    page8 = browser.new_page(viewport={"width": 1400, "height": 900})
+    errors8 = []
+    page8.on("pageerror", lambda exc: errors8.append(str(exc)))
+    page8.on("dialog", lambda d: d.accept())
+    page8.goto(BASE)
+    page8.wait_for_selector("#treeWrap .node")
+    page8.click('button[data-tab="general"]')
+    gnodes8 = page8.locator(".node")
+    for i in range(3):
+        gnodes8.nth(i).click()
+        page8.click("#incBtn")
+        page8.wait_for_timeout(60)
+
+    page8.click('button[data-tab="progression"]')
+    page8.wait_for_timeout(150)
+    rows8 = page8.locator(".progression-row")
+    a_name, b_name, c_name = [rows8.nth(i).locator(".step-name").inner_text() for i in range(3)]
+    b_cumulative = int(rows8.nth(1).locator(".cost-total").inner_text().split()[0].lstrip("~"))
+    print(f"A={a_name} B={b_name} C={c_name}, divider set at B's cumulative={b_cumulative}")
+
+    page8.click("#addWaypointBtn")
+    page8.wait_for_timeout(80)
+    page8.fill("#waypointPtsInput", str(b_cumulative))
+    page8.fill("#waypointLabelInput", "Section")
+    page8.click("#saveWaypointBtn")
+    page8.wait_for_timeout(150)
+
+    a_row = page8.locator(".progression-row").filter(has=page8.locator(".step-name", has_text=a_name)).first
+    a_row.locator(".step-move").click()
+    page8.wait_for_timeout(80)
+    page8.locator(".move-menu-item", has_text="Section — top").click()
+    page8.wait_for_timeout(100)
+
+    order8 = page8.evaluate("""() => {
+        return Array.from(document.querySelectorAll('#progressionContent > *')).map((el) => {
+            if (el.classList.contains('progression-divider')) return 'DIVIDER';
+            const name = el.querySelector('.step-name');
+            return name ? name.textContent.trim() : null;
+        });
+    }""")
+    print("full DOM order (rows + divider):", order8)
+    divider_idx8 = order8.index("DIVIDER")
+    a_idx8 = next(i for i, v in enumerate(order8) if v and a_name in v)
+    assert a_idx8 == divider_idx8 + 1, \
+        f"FAIL: expected A immediately after the divider, got {order8}"
+    print("PASS: 'Section — top' correctly skips past every existing section member when none alone clears the threshold")
+
+    print("ERRORS:", errors8)
+    assert not errors8
+    page8.close()
+
     browser.close()
     print("ALL PASS")

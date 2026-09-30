@@ -1030,8 +1030,13 @@ function waypointSections(timeline, totalVisible, movingStepCost, movingIndex) {
       if (slot < sectionSteps.length) return { pos: sectionSteps[slot].visiblePos, anchored: true };
       // Past this section's last step - land wherever the next real step
       // (anywhere later in the timeline) sits, or past the end of the
-      // whole list if nothing follows at all.
-      for (let j = i + 1; j < timeline.length; j++) {
+      // whole list if nothing follows at all. Starts searching right after
+      // this section's own last member (i + 1 + sectionSteps.length), not
+      // i + 1 - starting at i + 1 lands on sectionSteps[0] itself (the
+      // section's FIRST member, immediately after the divider at i),
+      // putting the result back at the top of this same section instead of
+      // past it.
+      for (let j = i + 1 + sectionSteps.length; j < timeline.length; j++) {
         if (timeline[j].type === "step") return { pos: timeline[j].visiblePos, anchored: true };
       }
       return { pos: totalVisible + 1, anchored: false };
