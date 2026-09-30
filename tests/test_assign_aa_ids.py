@@ -56,4 +56,35 @@ print("multiple-vanished case (sorted):", result4)
 assert result4 == ["general::a-aa", "general::m-aa", "general::z-aa"]
 print("PASS: vanished keys come back sorted, not in dict-iteration order")
 
+# --- find_key_collisions: the legitimate repeated-name shape (one
+# non-auto AA plus any number of auto siblings) must never be flagged -
+# slug_key_for already disambiguates it with -auto/-auto-N suffixes. ---
+legit_entries = [
+    {"scope": "class", "className": "Cleric", "name": "Divine Aura", "auto": True},
+    {"scope": "class", "className": "Cleric", "name": "Divine Aura", "auto": False},
+    {"scope": "class", "className": "Cleric", "name": "Unbound Boon", "auto": False},
+]
+legit_keyed = aid.compute_keys(legit_entries)
+print("legitimate duplicate-name keys:", legit_keyed)
+assert aid.find_key_collisions(legit_keyed) == [], \
+    f"FAIL: one non-auto plus one auto sharing a name must not be flagged, got {aid.find_key_collisions(legit_keyed)}"
+print("PASS: the legitimate one-non-auto-plus-auto-siblings shape is never flagged as a collision")
+
+# --- The actual bug: two NON-AUTO entries sharing a name in the same
+# category both get the bare slug from slug_key_for (only an auto
+# occurrence gets an -auto suffix) - a real, silent collision onto one
+# id_key that must be caught before assign_aa_ids.py ever writes it. ---
+collision_entries = [
+    {"scope": "general", "className": None, "name": "Combat Fury", "auto": False},
+    {"scope": "general", "className": None, "name": "Combat Fury", "auto": False},
+    {"scope": "general", "className": None, "name": "Adamant Will", "auto": False},
+]
+collision_keyed = aid.compute_keys(collision_entries)
+print("colliding duplicate-name keys:", collision_keyed)
+result5 = aid.find_key_collisions(collision_keyed)
+print("collisions found:", result5)
+assert result5 == ["general::combat-fury"], \
+    f"FAIL: expected exactly one collision on general::combat-fury, got {result5}"
+print("PASS: two non-auto AAs sharing a name in one category are caught as a collision")
+
 print("ALL PASS")

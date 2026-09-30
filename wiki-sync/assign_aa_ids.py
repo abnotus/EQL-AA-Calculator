@@ -110,6 +110,25 @@ def write_table(table):
         f.write(content)
 
 
+def find_key_collisions(keyed):
+    """slug_key_for is only guaranteed to produce a unique key per (scope,
+    className) bucket for the one repeated-name shape it actually
+    disambiguates: exactly one non-auto occurrence plus any number of auto
+    ones. Two non-auto entries sharing a name in the same bucket both
+    independently get the bare slug - build_minify.py's own invariant
+    check normally catches that shape in data.src.js before a build ever
+    ships, but this script can run first (see this project's data-
+    correction routine) and would otherwise silently collapse both onto
+    one id_key here, with no error, before that check ever gets a chance
+    to run. Returns a list of (scope, className, key) for every id_key
+    that isn't unique."""
+    counts = {}
+    for scope, className, key in keyed:
+        ik = id_key(scope, className, key)
+        counts[ik] = counts.get(ik, 0) + 1
+    return sorted(ik for ik, n in counts.items() if n > 1)
+
+
 def compute_vanished(existing, current_id_keys):
     """Ids `existing` still has that no current AA's identity key resolves
     to. A genuine removal is exactly this with no corresponding new id
@@ -123,6 +142,19 @@ def compute_vanished(existing, current_id_keys):
 def main():
     entries = parse_data_src()
     keyed = compute_keys(entries)
+
+    collisions = find_key_collisions(keyed)
+    if collisions:
+        print("ERROR: two or more AAs collide onto the same identity key - refusing to touch aaIds.js:")
+        for ik in collisions:
+            print(f"  {ik}")
+        print(
+            "Almost certainly two non-auto AAs sharing a name in the same category "
+            "(data.src.js needs an `auto` flag fixed, same invariant build_minify.py "
+            "checks) - fix the data before re-running this script."
+        )
+        return 1
+
     current_id_keys = {id_key(scope, className, key) for scope, className, key in keyed}
 
     existing = load_existing_table()
