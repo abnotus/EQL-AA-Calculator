@@ -114,7 +114,10 @@ function idxForEntryKey(rawEntries, key) {
   return -1;
 }
 
-function currentList(scope, className) {
+// Exported so callers that index it repeatedly (a loop over many idx
+// values) can resolve it once instead of going through aaAt per lookup -
+// logic.js's own point-summing/reconciliation walks do this.
+export function currentList(scope, className) {
   return scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
 }
 

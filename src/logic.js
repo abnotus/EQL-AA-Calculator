@@ -5,7 +5,7 @@
 // on logic, not the other way around).
 
 import { state, CLASS_SLOT_KEYS, AA_CATEGORY_KEYS, saveLocal, saveOwned, saveHidden, sanitizeWaypoints } from "./state.js";
-import { costGuessFor, effectGuessFor } from "./keys.js";
+import { costGuessFor, effectGuessFor, aaAt, currentList } from "./keys.js";
 
 export function costNum(c) {
   const n = parseInt(c, 10);
@@ -190,8 +190,7 @@ export function effectiveRank(catKey, idx) {
 // class has no catKey at all (classSlotIndex returns -1 for it). Same
 // split as costGuess/costGuessScoped.
 export function effectiveRankScoped(scope, className, idx) {
-  const list = scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
-  const aa = list[idx];
+  const aa = aaAt(scope, className, idx);
   // An auto-granted AA's free portion only applies while its class is
   // active — it's a level-gated freebie, not a standing investment like a
   // manually-trained rank (which persists while inactive; see Other
@@ -228,8 +227,7 @@ export function autoRanksOffset(aa) {
 // have the AA's identity (e.g. the Progression toggle, off data attributes),
 // not the AA object itself.
 export function autoRanksOffsetScoped(scope, className, idx) {
-  const list = scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
-  return autoRanksOffset(list[idx]);
+  return autoRanksOffset(aaAt(scope, className, idx));
 }
 
 function getRanksStore(catKey) {
@@ -864,8 +862,7 @@ export function heldRankInvalidReason(catKey, idx) {
 // check a held rank in a class that isn't one of the 3 active slots,
 // instead of silently skipping it.
 export function heldRankInvalidReasonScoped(scope, className, idx) {
-  const list = scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
-  const aa = list[idx];
+  const aa = aaAt(scope, className, idx);
   if (!aa || aa.auto) return null;
   const store = scope === "class" ? (state.ranks.classes[className] || {}) : (state.ranks[scope] || {});
   const purchased = store[idx] || 0;
@@ -890,8 +887,7 @@ export function heldRankInvalidReasonScoped(scope, className, idx) {
   for (let r = 1; r <= purchased; r++) {
     const required = resolved.forRank(r);
     if (targetRank < required) {
-      const targetList = resolved.scope === "class" ? (AA_DATA.classes[resolved.className] || []) : (AA_DATA[resolved.scope] || []);
-      const targetAA = targetList[resolved.idx];
+      const targetAA = aaAt(resolved.scope, resolved.className, resolved.idx);
       return `Rank ${r} requires ${targetAA ? targetAA.name : "a prerequisite"} rank ${required}, which you no longer have.`;
     }
   }
@@ -1292,7 +1288,7 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
     const key = entryKey(entry.scope, entry.className, entry.idx);
     const category = resolveEntryCategory(entry);
     const active = category !== null;
-    const aa = entry.scope === "class" ? (AA_DATA.classes[entry.className] || [])[entry.idx] : (AA_DATA[entry.scope] || [])[entry.idx];
+    const aa = aaAt(entry.scope, entry.className, entry.idx);
     // purchaseCount tracks how many times THIS purchase has been made (for isLast/
     // reordering bookkeeping); stepRank is the true effective rank it represents,
     // offset by any free autoRanks that never went through purchaseOrder at all.
@@ -1310,9 +1306,7 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
       if (!resolved) {
         prereqWarn = true; // malformed or unresolvable - same "unmet" signal as elsewhere
       } else {
-        const targetAA = resolved.scope === "class"
-          ? (AA_DATA.classes[resolved.className] || [])[resolved.idx]
-          : (AA_DATA[resolved.scope] || [])[resolved.idx];
+        const targetAA = aaAt(resolved.scope, resolved.className, resolved.idx);
         // A fully-auto target never goes through purchaseOrder, and an
         // autoRanks target's free floor doesn't either — counts[targetKey]
         // alone would under-count it, unlike effectiveRank elsewhere
