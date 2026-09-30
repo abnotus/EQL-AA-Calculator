@@ -4078,10 +4078,22 @@ let dragBaselineWarnCount = 0;
 let dragWarnCacheToIndex = null;
 let dragWarnCacheResult = false;
 
+// Tracks the one row/box currently showing a drag-over/drag-warn mark, so
+// clearDragOverMarks doesn't need to query every row in the list to find
+// it - every dragover handler below clears before marking at most one
+// element, and dragover fires continuously (many times a second) while
+// the pointer moves, on a list that can run to hundreds of rows.
+let markedDragRow = null;
+
+function markDragOver(rowEl, cls) {
+  rowEl.classList.add(cls);
+  markedDragRow = rowEl;
+}
+
 function clearDragOverMarks() {
-  Array.from(el.progressionContent.querySelectorAll(".progression-row")).forEach((r) => {
-    r.classList.remove("drag-over-top", "drag-over-bottom", "drag-warn");
-  });
+  if (!markedDragRow) return;
+  markedDragRow.classList.remove("drag-over-top", "drag-over-bottom", "drag-warn");
+  markedDragRow = null;
 }
 
 function autoScrollStep() {
@@ -4673,7 +4685,7 @@ function wireProgressionRowEvents() {
       const rect = rowEl.getBoundingClientRect();
       const before = e.clientY - rect.top < rect.height / 2;
       const toIndex = before ? overIndex : overIndex + 1;
-      rowEl.classList.add(before ? "drag-over-top" : "drag-over-bottom");
+      markDragOver(rowEl, before ? "drag-over-top" : "drag-over-bottom");
       if (dragWouldIntroduceWarn(toIndex)) rowEl.classList.add("drag-warn");
       return;
     }
@@ -4692,7 +4704,7 @@ function wireProgressionRowEvents() {
       clearDragOverMarks();
       const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
       if (overIndex === dragSrcIndex) return;
-      ownerRow.classList.add("drag-over-bottom");
+      markDragOver(ownerRow, "drag-over-bottom");
       if (dragWouldIntroduceWarn(overIndex + 1)) ownerRow.classList.add("drag-warn");
       return;
     }
@@ -4710,14 +4722,14 @@ function wireProgressionRowEvents() {
       if (!ownerRow) {
         const firstRow = el.progressionContent.querySelector(".progression-row");
         if (firstRow && parseInt(firstRow.getAttribute("data-index"), 10) !== dragSrcIndex) {
-          firstRow.classList.add("drag-over-top");
+          markDragOver(firstRow, "drag-over-top");
           if (dragWouldIntroduceWarn(0)) firstRow.classList.add("drag-warn");
         }
         return;
       }
       const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
       if (overIndex === dragSrcIndex) return;
-      ownerRow.classList.add("drag-over-bottom");
+      markDragOver(ownerRow, "drag-over-bottom");
       if (dragWouldIntroduceWarn(overIndex + 1)) ownerRow.classList.add("drag-warn");
     }
   });
@@ -4890,7 +4902,7 @@ function wireProgressionDropZone() {
     // append-to-end zone below the last row isn't the one invisible spot.
     const last = lastProgressionRow();
     if (last && parseInt(last.getAttribute("data-index"), 10) !== dragSrcIndex) {
-      last.classList.add("drag-over-bottom");
+      markDragOver(last, "drag-over-bottom");
       if (dragWouldIntroduceWarn(state.purchaseOrder.length)) last.classList.add("drag-warn");
     }
   });
