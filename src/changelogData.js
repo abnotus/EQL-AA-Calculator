@@ -4,6 +4,16 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "2.1.1",
+    date: "2026-10-01",
+    items: [
+      "Share links and exports now keep your owned rank correctly when it's higher than your planned rank, or far from it. Links made before this update still open as before.",
+      "Unmarking an AA that comes with free ranks no longer leaves it hidden from the Unowned Only filter.",
+      "Move To now lands in the right spot when moving a step into a waypoint section.",
+      "A pick on a class you've swapped away from now shows a notice if its prerequisite stops being met, and a share link with an AA the calculator doesn't recognize now tells you instead of dropping it silently."
+    ]
+  },
+  {
     version: "2.1.0",
     date: "2026-09-28",
     items: [
