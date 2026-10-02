@@ -266,10 +266,14 @@ function safeSharedRankValue(value) {
 function migrateSharedQuickEvacuation(ranksLike) {
   if (!ranksLike || typeof ranksLike !== "object") return;
   const classes = ranksLike.classes;
-  if (!classes || !classes.Wizard || !("quick-evacuation" in classes.Wizard)) return;
+  // classes.Wizard/Druid are untrusted too - the `in` operator throws on a
+  // non-object RHS (e.g. a string), and assigning a property throws on any
+  // primitive in strict mode (every ES module is strict), so both need
+  // isObject's own check before being read or written as a store.
+  if (!isObject(classes) || !isObject(classes.Wizard) || !("quick-evacuation" in classes.Wizard)) return;
   const fromWizard = safeSharedRankValue(classes.Wizard["quick-evacuation"]);
   delete classes.Wizard["quick-evacuation"];
-  if (!classes.Druid) classes.Druid = {};
+  if (!isObject(classes.Druid)) classes.Druid = {};
   const fromDruid = safeSharedRankValue(classes.Druid["quick-evacuation"]);
   classes.Druid["quick-evacuation"] = Math.max(fromDruid, fromWizard);
 }
@@ -295,11 +299,12 @@ function migrateSharedQuickEvacuationPurchaseOrder(purchaseOrder) {
 function migrateSharedQuickEvacuationHidden(hiddenLike) {
   if (!hiddenLike || typeof hiddenLike !== "object") return;
   const classes = hiddenLike.classes;
-  const fromWizard = classes && classes.Wizard && classes.Wizard["quick-evacuation"];
+  if (!isObject(classes) || !isObject(classes.Wizard)) return;
+  const fromWizard = classes.Wizard["quick-evacuation"];
   if (fromWizard === undefined) return;
   delete classes.Wizard["quick-evacuation"];
   if (fromWizard) {
-    if (!classes.Druid) classes.Druid = {};
+    if (!isObject(classes.Druid)) classes.Druid = {};
     classes.Druid["quick-evacuation"] = true;
   }
 }

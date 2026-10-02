@@ -76,4 +76,56 @@ with sync_playwright() as p:
     print("ERRORS:", errors)
     assert not errors, f"FAIL: page errors {errors}"
     browser.close()
+
+    # --- A malformed classes.Wizard store (not an object at all) must not
+    # crash - the `in` operator (used to check for a "quick-evacuation"
+    # entry before migrating it) throws on a non-object right-hand side. ---
+    browser2 = p.chromium.launch(channel="chrome", headless=True)
+    page2 = browser2.new_page(viewport={"width": 1400, "height": 900})
+    errors2 = []
+    page2.on("pageerror", lambda exc: errors2.append(str(exc)))
+    page2.on("dialog", lambda d: d.accept())
+    bad_wizard_store = {"v": 4, "owned": {"general": {}, "archetype": {}, "special": {}, "classes": {"Wizard": "bad"}}}
+    page2.add_init_script(f"""
+        localStorage.setItem('eql_aa_owned_legacy', {json.dumps(json.dumps(bad_wizard_store))});
+    """)
+    page2.goto(BASE)
+    page2.wait_for_timeout(300)
+    tree_count = page2.locator("#treeWrap .node").count()
+    print(f"malformed Wizard store case: tree node count={tree_count}, errors={errors2}")
+    assert not errors2, f"FAIL: a malformed classes.Wizard store threw instead of degrading gracefully: {errors2}"
+    assert tree_count > 0, "FAIL: tree never rendered - boot froze on a malformed classes.Wizard store"
+    print("PASS: a non-object classes.Wizard store no longer crashes startup")
+    browser2.close()
+
+    # --- A malformed classes.Druid store (not an object), alongside a
+    # VALID Wizard entry, must not crash either - assigning a property to
+    # a primitive (Druid: true) throws in strict mode - and the valid
+    # Wizard rank should still survive via the recovered Druid store. ---
+    browser3 = p.chromium.launch(channel="chrome", headless=True)
+    page3 = browser3.new_page(viewport={"width": 1400, "height": 900})
+    errors3 = []
+    page3.on("pageerror", lambda exc: errors3.append(str(exc)))
+    page3.on("dialog", lambda d: d.accept())
+    bad_druid_store = {
+        "v": 4,
+        "owned": {"general": {}, "archetype": {}, "special": {}, "classes": {"Druid": True, "Wizard": {"quick-evacuation": 2}}}
+    }
+    page3.add_init_script(f"""
+        localStorage.setItem('eql_aa_owned_legacy', {json.dumps(json.dumps(bad_druid_store))});
+    """)
+    page3.goto(BASE)
+    page3.wait_for_timeout(300)
+    tree_count3 = page3.locator("#treeWrap .node").count()
+    print(f"malformed Druid store case: tree node count={tree_count3}, errors={errors3}")
+    assert not errors3, f"FAIL: a malformed classes.Druid store threw instead of degrading gracefully: {errors3}"
+    assert tree_count3 > 0, "FAIL: tree never rendered - boot froze on a malformed classes.Druid store"
+    page3.click('button[data-tab="progression"]')
+    page3.wait_for_timeout(100)
+    owned_summary = page3.locator("#ownedSummary").inner_text()
+    print("owned summary after recovering from a malformed Druid store:", owned_summary)
+    assert owned_summary.startswith("9 "), \
+        f"FAIL: expected the valid Wizard rank 2 (9 pts) to still migrate into a recovered Druid store, got {owned_summary!r}"
+    print("PASS: a non-object classes.Druid store is replaced rather than crashing, and a valid Wizard entry alongside it still migrates")
+    browser3.close()
     print("ALL PASS")
