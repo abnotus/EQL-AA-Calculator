@@ -155,12 +155,17 @@ MAX_RETRIES = int(os.environ.get("AACALC_TEST_RETRIES", "1"))
 
 
 def run_one(test_path):
-    attempts = 0
+    """Returns the list of every attempt's (status, out, err), oldest
+    first - not just the last one. A test that fails once and passes on
+    retry is exactly the case worth investigating (is this really just
+    CPU contention, or an intermittent bug?), so a discarded first-attempt
+    failure would defeat the point of keeping retries around at all."""
+    attempts = []
     while True:
         status, out, err = run_once(test_path)
-        attempts += 1
-        if status == "pass" or attempts > MAX_RETRIES:
-            return (status, out, err, attempts)
+        attempts.append((status, out, err))
+        if status == "pass" or len(attempts) > MAX_RETRIES:
+            return attempts
 
 
 def main():
@@ -188,7 +193,9 @@ def main():
             for future in concurrent.futures.as_completed(future_to_path):
                 path = future_to_path[future]
                 name = path.name
-                status, out, err, attempts = future.result()
+                attempt_log = future.result()
+                status, out, err = attempt_log[-1]
+                attempts = len(attempt_log)
                 completed += 1
                 results_by_name[name] = (status, out, err)
                 retried_note = f" (passed on retry {attempts - 1})" if status == "pass" and attempts > 1 else ""
@@ -199,6 +206,18 @@ def main():
                     for line in tail.splitlines():
                         print(f"  {line}")
                     print(f"  --- end {name} ---")
+                elif attempts > 1:
+                    # Passed on retry - the discarded earlier failure(s)
+                    # are exactly what you'd need to tell "just CPU
+                    # contention" apart from "an intermittent real bug",
+                    # so print them too instead of letting the final pass
+                    # erase them.
+                    for i, (prev_status, prev_out, prev_err) in enumerate(attempt_log[:-1], 1):
+                        prev_tail = "\n".join((prev_out + prev_err).strip().splitlines()[-25:])
+                        print(f"  --- attempt {i} ({prev_status}) before the retry that passed ---")
+                        for line in prev_tail.splitlines():
+                            print(f"  {line}")
+                        print(f"  --- end attempt {i} ---")
         # Back to the fixed alphabetical order for the final tally, so a
         # FAILED/TIMED OUT list reads the same regardless of which run
         # finished each test first.

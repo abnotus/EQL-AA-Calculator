@@ -31,7 +31,9 @@ APP_SRC_PATH = os.path.join(os.path.dirname(__file__), "..", "app.src.js")
 DATA_JS_PATH = os.path.join(os.path.dirname(__file__), "..", "data.js")
 
 
-def _replace_balanced(src, start, open_char, close_char, replacement):
+def _find_balanced_end(src, start, open_char, close_char):
+    """Returns the index one past the `close_char` that balances the
+    `open_char` at `src[start]`."""
     depth = 0
     i = start
     while True:
@@ -42,7 +44,11 @@ def _replace_balanced(src, start, open_char, close_char, replacement):
             if depth == 0:
                 break
         i += 1
-    end = i + 1
+    return i + 1
+
+
+def _replace_balanced(src, start, open_char, close_char, replacement):
+    end = _find_balanced_end(src, start, open_char, close_char)
     return src[:start] + replacement + src[end:]
 
 
@@ -74,15 +80,54 @@ def replace_table_value(src, key_prefix, replacement):
 def insert_table_entry(src, table_decl, entry_text):
     """Finds `table_decl` (e.g. 'const COST_GUESS_TABLE = {') in src and
     inserts `entry_text` (a bare '\"key\": {...}' pair, no trailing comma)
-    as the new first entry of that object literal - for a fabricated host
-    AA that has no real guess-table entry of its own to replace (the
-    common case: a host chosen for being ordinary and fully confirmed has
-    nothing for the real algorithm to have guessed)."""
+    as a new entry of that object literal - for a fabricated host AA that
+    has no real guess-table entry of its own to replace (the common case:
+    a host chosen for being ordinary and fully confirmed has nothing for
+    the real algorithm to have guessed).
+
+    Asserts the key isn't already present in the table, and inserts as the
+    LAST entry rather than the first, both for the same reason: a plain JS
+    object literal resolves a duplicate key to whichever declaration comes
+    LAST, so a real entry for this exact key - the host AA's own real cost/
+    effect becoming genuinely unconfirmed someday, however unlikely right
+    now - would otherwise silently win over an earlier-declared synthetic
+    one instead of raising anything. The assert turns that into a loud,
+    specific failure (pick a different host, or fold the real entry's
+    content into the synthetic one via replace_table_value instead); the
+    append-at-the-end placement is the belt to that assert's suspenders,
+    in case a key ever matches the substring check in some form the assert
+    doesn't catch."""
     decl_start = src.find(table_decl)
     assert decl_start != -1, f"could not find {table_decl!r} - has this table's declaration changed?"
     brace_pos = decl_start + len(table_decl) - 1
     assert src[brace_pos] == "{", f"{table_decl!r} doesn't end at its own opening brace as expected"
-    return src[:brace_pos + 1] + f"\n  {entry_text},\n" + src[brace_pos + 1:]
+    # closing_brace_idx is the table's own closing `}` - _find_balanced_end
+    # returns one past it, so the body (for the duplicate-key check) sits
+    # strictly between the two braces, and the new entry is spliced in
+    # right before that `}` (not after it, which would dangle the entry
+    # outside the object literal entirely).
+    closing_brace_idx = _find_balanced_end(src, brace_pos, "{", "}") - 1
+    table_body = src[brace_pos + 1:closing_brace_idx]
+    first_quote = entry_text.index('"')
+    second_quote = entry_text.index('"', first_quote + 1)
+    quoted_key = entry_text[first_quote:second_quote + 1]
+    assert quoted_key not in table_body, (
+        f"{quoted_key} already has a real entry in {table_decl!r} - this "
+        f"fabricated host AA now has a genuine guess of its own, so "
+        f"inserting a synthetic entry would silently lose to it (a JS "
+        f"object literal's last declared duplicate key always wins). Pick "
+        f"a different host AA, or use replace_table_value to override the "
+        f"real entry directly instead."
+    )
+    # The generator never writes a trailing comma after its last entry
+    # (common.py joins with ",\n" between entries, nothing after the final
+    # one - confirmed in guess_costs.py/guess_effects.py's own output
+    # writers), so appending after existing content needs its own leading
+    # comma; an empty table (table_body blank) must NOT get one, or a
+    # table that genuinely has zero real entries left would become a
+    # syntax error instead of a one-entry object literal.
+    separator = "," if table_body.strip() else ""
+    return src[:closing_brace_idx] + f"{separator}\n  {entry_text}\n" + src[closing_brace_idx:]
 
 
 def read_app_src():
