@@ -104,7 +104,7 @@ const AA_DATA = {
     "Berserker": [
       { name: "Blood Rune", ranks: 3, costs: ["1","2","3"], levelReq: "1", description: "Melee and ability critical hits give you 5/10/15% of the damage done as an absorption shield, up to 5/8/10% of your max hitpoints." },
       { name: "Innate Power Strike", ranks: 1, costs: ["0"], levelReq: "1", auto: true, description: "Grants the Berserker an increased chance to critically strike." },
-      { name: "Tireless Spirit", ranks: 1, costs: ["3"], levelReq: "10", description: "Activated: increases your movement speed by 125% for 18 seconds. (Refresh 0:25:00)" },
+      { name: "Tireless Sprint", ranks: 1, costs: ["3"], levelReq: "10", description: "Activated: increases your movement speed by 125% for 18 seconds. (Refresh 0:25:00)" },
       { name: "Unbound Fury", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your chance to land a critical hit with your melee attacks and abilities by 2/4/6%. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Cleric": [

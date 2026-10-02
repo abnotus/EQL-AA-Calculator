@@ -82,7 +82,7 @@ export const AA_ID_TABLE = {
   "class:Beastlord:playing-possum": 74,
   "class:Berserker:blood-rune": 75,
   "class:Berserker:innate-power-strike": 76,
-  "class:Berserker:tireless-spirit": 77,
+  "class:Berserker:tireless-sprint": 77,
   "class:Berserker:unbound-fury": 78,
   "class:Cleric:innate-divine-healing": 79,
   "class:Cleric:divine-aura": 80,
