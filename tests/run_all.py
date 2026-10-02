@@ -164,6 +164,7 @@ def run_one(test_path):
 
 
 def main():
+    start_time = time.time()
     test_files = sorted(TESTS_DIR.glob("test_*.py"))
     if not test_files:
         print("No tests/test_*.py files found.")
@@ -202,7 +203,7 @@ def main():
         # FAILED/TIMED OUT list reads the same regardless of which run
         # finished each test first.
         results = [(path.name, *results_by_name[path.name]) for path in test_files]
-        return summarize(results)
+        return summarize(results, time.time() - start_time)
     finally:
         server.terminate()
         try:
@@ -215,12 +216,12 @@ def main():
             pass
 
 
-def summarize(results):
+def summarize(results, elapsed_seconds):
     passed = [r for r in results if r[1] == "pass"]
     failed = [r for r in results if r[1] == "fail"]
     timed_out = [r for r in results if r[1] == "timeout"]
     print()
-    print(f"{len(passed)}/{len(results)} passed.")
+    print(f"{len(passed)}/{len(results)} passed in {elapsed_seconds:.1f}s.")
     if failed:
         print(f"FAILED ({len(failed)}): " + ", ".join(name for name, *_ in failed))
     if timed_out:

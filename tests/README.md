@@ -22,9 +22,9 @@ headless Chrome processes running at once can occasionally blow a
 `wait_for_selector` timeout on CPU contention alone rather than a real
 bug - a genuine failure fails the same way both times. Prints a pass/fail
 line per test (in the order each one finishes, not file order, with
-`(passed on retry N)` noted when one needed it) plus a summary, and exits
-non-zero if anything still failed or timed out after its retry. There's no
-CI (see below).
+`(passed on retry N)` noted when one needed it) plus a summary with the
+total wall-clock time, and exits non-zero if anything still failed or
+timed out after its retry. There's no CI (see below).
 
 ## Data-independent unit tests
 
