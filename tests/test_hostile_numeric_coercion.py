@@ -149,6 +149,31 @@ with sync_playwright() as p:
     assert tree_count > 0, "FAIL: tree never rendered - startup froze on a hostile decodeDropped value"
     print("PASS: a hostile decodeDropped value no longer crashes startup")
 
+    # --- A sharedWithClass AA's owned rank: {"toString": null}, under
+    # Wizard's own owned store (state.js's migrateSharedQuickEvacuation).
+    # Unlike an ordinary rank (clamped via clampRankValue, which already
+    # guards this), the migration step runs BEFORE deserializeRanks ever
+    # sees the value, feeding it straight into Math.max to decide which of
+    # Druid's/Wizard's copies wins - same failure mode as the other cases
+    # above (ToPrimitive throws instead of parseInt ever running). ---
+    errors.clear()
+    owned_payload = {
+        "v": 4,
+        "owned": {"general": {}, "archetype": {}, "special": {}, "classes": {"Wizard": {"quick-evacuation": HOSTILE}}}
+    }
+    page.goto(BASE)
+    page.evaluate(
+        "(kv) => localStorage.setItem(kv[0], JSON.stringify(kv[1]))",
+        ["eql_aa_owned_legacy", owned_payload]
+    )
+    page.reload()
+    page.wait_for_timeout(500)
+    tree_count = page.locator("#treeWrap .node").count()
+    print(f"shared owned rank case: tree node count={tree_count}, errors={errors}")
+    assert not errors, f"FAIL: a hostile shared owned rank threw instead of degrading gracefully: {errors}"
+    assert tree_count > 0, "FAIL: tree never rendered - startup froze on a hostile shared owned rank"
+    print("PASS: a hostile value under a sharedWithClass AA's owned store no longer crashes startup")
+
     print("ERRORS:", errors)
     assert not errors
     browser.close()

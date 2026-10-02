@@ -76,7 +76,7 @@ cost via Python's negative indexing.
 `test_auto_grant_class_eligibility.py`, `test_hostile_numeric_coercion.py`,
 `test_browse_unowned_filter.py`, `test_quick_evacuation_shared_rank.py`,
 `test_quick_evacuation_migration.py`, `test_quick_evacuation_inactive_class.py`,
-`test_renamed_aa_key_migration.py`
+`test_quick_evacuation_owned_merge.py`, `test_renamed_aa_key_migration.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -136,6 +136,7 @@ python tests/test_browse_unowned_filter.py
 python tests/test_quick_evacuation_shared_rank.py
 python tests/test_quick_evacuation_migration.py
 python tests/test_quick_evacuation_inactive_class.py
+python tests/test_quick_evacuation_owned_merge.py
 python tests/test_renamed_aa_key_migration.py
 ```
 
@@ -347,10 +348,11 @@ rebuilding and committing.
   `test_decompression_bomb.py`.
 - **Numeric coercion on decoded/untrusted values.** `safeParseInt` in
   `state.js` and every call site routed through it (`applyLoaded`'s
-  charLevel, `clampRankValue`, `sanitizeWaypoints`). A value that can't
-  become a primitive (e.g. `{"toString": null}`) must be dropped like any
-  other malformed input, not thrown as an uncaught exception mid-boot.
-  `test_hostile_numeric_coercion.py`.
+  charLevel, `clampRankValue`, `sanitizeWaypoints`,
+  `migrateSharedQuickEvacuation`'s `safeSharedRankValue`). A value that
+  can't become a primitive (e.g. `{"toString": null}`) must be dropped
+  like any other malformed input, not thrown as an uncaught exception
+  mid-boot. `test_hostile_numeric_coercion.py`.
 - **Browse's Unowned Only filter and owned/unowned card styling.**
   `ownedRank` (`logic.js`), `state.browseUnownedOnly`, and `renderBrowse`'s
   `.owned`/`.owned-info` treatment. Combines with the existing category
@@ -364,14 +366,17 @@ rebuilding and committing.
   selected rather than only the canonical one), and
   `migrateSharedQuickEvacuation`/its purchaseOrder and hidden counterparts
   in `state.js` (a save from before this all existed could hold the value
-  under either class's own store). Quick Evacuation (Druid/Wizard) is the
-  only AA with the field as of this writing - displayed as a completely
-  ordinary row on each of its two classes' own tabs, matching the game,
-  but reading and writing one shared rank/owned/hidden slot underneath
-  regardless of which tab is used to change it, and staying fully
-  editable through Progression and Undo Last even when only one of the
-  two classes is currently active. `test_quick_evacuation_shared_rank.py`,
-  `test_quick_evacuation_migration.py`, `test_quick_evacuation_inactive_class.py`.
+  under either class's own store) - also run from `mergeOwnedProfileInto`
+  on the SOURCE profile before merging, not just on every load, since a
+  merge reads another profile's raw owned data the same deserializeRanks
+  way. Quick Evacuation (Druid/Wizard) is the only AA with the field as of
+  this writing - displayed as a completely ordinary row on each of its two
+  classes' own tabs, matching the game, but reading and writing one shared
+  rank/owned/hidden slot underneath regardless of which tab is used to
+  change it, and staying fully editable through Progression and Undo Last
+  even when only one of the two classes is currently active.
+  `test_quick_evacuation_shared_rank.py`, `test_quick_evacuation_migration.py`,
+  `test_quick_evacuation_inactive_class.py`, `test_quick_evacuation_owned_merge.py`.
 - **A plain AA rename's name-keyed save compatibility.** `RENAMED_KEYS`/
   `idxForKey` in `keys.js` - a v4+ save stores a slug directly, with
   nothing like `aaIds.js`'s numeric ids to survive a rename on its own, so

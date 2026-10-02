@@ -1019,14 +1019,26 @@ function mapKeyedStoreToIdx(saved, resolveIdx, toValue, onDrop) {
 // through normal play before today, since each class's rank was tracked
 // independently) the higher one wins, rather than guessing which is
 // "right".
+// A stored rank is untrusted (localStorage, pasted text, a URL) and isn't
+// guaranteed to have gone through this app - Math.max throws on a value
+// ToPrimitive can't coerce (e.g. a crafted {toString: null}), the same
+// class of hostile input safeParseInt/clampRankValue above already guard
+// against for every ordinary rank. An invalid value reads as 0 here,
+// same fallback clampRankValue itself uses.
+function safeSharedRankValue(value) {
+  const n = safeParseInt(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function migrateSharedQuickEvacuation(ranksLike) {
   if (!ranksLike || typeof ranksLike !== "object") return;
   const classes = ranksLike.classes;
-  const fromWizard = classes && classes.Wizard && classes.Wizard["quick-evacuation"];
-  if (fromWizard === undefined) return;
+  if (!classes || !classes.Wizard || !("quick-evacuation" in classes.Wizard)) return;
+  const fromWizard = safeSharedRankValue(classes.Wizard["quick-evacuation"]);
   delete classes.Wizard["quick-evacuation"];
   if (!classes.Druid) classes.Druid = {};
-  classes.Druid["quick-evacuation"] = Math.max(classes.Druid["quick-evacuation"] || 0, fromWizard || 0);
+  const fromDruid = safeSharedRankValue(classes.Druid["quick-evacuation"]);
+  classes.Druid["quick-evacuation"] = Math.max(fromDruid, fromWizard);
 }
 
 // Same redirect as migrateSharedQuickEvacuation, for a purchaseOrder array
@@ -1470,6 +1482,13 @@ function splitOwnedProfile() {
 function mergeOwnedProfileInto(sourceProfileId) {
   const sourceRaw = loadOwnedProfileRaw(sourceProfileId);
   if (!sourceRaw || !sourceRaw.owned || typeof sourceRaw.owned !== "object") return { merged: 0 };
+  // Same reasoning as every other deserializeRanks call site - a source
+  // profile saved before sharedCanonical existed could hold Quick
+  // Evacuation's owned rank under Wizard's own store, which would
+  // otherwise merge in as a separate entry alongside Druid's canonical one
+  // instead of raising it, inflating ownedPoints() without the current
+  // profile's own display ever reflecting the higher value.
+  migrateSharedQuickEvacuation(sourceRaw.owned);
   const source = deserializeRanks(sourceRaw.owned, (scope, cls, key) => idxForKey(scope, cls, key)).ranks;
   let merged = 0;
   function mergeStore(target, src) {
