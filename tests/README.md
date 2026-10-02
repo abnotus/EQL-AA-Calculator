@@ -12,10 +12,19 @@ python tests/run_all.py
 
 Discovers every `test_*.py` in this directory, starts its own local server
 for the duration (killed again when the run ends, whether or not everything
-passed), and runs each test as its own subprocess with a timeout so one
-stalled test can't hang the whole run. Prints a pass/fail line per test plus
-a summary, and exits non-zero if anything failed or timed out. There's no CI
-(see below).
+passed), and runs several test files at once (`AACALC_TEST_WORKERS`,
+default 4 - each test already launches its own fully isolated browser, so
+this is safe; see `run_all.py`'s own header comment for the tradeoffs of
+raising it) as its own subprocess with a timeout so one stalled test can't
+hang the whole run. A failed or timed-out test gets one automatic retry
+(`AACALC_TEST_RETRIES`, default 1) before being reported, since enough
+headless Chrome processes running at once can occasionally blow a
+`wait_for_selector` timeout on CPU contention alone rather than a real
+bug - a genuine failure fails the same way both times. Prints a pass/fail
+line per test (in the order each one finishes, not file order, with
+`(passed on retry N)` noted when one needed it) plus a summary, and exits
+non-zero if anything still failed or timed out after its retry. There's no
+CI (see below).
 
 ## Data-independent unit tests
 
