@@ -445,6 +445,13 @@ function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
 // add a new entry at the top whenever a user-relevant change ships.
 const USER_CHANGELOG = [
   {
+    version: "2.1.2",
+    date: "2026-10-02",
+    items: [
+      "Quick Evacuation (Druid and Wizard) is now tracked as a single shared ability. Training it under either class adds to the same progress instead of two separate pools, matching how it actually works in game."
+    ]
+  },
+  {
     version: "2.1.1",
     date: "2026-10-01",
     items: [
