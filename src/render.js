@@ -952,7 +952,10 @@ export function handleDeleteWaypoint() {
 function classBadgeClass(s) {
   if (s.scope !== "class") return "";
   if (!s.active) return " step-cat-inactive";
-  return ` step-cat-slot${state.selectedClasses.indexOf(s.className)}`;
+  // By s.category (the class actually active right now), not s.className
+  // (the canonical identity, which can be a different, currently-inactive
+  // class for a sharedWithClass AA bought from the other one's tab).
+  return ` step-cat-slot${CLASS_SLOT_KEYS.indexOf(s.category)}`;
 }
 
 // One entry per waypoint (not just the row's current section - moving
@@ -1207,8 +1210,8 @@ export function renderProgression(totals) {
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === steps[0].index ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps[steps.length - 1].index ? "disabled" : ""}>&darr;</button>
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to preview this.` : canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
-        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.active && s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
-        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.active && s.isLast ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
+        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.categoryIdx}" ${s.active && s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
+        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.categoryIdx}" ${s.active && s.isLast ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
         <span class="move-menu-wrap">
           <button class="step-btn step-move${openMoveMenuKey === key ? " active" : ""}" data-key="${key}" title="Move to...">&#8943;</button>
           ${openMoveMenuKey === key ? moveMenuHtml(s, timeline, steps.length) : ""}
@@ -1219,7 +1222,7 @@ export function renderProgression(totals) {
     // canExpand requires s.active, so s.category is always set here - no
     // need for costDisplayScoped's fallback the way Browse/Other Classes
     // need it.
-    return row + nextRankBoxHtml(s.category, s.idx, s.aa, s.stepRank, " progression-next-rank");
+    return row + nextRankBoxHtml(s.category, s.categoryIdx, s.aa, s.stepRank, " progression-next-rank");
   });
 
   el.progressionContent.innerHTML = htmlParts.join("");

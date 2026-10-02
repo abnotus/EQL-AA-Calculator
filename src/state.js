@@ -238,6 +238,60 @@ function mapKeyedStoreToIdx(saved, resolveIdx, toValue, onDrop) {
 // (changeRank deletes a store entry the moment it hits 0), so a drop always
 // means real invested points just vanished from the build — worth telling
 // the user about instead of leaving them to notice a lower total on their own.
+// Quick Evacuation's two class-scoped entries (Druid, Wizard) read and
+// write through a single shared slot now (logic.js's sharedCanonical) -
+// Druid's copy is the canonical one. A save made before that redirect
+// existed could have written to either class's own store independently,
+// so a save holding a value under Wizard's needs moving into Druid's
+// before any deserialize function below runs - otherwise Wizard's
+// residual value becomes invisible (sharedCanonical only ever reads
+// Druid's slot) while still being summed by code that walks a class's own
+// raw store directly (spentForClass/sumAcrossAllClasses in logic.js),
+// inflating the total by the orphaned value instead of matching what's
+// shown. If a save somehow holds a value under both (not reachable
+// through normal play before today, since each class's rank was tracked
+// independently) the higher one wins, rather than guessing which is
+// "right".
+function migrateSharedQuickEvacuation(ranksLike) {
+  if (!ranksLike || typeof ranksLike !== "object") return;
+  const classes = ranksLike.classes;
+  const fromWizard = classes && classes.Wizard && classes.Wizard["quick-evacuation"];
+  if (fromWizard === undefined) return;
+  delete classes.Wizard["quick-evacuation"];
+  if (!classes.Druid) classes.Druid = {};
+  classes.Druid["quick-evacuation"] = Math.max(classes.Druid["quick-evacuation"] || 0, fromWizard || 0);
+}
+
+// Same redirect as migrateSharedQuickEvacuation, for a purchaseOrder array
+// (name-keyed {scope, className, key} entries) instead of a ranks store -
+// every entry pointing at Wizard's copy is repointed at Druid's in place,
+// so reconcilePurchaseOrderCounts (which already runs after every load)
+// trims any resulting count mismatch the normal way instead of the
+// entries just failing to resolve once their held rank moves to Druid.
+function migrateSharedQuickEvacuationPurchaseOrder(purchaseOrder) {
+  if (!Array.isArray(purchaseOrder)) return;
+  purchaseOrder.forEach((e) => {
+    if (e && e.key === "quick-evacuation" && e.scope === "class" && e.className === "Wizard") {
+      e.className = "Druid";
+    }
+  });
+}
+
+// Same redirect as migrateSharedQuickEvacuation, for hidden tracking - a
+// boolean OR instead of a max, since there's no "higher" hidden state to
+// prefer.
+function migrateSharedQuickEvacuationHidden(hiddenLike) {
+  if (!hiddenLike || typeof hiddenLike !== "object") return;
+  const classes = hiddenLike.classes;
+  const fromWizard = classes && classes.Wizard && classes.Wizard["quick-evacuation"];
+  if (fromWizard === undefined) return;
+  delete classes.Wizard["quick-evacuation"];
+  if (fromWizard) {
+    if (!classes.Druid) classes.Druid = {};
+    classes.Druid["quick-evacuation"] = true;
+  }
+}
+
 function deserializeRanks(saved, resolveIdx) {
   let dropped = 0;
   const ranks = mapKeyedStoreToIdx(saved, resolveIdx, clampRankValue, () => { dropped++; });
@@ -271,6 +325,7 @@ export function loadAndApplyHidden() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.hidden && typeof parsed.hidden === "object") {
+        migrateSharedQuickEvacuationHidden(parsed.hidden);
         state.hiddenAAs = deserializeHidden(parsed.hidden);
         return;
       }
@@ -520,6 +575,14 @@ export function applyLoaded(loaded) {
   // to the wrong ability. Either way, an AA that no longer resolves is
   // dropped rather than guessed at.
   const isLegacy = !(typeof loaded.v === "number" && loaded.v >= 4);
+  // The pre-v4 index-based path is left unmigrated here - old enough, and
+  // narrow enough a window, that a save still on it having Quick
+  // Evacuation trained under Wizard specifically isn't worth the extra
+  // legacy-index bookkeeping this would otherwise need.
+  if (!isLegacy) {
+    migrateSharedQuickEvacuation(loaded.ranks);
+    migrateSharedQuickEvacuationPurchaseOrder(loaded.purchaseOrder);
+  }
   let droppedRanks = 0;
   if (loaded.ranks && typeof loaded.ranks === "object") {
     const result = isLegacy
@@ -562,6 +625,7 @@ export function applyLoaded(loaded) {
 export function loadAndApplyOwned(rawMainPayload) {
   const stored = loadOwnedProfileRaw(state.ownedProfileId);
   if (stored && stored.owned && typeof stored.owned === "object") {
+    migrateSharedQuickEvacuation(stored.owned);
     const result = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key));
     state.owned = result.ranks;
     return { droppedOwned: result.dropped };
@@ -570,6 +634,7 @@ export function loadAndApplyOwned(rawMainPayload) {
     // owned only ever existed in the main payload under SAVE_FORMAT_VERSION
     // 4 (it shipped well after v4 became name-keyed) - no legacy index-based
     // form to handle here, unlike ranks/purchaseOrder above.
+    migrateSharedQuickEvacuation(rawMainPayload.owned);
     const result = deserializeRanks(rawMainPayload.owned, (scope, cls, key) => idxForKey(scope, cls, key));
     state.owned = result.ranks;
     saveOwned();
@@ -599,6 +664,7 @@ export function payloadOwnedHasContent(owned) {
 // caller.
 export function adoptImportedOwnedAsNewProfile(ownedField) {
   const newId = genId();
+  migrateSharedQuickEvacuation(ownedField);
   const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
   state.ownedProfileId = newId;
   state.owned = result.ranks;

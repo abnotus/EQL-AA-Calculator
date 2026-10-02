@@ -74,7 +74,9 @@ cost via Python's negative indexing.
 `test_progression_drag_warn_cache.py`, `test_save_build_partial_failure.py`,
 `test_builds_cross_tab_sync.py`, `test_decompression_bomb.py`,
 `test_auto_grant_class_eligibility.py`, `test_hostile_numeric_coercion.py`,
-`test_browse_unowned_filter.py`, `test_quick_evacuation_shared_rank.py`
+`test_browse_unowned_filter.py`, `test_quick_evacuation_shared_rank.py`,
+`test_quick_evacuation_migration.py`, `test_quick_evacuation_inactive_class.py`,
+`test_renamed_aa_key_migration.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -132,6 +134,9 @@ python tests/test_decompression_bomb.py
 python tests/test_hostile_numeric_coercion.py
 python tests/test_browse_unowned_filter.py
 python tests/test_quick_evacuation_shared_rank.py
+python tests/test_quick_evacuation_migration.py
+python tests/test_quick_evacuation_inactive_class.py
+python tests/test_renamed_aa_key_migration.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -353,9 +358,24 @@ rebuilding and committing.
 - **A `sharedWithClass` AA's cross-class rank sharing.** `sharedCanonical`
   in `logic.js` and every chokepoint routed through it
   (`effectiveRankScoped`, `changeRank`, `ownedRank`/`setOwnedRank`,
-  `isHiddenScoped`/`setHiddenScoped`, `pushPurchase`/`popLastPurchase`).
-  Quick Evacuation (Druid/Wizard) is the only AA with the field as of this
-  writing - displayed as a completely ordinary row on each of its two
-  classes' own tabs, matching the game, but reading and writing one shared
-  rank/owned/hidden slot underneath regardless of which tab is used to
-  change it. `test_quick_evacuation_shared_rank.py`.
+  `isHiddenScoped`/`setHiddenScoped`, `pushPurchase`/`popLastPurchase`),
+  `activeEntryTarget`/`sharedGroupClasses` (Progression's own-row active
+  state and Undo Last, resolved through whichever linked class is actually
+  selected rather than only the canonical one), and
+  `migrateSharedQuickEvacuation`/its purchaseOrder and hidden counterparts
+  in `state.js` (a save from before this all existed could hold the value
+  under either class's own store). Quick Evacuation (Druid/Wizard) is the
+  only AA with the field as of this writing - displayed as a completely
+  ordinary row on each of its two classes' own tabs, matching the game,
+  but reading and writing one shared rank/owned/hidden slot underneath
+  regardless of which tab is used to change it, and staying fully
+  editable through Progression and Undo Last even when only one of the
+  two classes is currently active. `test_quick_evacuation_shared_rank.py`,
+  `test_quick_evacuation_migration.py`, `test_quick_evacuation_inactive_class.py`.
+- **A plain AA rename's name-keyed save compatibility.** `RENAMED_KEYS`/
+  `idxForKey` in `keys.js` - a v4+ save stores a slug directly, with
+  nothing like `aaIds.js`'s numeric ids to survive a rename on its own, so
+  a plain rename (the AA itself unchanged) needs an explicit old-slug ->
+  new-slug entry added in the same commit, or an existing save's rank
+  drops exactly like a genuine removal. `test_renamed_aa_key_migration.py`
+  (Berserker's Tireless Spirit -> Tireless Sprint).

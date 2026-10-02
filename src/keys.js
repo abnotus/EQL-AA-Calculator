@@ -17,6 +17,20 @@
 // obsolete — a legacy save that migrates cleanly isn't rewritten to v4
 // form until the user's next actual mutation, so an untouched old save can
 // sit in localStorage indefinitely without this table's help.
+//
+// RENAMED_KEYS covers the other kind of drift: a v4+ (name-keyed) save
+// stores the slug directly, with nothing like aaIds.js's numeric ids to
+// survive a rename - a plain wiki rename (the AA itself unchanged, just
+// its name) leaves an old save's key resolving to nothing, indistinguishable
+// from the AA having been removed outright. Keyed exactly like aaIds.js's
+// AA_ID_TABLE (scope:className:key) to old slug -> new slug, consulted by
+// idxForKey only (keyForIdx always writes the current slug). Add an entry
+// here in the same commit as any future data.src.js rename, and never
+// remove one once added, even once it feels old - same append-only
+// reasoning as aaIds.js.
+const RENAMED_KEYS = {
+  "class:Berserker:tireless-spirit": "tireless-sprint",
+};
 
 import { AA_ID_TABLE } from "./aaIds.js";
 import { COST_GUESS_TABLE } from "./costGuesses.js";
@@ -173,7 +187,11 @@ export function keyForIdx(scope, className, idx) {
 // key form. -1 if that AA no longer exists under this scope/class.
 export function idxForKey(scope, className, key) {
   const idx = entryKeyMaps(scope, className).keyToIdx.get(key);
-  return idx === undefined ? -1 : idx;
+  if (idx !== undefined) return idx;
+  const renamed = RENAMED_KEYS[`${scope}:${className || ""}:${key}`];
+  if (renamed === undefined) return -1;
+  const renamedIdx = entryKeyMaps(scope, className).keyToIdx.get(renamed);
+  return renamedIdx === undefined ? -1 : renamedIdx;
 }
 
 // idx captured against the frozen pre-key ordering -> idx into today's

@@ -218,6 +218,20 @@ const EFFECT_GUESS_TABLE = {
 // obsolete — a legacy save that migrates cleanly isn't rewritten to v4
 // form until the user's next actual mutation, so an untouched old save can
 // sit in localStorage indefinitely without this table's help.
+//
+// RENAMED_KEYS covers the other kind of drift: a v4+ (name-keyed) save
+// stores the slug directly, with nothing like aaIds.js's numeric ids to
+// survive a rename - a plain wiki rename (the AA itself unchanged, just
+// its name) leaves an old save's key resolving to nothing, indistinguishable
+// from the AA having been removed outright. Keyed exactly like aaIds.js's
+// AA_ID_TABLE (scope:className:key) to old slug -> new slug, consulted by
+// idxForKey only (keyForIdx always writes the current slug). Add an entry
+// here in the same commit as any future data.src.js rename, and never
+// remove one once added, even once it feels old - same append-only
+// reasoning as aaIds.js.
+const RENAMED_KEYS = {
+  "class:Berserker:tireless-spirit": "tireless-sprint",
+};
 
 const LEGACY_AA_ORDER = {
   "general": [
@@ -370,7 +384,11 @@ function keyForIdx(scope, className, idx) {
 // key form. -1 if that AA no longer exists under this scope/class.
 function idxForKey(scope, className, key) {
   const idx = entryKeyMaps(scope, className).keyToIdx.get(key);
-  return idx === undefined ? -1 : idx;
+  if (idx !== undefined) return idx;
+  const renamed = RENAMED_KEYS[`${scope}:${className || ""}:${key}`];
+  if (renamed === undefined) return -1;
+  const renamedIdx = entryKeyMaps(scope, className).keyToIdx.get(renamed);
+  return renamedIdx === undefined ? -1 : renamedIdx;
 }
 
 // idx captured against the frozen pre-key ordering -> idx into today's
@@ -987,6 +1005,60 @@ function mapKeyedStoreToIdx(saved, resolveIdx, toValue, onDrop) {
 // (changeRank deletes a store entry the moment it hits 0), so a drop always
 // means real invested points just vanished from the build — worth telling
 // the user about instead of leaving them to notice a lower total on their own.
+// Quick Evacuation's two class-scoped entries (Druid, Wizard) read and
+// write through a single shared slot now (logic.js's sharedCanonical) -
+// Druid's copy is the canonical one. A save made before that redirect
+// existed could have written to either class's own store independently,
+// so a save holding a value under Wizard's needs moving into Druid's
+// before any deserialize function below runs - otherwise Wizard's
+// residual value becomes invisible (sharedCanonical only ever reads
+// Druid's slot) while still being summed by code that walks a class's own
+// raw store directly (spentForClass/sumAcrossAllClasses in logic.js),
+// inflating the total by the orphaned value instead of matching what's
+// shown. If a save somehow holds a value under both (not reachable
+// through normal play before today, since each class's rank was tracked
+// independently) the higher one wins, rather than guessing which is
+// "right".
+function migrateSharedQuickEvacuation(ranksLike) {
+  if (!ranksLike || typeof ranksLike !== "object") return;
+  const classes = ranksLike.classes;
+  const fromWizard = classes && classes.Wizard && classes.Wizard["quick-evacuation"];
+  if (fromWizard === undefined) return;
+  delete classes.Wizard["quick-evacuation"];
+  if (!classes.Druid) classes.Druid = {};
+  classes.Druid["quick-evacuation"] = Math.max(classes.Druid["quick-evacuation"] || 0, fromWizard || 0);
+}
+
+// Same redirect as migrateSharedQuickEvacuation, for a purchaseOrder array
+// (name-keyed {scope, className, key} entries) instead of a ranks store -
+// every entry pointing at Wizard's copy is repointed at Druid's in place,
+// so reconcilePurchaseOrderCounts (which already runs after every load)
+// trims any resulting count mismatch the normal way instead of the
+// entries just failing to resolve once their held rank moves to Druid.
+function migrateSharedQuickEvacuationPurchaseOrder(purchaseOrder) {
+  if (!Array.isArray(purchaseOrder)) return;
+  purchaseOrder.forEach((e) => {
+    if (e && e.key === "quick-evacuation" && e.scope === "class" && e.className === "Wizard") {
+      e.className = "Druid";
+    }
+  });
+}
+
+// Same redirect as migrateSharedQuickEvacuation, for hidden tracking - a
+// boolean OR instead of a max, since there's no "higher" hidden state to
+// prefer.
+function migrateSharedQuickEvacuationHidden(hiddenLike) {
+  if (!hiddenLike || typeof hiddenLike !== "object") return;
+  const classes = hiddenLike.classes;
+  const fromWizard = classes && classes.Wizard && classes.Wizard["quick-evacuation"];
+  if (fromWizard === undefined) return;
+  delete classes.Wizard["quick-evacuation"];
+  if (fromWizard) {
+    if (!classes.Druid) classes.Druid = {};
+    classes.Druid["quick-evacuation"] = true;
+  }
+}
+
 function deserializeRanks(saved, resolveIdx) {
   let dropped = 0;
   const ranks = mapKeyedStoreToIdx(saved, resolveIdx, clampRankValue, () => { dropped++; });
@@ -1020,6 +1092,7 @@ function loadAndApplyHidden() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.hidden && typeof parsed.hidden === "object") {
+        migrateSharedQuickEvacuationHidden(parsed.hidden);
         state.hiddenAAs = deserializeHidden(parsed.hidden);
         return;
       }
@@ -1269,6 +1342,14 @@ function applyLoaded(loaded) {
   // to the wrong ability. Either way, an AA that no longer resolves is
   // dropped rather than guessed at.
   const isLegacy = !(typeof loaded.v === "number" && loaded.v >= 4);
+  // The pre-v4 index-based path is left unmigrated here - old enough, and
+  // narrow enough a window, that a save still on it having Quick
+  // Evacuation trained under Wizard specifically isn't worth the extra
+  // legacy-index bookkeeping this would otherwise need.
+  if (!isLegacy) {
+    migrateSharedQuickEvacuation(loaded.ranks);
+    migrateSharedQuickEvacuationPurchaseOrder(loaded.purchaseOrder);
+  }
   let droppedRanks = 0;
   if (loaded.ranks && typeof loaded.ranks === "object") {
     const result = isLegacy
@@ -1311,6 +1392,7 @@ function applyLoaded(loaded) {
 function loadAndApplyOwned(rawMainPayload) {
   const stored = loadOwnedProfileRaw(state.ownedProfileId);
   if (stored && stored.owned && typeof stored.owned === "object") {
+    migrateSharedQuickEvacuation(stored.owned);
     const result = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key));
     state.owned = result.ranks;
     return { droppedOwned: result.dropped };
@@ -1319,6 +1401,7 @@ function loadAndApplyOwned(rawMainPayload) {
     // owned only ever existed in the main payload under SAVE_FORMAT_VERSION
     // 4 (it shipped well after v4 became name-keyed) - no legacy index-based
     // form to handle here, unlike ranks/purchaseOrder above.
+    migrateSharedQuickEvacuation(rawMainPayload.owned);
     const result = deserializeRanks(rawMainPayload.owned, (scope, cls, key) => idxForKey(scope, cls, key));
     state.owned = result.ranks;
     saveOwned();
@@ -1348,6 +1431,7 @@ function payloadOwnedHasContent(owned) {
 // caller.
 function adoptImportedOwnedAsNewProfile(ownedField) {
   const newId = genId();
+  migrateSharedQuickEvacuation(ownedField);
   const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
   state.ownedProfileId = newId;
   state.owned = result.ranks;
@@ -1856,12 +1940,48 @@ function entryKey(scope, className, idx) {
   return `${scope}|${className || ""}|${idx}`;
 }
 
-// Which category key currently displays this entry's class, or null if that class
-// isn't in any of the 3 active slots right now.
-function resolveEntryCategory(entry) {
-  if (entry.scope !== "class") return entry.scope;
-  const slot = state.selectedClasses.indexOf(entry.className);
-  return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
+// Every class whose own copy of this AA shares one investment with it (see
+// keys.js's aaAt comment on sharedWithClass) - just [className] for an
+// ordinary AA. The canonical copy (Druid, for Quick Evacuation) has no
+// sharedWithClass field of its own, so finding ITS siblings means checking
+// every other class for a copy that points back at it by name; a
+// non-canonical copy (Wizard's) just names its one canonical class
+// directly.
+function sharedGroupClasses(scope, className, idx) {
+  if (scope !== "class") return [className];
+  const aa = aaAt(scope, className, idx);
+  if (!aa) return [className];
+  if (aa.sharedWithClass) return [className, aa.sharedWithClass];
+  const siblings = CLASS_LIST.filter((c) => {
+    if (c === className) return false;
+    const otherIdx = idxForKey("class", c, slugify(aa.name));
+    const otherAA = otherIdx >= 0 ? aaAt("class", c, otherIdx) : null;
+    return otherAA && otherAA.sharedWithClass === className;
+  });
+  return siblings.length ? [className, ...siblings] : [className];
+}
+
+// Which currently-active class (if any) can actually be used to operate on
+// `entry` - its own class if that's active, or (for a sharedWithClass pair)
+// whichever linked class is, since the two always represent the same real
+// investment regardless of which tab was used to buy it (changeRank always
+// records the canonical identity in purchaseOrder/lastMutation, even for a
+// purchase made from the OTHER class's tab). Returns that class's OWN idx
+// for this AA too, which can differ from entry.idx - each class's own
+// array has different neighbors - so category and idx must always be used
+// together, never entry.idx against a different class's category. category
+// is null (idx left unchanged) if no class in the group is active.
+function activeEntryTarget(entry) {
+  if (entry.scope !== "class") return { category: entry.scope, idx: entry.idx };
+  const classes = sharedGroupClasses(entry.scope, entry.className, entry.idx);
+  const aa = aaAt(entry.scope, entry.className, entry.idx);
+  for (const c of classes) {
+    const slot = state.selectedClasses.indexOf(c);
+    if (slot < 0) continue;
+    const idx = c === entry.className ? entry.idx : idxForKey("class", c, slugify(aa.name));
+    if (idx >= 0) return { category: CLASS_SLOT_KEYS[slot], idx };
+  }
+  return { category: null, idx: entry.idx };
 }
 
 function pushPurchase(scope, className, idx) {
@@ -2575,14 +2695,14 @@ function undoLastMutation() {
   lastMutation = null;
 
   if (m.type === "add") {
-    const category = resolveEntryCategory(m.entry);
+    const { category, idx } = activeEntryTarget(m.entry);
     if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
-    const rank = effectiveRank(category, m.entry.idx);
+    const rank = effectiveRank(category, idx);
     if (rank <= 0) return { changed: false, message: "Nothing to undo." };
-    if (isDependedOn(category, m.entry.idx, rank)) {
+    if (isDependedOn(category, idx, rank)) {
       return { changed: false, message: "Can't undo — another AA now depends on this rank." };
     }
-    return { changed: changeRank(category, m.entry.idx, -1), message: null };
+    return { changed: changeRank(category, idx, -1), message: null };
   }
 
   if (m.type === "reorder") {
@@ -2605,15 +2725,21 @@ function undoLastMutation() {
 
   // m.type === "remove": restore the entry to its original array position and
   // bump that AA's rank back up by one.
-  const category = resolveEntryCategory(m.entry);
+  const { category, idx } = activeEntryTarget(m.entry);
   if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
-  const aa = getList(category)[m.entry.idx];
+  // getList/effectiveRank go through whichever class is actually active
+  // (idx translated to match its own array - see activeEntryTarget), but
+  // the store itself is always m.entry's own canonical identity, exactly
+  // like changeRank's own writes - a sharedWithClass AA's real value only
+  // ever lives under its canonical copy, regardless of which class's tab
+  // is currently being used to reach it.
+  const aa = getList(category)[idx];
   if (!aa) return { changed: false, message: "Can't undo — that AA is no longer available." };
   const store = getRanksStoreScoped(m.entry.scope, m.entry.className);
   // Same autoRanks special-case changeRank itself applies: a decrement that
   // lands at or below the free floor deletes the store entry, so the raw
   // store value alone under-reads an autoRanks AA's true current rank.
-  const cur = aa.autoRanks ? effectiveRank(category, m.entry.idx) : (store[m.entry.idx] || 0);
+  const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[m.entry.idx] || 0);
   if (cur >= aa.ranks) return { changed: false, message: "Can't undo — already at max rank." };
   store[m.entry.idx] = cur + 1;
   const pos = Math.min(m.position, state.purchaseOrder.length);
@@ -2704,7 +2830,12 @@ function computeProgressionSteps(order = state.purchaseOrder) {
   let blendedCumulative = 0;
   return order.map((entry, i) => {
     const key = entryKey(entry.scope, entry.className, entry.idx);
-    const category = resolveEntryCategory(entry);
+    // category/categoryIdx are a pair - whichever class in a sharedWithClass
+    // group is actually active right now, and THAT class's own idx for this
+    // AA (which can differ from entry.idx, the canonical identity every
+    // purchaseOrder entry carries regardless of which tab bought it). Never
+    // mix entry.idx with category, or categoryIdx with entry.scope/className.
+    const { category, idx: categoryIdx } = activeEntryTarget(entry);
     const active = category !== null;
     const aa = aaAt(entry.scope, entry.className, entry.idx);
     // purchaseCount tracks how many times THIS purchase has been made (for isLast/
@@ -2783,7 +2914,7 @@ function computeProgressionSteps(order = state.purchaseOrder) {
     const owned = stepRank <= ownedRank(entry.scope, entry.className, entry.idx);
 
     return {
-      index: i, aa, idx: entry.idx, scope: entry.scope, className: entry.className,
+      index: i, aa, idx: entry.idx, categoryIdx, scope: entry.scope, className: entry.className,
       category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, classCapWarn, classEligibilityWarn, label, name, isLast, owned
     };
   });
@@ -4345,7 +4476,10 @@ function handleDeleteWaypoint() {
 function classBadgeClass(s) {
   if (s.scope !== "class") return "";
   if (!s.active) return " step-cat-inactive";
-  return ` step-cat-slot${state.selectedClasses.indexOf(s.className)}`;
+  // By s.category (the class actually active right now), not s.className
+  // (the canonical identity, which can be a different, currently-inactive
+  // class for a sharedWithClass AA bought from the other one's tab).
+  return ` step-cat-slot${CLASS_SLOT_KEYS.indexOf(s.category)}`;
 }
 
 // One entry per waypoint (not just the row's current section - moving
@@ -4600,8 +4734,8 @@ function renderProgression(totals) {
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === steps[0].index ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps[steps.length - 1].index ? "disabled" : ""}>&darr;</button>
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to preview this.` : canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
-        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.active && s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
-        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.idx}" ${s.active && s.isLast ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
+        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.categoryIdx}" ${s.active && s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
+        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.categoryIdx}" ${s.active && s.isLast ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.className || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
         <span class="move-menu-wrap">
           <button class="step-btn step-move${openMoveMenuKey === key ? " active" : ""}" data-key="${key}" title="Move to...">&#8943;</button>
           ${openMoveMenuKey === key ? moveMenuHtml(s, timeline, steps.length) : ""}
@@ -4612,7 +4746,7 @@ function renderProgression(totals) {
     // canExpand requires s.active, so s.category is always set here - no
     // need for costDisplayScoped's fallback the way Browse/Other Classes
     // need it.
-    return row + nextRankBoxHtml(s.category, s.idx, s.aa, s.stepRank, " progression-next-rank");
+    return row + nextRankBoxHtml(s.category, s.categoryIdx, s.aa, s.stepRank, " progression-next-rank");
   });
 
   el.progressionContent.innerHTML = htmlParts.join("");

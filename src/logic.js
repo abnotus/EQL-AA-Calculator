@@ -453,12 +453,48 @@ function entryKey(scope, className, idx) {
   return `${scope}|${className || ""}|${idx}`;
 }
 
-// Which category key currently displays this entry's class, or null if that class
-// isn't in any of the 3 active slots right now.
-function resolveEntryCategory(entry) {
-  if (entry.scope !== "class") return entry.scope;
-  const slot = state.selectedClasses.indexOf(entry.className);
-  return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
+// Every class whose own copy of this AA shares one investment with it (see
+// keys.js's aaAt comment on sharedWithClass) - just [className] for an
+// ordinary AA. The canonical copy (Druid, for Quick Evacuation) has no
+// sharedWithClass field of its own, so finding ITS siblings means checking
+// every other class for a copy that points back at it by name; a
+// non-canonical copy (Wizard's) just names its one canonical class
+// directly.
+function sharedGroupClasses(scope, className, idx) {
+  if (scope !== "class") return [className];
+  const aa = aaAt(scope, className, idx);
+  if (!aa) return [className];
+  if (aa.sharedWithClass) return [className, aa.sharedWithClass];
+  const siblings = CLASS_LIST.filter((c) => {
+    if (c === className) return false;
+    const otherIdx = idxForKey("class", c, slugify(aa.name));
+    const otherAA = otherIdx >= 0 ? aaAt("class", c, otherIdx) : null;
+    return otherAA && otherAA.sharedWithClass === className;
+  });
+  return siblings.length ? [className, ...siblings] : [className];
+}
+
+// Which currently-active class (if any) can actually be used to operate on
+// `entry` - its own class if that's active, or (for a sharedWithClass pair)
+// whichever linked class is, since the two always represent the same real
+// investment regardless of which tab was used to buy it (changeRank always
+// records the canonical identity in purchaseOrder/lastMutation, even for a
+// purchase made from the OTHER class's tab). Returns that class's OWN idx
+// for this AA too, which can differ from entry.idx - each class's own
+// array has different neighbors - so category and idx must always be used
+// together, never entry.idx against a different class's category. category
+// is null (idx left unchanged) if no class in the group is active.
+function activeEntryTarget(entry) {
+  if (entry.scope !== "class") return { category: entry.scope, idx: entry.idx };
+  const classes = sharedGroupClasses(entry.scope, entry.className, entry.idx);
+  const aa = aaAt(entry.scope, entry.className, entry.idx);
+  for (const c of classes) {
+    const slot = state.selectedClasses.indexOf(c);
+    if (slot < 0) continue;
+    const idx = c === entry.className ? entry.idx : idxForKey("class", c, slugify(aa.name));
+    if (idx >= 0) return { category: CLASS_SLOT_KEYS[slot], idx };
+  }
+  return { category: null, idx: entry.idx };
 }
 
 function pushPurchase(scope, className, idx) {
@@ -1172,14 +1208,14 @@ export function undoLastMutation() {
   lastMutation = null;
 
   if (m.type === "add") {
-    const category = resolveEntryCategory(m.entry);
+    const { category, idx } = activeEntryTarget(m.entry);
     if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
-    const rank = effectiveRank(category, m.entry.idx);
+    const rank = effectiveRank(category, idx);
     if (rank <= 0) return { changed: false, message: "Nothing to undo." };
-    if (isDependedOn(category, m.entry.idx, rank)) {
+    if (isDependedOn(category, idx, rank)) {
       return { changed: false, message: "Can't undo — another AA now depends on this rank." };
     }
-    return { changed: changeRank(category, m.entry.idx, -1), message: null };
+    return { changed: changeRank(category, idx, -1), message: null };
   }
 
   if (m.type === "reorder") {
@@ -1202,15 +1238,21 @@ export function undoLastMutation() {
 
   // m.type === "remove": restore the entry to its original array position and
   // bump that AA's rank back up by one.
-  const category = resolveEntryCategory(m.entry);
+  const { category, idx } = activeEntryTarget(m.entry);
   if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
-  const aa = getList(category)[m.entry.idx];
+  // getList/effectiveRank go through whichever class is actually active
+  // (idx translated to match its own array - see activeEntryTarget), but
+  // the store itself is always m.entry's own canonical identity, exactly
+  // like changeRank's own writes - a sharedWithClass AA's real value only
+  // ever lives under its canonical copy, regardless of which class's tab
+  // is currently being used to reach it.
+  const aa = getList(category)[idx];
   if (!aa) return { changed: false, message: "Can't undo — that AA is no longer available." };
   const store = getRanksStoreScoped(m.entry.scope, m.entry.className);
   // Same autoRanks special-case changeRank itself applies: a decrement that
   // lands at or below the free floor deletes the store entry, so the raw
   // store value alone under-reads an autoRanks AA's true current rank.
-  const cur = aa.autoRanks ? effectiveRank(category, m.entry.idx) : (store[m.entry.idx] || 0);
+  const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[m.entry.idx] || 0);
   if (cur >= aa.ranks) return { changed: false, message: "Can't undo — already at max rank." };
   store[m.entry.idx] = cur + 1;
   const pos = Math.min(m.position, state.purchaseOrder.length);
@@ -1301,7 +1343,12 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
   let blendedCumulative = 0;
   return order.map((entry, i) => {
     const key = entryKey(entry.scope, entry.className, entry.idx);
-    const category = resolveEntryCategory(entry);
+    // category/categoryIdx are a pair - whichever class in a sharedWithClass
+    // group is actually active right now, and THAT class's own idx for this
+    // AA (which can differ from entry.idx, the canonical identity every
+    // purchaseOrder entry carries regardless of which tab bought it). Never
+    // mix entry.idx with category, or categoryIdx with entry.scope/className.
+    const { category, idx: categoryIdx } = activeEntryTarget(entry);
     const active = category !== null;
     const aa = aaAt(entry.scope, entry.className, entry.idx);
     // purchaseCount tracks how many times THIS purchase has been made (for isLast/
@@ -1380,7 +1427,7 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
     const owned = stepRank <= ownedRank(entry.scope, entry.className, entry.idx);
 
     return {
-      index: i, aa, idx: entry.idx, scope: entry.scope, className: entry.className,
+      index: i, aa, idx: entry.idx, categoryIdx, scope: entry.scope, className: entry.className,
       category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, classCapWarn, classEligibilityWarn, label, name, isLast, owned
     };
   });
