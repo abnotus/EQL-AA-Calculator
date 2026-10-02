@@ -1,6 +1,6 @@
 {
   "pageid": 56762,
-  "revid": 179690,
+  "revid": 180375,
   "abilities": {
     "general::Adamant Will::0": {
       "ranks": "4",
@@ -709,7 +709,7 @@
       ],
       "description": "Grants the Berserker an increased chance to critically strike. Requirements: Level 1."
     },
-    "class:Berserker::Tireless Spirit::0": {
+    "class:Berserker::Tireless Sprint::0": {
       "ranks": "1",
       "costs": [
         "3"
