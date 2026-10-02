@@ -9,6 +9,15 @@
 # previously-missed spots so a guess shows up consistently everywhere a
 # real cost would.
 #
+# The guess scenario is fabricated on a stable, player-log-verified host
+# (Rapid Feign, Monk - see wiki_guess_fixtures.py and
+# test_manual_guess.py's own header comment for the full rationale) rather
+# than pinned to whichever real AA currently has an unconfirmed cost - this
+# test had already been re-pinned 5 times (Adamant Will -> Combat
+# Stability -> Alchemy Mastery -> Wizard's Quick Evacuation -> Turn
+# Summoned) as each prior example got confirmed by the wiki in turn before
+# this fix.
+#
 # The final scenario covers an inactive-class pick - one whose class is no
 # longer in the active 3. Progression renders it inline, muted and
 # read-only, rather than hiding it, so the scenario checks the row is
@@ -18,8 +27,21 @@
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
+from wiki_guess_fixtures import read_app_src, read_data_js, replace_object_literal, insert_table_entry
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
+
+FROZEN_AA = '{name:"Rapid Feign",ranks:3,costs:["3","6","?"],levelReq:"17",description:"Reduces the reuse time of your Feign Death skill by 1/3/5 second(s)."}'
+SYNTHETIC_ENTRY = '"class:Monk:rapid-feign": { "2": { value: 9, confidence: "high", basedOn: ["Adamant Will", "Combat Stability"] } }'
+
+
+def patched_data_js():
+    return replace_object_literal(read_data_js(), '{name:"Rapid Feign"', FROZEN_AA)
+
+
+def patched_app_src():
+    return insert_table_entry(read_app_src(), "const COST_GUESS_TABLE = {", SYNTHETIC_ENTRY)
+
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)
@@ -27,46 +49,40 @@ with sync_playwright() as p:
     errors = []
     page.on("pageerror", lambda exc: errors.append(str(exc)))
     page.on("dialog", lambda d: d.accept())
+    page.route("**/data.js*", lambda route: route.fulfill(body=patched_data_js(), content_type="application/javascript; charset=utf-8"))
+    page.route("**/app.js*", lambda route: route.fulfill(body=patched_app_src(), content_type="application/javascript; charset=utf-8"))
 
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
 
-    # --- Browse view: Turn Summoned's rank 3 (high-confidence guess, value
-    # 9) should show as an estimate in the per-rank cost list, not a plain
-    # "?". Use the global search box to find it quickly - Browse lists
-    # every class regardless of the active 3 slots, so no class selection is
-    # needed here. Magician isn't one of the default 3 slots (Bard/
-    # Beastlord/Berserker), so this already doubles as proof the scoped
-    # guess lookup isn't specific to an active class. (This used to be rank
-    # 2, before that Alchemy Mastery's rank 2, before that Combat
-    # Stability's rank 3, before that Adamant Will's rank 4, before that
-    # Wizard's Quick Evacuation - each got confirmed by a wiki scrape in
-    # turn since this test was first written; rank 2 here specifically was
-    # confirmed real (6) by the same scrape that pinned Master of All's
-    # rework. Turn Summoned is currently the only AA in the whole dataset
-    # with a real cost still unconfirmed, so there's no second example left
-    # to pin alongside it.) ---
+    # --- Browse view: Rapid Feign's rank 3 (fabricated high-confidence
+    # guess, value 9) should show as an estimate in the per-rank cost list,
+    # not a plain "?". Use the global search box to find it quickly -
+    # Browse lists every class regardless of the active 3 slots, so no
+    # class selection is needed here. Monk isn't one of the default 3
+    # slots (Bard/Beastlord/Berserker), so this already doubles as proof
+    # the scoped guess lookup isn't specific to an active class. ---
     page.click("#browseToggle")
-    page.fill("#globalSearch", "Turn Summoned")
+    page.fill("#globalSearch", "Rapid Feign")
     page.wait_for_timeout(100)
-    card = page.locator(".browse-card", has=page.locator(".name", has_text="Turn Summoned"))
+    card = page.locator(".browse-card", has=page.locator(".name", has_text="Rapid Feign"))
     info_html = card.locator(".info").inner_html()
-    print("Turn Summoned browse info html:", info_html)
+    print("Rapid Feign browse info html:", info_html)
     assert "~9" in info_html
     assert 'class="is-estimate tier-high"' in info_html
-    print("PASS: Browse shows Turn Summoned's rank-3 estimate for a class outside the active 3 slots, not a bare '?'")
+    print("PASS: Browse shows Rapid Feign's rank-3 estimate for a class outside the active 3 slots, not a bare '?'")
 
     page.fill("#globalSearch", "")
     page.click("#browseToggle")
 
-    # --- Progression tab: buy Turn Summoned up through the guessed rank 3
+    # --- Progression tab: buy Rapid Feign up through the guessed rank 3
     # and confirm the per-step cost pill shows the estimate (not '0'), the
     # running total blends it in like the topbar, and the next-rank preview
-    # also shows the estimate + confidence chip. Turn Summoned is a
-    # per-class (Magician) AA, so it needs a slot. ---
-    page.select_option("#classSelect0", "Magician")
+    # also shows the estimate + confidence chip. Rapid Feign is a
+    # per-class (Monk) AA, so it needs a slot. ---
+    page.select_option("#classSelect0", "Monk")
     page.click('button[data-tab="classSlot0"]')
-    am = page.locator(".node", has=page.locator(".name", has_text="Turn Summoned"))
+    am = page.locator(".node", has=page.locator(".name", has_text="Rapid Feign"))
     am.click()
     for _ in range(3):
         page.click("#incBtn")

@@ -156,55 +156,58 @@ than clicking through the UI to build it up live — faster, and pins the
 exact scenario being tested instead of leaving it implicit in a sequence of
 clicks.
 
-## Tests pinned to live data
+## Fabricated guess fixtures (formerly pinned to live data)
 
-Several tests use specific live AAs as their guessed-value examples:
-`test_effect_guess.py`'s Banestrike, `test_cost_guess.py`'s Combat Fury
-and Turn Summoned, `test_guess_all_tabs.py`'s Cannibalization and Turn
-Summoned, and `test_estimated_total.py`'s Combat Agility and Turn Summoned.
-A wiki scrape that confirms one of those specific ranks breaks that test.
-When that happens, regenerate `costGuesses.js`/`effectGuesses.js`, pick a
-fresh example from whichever guess table still has one, and swap it in; the
-affected test's own comments describe how the last swap went. Turn Summoned
-is currently the only AA left in the dataset with a real cost still
-unconfirmed, so a couple of these tests lean on it alone.
+`test_cost_guess.py`, `test_guess_all_tabs.py`, `test_estimated_total.py`,
+`test_manual_guess.py`, and `test_effect_guess.py` used to pin their
+guessed-value scenarios to whichever real AA currently had an unconfirmed
+cost or effect value - a wiki scrape (or the user's own edit) confirming
+that value broke the test, needing a full rewrite to a new live example
+every time. This happened repeatedly (`test_effect_guess.py` alone was
+re-pinned six times) and got worse over time as the real dataset ran out
+of unconfirmed values to pin to - by the time this was fixed, Turn
+Summoned's rank 3 was the *only* unconfirmed cost left in the whole
+dataset, with four different test files depending on it at once.
 
-`test_manual_guess.py` is the exception: there is currently no live AA with a
-manual (curator-judgment, very-low confidence) *cost* guess, and the one AA
-still carrying an unguessed cost (Turn Summoned) already has its own real,
-high-confidence algorithmic guess. Rather than invent a `MANUAL_GUESSES`
-entry with no real justification, that test intercepts the `app.js` request
-and serves `app.src.js` (unminified, so `COST_GUESS_TABLE`'s name survives;
-real `app.js` has it mangled by esbuild) with Turn Summoned's real table
-entry replaced outright by a synthetic one. A plain string-prepend isn't
-enough, since Turn Summoned's own entry declared later in the same object
-literal would win over a prepended duplicate key. If a real manual cost guess
-ever reappears, prefer swapping back to it over keeping the synthetic one.
+All five now fabricate their own "?" and its guess instead, via
+`page.route()` interception - `tests/wiki_guess_fixtures.py` holds the
+shared brace-matching logic (two targets: a whole AA object in `data.js`,
+which is minified but not mangled so the real file can be intercepted
+directly; and a guess-table entry's value in `app.src.js`, the unminified
+sibling of `app.js`, needed because `app.js`'s bundling *does* mangle
+`COST_GUESS_TABLE`/`EFFECT_GUESS_TABLE`'s own names). Each test file keeps
+its own hardcoded fixture content inline (self-contained, same as every
+other test here) and just calls into the shared helpers. A future wiki
+edit to either host AA is invisible to these tests - they never read the
+real value at all, so there's nothing left to re-pin.
 
-`test_effect_guess.py`'s Banestrike has two confirmed ranks and two
-unconfirmed ones, each resolving to a hand-picked, very-low-confidence
-manual guess rather than a sibling match (no other AA shares its name).
-Druid/Wizard's Quick Evacuation held this spot before its own last "?"
-got confirmed - the two copies' only remaining difference was cosmetic
-%-placement in the wiki text around an otherwise-identical, already-known
-value, which is what made them recognizable as one real shared investment
-in the first place (see `logic.js`'s `sharedCanonical`). Should the guess
-table ever run out of entries entirely, this test would need a different
-anchor again; the sibling-matching and
-interpolation rules themselves are covered data-independently by
-`test_guess_effects.py`. When picking its next example, prefer an AA a
-player actually spends points on. Banestrike is nominally unlocked by
-Slayer achievements rather than bought, but carries no `auto`/`autoRanks`
-flag in `data.src.js`, so the app already treats it as an ordinary
-purchasable entry everywhere else — this test goes along with that
-existing simplification rather than inventing a new one. Unbound Companion
-is the only other AA with an unresolved effect value, but it is `auto:
-true`, so a test driving it with `#incBtn` would be buying a rank that
-cannot be bought in game.
+The two fabricated hosts are chosen for being ordinary and
+*player-log-verified* (`wiki-sync/log_verified.json` - the user's own
+real purchases), not just wiki-confirmed, and specifically avoid AAs with
+real quirks that would make them poor stand-ins (Turn Summoned's rank 2 is
+gated above the level cap; Banestrike is achievement-granted, not bought):
 
-The cost-guess table has run out of medium-confidence entries; what is left
-is either high-confidence or manual very-low, so `test_guess_all_tabs.py`
-pins those two tiers only.
+- **Cost guesses**: Rapid Feign (Monk). Real shape is already
+  `costs:["3","6","9"]` - the fixture only swaps rank 3's real `9` for a
+  synthetic `?` plus a synthetic high-confidence guess of `9`, so every
+  existing numeric assertion stayed unchanged across the swap.
+  `test_estimated_total.py` uses a *different* host for this one (see
+  below) since its own build already has Monk active.
+- **Effect guesses**: Baking Mastery (general). Real description is
+  already `"...by 10/25/50%."` - the fixture swaps ranks 2-3's real
+  `25`/`50` for `?`/`?` plus a synthetic **medium-confidence,
+  sibling-matched** guess (`basedOn: ["Alchemy Mastery"]`, a real sibling
+  per `test_guess_effects.py`'s own `group_for_name` assertion) - richer
+  coverage than the manual/very-low tier Banestrike's lack of any sibling
+  was stuck demonstrating.
+
+`test_estimated_total.py`'s `BUILD` fixture already has Monk active in one
+of its own 3 class slots, so swapping Rapid Feign's class (Monk) into a
+slot wouldn't make any *other* class's spending go inactive - the
+combined "estimate blended in + some spending now inactive" tooltip
+assertion needs a class BUILD doesn't already use. It fabricates Instrument
+Mastery (Bard) instead - same log-verified-host reasoning, same
+`costs:["3","6","9"]` shape, different class.
 
 `test_real_world_build.py` is pinned to a whole real share link (a live
 user's actual Paladin/Enchanter/Druid build) rather than one AA. A wiki

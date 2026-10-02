@@ -3,11 +3,32 @@
 # (spentPoints/affordability), must render with the right confidence tier
 # in the tree node badge, the side panel's next-rank box, and the
 # rank-costs pip strip, and must never appear for a real known cost.
+#
+# The high-confidence scenario below is fabricated on a stable, player-
+# log-verified host (Rapid Feign, Monk - see wiki_guess_fixtures.py and
+# test_manual_guess.py's own header comment for the full rationale) rather
+# than pinned to whichever real AA currently has an unconfirmed cost - this
+# test had already been re-pinned 4 times (Adamant Will -> Combat
+# Stability -> Alchemy Mastery -> Turn Summoned) as each prior example got
+# confirmed by the wiki in turn before this fix.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
+from wiki_guess_fixtures import read_app_src, read_data_js, replace_object_literal, insert_table_entry
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
+
+FROZEN_AA = '{name:"Rapid Feign",ranks:3,costs:["3","6","?"],levelReq:"17",description:"Reduces the reuse time of your Feign Death skill by 1/3/5 second(s)."}'
+SYNTHETIC_ENTRY = '"class:Monk:rapid-feign": { "2": { value: 9, confidence: "high", basedOn: ["Adamant Will", "Combat Stability"] } }'
+
+
+def patched_data_js():
+    return replace_object_literal(read_data_js(), '{name:"Rapid Feign"', FROZEN_AA)
+
+
+def patched_app_src():
+    return insert_table_entry(read_app_src(), "const COST_GUESS_TABLE = {", SYNTHETIC_ENTRY)
+
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)
@@ -15,24 +36,19 @@ with sync_playwright() as p:
     errors = []
     page.on("pageerror", lambda exc: errors.append(str(exc)))
     page.on("dialog", lambda d: d.accept())
+    page.route("**/data.js*", lambda route: route.fulfill(body=patched_data_js(), content_type="application/javascript; charset=utf-8"))
+    page.route("**/app.js*", lambda route: route.fulfill(body=patched_app_src(), content_type="application/javascript; charset=utf-8"))
 
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
 
-    # --- Turn Summoned (Magician): high-confidence guess (9) for rank 3.
-    # (This used to be rank 2, before that Alchemy Mastery's rank 2, before
-    # that Combat Stability's rank 3, before that Adamant Will's rank 4 -
-    # each got confirmed by a wiki scrape in turn since this test was first
-    # written, the same "guess resolves away" story Combat Fury's own
-    # section below already tells; rank 2 here specifically was confirmed
-    # real (6) by the same scrape that pinned Master of All's rework. Every
-    # remaining high-confidence guess now lives on a per-class AA rather
-    # than a general one, so this swap also needs a class in a slot -
-    # Magician isn't one of the default slot0-2 classes, so it's selected
-    # explicitly.) ---
-    page.select_option("#classSelect0", "Magician")
+    # --- Rapid Feign (Monk): fabricated high-confidence guess (9) for
+    # rank 3. Monk isn't one of the default slot0-2 classes, so it's
+    # selected explicitly - incidentally covers the scoped guess lookup
+    # for a class outside the active 3 slots too. ---
+    page.select_option("#classSelect0", "Monk")
     page.click('button[data-tab="classSlot0"]')
-    am = page.locator(".node", has=page.locator(".name", has_text="Turn Summoned"))
+    am = page.locator(".node", has=page.locator(".name", has_text="Rapid Feign"))
     am.click()
     for _ in range(2):
         page.click("#incBtn")  # ranks 1-2, real costs 3+6 = 9
@@ -47,7 +63,7 @@ with sync_playwright() as p:
     print("tree costtag text:", tag.inner_text(), "class:", tag.get_attribute("class"))
     assert tag.inner_text() == "~9"
     assert "is-estimate" in tag.get_attribute("class") and "tier-high" in tag.get_attribute("class")
-    print("PASS: tree node shows the high-confidence guess for Turn Summoned's unknown rank 3")
+    print("PASS: tree node shows the high-confidence guess for Rapid Feign's unknown rank 3")
 
     # Side panel next-rank box + pip strip.
     next_cost_b = page.locator("#sidePanel .next-rank-title b")
@@ -114,7 +130,7 @@ with sync_playwright() as p:
     page.click("#exportBtn")
     page.wait_for_timeout(300)
     export_text = page.locator("#exportText").input_value()
-    line = next(l for l in export_text.split("\n") if "Turn Summoned rank 3" in l)
+    line = next(l for l in export_text.split("\n") if "Rapid Feign rank 3" in l)
     print("export text line for the guessed rank 3:", line)
     assert "~9 pt(s)" in line, f"FAIL: expected the export to show the ~9 guess, got: {line}"
     assert "~18 total" in line, f"FAIL: expected the export's running total to blend to ~18 like Progression's own, got: {line}"

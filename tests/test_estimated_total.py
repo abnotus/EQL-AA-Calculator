@@ -22,31 +22,33 @@
 # scale and realism, but it no longer carries any unconfirmed-cost rank of
 # its own (Packrat, its last live example, got fully confirmed by a wiki
 # scrape - the eventual fate every guess on this page is built to have).
-# So the guessed-cost scenario below buys Turn Summoned (a Magician class
-# AA, level 45 - comfortably under BUILD's level 50 - real ranks 1-2 cost
+# So the guessed-cost scenario below buys Instrument Mastery (a Bard class
+# AA, level 1 - comfortably under BUILD's level 50 - real ranks 1-2 cost
 # 3/6, a single guessed rank 3 after them: 9) live on top of the loaded
 # build instead, reintroducing a real "guess blends into the running total,
 # never freezing" case without needing a stale, hand-picked share code.
-# (This used to be Reaching Notes, then Quick Evacuation - each in turn got
-# fully confirmed by a wiki scrape since this scenario was last written, so
-# it no longer has any "?" cost left; swapped to a currently-live example
-# each time.)
 #
-# Turn Summoned itself used to carry two consecutive guessed ranks (2 and
-# 3) - the same scrape that reworked Master of All confirmed rank 2's real
-# cost, leaving only rank 3 unconfirmed. Turn Summoned is currently the
-# only AA anywhere in the dataset with any unconfirmed cost at all, and
-# it's a single trailing rank - there is no live example left of two
-# differently-sized guesses in a row, or of a PARTIAL owned/to-go split
-# (an interior guessed rank, with real ranks still unowned after it): a
-# single trailing guess is atomic, only ever 0% or 100% owned, never
-# split. The scenario below tests the 100%-owned case instead of a partial
-# one for that reason - not a gap introduced here, just what's left
-# testable against real data right now. The guessing feature itself is
-# unaffected; this only concerns which live AA can demonstrate it.
-# Refreshed periodically to the user's current build as they keep playing -
-# BUILD_STALE is regenerated alongside it each time (decode BUILD, inject
-# "t": 1000, re-encode gzip+base64url) so both stay in sync.
+# Rather than pin to whichever real AA currently has an unconfirmed cost
+# (this scenario had already been re-pinned from Reaching Notes to Quick
+# Evacuation to Turn Summoned as each got confirmed by the wiki in turn),
+# the "?" and its guess are fabricated on Instrument Mastery instead, a stable,
+# player-log-verified host (wiki-sync/log_verified.json confirms rank 3
+# reached 2026-09-16 - see wiki_guess_fixtures.py and
+# test_manual_guess.py's own header comment for the full rationale). Bard
+# specifically (not Monk, used by the other guess-rendering tests) because
+# BUILD already has Monk active in one of its own 3 slots - swapping it in
+# again wouldn't demonstrate the "a class's own real spending becomes
+# inactive" tooltip disclosure below, the way swapping in a class BUILD
+# doesn't already use does.
+#
+# There is no live example of two differently-sized guesses in a row, or
+# of a PARTIAL owned/to-go split (an interior guessed rank, with real ranks
+# still unowned after it): a single trailing guess is atomic, only ever 0%
+# or 100% owned, never split. The scenario below tests the 100%-owned case
+# instead of a partial one for that reason. Refreshed periodically to the
+# user's current build as they keep playing - BUILD_STALE is regenerated
+# alongside it each time (decode BUILD, inject "t": 1000, re-encode
+# gzip+base64url) so both stay in sync.
 #
 # A second, separate scenario partway through this file re-tests the same
 # build with a stale "t" (totalPoints) field injected into its payload, to
@@ -57,9 +59,22 @@
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
+from wiki_guess_fixtures import read_app_src, read_data_js, replace_object_literal, insert_table_entry
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 BUILD = "H4sIAAAAAAAACn2QS27DMAxE78L1LCRSv_gGXfQEghZGYwQG0qQwinZR9O4FKSvuKtAzRjRGFDU_9EUTg95oqidkeGmgK03RgTaaak2QhpoRGmqxPXsrWOCdaoJXySgNVbxVEswqsUtvIieT4Ox8COaMzn5G7iJIKr2n1ztUXYa0BvqgSZ2RwQlR_sHgvBPdsecMO-yHzyHvq2ihQ7AgpuHUL9kqKNBRB_oIg_2BPqkTBnGH5QkNdNd0R66W4CPIfAT5LCWb9xFTA31ry-BAL7f1c52vBLpv8-2ykF7iQK_r-TK_LwTaljO19vsHCmycbf8BAAA"
+
+FROZEN_AA = '{name:"Instrument Mastery",ranks:3,costs:["3","6","?"],levelReq:"1",description:"Further improves the instrument bonus of your songs by 20/40/60%. Impacts Brass, Percussion, String and Woodwind songs."}'
+SYNTHETIC_ENTRY = '"class:Bard:instrument-mastery": { "2": { value: 9, confidence: "high", basedOn: ["Adamant Will", "Combat Stability"] } }'
+
+
+def patched_data_js():
+    return replace_object_literal(read_data_js(), '{name:"Instrument Mastery"', FROZEN_AA)
+
+
+def patched_app_src():
+    return insert_table_entry(read_app_src(), "const COST_GUESS_TABLE = {", SYNTHETIC_ENTRY)
+
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)
@@ -67,6 +82,8 @@ with sync_playwright() as p:
     errors = []
     page.on("pageerror", lambda exc: errors.append(str(exc)))
     page.on("dialog", lambda d: d.accept())
+    page.route("**/data.js*", lambda route: route.fulfill(body=patched_data_js(), content_type="application/javascript; charset=utf-8"))
+    page.route("**/app.js*", lambda route: route.fulfill(body=patched_app_src(), content_type="application/javascript; charset=utf-8"))
 
     # --- Fresh page, nothing purchased: plain real number, red, no note. ---
     page.goto(BASE)
@@ -92,24 +109,24 @@ with sync_playwright() as p:
     assert sv.locator(".is-estimate").count() == 0, "FAIL: a fully-confirmed build shouldn't carry estimate styling"
     assert sv.get_attribute("title") is None
 
-    # --- Buy Turn Summoned live on top of it: ranks 1-2 are real (costs
-    # 3/6), rank 3 is guessed (9 - high confidence, cross-AA sibling
-    # match). Real total climbs to 244 (235 + ranks 1-2's real 3+6); rank 3
-    # adds nothing to spentPoints() itself but 9 to the blended headline
-    # (244 + 9 = 253). Turn Summoned is a Magician class AA, so slot 3
-    # (Shaman in BUILD) needs to swap to Magician first - done after the
-    # "95 / 235" assertion above so it doesn't disturb BUILD's own
-    # already-purchased Paladin/Monk/Shaman ranks, which are
+    # --- Buy Instrument Mastery live on top of it: ranks 1-2 are real
+    # (costs 3/6), rank 3 is guessed (9 - high confidence, fabricated
+    # sibling match). Real total climbs to 244 (235 + ranks 1-2's real
+    # 3+6); rank 3 adds nothing to spentPoints() itself but 9 to the
+    # blended headline (244 + 9 = 253). Instrument Mastery is a Bard class
+    # AA, so slot 3 (Shaman in BUILD) needs to swap to Bard first - done
+    # after the "95 / 235" assertion above so it doesn't disturb BUILD's
+    # own already-purchased Paladin/Monk/Shaman ranks, which are
     # lifetime-scoped and unaffected by a later class swap. ---
-    page.select_option("#classSelect2", "Magician")
+    page.select_option("#classSelect2", "Bard")
     page.click('button[data-tab="classSlot2"]')
     page.wait_for_timeout(100)
-    ts_node = page.locator(".node", has=page.locator(".name", has_text="Turn Summoned"))
+    ts_node = page.locator(".node", has=page.locator(".name", has_text="Instrument Mastery"))
     ts_node.click()
     for _ in range(3):
         page.click("#incBtn")
         page.wait_for_timeout(15)
-    print("spentValue after buying Turn Summoned to rank 3:", sv.inner_text(), sv.get_attribute("title"))
+    print("spentValue after buying Instrument Mastery to rank 3:", sv.inner_text(), sv.get_attribute("title"))
     # Owned (95) has no estimate contribution here - only the planned side
     # does, so exactly one of the two numbers gets the estimate span/color,
     # not the whole "owned / planned" pair.
@@ -120,7 +137,7 @@ with sync_playwright() as p:
     color = planned_span.evaluate("el => getComputedStyle(el).color")
     print("planned estimate span computed color:", color)
     assert color == "rgb(90, 169, 230)", f"FAIL: the blended planned side should render blue, got {color}"
-    # Swapping slot 3 to Magician (above) made Shaman inactive - BUILD already
+    # Swapping slot 3 to Bard (above) made Shaman inactive - BUILD already
     # had 5 real points on Shaman, so the tooltip now also discloses that
     # slice, same as any other class-swap-with-existing-spend scenario.
     assert sv.get_attribute("title") == "Planned: 244 confirmed + 9 estimated. 5 pts from classes not currently selected (see the Other Classes tab)."
@@ -142,15 +159,15 @@ with sync_playwright() as p:
     assert prog_title == "244 confirmed + 9 estimated.", f"FAIL: unexpected breakdown tooltip: {prog_title}"
     print("PASS: Progression's running total blends in estimates exactly like the topbar headline does, agreeing on both the figure and its breakdown")
 
-    # --- Turn Summoned rank-by-rank: ranks 1-2 are real (riding on top of
+    # --- Instrument Mastery rank-by-rank: ranks 1-2 are real (riding on top of
     # BUILD's own real 235, so they render as PLAIN numbers); rank 3 is
     # guessed - its own total must be exactly its own guess higher than the
     # row before it, never frozen. Before the blendedCumulative fix, a
     # guessed-rank row showed the SAME frozen total as the row before it
     # instead, even though its own pill showed a nonzero estimate. ---
-    ts_rows = page.locator(".progression-row", has=page.locator(".step-name", has_text="Turn Summoned"))
+    ts_rows = page.locator(".progression-row", has=page.locator(".step-name", has_text="Instrument Mastery"))
     totals = [ts_rows.nth(i).locator(".cost-total").inner_text() for i in range(ts_rows.count())]
-    print("Turn Summoned rank 1-3's running totals in order:", totals)
+    print("Instrument Mastery rank 1-3's running totals in order:", totals)
     expected = ["238 total", "244 total", "~253 total"]
     assert totals == expected, \
         f"FAIL: the running total must climb by exactly each rank's own real-or-guessed cost - got {totals}"
@@ -159,18 +176,18 @@ with sync_playwright() as p:
     # --- Owned/to-go (ownedSummary) must blend the same way, not silently
     # drop an owned rank's estimate from either side - see
     # estimatedExtraOwnedPoints in logic.js. BUILD's own preloaded owned
-    # progress (95 real points, none of it Turn Summoned, which was only
+    # progress (95 real points, none of it Instrument Mastery, which was only
     # just bought above) starts this real-only on the owned side, with ALL
-    # 9 of Turn Summoned's estimate still on "to go". ---
+    # 9 of Instrument Mastery's estimate still on "to go". ---
     owned_summary = page.locator("#ownedSummary")
-    print("owned summary before owning any of Turn Summoned:", owned_summary.inner_text())
+    print("owned summary before owning any of Instrument Mastery:", owned_summary.inner_text())
     assert owned_summary.inner_text() == "95 pts owned, ~158 to go", \
-        f"FAIL: preloaded owned progress should read as a real 95, with all 9 of Turn Summoned's estimate still on 'to go' - got {owned_summary.inner_text()!r}"
+        f"FAIL: preloaded owned progress should read as a real 95, with all 9 of Instrument Mastery's estimate still on 'to go' - got {owned_summary.inner_text()!r}"
     togo_span0 = owned_summary.locator(".is-estimate")
     assert togo_span0.get_attribute("title") == "149 confirmed + 9 estimated.", \
         f"FAIL: unexpected 'to go' breakdown tooltip: {togo_span0.get_attribute('title')!r}"
 
-    # --- Marking Turn Summoned fully owned (through its guessed rank 3)
+    # --- Marking Instrument Mastery fully owned (through its guessed rank 3)
     # pulls its entire estimate onto the owned side - there's no live AA
     # left with an INTERIOR unconfirmed rank to demonstrate a partial split
     # (see this file's own header comment), so this checks the all-owned
@@ -181,7 +198,7 @@ with sync_playwright() as p:
     # anymore. ---
     ts_rows.nth(2).locator(".step-own").click()
     page.wait_for_timeout(150)
-    print("owned summary after marking Turn Summoned fully owned:", owned_summary.inner_text())
+    print("owned summary after marking Instrument Mastery fully owned:", owned_summary.inner_text())
     assert owned_summary.inner_text() == "~113 pts owned, 140 to go", \
         f"FAIL: owned should blend in rank 3's guess (9) on top of the real 104 (95 + ranks 1-2's real 3+6), and to-go should drop to a plain real 140 - got {owned_summary.inner_text()!r}"
     assert owned_summary.locator(".is-estimate").count() == 1, \

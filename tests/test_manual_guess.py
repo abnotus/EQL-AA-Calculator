@@ -6,51 +6,40 @@
 # same guarantees as the algorithmic tiers, just a different evidence
 # source and a strictly lower confidence label.
 #
-# As of this writing there is no live AA with a manual cost guess at all -
-# every MANUAL_GUESSES entry that used to apply has since been fully
-# confirmed by the wiki. The one AA still carrying an unguessed cost (Turn
-# Summoned, Magician, rank 3 - rank 2 was confirmed real by the same scrape
-# that pinned Master of All's rework) already has its own real,
-# high-confidence algorithmic guess, so this seeds a synthetic
-# COST_GUESS_TABLE entry for it at the browser level instead, overriding
-# (not merely adding to) that real entry so the very-low/manual tier can be
-# tested in isolation: real app.js is a minified bundle whose identifiers
-# (including COST_GUESS_TABLE itself) don't survive esbuild's mangling, so
-# this intercepts the app.js request and serves app.src.js (the unminified,
-# readable, otherwise-identical generated artifact) with Turn Summoned's
-# real table entry replaced outright - a plain string-prepend (as opposed
-# to a full replace) would just get clobbered by the real entry declared
-# later in the same object literal, since it shares Turn Summoned's key.
-# Turn Summoned's own real cost/level data is untouched - only the
-# synthetic guess is injected, and only for this test's own page.
+# There's no live AA with a manual cost guess at all right now - every
+# MANUAL_GUESSES entry that used to apply has since been fully confirmed by
+# the wiki - so rather than pin to whichever real AA happens to have an
+# unconfirmed cost today (and rewrite this test again the next time the
+# wiki catches up, as has happened repeatedly to this file's siblings - see
+# tests/README.md), this fabricates the whole scenario on a stable,
+# player-log-verified host: Rapid Feign (Monk, wiki-sync/log_verified.json
+# confirms rank 3 reached 2026-09-16), an otherwise perfectly ordinary AA
+# with no auto/classRankCap/eligibleClasses/prereq quirks. Its real shape
+# is already exactly ranks:3, costs:["3","6","9"] - data.js's route below
+# only swaps rank 3's real "9" for a synthetic "?", and app.js's route
+# (serving the unminified app.src.js, since COST_GUESS_TABLE's identifier
+# doesn't survive esbuild's real bundling - see wiki_guess_fixtures.py)
+# gives that same slot a synthetic very-low/manual guess. Neither Rapid
+# Feign's real identity nor its real ranks 1-2 costs are otherwise touched -
+# only the one slot this test needs is synthetic, and only for this test's
+# own page.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
+from wiki_guess_fixtures import read_app_src, read_data_js, replace_object_literal, insert_table_entry
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
-APP_SRC_PATH = os.path.join(os.path.dirname(__file__), "..", "app.src.js")
-TARGET_KEY = '"class:Magician:turn-summoned": {'  # object-shaped - AA_ID_TABLE has the same key with a plain numeric value, need the COST_GUESS_TABLE occurrence specifically
-SYNTHETIC_VALUE = '{ "2": { value: 9, confidence: "very-low", basedOn: [], manual: true } }'
+
+FROZEN_AA = '{name:"Rapid Feign",ranks:3,costs:["3","6","?"],levelReq:"17",description:"Reduces the reuse time of your Feign Death skill by 1/3/5 second(s)."}'
+SYNTHETIC_ENTRY = '"class:Monk:rapid-feign": { "2": { value: 9, confidence: "very-low", basedOn: [], manual: true } }'
+
+
+def patched_data_js():
+    return replace_object_literal(read_data_js(), '{name:"Rapid Feign"', FROZEN_AA)
 
 
 def patched_app_src():
-    with open(APP_SRC_PATH, "r", encoding="utf-8") as f:
-        src = f.read()
-    key_start = src.find(TARGET_KEY)
-    assert key_start != -1, "FAIL: could not find class:Magician:turn-summoned's object-valued entry in app.src.js - has COST_GUESS_TABLE's declaration changed shape?"
-    brace_start = key_start + len(TARGET_KEY) - 1
-    depth = 0
-    i = brace_start
-    while True:
-        if src[i] == "{":
-            depth += 1
-        elif src[i] == "}":
-            depth -= 1
-            if depth == 0:
-                break
-        i += 1
-    value_end = i + 1
-    return src[:brace_start] + SYNTHETIC_VALUE + src[value_end:]
+    return insert_table_entry(read_app_src(), "const COST_GUESS_TABLE = {", SYNTHETIC_ENTRY)
 
 
 with sync_playwright() as p:
@@ -59,21 +48,22 @@ with sync_playwright() as p:
     errors = []
     page.on("pageerror", lambda exc: errors.append(str(exc)))
     page.on("dialog", lambda d: d.accept())
+    page.route("**/data.js*", lambda route: route.fulfill(body=patched_data_js(), content_type="application/javascript; charset=utf-8"))
     page.route("**/app.js*", lambda route: route.fulfill(body=patched_app_src(), content_type="application/javascript; charset=utf-8"))
 
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
 
-    # --- Turn Summoned: costs = [3, 6, ?], ranks 1-2 real. Magician isn't
-    # one of the 3 default class slots, so it needs swapping in first. The
+    # --- Rapid Feign: costs = [3, 6, ?], ranks 1-2 real. Monk isn't one of
+    # the 3 default class slots, so it needs swapping in first. The
     # synthetic entry above gives rank 3 (index 2) a manual, very-low-
-    # confidence value of 9, replacing its real high-confidence guess
-    # entirely. ---
-    page.select_option("#classSelect0", "Magician")
+    # confidence value of 9, overriding what would otherwise be a real "?"
+    # with no guess at all. ---
+    page.select_option("#classSelect0", "Monk")
     page.click('button[data-tab="classSlot0"]')
     page.wait_for_timeout(100)
-    ts = page.locator(".node", has=page.locator(".name", has_text="Turn Summoned"))
-    ts.click()
+    rf = page.locator(".node", has=page.locator(".name", has_text="Rapid Feign"))
+    rf.click()
     for _ in range(2):
         page.click("#incBtn")  # buy ranks 1-2, real costs 3+6 = 9
         page.wait_for_timeout(20)
@@ -82,7 +72,7 @@ with sync_playwright() as p:
     print("points spent after ranks 1-2 (real cost 9):", spent_before)
     assert spent_before == "0 / 9"
 
-    tag = ts.locator(".costtag")
+    tag = rf.locator(".costtag")
     print("tree costtag text:", tag.inner_text(), "class:", tag.get_attribute("class"))
     assert tag.inner_text() == "~9"
     cls = tag.get_attribute("class")
@@ -109,10 +99,10 @@ with sync_playwright() as p:
 
     # --- Buying the manually-guessed rank must cost costNum('?') == 0 in
     # spentPoints()/affordability terms, not the guessed 9 - manual guesses
-    # must never leak into real point math, same structural guarantee as
-    # algorithmic guesses. The topbar's "spent" side blends in the guess
-    # for display; Progression's own running total blends the same way too
-    # (~18, matching the topbar) instead of staying frozen at the real 9. ---
+    # must never leak into real point math. The topbar's "spent" side blends
+    # in the guess for display; Progression's own running total blends the
+    # same way too (~18, matching the topbar) instead of staying frozen at
+    # the real 9. ---
     page.click("#incBtn")  # buy rank 3 (real cost "?", math treats as 0)
     page.wait_for_timeout(50)
     spent_after = page.locator("#spentValue").inner_text()

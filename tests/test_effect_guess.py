@@ -7,34 +7,48 @@
 # and must never affect anything else (search, export text, real math,
 # which never looked at description text for spending purposes anyway).
 #
-# special::banestrike is the live example: real confirmed values for ranks
-# 1-2 (2/4), with ranks 3-4 each a "?" ("...by 2/4/?/?%.") - no sibling AA
-# shares its name, so each "?" only ever gets a hand-picked manual guess
-# (very-low confidence), not a sibling-matched one. It has been Baking
-# Mastery, Combat Fury, Spell Casting Subtlety, Packrat and (briefly)
-# Druid/Wizard's Quick Evacuation before now - each of the first four
-# resolved on the wiki in turn, and Quick Evacuation stopped being a
-# sibling pair when its two per-class entries turned out to be one shared
-# archetype AA in disguise and were merged into a single data.src.js entry
-# - each the expected way this test breaks. Regenerate effectGuesses.js,
-# then pick whatever still has a "?" left.
+# Pinning this to whichever real AA currently has an unconfirmed effect
+# value has been expensive: this test has been rewritten to a new live
+# example six times (Baking Mastery, Combat Fury, Spell Casting Subtlety,
+# Packrat, Druid/Wizard's Quick Evacuation, Banestrike) as each prior one
+# got confirmed by the wiki (or, for Quick Evacuation, turned out to be a
+# shared AA and got merged away) in turn. Rather than keep re-pinning, the
+# "?" and its guess are fabricated here on a stable, player-log-verified
+# host: Baking Mastery (general, wiki-sync/log_verified.json confirms rank
+# 3 reached 2026-09-21 - see wiki_guess_fixtures.py and
+# test_manual_guess.py's own header comment for the full mechanism). Its
+# real description is already "Reduces the chance of failing Baking
+# recipes by 10/25/50%." - rank 1 (10) stays real; ranks 2-3 (25/50) become
+# the fabricated "?"s.
 #
-# One thing to know when picking the next one: prefer an AA a player
-# actually spends points on. Unbound Companion is the only other AA with
-# an unresolved "?" at the time of writing, but it's auto-granted
-# (`auto: true`) rather than purchased, so driving it with #incBtn tests a
-# purchase that cannot happen in game - same reasoning that ruled out
-# Banestrike before it became the only option. Banestrike itself is
-# nominally unlocked by Slayer achievements rather than bought, but
-# data.src.js carries no `auto`/`autoRanks` flag for it, so the app already
-# treats it as an ordinary purchasable entry everywhere else - this test
-# just goes along with that existing simplification rather than inventing
-# a new one.
+# This also restores coverage the Banestrike/Packrat-era pins had lost:
+# those AAs have no sibling, so their guesses could only ever be the
+# manual/very-low tier (see test_guess_effects.py for that algorithm's own
+# data-independent coverage). Baking Mastery's real sibling group (the
+# other crafting masteries - test_guess_effects.py's own
+# group_for_name("Baking Mastery") == group_for_name("Alchemy Mastery")
+# assertion confirms this is a real, not fabricated, pairing) lets this
+# test exercise a medium-confidence, sibling-matched guess and its "from
+# Alchemy Mastery" tooltip wording instead - the richer case Quick
+# Evacuation used to cover before it stopped being two separate AAs.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
+from wiki_guess_fixtures import read_app_src, read_data_js, replace_object_literal, insert_table_entry
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
+
+FROZEN_AA = '{name:"Baking Mastery",ranks:3,costs:["2","4","6"],levelReq:"1",description:"Reduces the chance of failing Baking recipes by 10/?/?%."}'
+SYNTHETIC_ENTRY = '"general::baking-mastery": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Alchemy Mastery"] }, "2": { value: 50, confidence: "medium", basedOn: ["Alchemy Mastery"] } } }'
+
+
+def patched_data_js():
+    return replace_object_literal(read_data_js(), '{name:"Baking Mastery"', FROZEN_AA)
+
+
+def patched_app_src():
+    return insert_table_entry(read_app_src(), "const EFFECT_GUESS_TABLE = {", SYNTHETIC_ENTRY)
+
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=True)
@@ -42,94 +56,87 @@ with sync_playwright() as p:
     errors = []
     page.on("pageerror", lambda exc: errors.append(str(exc)))
     page.on("dialog", lambda d: d.accept())
+    page.route("**/data.js*", lambda route: route.fulfill(body=patched_data_js(), content_type="application/javascript; charset=utf-8"))
+    page.route("**/app.js*", lambda route: route.fulfill(body=patched_app_src(), content_type="application/javascript; charset=utf-8"))
 
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
-    page.click('button[data-tab="special"]')
+    page.click('button[data-tab="general"]')
 
-    bs = page.locator(".node", has=page.locator(".name", has_text="Banestrike"))
-    bs.click()
-    page.click("#incBtn")  # rank1, real value 2
+    bm = page.locator(".node", has=page.locator(".name", has_text="Baking Mastery"))
+    bm.click()
+    page.click("#incBtn")  # rank1, real value 10
     page.wait_for_timeout(30)
 
-    # --- Side panel: rank1 is real (bolded, no estimate); ranks 3 and 4's
+    # --- Side panel: rank1 is real (bolded, no estimate); ranks 2 and 3's
     # "?"s each show their own guess, styled and tooltipped independently,
-    # neither bolded (neither is the current rank yet). Rank 2 (also real,
-    # not yet current) renders as plain unstyled text. ---
+    # neither bolded (neither is the current rank yet). ---
     desc = page.locator("#sidePanel .desc").first
     html = desc.inner_html()
     print("side panel desc (rank1 current):", html)
-    assert '<span class="rank-highlight">2</span>' in html, "FAIL: the real current-rank value should still be bolded"
-    assert html.count('class="is-estimate tier-very-low" title="Estimated (very low confidence)') == 2, "FAIL: expected two independently-styled guessed ranks"
-    assert "~6" in html and "~8" in html
-    assert "hand-picked pending wiki confirmation" in html, "FAIL: expected the manual-guess tooltip wording"
-    assert html.rstrip().endswith("Complete Slayer achievements to progress this ability."), "FAIL: trailing prose after the progression should be untouched"
+    assert '<span class="rank-highlight">10</span>' in html, "FAIL: the real current-rank value should still be bolded"
+    assert html.count('class="is-estimate tier-medium" title="Estimated (medium confidence)') == 2, "FAIL: expected two independently-styled guessed ranks"
+    assert "~25" in html and "~50" in html
+    assert "from Alchemy Mastery" in html, "FAIL: expected the sibling-match tooltip wording"
+    assert html.rstrip().endswith("%."), "FAIL: description should end right after rank 3's guess"
     print("PASS: side panel shows the real current rank bolded and both guessed ranks estimate-styled, independently")
 
-    # --- Buy rank2 (also real) so the next-rank preview lands on rank3,
-    # the first guessed slot. ---
-    page.click("#incBtn")
-    page.wait_for_timeout(30)
-
-    # --- Progression tab: the next-rank preview (rank3, the first guessed
-    # one) shows the same estimate. Being the next rank it is also
-    # rank-highlighted, so this is the combined case in situ. ---
+    # --- Progression tab: the next-rank preview (rank2, the first guessed
+    # one, immediately after the one real rank) shows the same estimate.
+    # Being the next rank it is also rank-highlighted, so this is the
+    # combined case in situ. ---
     page.click('button[data-tab="progression"]')
     page.wait_for_timeout(100)
-    # Each rank purchased is its own progression row (one per
-    # purchaseOrder entry), so two rows named "Banestrike" exist here
-    # (ranks 1 and 2) - the one just bought (rank2, the later row) is the
-    # one whose "next rank" preview is rank3.
-    row = page.locator(".progression-row", has=page.locator(".step-name", has_text="Banestrike")).last
+    row = page.locator(".progression-row", has=page.locator(".step-name", has_text="Baking Mastery"))
     row.locator(".step-expand").click()
     page.wait_for_timeout(100)
     prog_desc = page.locator(".progression-next-rank .desc").inner_html()
     print("Progression next-rank desc:", prog_desc)
-    assert "~6" in prog_desc and "is-estimate" in prog_desc and "tier-very-low" in prog_desc
+    assert "~25" in prog_desc and "is-estimate" in prog_desc and "tier-medium" in prog_desc
     print("PASS: Progression's next-rank preview shows the same guess")
 
-    # --- Buy rank3 - now the guessed slot IS the current rank too. Combined
+    # --- Buy rank2 - now the guessed slot IS the current rank too. Combined
     # rank-highlight + is-estimate case: color/background must resolve to
     # the tier color, not the default red rank-highlight background (the
     # exact CSS-cascade pitfall the Progression cost pill hit earlier). ---
-    page.click('button[data-tab="special"]')
-    bs.click()
+    page.click('button[data-tab="general"]')
+    bm.click()
     page.click("#incBtn")
     page.wait_for_timeout(30)
     span = page.locator("#sidePanel .desc .is-estimate.rank-highlight").first
     cls = span.get_attribute("class")
     print("combined rank-highlight + is-estimate class:", cls)
-    assert "is-estimate" in cls and "tier-very-low" in cls and "rank-highlight" in cls
+    assert "is-estimate" in cls and "tier-medium" in cls and "rank-highlight" in cls
     color = span.evaluate("el => getComputedStyle(el).color")
     bg = span.evaluate("el => getComputedStyle(el).backgroundColor")
     print("combined span color/background:", color, bg)
-    assert color == "rgb(107, 100, 89)", f"FAIL: expected the very-low-tier color to win, got {color}"
-    assert bg == "rgba(107, 100, 89, 0.12)", f"FAIL: expected the very-low-tier background, not the default red rank-highlight one, got {bg}"
+    assert color == "rgb(166, 124, 217)", f"FAIL: expected the medium-tier color to win, got {color}"
+    assert bg == "rgba(166, 124, 217, 0.12)", f"FAIL: expected the medium-tier background, not the default red rank-highlight one, got {bg}"
     print("PASS: a slot that's both the current rank and a guess resolves to the tier's own color and background")
 
     # --- Browse: rank-agnostic reference view - the guess still shows, but
     # with no rank-highlight class at all (there's no "current rank" here). ---
     page.click("#browseToggle")
-    page.fill("#globalSearch", "Banestrike")
+    page.fill("#globalSearch", "Baking Mastery")
     page.wait_for_timeout(100)
-    card = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Banestrike")).first
+    card = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Baking Mastery")).first
     browse_html = card.locator(".desc").inner_html()
     print("Browse desc html:", browse_html)
-    assert "~6" in browse_html and "~8" in browse_html and "is-estimate" in browse_html
+    assert "~25" in browse_html and "~50" in browse_html and "is-estimate" in browse_html
     assert "rank-highlight" not in browse_html, "FAIL: Browse has no current rank, nothing should be bolded"
     page.fill("#globalSearch", "")
     page.click("#browseToggle")
     print("PASS: Browse shows the guess with no rank-highlighting (no current rank concept there)")
 
     # --- Summary tab: picked AAs show their description at the rank you
-    # hold, same guess/bold treatment as the side panel. Current rank (3)
+    # hold, same guess/bold treatment as the side panel. Current rank (2)
     # happens to be a guessed slot too, same combined case as above. ---
     page.click('button[data-tab="summary"]')
     page.wait_for_timeout(100)
-    summary_card = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Banestrike"))
+    summary_card = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Baking Mastery"))
     summary_html = summary_card.locator(".desc").inner_html()
     print("Summary desc html:", summary_html)
-    assert "~6" in summary_html and "is-estimate" in summary_html and "rank-highlight" in summary_html
+    assert "~25" in summary_html and "is-estimate" in summary_html and "rank-highlight" in summary_html
     print("PASS: Summary shows the guess, bolded (it's the currently-held rank there)")
 
     print("ERRORS:", errors)
