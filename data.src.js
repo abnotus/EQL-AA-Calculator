@@ -72,7 +72,6 @@ const AA_DATA = {
     { name: "Physical Enhancement", ranks: 1, costs: ["3"], levelReq: "1", eligibleClasses: ["Bard","Beastlord","Berserker","Monk","Paladin","Ranger","Rogue","Shadow Knight","Warrior"], description: "Increases melee avoidance by 2% and armor class soft cap by 2%." },
     { name: "Point Blank Fire", ranks: 1, costs: ["0"], levelReq: "1", eligibleClasses: ["Berserker","Monk","Ranger","Rogue"], description: "Passively grants double and triple attack from ranged attacks regardless of toggle state. Toggleable: prefers ranged weapons for auto attacks, even in melee range." },
     { name: "Quick Damage", ranks: 3, costs: ["3","6","9"], levelReq: "1", eligibleClasses: ["Bard","Beastlord","Cleric","Druid","Enchanter","Magician","Necromancer","Paladin","Ranger","Shadow Knight","Shaman","Wizard"], description: "Reduces the base cast time of 3+ second direct damage spells by 2/5/10%." },
-    { name: "Quick Evacuation", ranks: 3, costs: ["3","6","9"], levelReq: "1", eligibleClasses: ["Druid","Wizard"], description: "Reduces the cast time of your evacuation and succor spells and abilities by 10/25/50%." },
     { name: "Rampage", ranks: 1, costs: ["5"], levelReq: "30", eligibleClasses: ["Berserker","Warrior"], description: "Activated: performs a single primary combat round on all creatures within 40 feet. Cooldown is reduced by 1 minute each time Frenzy or Cleave is used (40 seconds if in Berserker Stance). (Refresh 0:10:00)" },
     { name: "Spell Casting Deftness", ranks: 3, costs: ["2","4","6"], levelReq: "1", eligibleClasses: ["Bard","Beastlord","Cleric","Druid","Enchanter","Magician","Necromancer","Paladin","Ranger","Shadow Knight","Shaman","Wizard"], description: "Reduces beneficial spell cast time (3+ seconds) by 10/25/50%." },
     { name: "Spell Casting Mastery", ranks: 3, costs: ["2","4","6"], levelReq: "1", eligibleClasses: ["Cleric","Druid","Enchanter","Magician","Necromancer","Shaman","Wizard"], description: "Reduces all spell mana cost by 2/5/10%." },
@@ -118,6 +117,7 @@ const AA_DATA = {
     ],
     "Druid": [
       { name: "Enhanced Root", ranks: 1, costs: ["5"], levelReq: "1", description: "Reduces the chance that an NPC target entangled by your root spells will break free when struck by a non-melee attack by 50%." },
+      { name: "Quick Evacuation", ranks: 3, costs: ["3","6","9"], levelReq: "1", description: "Reduces the cast time of your evacuation and succor spells and abilities by 10/25/50%." },
       { name: "Unbound Nature", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases the chance that you will land a critical hit with a spell by 2/3/4%. Rank 2 requires level 30, rank 3 requires level 50." }
     ],
     "Enchanter": [
@@ -189,6 +189,7 @@ const AA_DATA = {
     "Wizard": [
       { name: "Improved Familiar", ranks: 1, costs: ["6"], levelReq: "45", description: "Activated: summons your familiar, increasing critical direct damage spell damage by 3%, spell casting level by 9, your cold, disease, fire, magic, and poison resistances by 25 points each, mana regeneration by 6 points, max mana by 200 points, and grants see invisible." },
       { name: "Mana Burn", ranks: 1, costs: ["5"], levelReq: "45", prereq: "Requires Mental Clarity at level 3", description: "Activated: consumes up to 3000 mana to deal 4x the consumed mana as direct damage; prevents additional Mana Burn spells from landing on that target for 0:01:00." },
+      { name: "Quick Evacuation", ranks: 3, costs: ["3","6","9"], levelReq: "1", sharedWithClass: "Druid", description: "Reduces the cast time of your evacuation and succor spells and abilities by 10/25/50%." },
       { name: "Strong Root", ranks: 1, costs: ["5"], levelReq: "35", description: "Activated: roots your target in place for up to 48 seconds with a 300 point resist modifier and a 2 second cast time." },
       { name: "Unbound Destruction", ranks: 3, costs: ["0","0","0"], levelReq: "12", auto: true, description: "Increases your chance to land a critical hit with your direct damage spells by 2/4/6%. Rank 2 requires level 30, rank 3 requires level 50." }
     ]

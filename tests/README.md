@@ -74,7 +74,7 @@ cost via Python's negative indexing.
 `test_progression_drag_warn_cache.py`, `test_save_build_partial_failure.py`,
 `test_builds_cross_tab_sync.py`, `test_decompression_bomb.py`,
 `test_auto_grant_class_eligibility.py`, `test_hostile_numeric_coercion.py`,
-`test_browse_unowned_filter.py`, `test_quick_evacuation_merge_migration.py`
+`test_browse_unowned_filter.py`, `test_quick_evacuation_shared_rank.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -131,7 +131,7 @@ python tests/test_builds_cross_tab_sync.py
 python tests/test_decompression_bomb.py
 python tests/test_hostile_numeric_coercion.py
 python tests/test_browse_unowned_filter.py
-python tests/test_quick_evacuation_merge_migration.py
+python tests/test_quick_evacuation_shared_rank.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -169,11 +169,13 @@ ever reappears, prefer swapping back to it over keeping the synthetic one.
 `test_effect_guess.py`'s Banestrike has two confirmed ranks and two
 unconfirmed ones, each resolving to a hand-picked, very-low-confidence
 manual guess rather than a sibling match (no other AA shares its name).
-Druid/Wizard's Quick Evacuation held this spot before it turned out to be
-one shared archetype AA rather than two per-class ones; merging it into a
-single, fully-confirmed entry removed the sibling pair this test used to
-rely on. Should the guess table ever run out of entries entirely, this
-test would need a different anchor again; the sibling-matching and
+Druid/Wizard's Quick Evacuation held this spot before its own last "?"
+got confirmed - the two copies' only remaining difference was cosmetic
+%-placement in the wiki text around an otherwise-identical, already-known
+value, which is what made them recognizable as one real shared investment
+in the first place (see `logic.js`'s `sharedCanonical`). Should the guess
+table ever run out of entries entirely, this test would need a different
+anchor again; the sibling-matching and
 interpolation rules themselves are covered data-independently by
 `test_guess_effects.py`. When picking its next example, prefer an AA a
 player actually spends points on. Banestrike is nominally unlocked by
@@ -348,3 +350,12 @@ rebuilding and committing.
   `ownedRank` (`logic.js`), `state.browseUnownedOnly`, and `renderBrowse`'s
   `.owned`/`.owned-info` treatment. Combines with the existing category
   filter rather than replacing it. `test_browse_unowned_filter.py`.
+- **A `sharedWithClass` AA's cross-class rank sharing.** `sharedCanonical`
+  in `logic.js` and every chokepoint routed through it
+  (`effectiveRankScoped`, `changeRank`, `ownedRank`/`setOwnedRank`,
+  `isHiddenScoped`/`setHiddenScoped`, `pushPurchase`/`popLastPurchase`).
+  Quick Evacuation (Druid/Wizard) is the only AA with the field as of this
+  writing - displayed as a completely ordinary row on each of its two
+  classes' own tabs, matching the game, but reading and writing one shared
+  rank/owned/hidden slot underneath regardless of which tab is used to
+  change it. `test_quick_evacuation_shared_rank.py`.

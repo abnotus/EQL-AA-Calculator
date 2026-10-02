@@ -72,7 +72,9 @@ const LEGACY_AA_ORDER = {
 // ‘/’ are the curly "smart quotes" a wiki CMS's auto-formatting
 // commonly substitutes for a straight apostrophe - must be kept equivalent
 // to wiki-sync/common.py's own slugify by hand (see that file's docstring).
-function slugify(name) {
+// Exported for logic.js's sharedWithClass resolution (see aaAt's own
+// comment) - every other internal use here stays private.
+export function slugify(name) {
   return String(name || "")
     .toLowerCase()
     .replace(/['‘’]/g, "")
@@ -128,6 +130,15 @@ function currentEntries(scope, className) {
 // The actual AA object at idx in today's AA_DATA, or null. Used to validate
 // deserialized rank values against the AA's real max rank instead of trusting
 // whatever number was in a save file.
+//
+// A `sharedWithClass` field (Quick Evacuation's Wizard copy, as of this
+// writing) marks a class-scoped entry as a second, genuinely-the-same
+// listing of an ability a player can only ever invest in once - displayed
+// on its own class's tab like any other, exactly as the game itself shows
+// it, but redirected to the named class's own copy for every rank/owned/
+// purchase read and write (logic.js's sharedCanonical and its callers).
+// Each copy keeps its own independent aaIds.js id and share-code slot,
+// which simply never gets written to for the non-canonical copy.
 export function aaAt(scope, className, idx) {
   return currentList(scope, className)[idx] || null;
 }

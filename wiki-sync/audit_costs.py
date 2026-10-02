@@ -6,7 +6,8 @@ max-AA total and a real max-level player's reported total - see
 scrape_wiki.py's own docstring and the project's CLAUDE.md ("Open data
 question") for that discrepancy's history and current figures (a 6-point
 gap as of 2026-10-02, down from the original 13 once dataset drift and
-Quick Evacuation's duplicate-class-entry bug were accounted for).
+Quick Evacuation's intentional two-entry, one-real-investment shape
+(`sharedWithClass` in data.src.js) were accounted for).
 
 Reuses guess_costs.py's own sibling-matching machinery (same reference
 pool, same monotonic-only filter, same voting rules) but inverts its use:

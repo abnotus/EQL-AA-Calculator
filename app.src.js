@@ -98,7 +98,7 @@ const AA_ID_TABLE = {
   "class:Cleric:turn-undead": 83,
   "class:Cleric:unbound-boon": 84,
   "class:Druid:enhanced-root": 85,
-  "archetype::quick-evacuation": 86,
+  "class:Druid:quick-evacuation": 86,
   "class:Druid:unbound-nature": 87,
   "class:Enchanter:unbound-clarity": 88,
   "class:Magician:companions-fury": 89,
@@ -269,6 +269,8 @@ const LEGACY_AA_ORDER = {
 // ‘/’ are the curly "smart quotes" a wiki CMS's auto-formatting
 // commonly substitutes for a straight apostrophe - must be kept equivalent
 // to wiki-sync/common.py's own slugify by hand (see that file's docstring).
+// Exported for logic.js's sharedWithClass resolution (see aaAt's own
+// comment) - every other internal use here stays private.
 function slugify(name) {
   return String(name || "")
     .toLowerCase()
@@ -325,6 +327,15 @@ function currentEntries(scope, className) {
 // The actual AA object at idx in today's AA_DATA, or null. Used to validate
 // deserialized rank values against the AA's real max rank instead of trusting
 // whatever number was in a save file.
+//
+// A `sharedWithClass` field (Quick Evacuation's Wizard copy, as of this
+// writing) marks a class-scoped entry as a second, genuinely-the-same
+// listing of an ability a player can only ever invest in once - displayed
+// on its own class's tab like any other, exactly as the game itself shows
+// it, but redirected to the named class's own copy for every rank/owned/
+// purchase read and write (logic.js's sharedCanonical and its callers).
+// Each copy keeps its own independent aaIds.js id and share-code slot,
+// which simply never gets written to for the non-canonical copy.
 function aaAt(scope, className, idx) {
   return currentList(scope, className)[idx] || null;
 }
@@ -1233,50 +1244,6 @@ function loadLocal() {
   return readJsonFromStorage(STORAGE_KEY, isObject);
 }
 
-// Quick Evacuation was two per-class entries (Druid, Wizard) that were
-// really the same shared investment in-game the whole time (confirmed by
-// the player's own log: one purchase, one ability number, regardless of
-// which of the two classes was active) - merged into one archetype entry.
-// A save from before the merge has its rank filed under classes.Druid or
-// classes.Wizard; moved into archetype here, on the raw name-keyed object,
-// before deserializeRanks ever runs - otherwise the old key simply no
-// longer resolves to anything and the rank is silently dropped, reported
-// like a genuine removal instead of surviving the merge. If a save
-// somehow has a value under both (not reachable through normal play
-// before today, since each class's rank was tracked independently) the
-// higher one wins, rather than guessing which is "right".
-function migrateQuickEvacuationRanks(ranksLike) {
-  if (!ranksLike || typeof ranksLike !== "object") return;
-  const classes = ranksLike.classes;
-  if (!classes) return;
-  const fromDruid = classes.Druid && classes.Druid["quick-evacuation"];
-  const fromWizard = classes.Wizard && classes.Wizard["quick-evacuation"];
-  if (fromDruid === undefined && fromWizard === undefined) return;
-  if (classes.Druid) delete classes.Druid["quick-evacuation"];
-  if (classes.Wizard) delete classes.Wizard["quick-evacuation"];
-  const merged = Math.max(fromDruid || 0, fromWizard || 0);
-  ranksLike.archetype = ranksLike.archetype || {};
-  if (ranksLike.archetype["quick-evacuation"] === undefined) {
-    ranksLike.archetype["quick-evacuation"] = merged;
-  }
-}
-
-// Same merge as migrateQuickEvacuationRanks, for a purchaseOrder array
-// (name-keyed {scope, className, key} entries) instead of a ranks store -
-// every entry pointing at the old per-class identity is repointed at the
-// new shared one in place, so reconcilePurchaseOrderCounts (which already
-// runs after every load) trims any resulting count mismatch the normal
-// way instead of the entries just failing to resolve.
-function migrateQuickEvacuationPurchaseOrder(purchaseOrder) {
-  if (!Array.isArray(purchaseOrder)) return;
-  purchaseOrder.forEach((e) => {
-    if (e && e.key === "quick-evacuation" && e.scope === "class" && (e.className === "Druid" || e.className === "Wizard")) {
-      e.scope = "archetype";
-      e.className = null;
-    }
-  });
-}
-
 // Returns { droppedRanks } — how many saved rank entries had a key that no
 // longer resolves to a current AA. Callers use this to tell the user
 // something vanished, instead of a build that's just quietly smaller than
@@ -1302,14 +1269,6 @@ function applyLoaded(loaded) {
   // to the wrong ability. Either way, an AA that no longer resolves is
   // dropped rather than guessed at.
   const isLegacy = !(typeof loaded.v === "number" && loaded.v >= 4);
-  // The pre-v4 index-based path is left unmigrated - old enough, and
-  // narrow enough a window, that a save still on it having Quick
-  // Evacuation trained under the old per-class split isn't worth the
-  // extra legacy-index bookkeeping this merge would otherwise need.
-  if (!isLegacy) {
-    migrateQuickEvacuationRanks(loaded.ranks);
-    migrateQuickEvacuationPurchaseOrder(loaded.purchaseOrder);
-  }
   let droppedRanks = 0;
   if (loaded.ranks && typeof loaded.ranks === "object") {
     const result = isLegacy
@@ -1352,7 +1311,6 @@ function applyLoaded(loaded) {
 function loadAndApplyOwned(rawMainPayload) {
   const stored = loadOwnedProfileRaw(state.ownedProfileId);
   if (stored && stored.owned && typeof stored.owned === "object") {
-    migrateQuickEvacuationRanks(stored.owned);
     const result = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key));
     state.owned = result.ranks;
     return { droppedOwned: result.dropped };
@@ -1361,7 +1319,6 @@ function loadAndApplyOwned(rawMainPayload) {
     // owned only ever existed in the main payload under SAVE_FORMAT_VERSION
     // 4 (it shipped well after v4 became name-keyed) - no legacy index-based
     // form to handle here, unlike ranks/purchaseOrder above.
-    migrateQuickEvacuationRanks(rawMainPayload.owned);
     const result = deserializeRanks(rawMainPayload.owned, (scope, cls, key) => idxForKey(scope, cls, key));
     state.owned = result.ranks;
     saveOwned();
@@ -1391,7 +1348,6 @@ function payloadOwnedHasContent(owned) {
 // caller.
 function adoptImportedOwnedAsNewProfile(ownedField) {
   const newId = genId();
-  migrateQuickEvacuationRanks(ownedField);
   const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
   state.ownedProfileId = newId;
   state.owned = result.ranks;
@@ -1651,8 +1607,9 @@ function effectiveRankScoped(scope, className, idx) {
     // else gates who this free rank goes to.
     return classActive && isClassEligible(aa) && state.charLevel >= levelReq ? aa.ranks : 0;
   }
-  const store = scope === "class" ? (state.ranks.classes[className] || {}) : (state.ranks[scope] || {});
-  const purchased = store[idx] || 0;
+  const canonical = sharedCanonical(scope, className, idx);
+  const store = canonical.scope === "class" ? (state.ranks.classes[canonical.className] || {}) : (state.ranks[canonical.scope] || {});
+  const purchased = store[canonical.idx] || 0;
   if (aa && aa.autoRanks) {
     const levelReq = parseInt(aa.levelReq, 10) || 1;
     const freeRanks = classActive && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
@@ -1677,14 +1634,35 @@ function autoRanksOffsetScoped(scope, className, idx) {
   return autoRanksOffset(aaAt(scope, className, idx));
 }
 
-function getRanksStore(catKey) {
-  const slot = classSlotIndex(catKey);
-  if (slot >= 0) {
-    const className = state.selectedClasses[slot];
+function getRanksStoreScoped(scope, className) {
+  if (scope === "class") {
     if (!state.ranks.classes[className]) state.ranks.classes[className] = {};
     return state.ranks.classes[className];
   }
-  return state.ranks[catKey];
+  return state.ranks[scope];
+}
+
+// A `sharedWithClass`-tagged AA (Quick Evacuation's Wizard copy, as of this
+// writing - see keys.js's aaAt comment) displays as a completely normal row
+// on its own class's tab, matching the game, but its rank/owned/purchase
+// state all lives under the named class's own copy of the same AA instead
+// of its own - this resolves (scope, className, idx) to wherever it
+// actually reads/writes. Every other AA maps to itself.
+//
+// spentForClass/spentOnInactiveClasses (the Other Classes per-class
+// subtotals) deliberately aren't routed through this: they walk a class's
+// raw store directly rather than per-idx, so a shared AA's cost always
+// attributes to its canonical class alone. The one visible quirk is a pair
+// split across exactly one active, one inactive class: the Other Classes
+// tab can list the inactive one as holding points the player can actually
+// still edit live, from the other, active copy. Narrow enough (one AA pair
+// in the whole dataset) that threading a redirect through every per-class
+// sum isn't worth it for a single-pair special case.
+function sharedCanonical(scope, className, idx) {
+  const aa = aaAt(scope, className, idx);
+  if (!aa || !aa.sharedWithClass) return { scope, className, idx };
+  const canonicalIdx = idxForKey("class", aa.sharedWithClass, slugify(aa.name));
+  return canonicalIdx >= 0 ? { scope: "class", className: aa.sharedWithClass, idx: canonicalIdx } : { scope, className, idx };
 }
 
 // Unlike getRanksStore, keyed by scope/className directly rather than a
@@ -1708,8 +1686,9 @@ function getOwnedStore(scope, className) {
 }
 
 function ownedRank(scope, className, idx) {
-  const store = scope === "class" ? state.owned.classes[className] : state.owned[scope];
-  return (store && store[idx]) || 0;
+  const canonical = sharedCanonical(scope, className, idx);
+  const store = canonical.scope === "class" ? state.owned.classes[canonical.className] : state.owned[canonical.scope];
+  return (store && store[canonical.idx]) || 0;
 }
 
 // Pure state mutation, same spirit as changeRank/moveEntry: sets the owned
@@ -1717,10 +1696,11 @@ function ownedRank(scope, className, idx) {
 // doesn't clamp against the AA's rank count — the caller (Progression's
 // toggle) is responsible for passing a sane value.
 function setOwnedRank(scope, className, idx, rank) {
-  const store = getOwnedStore(scope, className);
-  const from = store[idx] || 0;
-  if (rank <= 0) delete store[idx]; else store[idx] = rank;
-  lastMutation = { type: "own", scope, className, idx, from, to: rank };
+  const canonical = sharedCanonical(scope, className, idx);
+  const store = getOwnedStore(canonical.scope, canonical.className);
+  const from = store[canonical.idx] || 0;
+  if (rank <= 0) delete store[canonical.idx]; else store[canonical.idx] = rank;
+  lastMutation = { type: "own", scope: canonical.scope, className: canonical.className, idx: canonical.idx, from, to: rank };
   // Owned persists to its own storage key (state.js), not the build
   // payload saveLocal writes — nothing here touches ranks/purchaseOrder.
   saveOwned();
@@ -1741,7 +1721,8 @@ function getHiddenStore(scope, className) {
 // outside the 3 active class slots, where categoryToScopeClassName would
 // return null - same split as costGuess/costGuessScoped.
 function isHiddenScoped(scope, className, idx) {
-  return !!getHiddenStore(scope, className)[idx];
+  const canonical = sharedCanonical(scope, className, idx);
+  return !!getHiddenStore(canonical.scope, canonical.className)[canonical.idx];
 }
 
 function isHidden(catKey, idx) {
@@ -1750,8 +1731,9 @@ function isHidden(catKey, idx) {
 }
 
 function setHiddenScoped(scope, className, idx, hidden) {
-  const store = getHiddenStore(scope, className);
-  if (hidden) store[idx] = true; else delete store[idx];
+  const canonical = sharedCanonical(scope, className, idx);
+  const store = getHiddenStore(canonical.scope, canonical.className);
+  if (hidden) store[canonical.idx] = true; else delete store[canonical.idx];
   // Display preference, not build state - its own storage key (state.js),
   // never lastMutation/saveLocal, so hiding something is never part of
   // Undo Last and never marks the build itself as changed.
@@ -1834,19 +1816,6 @@ function removeWaypoint(pts) {
   saveLocal();
 }
 
-// Purchase-order entries key AA picks by class NAME (not slot position), since class
-// names are already unique and stable — swapping which slot a class occupies shouldn't
-// orphan its place in the progression list.
-function scopeForCategory(category) {
-  const slot = classSlotIndex(category);
-  return slot >= 0 ? "class" : category;
-}
-
-function classNameForCategory(category) {
-  const slot = classSlotIndex(category);
-  return slot >= 0 ? state.selectedClasses[slot] : null;
-}
-
 function categoryToScopeClassName(category) {
   const slot = classSlotIndex(category);
   return slot >= 0 ? { scope: "class", className: state.selectedClasses[slot] } : { scope: category, className: null };
@@ -1895,15 +1864,13 @@ function resolveEntryCategory(entry) {
   return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
 }
 
-function pushPurchase(category, idx) {
-  state.purchaseOrder.push({ scope: scopeForCategory(category), className: classNameForCategory(category), idx });
+function pushPurchase(scope, className, idx) {
+  state.purchaseOrder.push({ scope, className, idx });
 }
 
 // Returns the removed entry and the array position it was removed from (needed to
 // restore it to the same spot later), or null if no matching entry was found.
-function popLastPurchase(category, idx) {
-  const scope = scopeForCategory(category);
-  const className = classNameForCategory(category);
+function popLastPurchase(scope, className, idx) {
   for (let i = state.purchaseOrder.length - 1; i >= 0; i--) {
     const e = state.purchaseOrder[i];
     if (e.scope === scope && e.idx === idx && (e.className || null) === (className || null)) {
@@ -2565,29 +2532,33 @@ function autoFloor(aa) {
 // Pure state mutation — no rendering, no user feedback. Returns whether a change
 // actually happened, so callers (the UI layer) decide what to do about it.
 function changeRank(category, idx, delta) {
-  const store = getRanksStore(category);
+  const { scope, className } = categoryToScopeClassName(category);
   const aa = getList(category)[idx];
+  // A sharedWithClass AA (see keys.js's aaAt comment) reads/writes its
+  // canonical copy's own slot regardless of which class's tab triggered
+  // this - both copies always report and change the same rank.
+  const canonical = sharedCanonical(scope, className, idx);
+  const store = getRanksStoreScoped(canonical.scope, canonical.className);
   // For an autoRanks AA, the free ranks are a floor you can never buy below (they're
   // not "purchased" at all) — step from the current effective rank, not the raw stored
   // one. See autoFloor for why the floor itself is level-gated.
   const floor = autoFloor(aa);
-  const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[idx] || 0);
+  const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[canonical.idx] || 0);
   const next = cur + delta;
   if (next < floor || next > aa.ranks) return false;
   // At or below the floor, nothing counts as an actual purchase (floor===0
   // already worked this way at next===0). Without this, refunding an
   // autoRanks AA back to its floor left a phantom store entry forever.
-  if (next <= floor) delete store[idx]; else store[idx] = next;
+  if (next <= floor) delete store[canonical.idx]; else store[canonical.idx] = next;
   if (delta > 0) {
-    pushPurchase(category, idx);
+    pushPurchase(canonical.scope, canonical.className, canonical.idx);
     // Stored as {scope, className, idx}, not the raw category (slot key) -
     // a slot key means "whatever class occupies this slot now", which
     // stops meaning the class that was here at purchase time once slots
     // get swapped. resolveEntryCategory re-resolves via className instead.
-    const { scope, className } = categoryToScopeClassName(category);
-    lastMutation = { type: "add", entry: { scope, className, idx } };
+    lastMutation = { type: "add", entry: { scope: canonical.scope, className: canonical.className, idx: canonical.idx } };
   } else {
-    const popped = popLastPurchase(category, idx);
+    const popped = popLastPurchase(canonical.scope, canonical.className, canonical.idx);
     lastMutation = popped ? { type: "remove", entry: popped.entry, position: popped.position } : null;
   }
   saveLocal();
@@ -2638,7 +2609,7 @@ function undoLastMutation() {
   if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
   const aa = getList(category)[m.entry.idx];
   if (!aa) return { changed: false, message: "Can't undo — that AA is no longer available." };
-  const store = getRanksStore(category);
+  const store = getRanksStoreScoped(m.entry.scope, m.entry.className);
   // Same autoRanks special-case changeRank itself applies: a decrement that
   // lands at or below the free floor deletes the store entry, so the raw
   // store value alone under-reads an autoRanks AA's true current rank.
