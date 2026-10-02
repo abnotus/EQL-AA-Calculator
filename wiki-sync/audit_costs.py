@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
 One-off diagnostic: hunts for a confirmed cost that disagrees with strong
-sibling consensus, as a way to localize the 13-point gap between this
-dataset's max-AA total (1185) and a real max-level player's reported total
-(1172) - see scrape_wiki.py's own docstring for that discrepancy's history.
+sibling consensus, as a way to localize the gap between this dataset's
+max-AA total and a real max-level player's reported total - see
+scrape_wiki.py's own docstring and the project's CLAUDE.md ("Open data
+question") for that discrepancy's history and current figures (a 6-point
+gap as of 2026-10-02, down from the original 13 once dataset drift and
+Quick Evacuation's duplicate-class-entry bug were accounted for).
 
 Reuses guess_costs.py's own sibling-matching machinery (same reference
 pool, same monotonic-only filter, same voting rules) but inverts its use:
@@ -32,7 +35,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import guess_costs  # noqa: E402 - reuse parse_data_src/guess_for_entry/is_monotonic as-is
 
-GAP = 13  # the discrepancy this run is hunting - see the module docstring
+GAP = 6  # the discrepancy this run is hunting - see the module docstring
 
 
 def build_reference_pool(entries, exclude_idx):
@@ -105,7 +108,7 @@ def main():
         print("(none found)")
     for e, idx, real, g in sorted(anomalies, key=lambda a: -abs(a[2] - a[3]["value"])):
         diff = real - g["value"]
-        flag = "  <=== exactly the 13-point gap" if abs(diff) == GAP else ""
+        flag = f"  <=== exactly the {GAP}-point gap" if abs(diff) == GAP else ""
         print(f'{e["scope"]}:{e["className"] or ""}:{e["name"]}  rank {idx + 1}/{e["ranks"]}: '
               f'real={real}  sibling-predicted={g["value"]} ({g["confidence"]}, '
               f'based on {", ".join(g["basedOn"])})  diff={diff:+d}{flag}')
@@ -117,7 +120,7 @@ def main():
         print("(none found)")
     for e, values, matches in phantoms:
         last_cost = values[-1]
-        flag = "  <=== exactly the 13-point gap" if last_cost == GAP else ""
+        flag = f"  <=== exactly the {GAP}-point gap" if last_cost == GAP else ""
         match_names = ", ".join(f'{m["name"]} ({m["scope"]}:{m["className"] or ""})' for m in matches)
         print(f'{e["scope"]}:{e["className"] or ""}:{e["name"]}  ranks={e["ranks"]}  '
               f'costs={list(values)}  last rank costs {last_cost}{flag}  '

@@ -14,6 +14,5 @@
 // guess never substitutes for a real value anywhere descriptions are
 // otherwise read (search, export text) - purely a display hint.
 export const EFFECT_GUESS_TABLE = {
-  "class:Druid:quick-evacuation": { "0": { "1": { value: 25, confidence: "medium", basedOn: ["Quick Evacuation"] }, "2": { value: 50, confidence: "medium", basedOn: ["Quick Evacuation"] } } },
   "special::banestrike": { "0": { "2": { value: 6, confidence: "very-low", basedOn: [], manual: true }, "3": { value: 8, confidence: "very-low", basedOn: [], manual: true } } }
 };

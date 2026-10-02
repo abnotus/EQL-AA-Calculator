@@ -68,9 +68,10 @@ def normalize_name(name):
 
 def load_data_src():
     """normalized name -> list of (scope, className, costs, canonicalName) -
-    more than one entry means the name is ambiguous across classes (e.g.
-    Quick Evacuation), which this treats the same as "not found" rather
-    than guessing."""
+    more than one entry means the name is ambiguous across classes (true of
+    Druid/Wizard's Quick Evacuation before it turned out to be one shared
+    archetype AA and was merged into a single entry), which this treats the
+    same as "not found" rather than guessing."""
     by_name = {}
     for scope, className, s in iter_data_entries(DATA_SRC):
         nm = DATA_ENTRY_NAME.search(s)

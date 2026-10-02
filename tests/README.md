@@ -74,7 +74,7 @@ cost via Python's negative indexing.
 `test_progression_drag_warn_cache.py`, `test_save_build_partial_failure.py`,
 `test_builds_cross_tab_sync.py`, `test_decompression_bomb.py`,
 `test_auto_grant_class_eligibility.py`, `test_hostile_numeric_coercion.py`,
-`test_browse_unowned_filter.py`
+`test_browse_unowned_filter.py`, `test_quick_evacuation_merge_migration.py`
 drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
@@ -131,6 +131,7 @@ python tests/test_builds_cross_tab_sync.py
 python tests/test_decompression_bomb.py
 python tests/test_hostile_numeric_coercion.py
 python tests/test_browse_unowned_filter.py
+python tests/test_quick_evacuation_merge_migration.py
 ```
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
@@ -143,7 +144,7 @@ clicks.
 ## Tests pinned to live data
 
 Several tests use specific live AAs as their guessed-value examples:
-`test_effect_guess.py`'s Quick Evacuation, `test_cost_guess.py`'s Combat Fury
+`test_effect_guess.py`'s Banestrike, `test_cost_guess.py`'s Combat Fury
 and Turn Summoned, `test_guess_all_tabs.py`'s Cannibalization and Turn
 Summoned, and `test_estimated_total.py`'s Combat Agility and Turn Summoned.
 A wiki scrape that confirms one of those specific ranks breaks that test.
@@ -165,17 +166,24 @@ enough, since Turn Summoned's own entry declared later in the same object
 literal would win over a prepended duplicate key. If a real manual cost guess
 ever reappears, prefer swapping back to it over keeping the synthetic one.
 
-`test_effect_guess.py`'s Quick Evacuation is Druid's copy: real confirmed
-costs but an unconfirmed effect percentage, which resolves to a
-medium-confidence guess sibling-matched against Wizard's own (confirmed)
-Quick Evacuation. Should every effect guess ever drop back to manual-only,
-this test would go back to pinning rendering rather than a particular tier;
-the sibling-matching and interpolation rules themselves are covered
-data-independently by `test_guess_effects.py`. When picking its next
-example, prefer an AA a player actually spends points on. Banestrike is the
-only other AA with a guessed effect value, but it is free and unlocked by
-Slayer achievements, so a test driving it with `#incBtn` would be buying a
-rank that cannot be bought in game.
+`test_effect_guess.py`'s Banestrike has two confirmed ranks and two
+unconfirmed ones, each resolving to a hand-picked, very-low-confidence
+manual guess rather than a sibling match (no other AA shares its name).
+Druid/Wizard's Quick Evacuation held this spot before it turned out to be
+one shared archetype AA rather than two per-class ones; merging it into a
+single, fully-confirmed entry removed the sibling pair this test used to
+rely on. Should the guess table ever run out of entries entirely, this
+test would need a different anchor again; the sibling-matching and
+interpolation rules themselves are covered data-independently by
+`test_guess_effects.py`. When picking its next example, prefer an AA a
+player actually spends points on. Banestrike is nominally unlocked by
+Slayer achievements rather than bought, but carries no `auto`/`autoRanks`
+flag in `data.src.js`, so the app already treats it as an ordinary
+purchasable entry everywhere else — this test goes along with that
+existing simplification rather than inventing a new one. Unbound Companion
+is the only other AA with an unresolved effect value, but it is `auto:
+true`, so a test driving it with `#incBtn` would be buying a rank that
+cannot be bought in game.
 
 The cost-guess table has run out of medium-confidence entries; what is left
 is either high-confidence or manual very-low, so `test_guess_all_tabs.py`

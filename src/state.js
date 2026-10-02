@@ -495,6 +495,50 @@ export function loadLocal() {
   return readJsonFromStorage(STORAGE_KEY, isObject);
 }
 
+// Quick Evacuation was two per-class entries (Druid, Wizard) that were
+// really the same shared investment in-game the whole time (confirmed by
+// the player's own log: one purchase, one ability number, regardless of
+// which of the two classes was active) - merged into one archetype entry.
+// A save from before the merge has its rank filed under classes.Druid or
+// classes.Wizard; moved into archetype here, on the raw name-keyed object,
+// before deserializeRanks ever runs - otherwise the old key simply no
+// longer resolves to anything and the rank is silently dropped, reported
+// like a genuine removal instead of surviving the merge. If a save
+// somehow has a value under both (not reachable through normal play
+// before today, since each class's rank was tracked independently) the
+// higher one wins, rather than guessing which is "right".
+function migrateQuickEvacuationRanks(ranksLike) {
+  if (!ranksLike || typeof ranksLike !== "object") return;
+  const classes = ranksLike.classes;
+  if (!classes) return;
+  const fromDruid = classes.Druid && classes.Druid["quick-evacuation"];
+  const fromWizard = classes.Wizard && classes.Wizard["quick-evacuation"];
+  if (fromDruid === undefined && fromWizard === undefined) return;
+  if (classes.Druid) delete classes.Druid["quick-evacuation"];
+  if (classes.Wizard) delete classes.Wizard["quick-evacuation"];
+  const merged = Math.max(fromDruid || 0, fromWizard || 0);
+  ranksLike.archetype = ranksLike.archetype || {};
+  if (ranksLike.archetype["quick-evacuation"] === undefined) {
+    ranksLike.archetype["quick-evacuation"] = merged;
+  }
+}
+
+// Same merge as migrateQuickEvacuationRanks, for a purchaseOrder array
+// (name-keyed {scope, className, key} entries) instead of a ranks store -
+// every entry pointing at the old per-class identity is repointed at the
+// new shared one in place, so reconcilePurchaseOrderCounts (which already
+// runs after every load) trims any resulting count mismatch the normal
+// way instead of the entries just failing to resolve.
+function migrateQuickEvacuationPurchaseOrder(purchaseOrder) {
+  if (!Array.isArray(purchaseOrder)) return;
+  purchaseOrder.forEach((e) => {
+    if (e && e.key === "quick-evacuation" && e.scope === "class" && (e.className === "Druid" || e.className === "Wizard")) {
+      e.scope = "archetype";
+      e.className = null;
+    }
+  });
+}
+
 // Returns { droppedRanks } — how many saved rank entries had a key that no
 // longer resolves to a current AA. Callers use this to tell the user
 // something vanished, instead of a build that's just quietly smaller than
@@ -520,6 +564,14 @@ export function applyLoaded(loaded) {
   // to the wrong ability. Either way, an AA that no longer resolves is
   // dropped rather than guessed at.
   const isLegacy = !(typeof loaded.v === "number" && loaded.v >= 4);
+  // The pre-v4 index-based path is left unmigrated - old enough, and
+  // narrow enough a window, that a save still on it having Quick
+  // Evacuation trained under the old per-class split isn't worth the
+  // extra legacy-index bookkeeping this merge would otherwise need.
+  if (!isLegacy) {
+    migrateQuickEvacuationRanks(loaded.ranks);
+    migrateQuickEvacuationPurchaseOrder(loaded.purchaseOrder);
+  }
   let droppedRanks = 0;
   if (loaded.ranks && typeof loaded.ranks === "object") {
     const result = isLegacy
@@ -562,6 +614,7 @@ export function applyLoaded(loaded) {
 export function loadAndApplyOwned(rawMainPayload) {
   const stored = loadOwnedProfileRaw(state.ownedProfileId);
   if (stored && stored.owned && typeof stored.owned === "object") {
+    migrateQuickEvacuationRanks(stored.owned);
     const result = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key));
     state.owned = result.ranks;
     return { droppedOwned: result.dropped };
@@ -570,6 +623,7 @@ export function loadAndApplyOwned(rawMainPayload) {
     // owned only ever existed in the main payload under SAVE_FORMAT_VERSION
     // 4 (it shipped well after v4 became name-keyed) - no legacy index-based
     // form to handle here, unlike ranks/purchaseOrder above.
+    migrateQuickEvacuationRanks(rawMainPayload.owned);
     const result = deserializeRanks(rawMainPayload.owned, (scope, cls, key) => idxForKey(scope, cls, key));
     state.owned = result.ranks;
     saveOwned();
@@ -599,6 +653,7 @@ export function payloadOwnedHasContent(owned) {
 // caller.
 export function adoptImportedOwnedAsNewProfile(ownedField) {
   const newId = genId();
+  migrateQuickEvacuationRanks(ownedField);
   const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
   state.ownedProfileId = newId;
   state.owned = result.ranks;

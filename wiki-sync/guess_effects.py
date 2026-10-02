@@ -104,11 +104,6 @@ EFFECT_SIBLING_GROUPS = [
         "Alchemy Mastery", "Baking Mastery", "Blacksmithing Mastery", "Brewing Mastery",
         "Fletching Mastery", "Jewel Craft Mastery", "Pottery Mastery", "Tailoring Mastery",
     ],
-    # The same AA (Quick Evacuation), present once per class list (Druid and
-    # Wizard) with cosmetically different %-placement in the wiki text but
-    # otherwise identical wording - genuinely the same ability, not a
-    # coincidence.
-    ["Quick Evacuation"],
 ]
 
 # Hand-maintained fallback for slots the algorithm has no evidence for at

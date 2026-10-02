@@ -91,7 +91,7 @@ export const AA_ID_TABLE = {
   "class:Cleric:turn-undead": 83,
   "class:Cleric:unbound-boon": 84,
   "class:Druid:enhanced-root": 85,
-  "class:Druid:quick-evacuation": 86,
+  "archetype::quick-evacuation": 86,
   "class:Druid:unbound-nature": 87,
   "class:Enchanter:unbound-clarity": 88,
   "class:Magician:companions-fury": 89,
