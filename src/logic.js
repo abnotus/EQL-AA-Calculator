@@ -485,16 +485,16 @@ function sharedGroupClasses(scope, className, idx) {
 // together, never entry.idx against a different class's category. category
 // is null (idx left unchanged) if no class in the group is active.
 function activeEntryTarget(entry) {
-  if (entry.scope !== "class") return { category: entry.scope, idx: entry.idx };
+  if (entry.scope !== "class") return { category: entry.scope, idx: entry.idx, classes: null };
   const classes = sharedGroupClasses(entry.scope, entry.className, entry.idx);
   const aa = aaAt(entry.scope, entry.className, entry.idx);
   for (const c of classes) {
     const slot = state.selectedClasses.indexOf(c);
     if (slot < 0) continue;
     const idx = c === entry.className ? entry.idx : idxForKey("class", c, slugify(aa.name));
-    if (idx >= 0) return { category: CLASS_SLOT_KEYS[slot], idx };
+    if (idx >= 0) return { category: CLASS_SLOT_KEYS[slot], idx, classes };
   }
-  return { category: null, idx: entry.idx };
+  return { category: null, idx: entry.idx, classes };
 }
 
 function pushPurchase(scope, className, idx) {
@@ -1348,7 +1348,7 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
     // AA (which can differ from entry.idx, the canonical identity every
     // purchaseOrder entry carries regardless of which tab bought it). Never
     // mix entry.idx with category, or categoryIdx with entry.scope/className.
-    const { category, idx: categoryIdx } = activeEntryTarget(entry);
+    const { category, idx: categoryIdx, classes: groupClasses } = activeEntryTarget(entry);
     const active = category !== null;
     const aa = aaAt(entry.scope, entry.className, entry.idx);
     // purchaseCount tracks how many times THIS purchase has been made (for isLast/
@@ -1419,7 +1419,15 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
     }
     blendedCumulative += blendedStepCost;
 
-    const label = entry.scope === "class" ? `${entry.className} AA` : labelFor(entry.scope);
+    // Every class in a sharedWithClass group, not just entry.className
+    // (the canonical one purchaseOrder always records) - "Druid/Wizard AA"
+    // for Quick Evacuation, same as an ordinary AA's own single class name
+    // everywhere else.
+    const label = entry.scope === "class" ? `${groupClasses.join("/")} AA` : labelFor(entry.scope);
+    // Same classes, worded for a "swap X back in" sentence rather than a
+    // compact badge - render.js's inactive-row warning and its disabled
+    // add/remove/expand button titles.
+    const classesLabel = entry.scope === "class" ? groupClasses.join(" or ") : "";
     const name = aa ? aa.name : "(unknown AA)";
     // Real-world progress, independent of active/prereqWarn - you can own a
     // rank for a class that isn't in one of the 3 slots right now, same as
@@ -1428,7 +1436,7 @@ export function computeProgressionSteps(order = state.purchaseOrder) {
 
     return {
       index: i, aa, idx: entry.idx, categoryIdx, scope: entry.scope, className: entry.className,
-      category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, classCapWarn, classEligibilityWarn, label, name, isLast, owned
+      category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, classCapWarn, classEligibilityWarn, label, classesLabel, name, isLast, owned
     };
   });
 }

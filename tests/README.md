@@ -371,8 +371,10 @@ rebuilding and committing.
   (`effectiveRankScoped`, `changeRank`, `ownedRank`/`setOwnedRank`,
   `isHiddenScoped`/`setHiddenScoped`, `pushPurchase`/`popLastPurchase`),
   `activeEntryTarget`/`sharedGroupClasses` (Progression's own-row active
-  state and Undo Last, resolved through whichever linked class is actually
-  selected rather than only the canonical one), and
+  state, its class badge - naming every linked class, not just the
+  canonical one purchaseOrder records - and Undo Last, resolved through
+  whichever linked class is actually selected rather than only the
+  canonical one), and
   `migrateSharedQuickEvacuation`/its purchaseOrder and hidden counterparts
   in `state.js` (a save from before this all existed could hold the value
   under either class's own store) - also run from `mergeOwnedProfileInto`

@@ -10,7 +10,11 @@
 # with "that class isn't currently selected" - both wrong, since the
 # player can plainly see and edit it live on Wizard's own tab right there.
 # logic.js's activeEntryTarget resolves through whichever linked class is
-# actually active instead of only the canonical one.
+# actually active instead of only the canonical one. Its class badge had
+# the same single-class blind spot (always "Druid AA", even when the row
+# was being edited live on Wizard's tab) - sharedGroupClasses/groupClasses
+# name every linked class ("Druid/Wizard AA"), regardless of which one
+# purchaseOrder happens to record or which is currently active.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -46,6 +50,14 @@ with sync_playwright() as p:
     row_classes = row.get_attribute("class")
     print("progression row classes:", row_classes)
     assert "inactive" not in row_classes, f"FAIL: row should be active (editable via Wizard's tab), got classes: {row_classes}"
+
+    # --- The class badge names both linked classes, not just Druid (the
+    # canonical identity purchaseOrder always records) - the row is being
+    # edited via Wizard's tab right now, so showing only "Druid AA" would
+    # misname which class is actually active. ---
+    badge_text = row.locator(".step-cat").inner_text()
+    print("class badge text:", badge_text)
+    assert badge_text == "Druid/Wizard AA", f"FAIL: expected the badge to name both linked classes, got {badge_text!r}"
 
     add_btn = row.locator(".step-add")
     remove_btn = row.locator(".step-remove")
