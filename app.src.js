@@ -1536,6 +1536,16 @@ function iconLetter(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
 }
 
+// Maps an AA's optional `era` field to its badge letter/color/label - the
+// one place that mapping lives, so render.js's icon-corner (Tree) and
+// inline (Browse/Summary/Other Classes) badge sites can't drift apart on
+// it. Absent/unrecognized era (every launch AA today) renders nothing.
+function eraBadge(aa) {
+  if (aa.era === "kunark") return { letter: "K", cssClass: "era-kunark", label: "Kunark" };
+  if (aa.era === "velious") return { letter: "V", cssClass: "era-velious", label: "Velious" };
+  return null;
+}
+
 // Builds the tooltip text for a guess object ({value, confidence, basedOn,
 // interpolated, manual}). Shared by formatGuessDisplay (render.js, costs)
 // and highlightRankValue (below, effect values) so both read the same.
@@ -3791,6 +3801,16 @@ function nextRankBoxHtml(catKey, idx, aa, rank, extraClass = "") {
       </div>`;
 }
 
+// Shared by the Tree node's icon corner and the Browse/Summary/Other
+// Classes card name line - one markup source so all 4 sites agree on the
+// badge's shape. Empty string (not null) so every call site can inline it
+// directly into a template literal, same as the existing aa.auto ternaries.
+function eraBadgeHtml(aa) {
+  const badge = eraBadge(aa);
+  if (!badge) return "";
+  return `<span class="era-badge ${badge.cssClass}" title="${badge.label} content">${badge.letter}</span>`;
+}
+
 function renderTree(catKey) {
   const list = getList(catKey);
 
@@ -3852,7 +3872,7 @@ function renderTree(catKey) {
     }
 
     node.innerHTML = `
-      <div class="icon">${escapeHtml(iconLetter(aa.name))}</div>
+      <div class="icon">${escapeHtml(iconLetter(aa.name))}${eraBadgeHtml(aa)}</div>
       <div class="name">${escapeHtml(aa.name)}</div>
       <div class="rankbar"><div class="fill" style="width:${(Math.min(rank, classCap) / aa.ranks) * 100}%"></div>${capExceeded ? `<div class="fill-capped" style="width:${((rank - classCap) / aa.ranks) * 100}%"></div>` : ""}</div>
       <div class="ranktext">${rank} / ${aa.ranks}</div>
@@ -4103,7 +4123,7 @@ function renderBrowse() {
         return `
       <div class="browse-card${hidden ? " hidden-aa" : ""}${owned > 0 ? " owned" : ""}">
         <div class="top">
-          <span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span>
+          <span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}${eraBadgeHtml(aa)}</span>
           <button class="hide-toggle-btn${hidden ? " active" : ""}" data-scope="${scope}" data-classname="${className || ""}" data-idx="${idx}" title="${hidden ? "Unhide this AA" : "Hide this AA from the tree and Browse"}">${hidden ? "Unhide" : "Hide"}</button>
           <span class="cat">${escapeHtml(cat)}</span>
         </div>
@@ -4163,7 +4183,7 @@ function renderSummary(totals) {
       const displayRank = effectiveDisplayRank(aa, rank);
       return `
       <div class="browse-card">
-        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
+        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}${eraBadgeHtml(aa)}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, displayRank), displayRank, effectLookup(key, idx))}</div>
         ${invalidReason ? `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>` : ""}
       </div>`;
@@ -4199,7 +4219,7 @@ function otherClassesSectionsHtml(classNames) {
       const displayRank = effectiveDisplayRank(aa, rank);
       return `
       <div class="browse-card">
-        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
+        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}${eraBadgeHtml(aa)}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, displayRank), displayRank, effectLookupScoped("class", className, idx))}</div>
       </div>`;
     }).join("");

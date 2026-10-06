@@ -38,6 +38,18 @@
      red-dominant palette instead of blending into it. */
   --hidden-accent: #146b64;
   --hidden-accent-bright: #2fe0d0;
+
+  /* Which expansion an AA came from (see the `era` field, absent = launch
+     and unmarked - see logic.js's eraBadge). Green/blue is the project's
+     own thematic pick (jungle Kunark, frozen Velious) - EQ has no
+     documented official per-expansion color scheme to match instead (box
+     art, in-game UI, and item/expansion icons were all checked). Each hue
+     is deliberately its own shade, not a reuse of --green (owned/maxed/
+     affordable) or the two existing blues above (--estimate-high,
+     --hidden-accent-bright), so this doesn't borrow a color that already
+     means something else in this palette. */
+  --era-kunark: #8a9c3f;
+  --era-velious: #4a7ba8;
 }
 
 * { box-sizing: border-box; }
@@ -512,6 +524,7 @@ main {
 }
 
 .node .icon {
+  position: relative;
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -611,6 +624,37 @@ main {
   color: #c9c9ce;
   font-size: 10px;
   font-weight: 700;
+}
+
+/* Expansion-era marker (see the `era` field, logic.js's eraBadge) - a
+   small bordered pill, same family as .costtag/.auto-badge. Inline flow
+   by default (Browse/Summary/Other Classes, right after the name); .node
+   .icon overrides this to an absolute corner badge on the Tree's avatar
+   circle instead, below. */
+.era-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 1px 4px;
+  border-radius: 8px;
+  margin-left: 3px;
+  vertical-align: middle;
+}
+.era-badge.era-kunark { border: 1px solid var(--era-kunark); color: var(--era-kunark); }
+.era-badge.era-velious { border: 1px solid var(--era-velious); color: var(--era-velious); }
+
+/* Tree context: overlaid on the icon's own bottom-right corner instead of
+   sitting inline next to it - the 4 existing .node-corner slots (.costtag
+   and its modifiers, above) are already taken by other badges, so this
+   anchors to .icon (now position: relative) rather than .node itself. */
+.node .icon .era-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: var(--bg);
+  margin-left: 0;
+  padding: 0 3px;
 }
 
 /* ---------- Side panel ---------- */

@@ -4,7 +4,7 @@ import { state, AA_CATEGORY_KEYS, CLASS_SLOT_KEYS, LAST_SEEN_VERSION_KEY, WAYPOI
 import { USER_CHANGELOG } from "./changelogData.js";
 import { el } from "./dom.js";
 import {
-  escapeHtml, iconLetter, highlightRankValue, applyPerRankTotal, labelFor, shortCategoryLabel,
+  escapeHtml, iconLetter, eraBadge, highlightRankValue, applyPerRankTotal, labelFor, shortCategoryLabel,
   getList, effectiveRank, structuralLockReason, resolvePrereqTarget, getBlockReason,
   isDependedOn, attemptIncrement, attemptDecrement, countPicked, computeProgressionSteps,
   costNum, spentPoints, undoLastMutation, canUndo, moveEntry, setOwnedRank, performReset,
@@ -235,6 +235,16 @@ function nextRankBoxHtml(catKey, idx, aa, rank, extraClass = "") {
       </div>`;
 }
 
+// Shared by the Tree node's icon corner and the Browse/Summary/Other
+// Classes card name line - one markup source so all 4 sites agree on the
+// badge's shape. Empty string (not null) so every call site can inline it
+// directly into a template literal, same as the existing aa.auto ternaries.
+function eraBadgeHtml(aa) {
+  const badge = eraBadge(aa);
+  if (!badge) return "";
+  return `<span class="era-badge ${badge.cssClass}" title="${badge.label} content">${badge.letter}</span>`;
+}
+
 export function renderTree(catKey) {
   const list = getList(catKey);
 
@@ -296,7 +306,7 @@ export function renderTree(catKey) {
     }
 
     node.innerHTML = `
-      <div class="icon">${escapeHtml(iconLetter(aa.name))}</div>
+      <div class="icon">${escapeHtml(iconLetter(aa.name))}${eraBadgeHtml(aa)}</div>
       <div class="name">${escapeHtml(aa.name)}</div>
       <div class="rankbar"><div class="fill" style="width:${(Math.min(rank, classCap) / aa.ranks) * 100}%"></div>${capExceeded ? `<div class="fill-capped" style="width:${((rank - classCap) / aa.ranks) * 100}%"></div>` : ""}</div>
       <div class="ranktext">${rank} / ${aa.ranks}</div>
@@ -547,7 +557,7 @@ export function renderBrowse() {
         return `
       <div class="browse-card${hidden ? " hidden-aa" : ""}${owned > 0 ? " owned" : ""}">
         <div class="top">
-          <span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span>
+          <span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}${eraBadgeHtml(aa)}</span>
           <button class="hide-toggle-btn${hidden ? " active" : ""}" data-scope="${scope}" data-classname="${className || ""}" data-idx="${idx}" title="${hidden ? "Unhide this AA" : "Hide this AA from the tree and Browse"}">${hidden ? "Unhide" : "Hide"}</button>
           <span class="cat">${escapeHtml(cat)}</span>
         </div>
@@ -607,7 +617,7 @@ function renderSummary(totals) {
       const displayRank = effectiveDisplayRank(aa, rank);
       return `
       <div class="browse-card">
-        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
+        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}${eraBadgeHtml(aa)}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, displayRank), displayRank, effectLookup(key, idx))}</div>
         ${invalidReason ? `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>` : ""}
       </div>`;
@@ -643,7 +653,7 @@ function otherClassesSectionsHtml(classNames) {
       const displayRank = effectiveDisplayRank(aa, rank);
       return `
       <div class="browse-card">
-        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
+        <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}${eraBadgeHtml(aa)}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, displayRank), displayRank, effectLookupScoped("class", className, idx))}</div>
       </div>`;
     }).join("");

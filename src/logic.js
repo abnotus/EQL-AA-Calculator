@@ -25,6 +25,16 @@ export function iconLetter(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
 }
 
+// Maps an AA's optional `era` field to its badge letter/color/label - the
+// one place that mapping lives, so render.js's icon-corner (Tree) and
+// inline (Browse/Summary/Other Classes) badge sites can't drift apart on
+// it. Absent/unrecognized era (every launch AA today) renders nothing.
+export function eraBadge(aa) {
+  if (aa.era === "kunark") return { letter: "K", cssClass: "era-kunark", label: "Kunark" };
+  if (aa.era === "velious") return { letter: "V", cssClass: "era-velious", label: "Velious" };
+  return null;
+}
+
 // Builds the tooltip text for a guess object ({value, confidence, basedOn,
 // interpolated, manual}). Shared by formatGuessDisplay (render.js, costs)
 // and highlightRankValue (below, effect values) so both read the same.
