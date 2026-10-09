@@ -79,7 +79,7 @@ python wiki-sync/assign_aa_ids.py
 
 Maintains `src/aaIds.js`, the append-only numeric id table the share/export format addresses AAs by (`keys.js`'s `idForKey`/`entryForId`). Existing AAs keep their id and new ones get the next unused integer. An id is never reused, even for a removed AA, so an old link resolves to "gone" rather than to a different AA.
 
-Run it after any `data.src.js` change that adds, removes or **renames** an AA. Identity comes from the slugified name, so a rename looks like a removal plus an addition, and existing links would silently drop that AA's picks. The script warns whenever an id vanishes in the same run new ones are assigned; if it was a rename (check the wiki's history), hand-edit `aaIds.js` to give the new key the *old* id.
+Run it after any `data.src.js` change that adds, removes or **renames** an AA. Identity comes from the slugified name, so a rename looks like a removal plus an addition, and existing links would silently drop that AA's picks. The script warns whenever an id vanishes in the same run new ones are assigned. A vanished id isn't automatically a rename: an AA can be genuinely removed. Once it's confirmed the AA itself is unchanged under a new name, make two fixes in the same commit: hand-edit `aaIds.js` to give the new key the *old* id (share links), and add an old-key → new-key entry to `RENAMED_KEYS` in `keys.js` (local saves store the key directly, so without it a saved rank silently drops on the next load). `tests/test_renamed_aa_key_migration.py` covers the second.
 
 ## Running locally
 
