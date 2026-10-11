@@ -85,8 +85,8 @@ cost via Python's negative indexing.
 `test_auto_grant_class_eligibility.py`, `test_hostile_numeric_coercion.py`,
 `test_browse_unowned_filter.py`, `test_quick_evacuation_shared_rank.py`,
 `test_quick_evacuation_migration.py`, `test_quick_evacuation_inactive_class.py`,
-`test_quick_evacuation_owned_merge.py`, `test_renamed_aa_key_migration.py`
-drive the actual app in a real Chrome instance via
+`test_quick_evacuation_owned_merge.py`, `test_renamed_aa_key_migration.py`,
+`test_era_badge.py` drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
 **Prerequisites:**
@@ -106,48 +106,7 @@ drive the actual app in a real Chrome instance via
   AACALC_TEST_PORT=8080 python tests/test_cost_guess.py
   ```
 
-Then, from the repo root:
-
-```
-python tests/test_cost_guess.py
-python tests/test_manual_guess.py
-python tests/test_guess_all_tabs.py
-python tests/test_disclaimer_banner.py
-python tests/test_estimated_total.py
-python tests/test_effect_guess.py
-python tests/test_build_slot_migration.py
-python tests/test_active_build_match.py
-python tests/test_class_rank_cap.py
-python tests/test_auto_grant_class_eligibility.py
-python tests/test_progression_autoscroll.py
-python tests/test_hidden_aas.py
-python tests/test_other_classes.py
-python tests/test_owned_inactive_classes.py
-python tests/test_owned_legacy_migration.py
-python tests/test_owned_profiles.py
-python tests/test_owned_profile_cleanup.py
-python tests/test_share_code_compression.py
-python tests/test_share_code_binary.py
-python tests/test_purchase_order_cap.py
-python tests/test_per_rank_description.py
-python tests/test_progression_move_to.py
-python tests/test_cross_class_prereq_dependency.py
-python tests/test_real_world_build.py
-python tests/test_archetype_class_eligibility.py
-python tests/test_builds_index_cache.py
-python tests/test_tree_click_delegation.py
-python tests/test_progression_drag_warn_cache.py
-python tests/test_save_build_partial_failure.py
-python tests/test_builds_cross_tab_sync.py
-python tests/test_decompression_bomb.py
-python tests/test_hostile_numeric_coercion.py
-python tests/test_browse_unowned_filter.py
-python tests/test_quick_evacuation_shared_rank.py
-python tests/test_quick_evacuation_migration.py
-python tests/test_quick_evacuation_inactive_class.py
-python tests/test_quick_evacuation_owned_merge.py
-python tests/test_renamed_aa_key_migration.py
-```
+Then run any one from the repo root, e.g. `python tests/test_cost_guess.py`.
 
 A few of these load a hand-crafted or hand-decoded `?build=` share code to
 reach a specific scenario (an already-purchased guessed rank, a build with
@@ -156,21 +115,12 @@ than clicking through the UI to build it up live — faster, and pins the
 exact scenario being tested instead of leaving it implicit in a sequence of
 clicks.
 
-## Fabricated guess fixtures (formerly pinned to live data)
+## Fabricated guess fixtures
 
 `test_cost_guess.py`, `test_guess_all_tabs.py`, `test_estimated_total.py`,
-`test_manual_guess.py`, and `test_effect_guess.py` used to pin their
-guessed-value scenarios to whichever real AA currently had an unconfirmed
-cost or effect value - a wiki scrape (or the user's own edit) confirming
-that value broke the test, needing a full rewrite to a new live example
-every time. This happened repeatedly (`test_effect_guess.py` alone was
-re-pinned six times) and got worse over time as the real dataset ran out
-of unconfirmed values to pin to - by the time this was fixed, Turn
-Summoned's rank 3 was the *only* unconfirmed cost left in the whole
-dataset, with four different test files depending on it at once.
-
-All five now fabricate their own "?" and its guess instead, via
-`page.route()` interception - `tests/wiki_guess_fixtures.py` holds the
+`test_manual_guess.py`, and `test_effect_guess.py` never depend on a real AA
+having an unconfirmed value, since the wiki confirming it would break them.
+Each fabricates its own "?" and its guess via `page.route()` interception - `tests/wiki_guess_fixtures.py` holds the
 shared brace-matching logic (two targets: a whole AA object in `data.js`,
 which is minified but not mangled so the real file can be intercepted
 directly; and a guess-table entry's value in `app.src.js`, the unminified
@@ -317,9 +267,9 @@ rebuilding and committing.
 - **Move To popover.** `absoluteIndexForVisiblePosition`,
   `moveToVisiblePosition`, `waypointSections`'s fit-aware section-boundary
   math, `moveMenuHtml`, or `s.visiblePos`'s role in
-  `computeProgressionSteps`/step-num display (now just `s.index + 1` for
-  every row, active class or not, since nothing gets filtered out of
-  Progression anymore). `test_progression_move_to.py`.
+  `computeProgressionSteps`/step-num display (`s.index + 1` for every row,
+  active class or not, since Progression filters nothing out).
+  `test_progression_move_to.py`.
 - **Prerequisite and dependency resolution.** `resolvePrereqTarget`/
   `resolvePrereqTargetScoped`, `isDependedOn`, `tryResolvePrereq`.
   `test_cross_class_prereq_dependency.py`.
@@ -383,8 +333,8 @@ rebuilding and committing.
   under either class's own store) - also run from `mergeOwnedProfileInto`
   on the SOURCE profile before merging, not just on every load, since a
   merge reads another profile's raw owned data the same deserializeRanks
-  way. Quick Evacuation (Druid/Wizard) is the only AA with the field as of
-  this writing - displayed as a completely ordinary row on each of its two
+  way. Quick Evacuation (Druid/Wizard) is currently the only AA with the
+  field, displayed as a completely ordinary row on each of its two
   classes' own tabs, matching the game, but reading and writing one shared
   rank/owned/hidden slot underneath regardless of which tab is used to
   change it, and staying fully editable through Progression and Undo Last
@@ -398,3 +348,7 @@ rebuilding and committing.
   new-slug entry added in the same commit, or an existing save's rank
   drops exactly like a genuine removal. `test_renamed_aa_key_migration.py`
   (Berserker's Tireless Spirit -> Tireless Sprint).
+- **Expansion-era badges.** `eraBadge` in `logic.js` and `render.js`'s
+  `eraBadgeHtml`, used on the Tree node icon and the Browse/Summary card name
+  line. An AA without an
+  `era` field must render no badge. `test_era_badge.py`.
