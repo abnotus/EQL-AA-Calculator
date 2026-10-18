@@ -3819,9 +3819,9 @@
       // null/absent only if the sender genuinely had nothing owned yet -
       // expandCompactRanks(null/undefined) degrades to the empty shape
       // either way. applyLoaded itself still never reads this (owned isn't
-      // part of "the build" it applies); the import layer inspects it
-      // separately via payloadOwnedHasContent before deciding whether to
-      // create a fresh profile for it (see maybeImportOwned).
+      // part of "the build" it applies); every import seeds a fresh profile
+      // from it, and payloadOwnedHasContent decides whether the import's
+      // message mentions owned progress (see maybeImportOwned).
       owned: ownedResult.ranks,
       // Not part of the build shape applyLoaded understands - read separately
       // by the import/share-link callers and folded into their own

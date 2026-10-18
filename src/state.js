@@ -676,9 +676,9 @@ export function loadAndApplyOwned(rawMainPayload) {
 
 // Whether a name-keyed owned payload (the shape loadLocal/decodeBuildCode
 // hand around, before deserializeRanks turns it into idx-keyed state.owned)
-// actually has anything in it - used by exportImport.js to decide whether an
-// imported build is even carrying owned data worth creating a profile for,
-// without needing to deserialize it first just to find out it's empty.
+// actually has anything in it. exportImport.js's maybeImportOwned uses it to
+// say whether an import brought owned progress along; the import gets its
+// own profile either way.
 export function payloadOwnedHasContent(owned) {
   if (!owned || typeof owned !== "object") return false;
   if (Object.keys(owned.general || {}).length || Object.keys(owned.archetype || {}).length || Object.keys(owned.special || {}).length) return true;

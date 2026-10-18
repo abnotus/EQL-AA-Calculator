@@ -246,7 +246,7 @@ rebuilding and committing.
 - **Share-code encoding.** `packV5`/`expandBinaryPayload`'s bit layout, the
   `bitWriter`/`bitReader` pair, `crc16`, `indexWidth`,
   `encodeBuildCode`/`decodeBuildCode`'s format-sniffing chain,
-  `compress`/`decompress`, or `compactRanksFor`/`expandCompactRanks`, all in
+  `decompress`, or `compactRanksFor`/`expandCompactRanks`, all in
   `exportImport.js`. `test_share_code_binary.py` covers the current v5
   binary format and `test_share_code_compression.py` covers every historical
   one still decoding. The v5 file's property test (randomized builds through
