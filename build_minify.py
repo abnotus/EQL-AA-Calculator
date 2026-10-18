@@ -33,7 +33,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "wiki-sync"))
-from common import slug_key_for  # noqa: E402
+from common import data_integrity_problems, id_key, parse_identity_entries, slug_key_for  # noqa: E402
 
 APP_ENTRY = "src/main.js"
 
@@ -83,16 +83,7 @@ def write_atomic(path, text):
     os.replace(tmp, path)
 
 
-DATA_CATEGORY_START = re.compile(r'^(general|archetype|special):\s*\[')
-DATA_CLASS_START = re.compile(r'^"([^"]+)":\s*\[')
-DATA_ENTRY_NAME = re.compile(r'name:\s*"((?:[^"\\]|\\.)*)"')
-DATA_ENTRY_AUTO = re.compile(r'\bauto:\s*true')
-
-
-MIN_EXPECTED_AA_ENTRIES = 100  # currently 144; floor with headroom for legitimate removals
-
-
-def check_prereq_disambiguation_invariant(data_src: str):
+def check_prereq_disambiguation_invariant(entries):
     """
     resolvePrereqTarget (src/logic.js) resolves a prereq by name within a
     single category (its own class list, or general/archetype/special - never
@@ -108,49 +99,17 @@ def check_prereq_disambiguation_invariant(data_src: str):
     check: a name can legitimately repeat *across* categories (e.g. "Quick
     Evacuation" exists in both Druid and Wizard) without being ambiguous,
     because a class AA's prereq always resolves within its own class first
-    and never falls through to a different class's list. Don't read a clean
-    result here as "every AA name in the game is unique" - it isn't, and
-    doesn't need to be.
-
-    This is a regex over source text, not a real parser, so it has the same
-    failure mode wiki-sync's table parser had: a format change it doesn't
-    recognize makes it match nothing and report zero problems, which looks
-    identical to "no problems." The entry-count floor below exists so that
-    "found nothing to check" fails loudly instead of passing silently.
+    and never falls through to a different class's list.
     """
-    current_cat = None
     buckets = {}
-    total_entries = 0
-    for line in data_src.split("\n"):
-        s = line.strip()
-        m = DATA_CATEGORY_START.match(s)
-        if m:
-            current_cat = m.group(1)
-            continue
-        m = DATA_CLASS_START.match(s)
-        if m:
-            current_cat = "class:" + m.group(1)
-            continue
-        if s.startswith("classes:") or not s.startswith("{ name:"):
-            continue
-        nm = DATA_ENTRY_NAME.search(s)
-        if not nm or not current_cat:
-            continue
-        total_entries += 1
-        buckets.setdefault(current_cat, []).append((nm.group(1), bool(DATA_ENTRY_AUTO.search(s))))
-
-    if total_entries < MIN_EXPECTED_AA_ENTRIES:
-        return [
-            f"  Only recognized {total_entries} AA entries in data.src.js (expected at least "
-            f"{MIN_EXPECTED_AA_ENTRIES}) - this checker's regex almost certainly stopped matching "
-            "the current format rather than the dataset actually shrinking. Fix the regexes "
-            "above before trusting this check (or anything else that regex-parses data.src.js)."
-        ]
+    for e in entries:
+        cat = f"class:{e['className']}" if e["scope"] == "class" else e["scope"]
+        buckets.setdefault(cat, []).append((e["name"], e["auto"]))
 
     problems = []
-    for cat, entries in buckets.items():
+    for cat, bucket in buckets.items():
         by_name = {}
-        for name, auto in entries:
+        for name, auto in bucket:
             by_name.setdefault(name, []).append(auto)
         for name, autos in by_name.items():
             if len(autos) <= 1:
@@ -167,7 +126,7 @@ def check_prereq_disambiguation_invariant(data_src: str):
 AA_IDS_TABLE_RE = re.compile(r'AA_ID_TABLE\s*=\s*(\{.*?\n\});', re.DOTALL)
 
 
-def check_aa_ids_current(data_src: str):
+def check_aa_ids_current(entries):
     """
     Every AA in data.src.js must have an entry in src/aaIds.js's
     AA_ID_TABLE. That table backs the compact share/export wire format
@@ -178,37 +137,7 @@ def check_aa_ids_current(data_src: str):
     failure mode for "someone edited data.src.js and forgot to run
     wiki-sync/assign_aa_ids.py" - this catches it at build time instead.
     """
-    import json as _json
-
-    current_cat = None
-    entries = []
-    for line in data_src.split("\n"):
-        s = line.strip()
-        m = DATA_CATEGORY_START.match(s)
-        if m:
-            current_cat = (m.group(1), None)
-            continue
-        m = DATA_CLASS_START.match(s)
-        if m:
-            current_cat = ("class", m.group(1))
-            continue
-        if s.startswith("classes:") or not s.startswith("{ name:"):
-            continue
-        nm = DATA_ENTRY_NAME.search(s)
-        if not nm or not current_cat:
-            continue
-        scope, class_name = current_cat
-        entries.append({
-            "scope": scope, "className": class_name,
-            "name": nm.group(1), "auto": bool(DATA_ENTRY_AUTO.search(s)),
-        })
-
-    # Same identity keys.js's keyForEntryIdx / assign_aa_ids.py compute -
-    # shared here via slug_key_for rather than a 4th reimplementation.
-    expected_id_keys = [
-        f"{e['scope']}:{e['className'] or ''}:{slug_key_for(entries, i)}"
-        for i, e in enumerate(entries)
-    ]
+    expected_id_keys = [id_key(e["scope"], e["className"], slug_key_for(entries, i)) for i, e in enumerate(entries)]
 
     ids_path = "src/aaIds.js"
     try:
@@ -219,7 +148,7 @@ def check_aa_ids_current(data_src: str):
     m = AA_IDS_TABLE_RE.search(ids_src)
     if not m:
         return [f"  Could not find AA_ID_TABLE in {ids_path} - has its format changed?"]
-    table = _json.loads(m.group(1))
+    table = json.loads(m.group(1))
 
     missing = [k for k in expected_id_keys if k not in table]
     if not missing:
@@ -253,7 +182,14 @@ def main():
         return 1
     with open("data.src.js", "r", encoding="utf-8") as f:
         data_src_check = f.read()
-    problems = check_prereq_disambiguation_invariant(data_src_check)
+    integrity = data_integrity_problems()
+    if integrity:
+        print("ERROR: data.src.js has entries that wouldn't ship correctly:")
+        for p in integrity:
+            print(p)
+        return 1
+    entries = parse_identity_entries()
+    problems = check_prereq_disambiguation_invariant(entries)
     if problems:
         print("ERROR: data.src.js violates the duplicate-AA-name disambiguation invariant:")
         for p in problems:
@@ -261,7 +197,7 @@ def main():
         print("A prereq referencing one of these names would resolve unpredictably. Fix the data (add/remove an `auto` flag so exactly one occurrence is non-auto) before building.")
         return 1
 
-    id_problems = check_aa_ids_current(data_src_check)
+    id_problems = check_aa_ids_current(entries)
     if id_problems:
         print("ERROR: src/aaIds.js is out of date with data.src.js:")
         for p in id_problems:

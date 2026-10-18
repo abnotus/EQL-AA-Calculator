@@ -92,6 +92,75 @@ def iter_data_entries(data_src_path=DATA_SRC):
         yield current_cat[0], current_cat[1], s
 
 
+def parse_identity_entries(data_src_path=DATA_SRC):
+    """[{scope, className, name, auto}] for every AA, in data.src.js order,
+    from the line parser above."""
+    entries = []
+    for scope, className, s in iter_data_entries(data_src_path):
+        nm = DATA_ENTRY_NAME.search(s)
+        if nm:
+            entries.append({"scope": scope, "className": className,
+                            "name": json.loads(f'"{nm.group(1)}"'),
+                            "auto": bool(DATA_ENTRY_AUTO.search(s))})
+    return entries
+
+
+_EVAL_DATA_SRC = r"""
+const src = require("fs").readFileSync(process.argv[1], "utf8");
+const { AA_DATA } = new Function(src + "\nreturn { AA_DATA };")();
+const out = [];
+for (const scope of ["general", "archetype", "special"]) {
+  (AA_DATA[scope] || []).forEach((aa) => out.push({ scope, className: null, name: aa.name, auto: !!aa.auto }));
+}
+for (const className of Object.keys(AA_DATA.classes || {})) {
+  AA_DATA.classes[className].forEach((aa) => out.push({ scope: "class", className, name: aa.name, auto: !!aa.auto }));
+}
+process.stdout.write(JSON.stringify(out));
+"""
+
+
+def evaluate_identity_entries(data_src_path=DATA_SRC):
+    """The same list as parse_identity_entries, from node actually running
+    data.src.js - the ground truth the line parser is checked against."""
+    import subprocess
+    result = subprocess.run(["node", "-e", _EVAL_DATA_SRC, str(data_src_path)],
+                            capture_output=True, text=True, encoding="utf-8")
+    if result.returncode != 0:
+        raise RuntimeError(f"node couldn't evaluate {data_src_path}:\n{result.stderr}")
+    return json.loads(result.stdout)
+
+
+def data_integrity_problems(data_src_path=DATA_SRC):
+    """Problems that would ship silently: an AA the line parser can't see
+    (it would get no id and drop out of share links), and two AAs in one
+    bucket sharing an identity key (one would take over the other's saves
+    and share id)."""
+    def bucketed(entries):
+        out = {}
+        for e in entries:
+            out.setdefault((e["scope"], e["className"]), []).append((e["name"], e["auto"]))
+        return out
+
+    parsed = parse_identity_entries(data_src_path)
+    actual = evaluate_identity_entries(data_src_path)
+    problems = []
+    parsed_b, actual_b = bucketed(parsed), bucketed(actual)
+    for bucket in sorted(set(parsed_b) | set(actual_b), key=lambda b: (b[0], b[1] or "")):
+        if parsed_b.get(bucket) != actual_b.get(bucket):
+            missing = [n for n, _ in actual_b.get(bucket, []) if (n, True) not in parsed_b.get(bucket, []) and (n, False) not in parsed_b.get(bucket, [])]
+            problems.append(f"  [{bucket[0]}:{bucket[1] or ''}] the line parser disagrees with data.src.js"
+                            + (f" - not seen: {', '.join(missing)}" if missing else "")
+                            + ". Write each AA as one `{ name: ... }` line.")
+    seen = {}
+    for i, e in enumerate(actual):
+        k = id_key(e["scope"], e["className"], slug_key_for(actual, i))
+        if k in seen:
+            problems.append(f'  "{e["name"]}" and "{seen[k]}" share the identity key {k}. Rename one so their slugs differ.')
+        else:
+            seen[k] = e["name"]
+    return problems
+
+
 def check_parse_sanity(entries, aa_ids_path=AA_IDS_SRC):
     """parse_data_src is a regex over source text, same failure mode
     build_minify.py's own invariant checkers guard against: a data.src.js

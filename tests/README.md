@@ -39,6 +39,7 @@ python tests/test_guess_effects.py
 python tests/test_assign_aa_ids.py
 python tests/test_slugify.py
 python tests/test_verify_from_log.py
+python tests/test_data_integrity.py
 ```
 
 This is deliberately *not* pinned to any AA's current confidence tier: the
@@ -60,6 +61,8 @@ an actual pending wiki rename to exercise it against.
 "smart apostrophe" must strip the same way a straight one does, or the same
 AA name slugifies differently depending only on which glyph the wiki page
 happens to use that day.
+
+`test_data_integrity.py` tests `wiki-sync/common.py`'s `data_integrity_problems` against synthetic `data.src.js` files: an AA written across two lines (the build's line parser can't see it, so it would ship with no share-code id) and two names that slugify to the same key must both be reported.
 
 `test_verify_from_log.py` tests `wiki-sync/verify_from_log.py`'s
 `classify_cost` directly — a malformed rank of 0 (or negative) must be
