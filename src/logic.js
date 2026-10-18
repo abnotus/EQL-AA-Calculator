@@ -1058,16 +1058,6 @@ export function findInvalidatedPicks() {
 // state.ranks itself is never touched — only a step's displayed rank and
 // position can change.
 export function reconcilePurchaseOrderCounts() {
-  function countFor(scope, className, idx) {
-    let n = 0;
-    for (const e of state.purchaseOrder) {
-      if (e.scope === scope && (e.className || null) === (className || null) && e.idx === idx) n++;
-    }
-    return n;
-  }
-  function expectedFor(aa, held) {
-    return Math.max(0, held - autoRanksOffset(aa));
-  }
   function key(scope, className, idx) {
     return `${scope}|${className || ""}|${idx}`;
   }
@@ -1075,63 +1065,39 @@ export function reconcilePurchaseOrderCounts() {
   // aa.auto entries are excluded from targets: nothing ever legitimately
   // writes a purchaseOrder entry for one, so they fall into the "not
   // held" case below rather than getting a count to satisfy.
-  const targets = [];
-  const targetKeys = new Set();
-  ["general", "archetype", "special"].forEach((scope) => {
-    const list = AA_DATA[scope] || [];
-    Object.keys(state.ranks[scope] || {}).forEach((idxStr) => {
+  const targets = new Map();
+  function addTargets(scope, className, list, store) {
+    Object.keys(store || {}).forEach((idxStr) => {
       const idx = parseInt(idxStr, 10);
       const aa = list[idx];
       if (aa && !aa.auto) {
-        targets.push({ scope, className: null, idx, aa, held: state.ranks[scope][idxStr] });
-        targetKeys.add(key(scope, null, idx));
+        targets.set(key(scope, className, idx), { scope, className, idx, expected: Math.max(0, store[idxStr] - autoRanksOffset(aa)), seen: 0 });
       }
     });
-  });
+  }
+  ["general", "archetype", "special"].forEach((scope) => addTargets(scope, null, AA_DATA[scope] || [], state.ranks[scope]));
   Object.keys(state.ranks.classes || {}).forEach((className) => {
-    const list = AA_DATA.classes[className] || [];
-    Object.keys(state.ranks.classes[className] || {}).forEach((idxStr) => {
-      const idx = parseInt(idxStr, 10);
-      const aa = list[idx];
-      if (aa && !aa.auto) {
-        targets.push({ scope: "class", className, idx, aa, held: state.ranks.classes[className][idxStr] });
-        targetKeys.add(key("class", className, idx));
-      }
-    });
+    addTargets("class", className, AA_DATA.classes[className] || [], state.ranks.classes[className]);
   });
 
-  let repaired = 0;
-
+  // One pass keeps each AA's first `expected` entries in order and drops
+  // orphans and extras; a second appends any that are missing.
   const orphanKeys = new Set();
+  const kept = [];
   state.purchaseOrder.forEach((e) => {
     const k = key(e.scope, e.className || null, e.idx);
-    if (!targetKeys.has(k)) orphanKeys.add(k);
+    const t = targets.get(k);
+    if (!t) { orphanKeys.add(k); return; }
+    t.seen++;
+    if (t.seen <= t.expected) kept.push(e);
   });
-  if (orphanKeys.size) {
-    state.purchaseOrder = state.purchaseOrder.filter((e) => targetKeys.has(key(e.scope, e.className || null, e.idx)));
-    repaired += orphanKeys.size;
-  }
-
-  targets.forEach(({ scope, className, idx, aa, held }) => {
-    const expected = expectedFor(aa, held);
-    const actual = countFor(scope, className, idx);
-    if (expected === actual) return;
+  let repaired = orphanKeys.size;
+  targets.forEach((t) => {
+    if (t.seen === t.expected) return;
     repaired++;
-    if (actual > expected) {
-      let toRemove = actual - expected;
-      for (let i = state.purchaseOrder.length - 1; i >= 0 && toRemove > 0; i--) {
-        const e = state.purchaseOrder[i];
-        if (e.scope === scope && (e.className || null) === (className || null) && e.idx === idx) {
-          state.purchaseOrder.splice(i, 1);
-          toRemove--;
-        }
-      }
-    } else {
-      for (let i = 0; i < expected - actual; i++) {
-        state.purchaseOrder.push({ scope, className, idx });
-      }
-    }
+    for (let i = t.seen; i < t.expected; i++) kept.push({ scope: t.scope, className: t.className, idx: t.idx });
   });
+  if (repaired) state.purchaseOrder = kept;
   return repaired;
 }
 

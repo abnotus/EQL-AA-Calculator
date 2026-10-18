@@ -115,7 +115,7 @@ v5 is deliberately **not** compressed: packed bits are near-maximum entropy, so 
 
 ### purchaseOrder has a hard length ceiling
 
-Rank values are clamped per entry on load (`clampRankValue`), and numeric fields from untrusted input go through `safeParseInt`, which accepts only numbers and strings. `purchaseOrder` needs its own ceiling: `reconcilePurchaseOrderCounts` (`logic.js`) costs far worse than linear time in its length, so a share link inflated to tens of thousands of entries (cheap to make, since it compresses well) would freeze the tab of whoever opens it. `MAX_PURCHASE_ORDER` (2000, in `state.js`'s `deserializePurchaseOrder`) truncates it first; a fully maxed roster is a few hundred entries. `MAX_WAYPOINTS` bounds waypoints the same way.
+Rank values are clamped per entry on load (`clampRankValue`), and numeric fields from untrusted input go through `safeParseInt`, which accepts only numbers and strings. `purchaseOrder` gets its own ceiling too: every load walks it (`reconcilePurchaseOrderCounts` in `logic.js` is linear, but rendering a step per entry isn't free), and a share link inflated to tens of thousands of entries is cheap to make, since it compresses well. `MAX_PURCHASE_ORDER` (2000, in `state.js`'s `deserializePurchaseOrder`) truncates it first; a fully maxed roster is a few hundred entries. `MAX_WAYPOINTS` bounds waypoints the same way.
 
 ### Named builds don't replace the always-autosaving current build
 

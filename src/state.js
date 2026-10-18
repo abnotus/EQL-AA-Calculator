@@ -364,14 +364,12 @@ export function serializePurchaseOrder(purchaseOrder) {
 
 // The entire AA roster - every class, general/archetype/special, everything
 // maxed - is a few hundred entries at most (well under 500 as of this
-// writing). Generous headroom above that, but a hard ceiling: without one,
-// a crafted purchaseOrder array costs reconcilePurchaseOrderCounts (logic.js)
-// far worse than linear time to reconcile against the real, small rank
-// counts in `r` - a multi-second tab freeze from a share link short enough
-// to paste in chat, not a large download. Applied to the raw untrusted
-// input before any per-entry work, so a malicious array can't cost more
-// than this many entries' worth of processing no matter how large it claims
-// to be.
+// writing). Generous headroom above that, but a hard ceiling: a crafted
+// share link short enough to paste in chat can carry a purchaseOrder of
+// tens of thousands of entries, and every one becomes a Progression step.
+// Applied to the raw untrusted input before any per-entry work, so a
+// malicious array can't cost more than this many entries' worth of
+// processing no matter how large it claims to be.
 export const MAX_PURCHASE_ORDER = 2000;
 
 // Unlike deserializeRanks, a dropped purchaseOrder entry isn't its own
