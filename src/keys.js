@@ -130,11 +130,25 @@ function idxForEntryKey(rawEntries, key) {
   return -1;
 }
 
+const SHARED_SCOPES = ["general", "archetype", "special"];
+const hasOwn = (obj, key) => !!obj && Object.prototype.hasOwnProperty.call(obj, key);
+
+// scope and className can come straight from a share link, so only own
+// properties of known scopes count: "constructor" or "__proto__" would
+// otherwise resolve to Object built-ins, and scope "classes" to the class
+// table itself.
+function listIn(table, scope, className) {
+  let list;
+  if (scope === "class") list = hasOwn(table.classes, className) ? table.classes[className] : null;
+  else if (SHARED_SCOPES.includes(scope)) list = table[scope];
+  return Array.isArray(list) ? list : [];
+}
+
 // Exported so callers that index it repeatedly (a loop over many idx
 // values) can resolve it once instead of going through aaAt per lookup -
 // logic.js's own point-summing/reconciliation walks do this.
 export function currentList(scope, className) {
-  return scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
+  return listIn(AA_DATA, scope, className);
 }
 
 function currentEntries(scope, className) {
@@ -158,22 +172,23 @@ export function aaAt(scope, className, idx) {
 }
 
 function legacyEntries(scope, className) {
-  return scope === "class" ? (LEGACY_AA_ORDER.classes[className] || []) : (LEGACY_AA_ORDER[scope] || []);
+  return listIn(LEGACY_AA_ORDER, scope, className);
 }
 
 // keyForIdx/idxForKey mappings, built lazily per (scope, className). Safe to
 // cache for the page's life because AA_DATA never changes at runtime, and it
 // keeps save/load from rescanning a scope's whole AA list for every entry.
-const entryKeyMapCache = {};
+const entryKeyMapCache = new Map();
 function entryKeyMaps(scope, className) {
   const cacheKey = `${scope}:${className || ""}`;
-  let maps = entryKeyMapCache[cacheKey];
+  let maps = entryKeyMapCache.get(cacheKey);
   if (!maps) {
     const entries = currentEntries(scope, className);
     const idxToKey = entries.map((_, idx) => keyForEntryIdx(entries, idx));
     const keyToIdx = new Map();
     idxToKey.forEach((key, idx) => { if (key != null && !keyToIdx.has(key)) keyToIdx.set(key, idx); });
-    maps = entryKeyMapCache[cacheKey] = { idxToKey, keyToIdx };
+    maps = { idxToKey, keyToIdx };
+    entryKeyMapCache.set(cacheKey, maps);
   }
   return maps;
 }
@@ -188,8 +203,9 @@ export function keyForIdx(scope, className, idx) {
 export function idxForKey(scope, className, key) {
   const idx = entryKeyMaps(scope, className).keyToIdx.get(key);
   if (idx !== undefined) return idx;
-  const renamed = RENAMED_KEYS[`${scope}:${className || ""}:${key}`];
-  if (renamed === undefined) return -1;
+  const renamedFrom = `${scope}:${className || ""}:${key}`;
+  if (!hasOwn(RENAMED_KEYS, renamedFrom)) return -1;
+  const renamed = RENAMED_KEYS[renamedFrom];
   const renamedIdx = entryKeyMaps(scope, className).keyToIdx.get(renamed);
   return renamedIdx === undefined ? -1 : renamedIdx;
 }
@@ -211,7 +227,7 @@ export function currentIdxForLegacyIdx(scope, className, legacyIdx) {
 let idToEntryCache = null;
 function idToEntry() {
   if (!idToEntryCache) {
-    idToEntryCache = {};
+    idToEntryCache = new Map();
     Object.keys(AA_ID_TABLE).forEach((idKey) => {
       const id = AA_ID_TABLE[idKey];
       const sep1 = idKey.indexOf(":");
@@ -219,7 +235,7 @@ function idToEntry() {
       const scope = idKey.slice(0, sep1);
       const className = idKey.slice(sep1 + 1, sep2) || null;
       const key = idKey.slice(sep2 + 1);
-      idToEntryCache[id] = { scope, className, key };
+      idToEntryCache.set(id, { scope, className, key });
     });
   }
   return idToEntryCache;
@@ -231,14 +247,14 @@ function idToEntry() {
 // missing id degrades to null the same way an unresolved name key does).
 export function idForKey(scope, className, key) {
   const idKey = `${scope}:${className || ""}:${key}`;
-  return Object.prototype.hasOwnProperty.call(AA_ID_TABLE, idKey) ? AA_ID_TABLE[idKey] : null;
+  return hasOwn(AA_ID_TABLE, idKey) ? AA_ID_TABLE[idKey] : null;
 }
 
 // Reverse of idForKey: a stable id -> { scope, className, key }, or null for
 // an id the table doesn't recognize (an AA removed since that id was
 // assigned — the id itself is never reused, so this is unambiguous).
 export function entryForId(id) {
-  return idToEntry()[id] || null;
+  return idToEntry().get(id) || null;
 }
 
 // (scope, className, aaIdx, rankIdx) -> a pattern-inferred cost estimate

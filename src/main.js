@@ -8,7 +8,7 @@ import { cacheDom, el } from "./dom.js";
 import { populateStaticControls, renderAll, showToast } from "./render.js";
 import { findInvalidatedPicks, reconcilePurchaseOrderCounts } from "./logic.js";
 import { wireEvents } from "./events.js";
-import { applySharedBuildFromUrl } from "./exportImport.js";
+import { applySharedBuildFromUrl, stripBuildParam } from "./exportImport.js";
 import { migrateStaleBuildSlots, cleanupOrphanedOwnedProfiles } from "./builds.js";
 
 async function init() {
@@ -42,7 +42,13 @@ async function init() {
   // If a share link applies, it replaces whatever localStorage just loaded.
   // Neither path toasts directly - this function assembles and shows one
   // combined load-time notice instead of several overwriting each other.
-  const shared = await applySharedBuildFromUrl(localResult);
+  let shared;
+  try {
+    shared = await applySharedBuildFromUrl(localResult);
+  } catch (e) {
+    stripBuildParam();
+    shared = { applied: false, notice: "That share link's build data looks invalid" };
+  }
   wireEvents();
   cleanupStaleStorageKeys();
   // Must run after applySharedBuildFromUrl above, which can itself mint a

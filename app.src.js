@@ -283,8 +283,16 @@
     }
     return -1;
   }
+  var SHARED_SCOPES = ["general", "archetype", "special"];
+  var hasOwn = (obj, key) => !!obj && Object.prototype.hasOwnProperty.call(obj, key);
+  function listIn(table, scope, className) {
+    let list;
+    if (scope === "class") list = hasOwn(table.classes, className) ? table.classes[className] : null;
+    else if (SHARED_SCOPES.includes(scope)) list = table[scope];
+    return Array.isArray(list) ? list : [];
+  }
   function currentList(scope, className) {
-    return scope === "class" ? AA_DATA.classes[className] || [] : AA_DATA[scope] || [];
+    return listIn(AA_DATA, scope, className);
   }
   function currentEntries(scope, className) {
     return currentList(scope, className).map((aa) => ({ name: aa.name, auto: !!aa.auto }));
@@ -293,12 +301,12 @@
     return currentList(scope, className)[idx] || null;
   }
   function legacyEntries(scope, className) {
-    return scope === "class" ? LEGACY_AA_ORDER.classes[className] || [] : LEGACY_AA_ORDER[scope] || [];
+    return listIn(LEGACY_AA_ORDER, scope, className);
   }
-  var entryKeyMapCache = {};
+  var entryKeyMapCache = /* @__PURE__ */ new Map();
   function entryKeyMaps(scope, className) {
     const cacheKey = `${scope}:${className || ""}`;
-    let maps = entryKeyMapCache[cacheKey];
+    let maps = entryKeyMapCache.get(cacheKey);
     if (!maps) {
       const entries = currentEntries(scope, className);
       const idxToKey = entries.map((_, idx) => keyForEntryIdx(entries, idx));
@@ -306,7 +314,8 @@
       idxToKey.forEach((key, idx) => {
         if (key != null && !keyToIdx.has(key)) keyToIdx.set(key, idx);
       });
-      maps = entryKeyMapCache[cacheKey] = { idxToKey, keyToIdx };
+      maps = { idxToKey, keyToIdx };
+      entryKeyMapCache.set(cacheKey, maps);
     }
     return maps;
   }
@@ -316,8 +325,9 @@
   function idxForKey(scope, className, key) {
     const idx = entryKeyMaps(scope, className).keyToIdx.get(key);
     if (idx !== void 0) return idx;
-    const renamed = RENAMED_KEYS[`${scope}:${className || ""}:${key}`];
-    if (renamed === void 0) return -1;
+    const renamedFrom = `${scope}:${className || ""}:${key}`;
+    if (!hasOwn(RENAMED_KEYS, renamedFrom)) return -1;
+    const renamed = RENAMED_KEYS[renamedFrom];
     const renamedIdx = entryKeyMaps(scope, className).keyToIdx.get(renamed);
     return renamedIdx === void 0 ? -1 : renamedIdx;
   }
@@ -331,7 +341,7 @@
   var idToEntryCache = null;
   function idToEntry() {
     if (!idToEntryCache) {
-      idToEntryCache = {};
+      idToEntryCache = /* @__PURE__ */ new Map();
       Object.keys(AA_ID_TABLE).forEach((idKey) => {
         const id = AA_ID_TABLE[idKey];
         const sep1 = idKey.indexOf(":");
@@ -339,17 +349,17 @@
         const scope = idKey.slice(0, sep1);
         const className = idKey.slice(sep1 + 1, sep2) || null;
         const key = idKey.slice(sep2 + 1);
-        idToEntryCache[id] = { scope, className, key };
+        idToEntryCache.set(id, { scope, className, key });
       });
     }
     return idToEntryCache;
   }
   function idForKey(scope, className, key) {
     const idKey = `${scope}:${className || ""}:${key}`;
-    return Object.prototype.hasOwnProperty.call(AA_ID_TABLE, idKey) ? AA_ID_TABLE[idKey] : null;
+    return hasOwn(AA_ID_TABLE, idKey) ? AA_ID_TABLE[idKey] : null;
   }
   function entryForId(id) {
-    return idToEntry()[id] || null;
+    return idToEntry().get(id) || null;
   }
   function costGuessFor(scope, className, aaIdx, rankIdx) {
     const key = keyForIdx(scope, className, aaIdx);
@@ -2083,7 +2093,7 @@
     try {
       const raw = localStorage.getItem(BUILDS_INDEX_KEY);
       const parsed = raw ? JSON.parse(raw) : [];
-      cachedIndex = Array.isArray(parsed) ? parsed : [];
+      cachedIndex = Array.isArray(parsed) ? parsed.filter((b) => isObject(b) && typeof b.id === "string") : [];
     } catch (e) {
       cachedIndex = [];
     }
@@ -4025,14 +4035,7 @@
         trustMatch: !isActiveBuildTheImportedSlot()
       });
       if (proceed) {
-        const result = applyLoaded(json);
-        state.selectedNode = null;
-        clearLastMutation();
-        clearActiveBuild();
-        const repaired = reconcilePurchaseOrderCounts();
-        const ownedOutcome = maybeImportOwned(json);
-        result.droppedRanks += ownedOutcome.dropped + safeDecodeDropped(json);
-        saveLocal();
+        const { result, repaired, ownedOutcome } = applyImportedBuild(json);
         const savedId = saveImportedBuild();
         notice = savedId ? `Loaded shared build from link \u2014 saved as "Imported Build" in Builds${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}` : `Loaded shared build from link, but couldn't save it to Builds \u2014 local storage may be full or unavailable${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`;
         applied = true;
@@ -4040,10 +4043,38 @@
     } else {
       notice = "That share link's build data looks invalid";
     }
+    stripBuildParam();
+    return { applied, notice };
+  }
+  function stripBuildParam() {
     const cleanUrl = new URL(window.location.href);
     cleanUrl.searchParams.delete("build");
     window.history.replaceState({}, "", cleanUrl.toString());
-    return { applied, notice };
+  }
+  function applyImportedBuild(json) {
+    const before = {
+      selectedClasses: state.selectedClasses,
+      charLevel: state.charLevel,
+      ranks: state.ranks,
+      purchaseOrder: state.purchaseOrder,
+      waypoints: state.waypoints,
+      owned: state.owned,
+      ownedProfileId: state.ownedProfileId
+    };
+    try {
+      const result = applyLoaded(json);
+      state.selectedNode = null;
+      clearLastMutation();
+      clearActiveBuild();
+      const repaired = reconcilePurchaseOrderCounts();
+      const ownedOutcome = maybeImportOwned(json);
+      result.droppedRanks += ownedOutcome.dropped + safeDecodeDropped(json);
+      saveLocal();
+      return { result, repaired, ownedOutcome };
+    } catch (e) {
+      Object.assign(state, before);
+      throw e;
+    }
   }
   async function buildExportText() {
     const spent = spentPoints();
@@ -4180,14 +4211,7 @@
     }
     if (!confirmReplaceCurrentBuild("import", "this build")) return false;
     try {
-      const result = applyLoaded(json);
-      state.selectedNode = null;
-      clearLastMutation();
-      clearActiveBuild();
-      const repaired = reconcilePurchaseOrderCounts();
-      const ownedOutcome = maybeImportOwned(json);
-      result.droppedRanks += ownedOutcome.dropped + safeDecodeDropped(json);
-      saveLocal();
+      const { result, repaired, ownedOutcome } = applyImportedBuild(json);
       renderAll();
       showToast(`Build imported${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`);
       return true;
@@ -4403,7 +4427,13 @@
     const ownedResult = loadAndApplyOwned(rawLocal);
     localResult.droppedRanks += ownedResult.droppedOwned;
     loadAndApplyHidden();
-    const shared = await applySharedBuildFromUrl(localResult);
+    let shared;
+    try {
+      shared = await applySharedBuildFromUrl(localResult);
+    } catch (e) {
+      stripBuildParam();
+      shared = { applied: false, notice: "That share link's build data looks invalid" };
+    }
     wireEvents();
     cleanupStaleStorageKeys();
     cleanupOrphanedOwnedProfiles();

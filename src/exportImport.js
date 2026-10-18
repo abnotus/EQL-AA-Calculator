@@ -685,14 +685,7 @@ export async function applySharedBuildFromUrl(localLoadResult) {
       trustMatch: !isActiveBuildTheImportedSlot()
     });
     if (proceed) {
-      const result = applyLoaded(json);
-      state.selectedNode = null;
-      clearLastMutation();
-      clearActiveBuild();
-      const repaired = reconcilePurchaseOrderCounts();
-      const ownedOutcome = maybeImportOwned(json);
-      result.droppedRanks += ownedOutcome.dropped + safeDecodeDropped(json);
-      saveLocal();
+      const { result, repaired, ownedOutcome } = applyImportedBuild(json);
       const savedId = saveImportedBuild();
       notice = savedId
         ? `Loaded shared build from link — saved as "Imported Build" in Builds${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`
@@ -703,10 +696,41 @@ export async function applySharedBuildFromUrl(localLoadResult) {
     notice = "That share link's build data looks invalid";
   }
 
+  stripBuildParam();
+  return { applied, notice };
+}
+
+// Also called by main.js when applying the link threw, so a reload doesn't
+// repeat it.
+export function stripBuildParam() {
   const cleanUrl = new URL(window.location.href);
   cleanUrl.searchParams.delete("build");
   window.history.replaceState({}, "", cleanUrl.toString());
-  return { applied, notice };
+}
+
+// The steps a share link and a text import share once the user has agreed
+// to replace their build. If any of them throws, the previous build is put
+// back in memory, so a failed import never leaves a half-replaced one.
+function applyImportedBuild(json) {
+  const before = {
+    selectedClasses: state.selectedClasses, charLevel: state.charLevel, ranks: state.ranks,
+    purchaseOrder: state.purchaseOrder, waypoints: state.waypoints, owned: state.owned,
+    ownedProfileId: state.ownedProfileId
+  };
+  try {
+    const result = applyLoaded(json);
+    state.selectedNode = null;
+    clearLastMutation();
+    clearActiveBuild();
+    const repaired = reconcilePurchaseOrderCounts();
+    const ownedOutcome = maybeImportOwned(json);
+    result.droppedRanks += ownedOutcome.dropped + safeDecodeDropped(json);
+    saveLocal();
+    return { result, repaired, ownedOutcome };
+  } catch (e) {
+    Object.assign(state, before);
+    throw e;
+  }
 }
 
 export async function buildExportText() {
@@ -904,14 +928,7 @@ export async function importBuildFromText(text) {
   }
   if (!confirmReplaceCurrentBuild("import", "this build")) return false;
   try {
-    const result = applyLoaded(json);
-    state.selectedNode = null;
-    clearLastMutation();
-    clearActiveBuild();
-    const repaired = reconcilePurchaseOrderCounts();
-    const ownedOutcome = maybeImportOwned(json);
-    result.droppedRanks += ownedOutcome.dropped + safeDecodeDropped(json);
-    saveLocal();
+    const { result, repaired, ownedOutcome } = applyImportedBuild(json);
     renderAll();
     showToast(`Build imported${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`);
     return true;

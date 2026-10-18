@@ -46,7 +46,8 @@ function loadIndex() {
   try {
     const raw = localStorage.getItem(BUILDS_INDEX_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    cachedIndex = Array.isArray(parsed) ? parsed : [];
+    // Corrupt storage can hold entries that aren't build records at all.
+    cachedIndex = Array.isArray(parsed) ? parsed.filter((b) => isObject(b) && typeof b.id === "string") : [];
   } catch (e) {
     cachedIndex = [];
   }
