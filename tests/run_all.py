@@ -31,8 +31,9 @@ wait_for_selector timeout on CPU contention alone, not a real bug;
 AACALC_TEST_RETRIES below absorbs exactly that, so raising this is
 reasonable on a beefier machine. Pass 1 to fall back to one at a time.
 
-Not wired into CI (see the project's own notes on why, for now) - this is
-purely the manual-run convenience the review that prompted it asked for.
+GitHub Actions runs this after every push (.github/workflows/checks.yml);
+a test that passed only on retry is listed in the summary and, there,
+raised as a warning annotation.
 """
 import concurrent.futures
 import os
@@ -181,6 +182,7 @@ def main():
     server, log_path = start_server()
     try:
         results_by_name = {}
+        retried = set()
         completed = 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
             future_to_path = {executor.submit(run_one, path): path for path in test_files}
@@ -198,6 +200,8 @@ def main():
                 attempts = len(attempt_log)
                 completed += 1
                 results_by_name[name] = (status, out, err)
+                if status == "pass" and attempts > 1:
+                    retried.add(name)
                 retried_note = f" (passed on retry {attempts - 1})" if status == "pass" and attempts > 1 else ""
                 print(f"[{completed}/{len(test_files)}] {name} ... {status.upper()}{retried_note}")
                 if status != "pass":
@@ -222,7 +226,7 @@ def main():
         # FAILED/TIMED OUT list reads the same regardless of which run
         # finished each test first.
         results = [(path.name, *results_by_name[path.name]) for path in test_files]
-        return summarize(results, time.time() - start_time)
+        return summarize(results, sorted(retried), time.time() - start_time)
     finally:
         server.terminate()
         try:
@@ -235,7 +239,7 @@ def main():
             pass
 
 
-def summarize(results, elapsed_seconds):
+def summarize(results, retried, elapsed_seconds):
     passed = [r for r in results if r[1] == "pass"]
     failed = [r for r in results if r[1] == "fail"]
     timed_out = [r for r in results if r[1] == "timeout"]
@@ -243,6 +247,13 @@ def summarize(results, elapsed_seconds):
     print(f"{len(passed)}/{len(results)} passed in {elapsed_seconds:.1f}s.")
     if failed:
         print(f"FAILED ({len(failed)}): " + ", ".join(name for name, *_ in failed))
+    if retried:
+        # Exit 0 still, since a retry exists to absorb CPU-contention
+        # flakes, but kept visible: an intermittent real bug looks the same.
+        print(f"PASSED ONLY ON RETRY ({len(retried)}): " + ", ".join(retried))
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            for name in retried:
+                print(f"::warning title=Passed only on retry::{name} failed its first attempt - see the log above")
     if timed_out:
         print(f"TIMED OUT ({len(timed_out)}, over {PER_TEST_TIMEOUT_SECONDS}s): " + ", ".join(name for name, *_ in timed_out))
     if not failed and not timed_out:
