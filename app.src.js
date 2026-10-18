@@ -1915,14 +1915,18 @@
     const structural = structuralLockReason(catKey, idx);
     return structural ? structural.text : null;
   }
+  function sameCanonicalAA(a, b) {
+    return a.scope === b.scope && (a.className || null) === (b.className || null) && a.idx === b.idx;
+  }
   function checkPrereqDependents(list, scope, className, targetScope, targetClassName, idx, newRank) {
+    const target = sharedCanonical(targetScope, targetClassName, idx);
     for (let i = 0; i < list.length; i++) {
       const aa = list[i];
       if (!aa.prereq) continue;
       const aaRank = effectiveRankScoped(scope, className, i);
       if (aaRank <= 0) continue;
       const r = resolvePrereqTargetScoped(aa.prereq, scope, className);
-      if (r && r.scope === targetScope && r.className === targetClassName && r.idx === idx && newRank < r.forRank(aaRank)) return true;
+      if (r && sameCanonicalAA(sharedCanonical(r.scope, r.className, r.idx), target) && newRank < r.forRank(aaRank)) return true;
     }
     return false;
   }

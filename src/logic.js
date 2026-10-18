@@ -1135,14 +1135,21 @@ export function getBlockReason(catKey, idx) {
 // spentPoints()/ownedPoints() already use, so refunding a general AA's
 // rank can't silently invalidate a dependent sitting in the Other Classes
 // tab without warning.
+// Compared by canonical identity, so a prereq on either copy of a
+// sharedWithClass AA counts against both.
+function sameCanonicalAA(a, b) {
+  return a.scope === b.scope && (a.className || null) === (b.className || null) && a.idx === b.idx;
+}
+
 function checkPrereqDependents(list, scope, className, targetScope, targetClassName, idx, newRank) {
+  const target = sharedCanonical(targetScope, targetClassName, idx);
   for (let i = 0; i < list.length; i++) {
     const aa = list[i];
     if (!aa.prereq) continue;
     const aaRank = effectiveRankScoped(scope, className, i);
     if (aaRank <= 0) continue;
     const r = resolvePrereqTargetScoped(aa.prereq, scope, className);
-    if (r && r.scope === targetScope && r.className === targetClassName && r.idx === idx && newRank < r.forRank(aaRank)) return true;
+    if (r && sameCanonicalAA(sharedCanonical(r.scope, r.className, r.idx), target) && newRank < r.forRank(aaRank)) return true;
   }
   return false;
 }
