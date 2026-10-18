@@ -1,6 +1,6 @@
 // All addEventListener wiring, run once from main.js after cacheDom().
 
-import { state, CLASS_SLOT_KEYS, DISCLAIMER_DISMISSED_KEY, MAX_CHAR_LEVEL, saveLocal } from "./state.js";
+import { state, CLASS_SLOT_KEYS, DISCLAIMER_DISMISSED_KEY, MAX_CHAR_LEVEL, saveLocal, ownedStorageKeyFor, refreshOwnedFromStorage } from "./state.js";
 import { el } from "./dom.js";
 import { clearAllOwned } from "./logic.js";
 import {
@@ -33,6 +33,11 @@ export function wireEvents() {
   // gap, not every concurrent-write ordering.
   window.addEventListener("storage", (e) => {
     if (e.key === BUILDS_INDEX_KEY) dropCachedIndex();
+    // Another tab sharing this owned profile marked or cleared something.
+    if (e.key === ownedStorageKeyFor(state.ownedProfileId)) {
+      refreshOwnedFromStorage();
+      renderAll();
+    }
   });
 
   el.classSelects.forEach((sel, i) => {

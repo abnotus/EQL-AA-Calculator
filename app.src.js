@@ -655,7 +655,7 @@
   }
   function saveOwnedProfileTo(profileId, ownedLike) {
     try {
-      localStorage.setItem(ownedStorageKeyFor(profileId), JSON.stringify({ v: SAVE_FORMAT_VERSION, owned: serializeRanks(ownedLike) }));
+      localStorage.setItem(ownedStorageKeyFor(profileId), JSON.stringify({ v: SAVE_FORMAT_VERSION, savedAt: Date.now(), owned: serializeRanks(ownedLike) }));
       return true;
     } catch (e) {
       return false;
@@ -666,6 +666,12 @@
   }
   function loadOwnedProfileRaw(profileId) {
     return readJsonFromStorage(ownedStorageKeyFor(profileId), isObject);
+  }
+  function refreshOwnedFromStorage() {
+    const stored = loadOwnedProfileRaw(state.ownedProfileId);
+    if (!stored || !isObject(stored.owned)) return;
+    migrateSharedQuickEvacuation(stored.owned);
+    state.owned = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key)).ranks;
   }
   function migrateLegacyOwnedProfile() {
     try {
@@ -785,6 +791,7 @@
     if (!sourceRaw || !sourceRaw.owned || typeof sourceRaw.owned !== "object") return { merged: 0 };
     migrateSharedQuickEvacuation(sourceRaw.owned);
     const source = deserializeRanks(sourceRaw.owned, (scope, cls, key) => idxForKey(scope, cls, key)).ranks;
+    refreshOwnedFromStorage();
     let merged = 0;
     function mergeStore(target, src) {
       Object.keys(src).forEach((idxStr) => {
@@ -1383,6 +1390,7 @@
     return store && store[canonical.idx] || 0;
   }
   function setOwnedRank(scope, className, idx, rank) {
+    refreshOwnedFromStorage();
     const canonical = sharedCanonical(scope, className, idx);
     const store = getOwnedStore(canonical.scope, canonical.className);
     const from = store[canonical.idx] || 0;
@@ -1514,6 +1522,7 @@
     return null;
   }
   function performReset(clearOwnedToo) {
+    refreshOwnedFromStorage();
     function trimmedRanks(ranksStore, ownedStore, list) {
       const kept = {};
       Object.keys(ranksStore).forEach((idxStr) => {
@@ -1568,7 +1577,7 @@
     lastMutation = null;
     reconcilePurchaseOrderCounts();
     saveLocal();
-    saveOwned();
+    if (clearOwnedToo) saveOwned();
   }
   function sumRealCost(list, store) {
     let total = 0;
@@ -2112,6 +2121,7 @@
   var BUILD_KEY_PREFIX = "eql_aa_build_";
   var IMPORTED_BUILD_NAME = "Imported Build";
   var ACTIVE_BUILD_KEY = "eql_aa_active_build_id";
+  var ORPHAN_GRACE_MS = 7 * 24 * 60 * 60 * 1e3;
   var cachedIndex = null;
   function dropCachedIndex() {
     cachedIndex = null;
@@ -2139,14 +2149,30 @@
   function listBuilds() {
     return loadIndex().slice().sort((a, b) => b.updatedAt - a.updatedAt);
   }
-  function getActiveBuildId() {
+  function sharedActiveBuildId() {
     try {
       return localStorage.getItem(ACTIVE_BUILD_KEY) || null;
     } catch (e) {
       return null;
     }
   }
+  function getActiveBuildId() {
+    try {
+      let id = sessionStorage.getItem(ACTIVE_BUILD_KEY);
+      if (id === null) {
+        id = sharedActiveBuildId() || "";
+        sessionStorage.setItem(ACTIVE_BUILD_KEY, id);
+      }
+      return id || null;
+    } catch (e) {
+      return sharedActiveBuildId();
+    }
+  }
   function setActiveBuildId(id) {
+    try {
+      sessionStorage.setItem(ACTIVE_BUILD_KEY, id || "");
+    } catch (e) {
+    }
     try {
       if (id) localStorage.setItem(ACTIVE_BUILD_KEY, id);
       else localStorage.removeItem(ACTIVE_BUILD_KEY);
@@ -2187,9 +2213,14 @@
   }
   function cleanupOrphanedOwnedProfiles() {
     const referenced = /* @__PURE__ */ new Set([state.ownedProfileId]);
+    const autosave = loadLocal();
+    if (autosave) referenced.add(ownedProfileIdOr(autosave.ownedProfileId));
     loadIndex().forEach(({ id }) => referenced.add(ownedProfileIdOfBuild(id)));
     listOwnedProfileIds().forEach((profileId) => {
-      if (!referenced.has(profileId)) removeOwnedProfile(profileId);
+      if (referenced.has(profileId)) return;
+      const raw = readJsonFromStorage(ownedStorageKeyFor(profileId), isObject);
+      if (raw && typeof raw.savedAt === "number" && Date.now() - raw.savedAt < ORPHAN_GRACE_MS) return;
+      removeOwnedProfile(profileId);
     });
   }
   function buildPayload() {
@@ -4293,6 +4324,10 @@
   function wireEvents() {
     window.addEventListener("storage", (e) => {
       if (e.key === BUILDS_INDEX_KEY) dropCachedIndex();
+      if (e.key === ownedStorageKeyFor(state.ownedProfileId)) {
+        refreshOwnedFromStorage();
+        renderAll();
+      }
     });
     el.classSelects.forEach((sel, i) => {
       let stepBase = null;

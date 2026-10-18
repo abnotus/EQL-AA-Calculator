@@ -7,7 +7,8 @@ import {
   state, saveLocal, serializeRanks, serializePurchaseOrder, applyLoaded, SAVE_FORMAT_VERSION,
   genId, loadAndApplyOwned, saveOwnedProfileTo,
   linkOwnedProfile, splitOwnedProfile, mergeOwnedProfileInto,
-  listOwnedProfileIds, removeOwnedProfile, readJsonFromStorage, isObject, ownedProfileIdOr
+  listOwnedProfileIds, removeOwnedProfile, readJsonFromStorage, isObject, ownedProfileIdOr,
+  loadLocal, ownedStorageKeyFor
 } from "./state.js";
 import { spentPoints, clearLastMutation, reconcilePurchaseOrderCounts } from "./logic.js";
 
@@ -18,11 +19,15 @@ const BUILD_KEY_PREFIX = "eql_aa_build_";
 // enter the picture.
 const IMPORTED_BUILD_NAME = "Imported Build";
 // Which saved slot (if any) the current working state was last loaded from or
-// saved as — purely for UI orientation (highlighting it in the list, showing
-// its name near the Builds button). Not part of any build's own payload, and
-// never trusted for anything beyond display: loading/saving always resolves
-// by id against the index, not the other way around.
+// saved as. Besides the UI (the highlighted row, the name on the Builds
+// button), it decides which slot Link/Split repoint and whether the current
+// build counts as backed up. Kept per tab in sessionStorage, so a Load in
+// one tab can't change what another tab's Link or Split writes to;
+// localStorage holds the latest one for a new tab to start from.
 const ACTIVE_BUILD_KEY = "eql_aa_active_build_id";
+// An unreferenced owned profile written this recently may still be another
+// open tab's live, unsaved session, so the boot sweep leaves it.
+const ORPHAN_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 
 // In-memory cache of the parsed index, avoiding a localStorage.getItem +
 // JSON.parse on every read (listBuilds() alone runs on every renderTopbar,
@@ -85,7 +90,7 @@ export function listBuilds() {
   return loadIndex().slice().sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
-export function getActiveBuildId() {
+function sharedActiveBuildId() {
   try {
     return localStorage.getItem(ACTIVE_BUILD_KEY) || null;
   } catch (e) {
@@ -93,7 +98,21 @@ export function getActiveBuildId() {
   }
 }
 
+export function getActiveBuildId() {
+  try {
+    let id = sessionStorage.getItem(ACTIVE_BUILD_KEY);
+    if (id === null) {
+      id = sharedActiveBuildId() || "";
+      sessionStorage.setItem(ACTIVE_BUILD_KEY, id);
+    }
+    return id || null;
+  } catch (e) {
+    return sharedActiveBuildId();
+  }
+}
+
 function setActiveBuildId(id) {
+  try { sessionStorage.setItem(ACTIVE_BUILD_KEY, id || ""); } catch (e) { /* ignore */ }
   try {
     if (id) localStorage.setItem(ACTIVE_BUILD_KEY, id);
     else localStorage.removeItem(ACTIVE_BUILD_KEY);
@@ -164,11 +183,20 @@ function ownedProfileIdOfBuild(id) {
 // main.js alongside migrateStaleBuildSlots/cleanupStaleStorageKeys, once
 // per boot - cheap at the scale of profiles one browser actually
 // accumulates.
+//
+// Another open tab's session can be on a profile no slot points at (after a
+// Split or an import), so the autosaved session's profile counts as
+// referenced too, and a recently written profile is left for a later boot.
 export function cleanupOrphanedOwnedProfiles() {
   const referenced = new Set([state.ownedProfileId]);
+  const autosave = loadLocal();
+  if (autosave) referenced.add(ownedProfileIdOr(autosave.ownedProfileId));
   loadIndex().forEach(({ id }) => referenced.add(ownedProfileIdOfBuild(id)));
   listOwnedProfileIds().forEach((profileId) => {
-    if (!referenced.has(profileId)) removeOwnedProfile(profileId);
+    if (referenced.has(profileId)) return;
+    const raw = readJsonFromStorage(ownedStorageKeyFor(profileId), isObject);
+    if (raw && typeof raw.savedAt === "number" && Date.now() - raw.savedAt < ORPHAN_GRACE_MS) return;
+    removeOwnedProfile(profileId);
   });
 }
 

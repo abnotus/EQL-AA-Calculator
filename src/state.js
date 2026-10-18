@@ -481,7 +481,7 @@ export function saveLocal() {
 // it while still reporting a successful save.
 export function saveOwnedProfileTo(profileId, ownedLike) {
   try {
-    localStorage.setItem(ownedStorageKeyFor(profileId), JSON.stringify({ v: SAVE_FORMAT_VERSION, owned: serializeRanks(ownedLike) }));
+    localStorage.setItem(ownedStorageKeyFor(profileId), JSON.stringify({ v: SAVE_FORMAT_VERSION, savedAt: Date.now(), owned: serializeRanks(ownedLike) }));
     return true;
   } catch (e) {
     return false;
@@ -499,6 +499,16 @@ export function saveOwned() {
 
 function loadOwnedProfileRaw(profileId) {
   return readJsonFromStorage(ownedStorageKeyFor(profileId), isObject);
+}
+
+// Another tab sharing this profile may have written it since it was
+// loaded, so a change re-reads it first instead of writing back a stale
+// copy over that tab's marks. Keeps what's in memory if nothing is stored.
+export function refreshOwnedFromStorage() {
+  const stored = loadOwnedProfileRaw(state.ownedProfileId);
+  if (!stored || !isObject(stored.owned)) return;
+  migrateSharedQuickEvacuation(stored.owned);
+  state.owned = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key)).ranks;
 }
 
 // Ensures the legacy global owned key's content is reachable under the
@@ -731,6 +741,7 @@ export function mergeOwnedProfileInto(sourceProfileId) {
   // profile's own display ever reflecting the higher value.
   migrateSharedQuickEvacuation(sourceRaw.owned);
   const source = deserializeRanks(sourceRaw.owned, (scope, cls, key) => idxForKey(scope, cls, key)).ranks;
+  refreshOwnedFromStorage();
   let merged = 0;
   function mergeStore(target, src) {
     Object.keys(src).forEach((idxStr) => {

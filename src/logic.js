@@ -4,7 +4,7 @@
 // render.js — so the dependency graph stays one-directional (render depends
 // on logic, not the other way around).
 
-import { state, CLASS_SLOT_KEYS, AA_CATEGORY_KEYS, saveLocal, saveOwned, saveHidden, sanitizeWaypoints } from "./state.js";
+import { state, CLASS_SLOT_KEYS, AA_CATEGORY_KEYS, saveLocal, saveOwned, saveHidden, sanitizeWaypoints, refreshOwnedFromStorage } from "./state.js";
 import { costGuessFor, effectGuessFor, aaAt, currentList, idxForKey, slugify } from "./keys.js";
 
 export function costNum(c) {
@@ -331,6 +331,7 @@ export function ownedRank(scope, className, idx) {
 // doesn't clamp against the AA's rank count — the caller (Progression's
 // toggle) is responsible for passing a sane value.
 export function setOwnedRank(scope, className, idx, rank) {
+  refreshOwnedFromStorage();
   const canonical = sharedCanonical(scope, className, idx);
   const store = getOwnedStore(canonical.scope, canonical.className);
   const from = store[canonical.idx] || 0;
@@ -557,6 +558,7 @@ function popLastPurchase(scope, className, idx) {
 // Auto-granted AAs need no handling here — they never get a
 // ranks/purchaseOrder entry in the first place.
 export function performReset(clearOwnedToo) {
+  refreshOwnedFromStorage();
   // Trims each planned rank down to min(owned, planned), never up. Owned
   // can legitimately exceed the plan (e.g. refund below an already-trained
   // rank), so capping against owned rather than the AA's max rank stops
@@ -632,9 +634,9 @@ export function performReset(clearOwnedToo) {
   // ranks/purchaseOrder in sync, but this is cheap enough to just always run.
   reconcilePurchaseOrderCounts();
   saveLocal();
-  // Only clearOwnedToo actually mutates state.owned - saveOwned runs
-  // unconditionally anyway, rather than adding a branch that could drift.
-  saveOwned();
+  // Only clearOwnedToo changes owned. Writing it otherwise could put back
+  // marks another tab has removed since.
+  if (clearOwnedToo) saveOwned();
 }
 
 // Shared by spentPoints/spentForClass: walks one (list, store) pair -
