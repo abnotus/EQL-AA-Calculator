@@ -2015,6 +2015,7 @@
     store[m.entry.idx] = cur + 1;
     const pos = Math.min(m.position, state.purchaseOrder.length);
     state.purchaseOrder.splice(pos, 0, m.entry);
+    lastMutation = { type: "add", entry: m.entry };
     saveLocal();
     return { changed: true, message: null };
   }

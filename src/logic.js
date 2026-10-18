@@ -1308,6 +1308,10 @@ export function undoLastMutation() {
   store[m.entry.idx] = cur + 1;
   const pos = Math.min(m.position, state.purchaseOrder.length);
   state.purchaseOrder.splice(pos, 0, m.entry);
+  // Re-arms Undo, so undoing twice toggles here like for every other kind.
+  // The restored entry is that AA's last occurrence again (only the top
+  // rank can be removed), so undoing it pops this same entry.
+  lastMutation = { type: "add", entry: m.entry };
   saveLocal();
   return { changed: true, message: null };
 }

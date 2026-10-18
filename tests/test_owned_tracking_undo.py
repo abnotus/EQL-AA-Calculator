@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-# Link, Merge and Split change which owned profile is live without going
-# through setOwnedRank, so they must clear the pending Undo Last. Otherwise
-# Undo replays an owned edit made under the old profile into the newly
-# linked one, rewriting another build's progress.
+# Undo Last bookkeeping. Link, Merge and Split change which owned profile
+# is live without going through setOwnedRank, so they must clear the
+# pending Undo Last. Otherwise Undo replays an owned edit made under the
+# old profile into the newly linked one, rewriting another build's
+# progress. And undoing a removed rank re-arms Undo, like every other kind.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -83,5 +84,26 @@ with sync_playwright() as p:
         assert not errors, errors
         print(f"PASS: {label} clears Undo Last, so it can't rewrite the other build's progress")
         page.close()
+    # Undo Last toggles: undoing a removed rank re-arms it, so a second
+    # Undo removes the rank again, as it does after undoing any other kind
+    # of change. Undoing a removal used to leave nothing to undo.
+    page = browser.new_page(viewport={"width": 1400, "height": 900})
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+    page.goto(BASE)
+    page.wait_for_selector("#treeWrap .node")
+    page.locator("#treeWrap .node").first.click()
+    page.click("#incBtn")
+    page.click("#decBtn")
+    page.click('button[data-tab="progression"]')
+    page.click("#undoLastBtn")
+    page.wait_for_timeout(60)
+    assert page.locator(".progression-row").count() == 1, "FAIL: Undo should restore the removed rank"
+    assert not page.locator("#undoLastBtn").is_disabled(), "FAIL: undoing a removal should re-arm Undo"
+    page.click("#undoLastBtn")
+    page.wait_for_timeout(60)
+    assert page.locator(".progression-row").count() == 0, "FAIL: a second Undo should remove the rank again"
+    print("PASS: Undo Last toggles after undoing a removed rank too")
+    page.close()
+
     browser.close()
     print("ALL PASS")
