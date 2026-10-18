@@ -51,8 +51,11 @@ VERIFIED_FILE = HERE / "log_verified.json"
 
 COSTS_RE = re.compile(r'\bcosts:\s*\[([^\]]*)\]')
 FILL_RE = re.compile(r'\bcosts:\s*Array\((\d+)\)\.fill\("0"\)')
-GAIN_RE = re.compile(r'You have gained the ability "([^"]+)" at a cost of (\d+) ability points?\.')
-IMPROVE_RE = re.compile(r'You have improved (.+?) (\d+) at a cost of (\d+) ability points?\.')
+# Anchored to the whole line after the log's "[timestamp] " prefix, so a
+# chat line quoting a purchase message ("Bob tells you, 'You have gained
+# ...'") isn't counted as a purchase.
+GAIN_RE = re.compile(r'^\[[^\]]*\] You have gained the ability "([^"]+)" at a cost of (\d+) ability points?\.\s*$')
+IMPROVE_RE = re.compile(r'^\[[^\]]*\] You have improved (.+?) (\d+) at a cost of (\d+) ability points?\.\s*$')
 
 
 def parse_costs(raw):
@@ -95,11 +98,11 @@ def parse_log(log_path):
         for i, line in enumerate(f, 1):
             if "at a cost of" not in line:
                 continue
-            m = GAIN_RE.search(line)
+            m = GAIN_RE.match(line)
             if m:
                 events.append((i, m.group(1), 1, int(m.group(2))))
                 continue
-            m = IMPROVE_RE.search(line)
+            m = IMPROVE_RE.match(line)
             if m:
                 events.append((i, m.group(1), int(m.group(2)), int(m.group(3))))
                 continue
@@ -118,6 +121,30 @@ def classify_cost(rank, cost, costs):
         return ("no-data", None)
     real = int(costs[rank - 1])
     return ("matched", real) if real == cost else ("mismatched", real)
+
+
+def merge_verified(existing, matched, today):
+    """Adds this run's matched (name, rank, cost) to the running record.
+    Each AA keeps the ranks the log has matched (ranksVerified) and
+    maxRankVerified, the highest rank R with every rank 1..R matched, so a
+    rank that mismatched or never appeared caps it. Never removes an entry
+    or lowers maxRankVerified: a name absent from this run's log isn't
+    unverified, just not re-checked. An entry written before ranksVerified
+    existed keeps its recorded maxRankVerified."""
+    for name, rank, cost in matched:
+        entry = existing.setdefault(name, {"maxRankVerified": 0, "ranksVerified": [], "verifiedAt": today})
+        ranks = set(entry.get("ranksVerified", []))
+        if rank in ranks:
+            continue
+        ranks.add(rank)
+        entry["ranksVerified"] = sorted(ranks)
+        contiguous = 0
+        while contiguous + 1 in ranks:
+            contiguous += 1
+        if contiguous > entry["maxRankVerified"]:
+            entry["maxRankVerified"] = contiguous
+        entry["verifiedAt"] = today
+    return existing
 
 
 def main():
@@ -184,19 +211,10 @@ def main():
         for line_no, name, rank, cost in no_data:
             print(f"  line {line_no}: {name} rank {rank} (cost {cost} in the log)")
 
-    # Running record: never removes an existing entry (a name absent from
-    # THIS run's log isn't unverified, just not re-checked this time) or
-    # lowers maxRankVerified; only adds new AAs or raises the rank.
     existing = {}
     if VERIFIED_FILE.exists():
         existing = json.loads(VERIFIED_FILE.read_text(encoding="utf-8"))
-    today = date.today().isoformat()
-    for name, rank, cost in matched:
-        entry = existing.get(name, {"maxRankVerified": 0, "verifiedAt": today})
-        if rank > entry["maxRankVerified"]:
-            entry["maxRankVerified"] = rank
-            entry["verifiedAt"] = today
-        existing[name] = entry
+    merge_verified(existing, matched, date.today().isoformat())
     # newline="\n" keeps the file LF on Windows (see assign_aa_ids.py).
     with open(VERIFIED_FILE, "w", encoding="utf-8", newline="\n") as f:
         f.write(json.dumps(existing, indent=2, sort_keys=True) + "\n")
