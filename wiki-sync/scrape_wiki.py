@@ -116,16 +116,27 @@ def fetch_page():
     }
 
 
-def parse_table(block):
-    # The table ends at its closing "|}" - trailing section content after
-    # that (e.g. a "[[Category:...]]" tag) isn't a row and must not leak
-    # into the last row's cells.
-    close = block.find("\n|}")
-    if close != -1:
-        block = block[:close]
+def split_tables(block):
+    """Every "{| ... |}" table in a block of section text, in order. Trailing
+    section content after a table's closing "|}" (e.g. a "[[Category:...]]"
+    tag) isn't a row and must not leak into the last row's cells."""
+    tables = []
+    pos = 0
+    while True:
+        open_at = block.find("{|", pos)
+        if open_at == -1:
+            return tables
+        close = block.find("\n|}", open_at)
+        end = close if close != -1 else len(block)
+        tables.append(block[open_at:end])
+        pos = end + 3
 
+
+def parse_table(table):
     rows = []
-    for part in re.split(r"\n\|-\s*\n", block):
+    # A row separator can carry attributes ("|- style=..."), so the whole
+    # "|-" line is the separator, not just a bare "|-".
+    for part in re.split(r"\n\|-[^\n]*\n", table):
         part = part.strip()
         if not part:
             continue
@@ -151,30 +162,50 @@ def parse_table(block):
     return rows
 
 
-def parse_sections(content):
+def section_category(title):
+    if title in SECTION_MAP:
+        return SECTION_MAP[title]
+    if title.endswith("Class AAs"):
+        return "class:" + title[: -len(" Class AAs")]
+    return None
+
+
+def parse_sections(content, warnings=None):
+    """category -> {name: [entry, ...]}. A heading below a mapped one (a
+    "=== Kunark ===" under "== General AAs ==", say) belongs to that
+    category. A section holding a table that maps to no category is
+    reported in `warnings`, since its AAs would otherwise never show up as
+    new."""
     headers = list(re.finditer(r"^(={2,4})\s*(.+?)\s*\1\s*$", content, re.M))
     wiki = {}
+    parents = []  # (level, category or None) for the enclosing headings
     for i, m in enumerate(headers):
+        level = len(m.group(1))
         title = m.group(2).strip()
+        while parents and parents[-1][0] >= level:
+            parents.pop()
+        cat = section_category(title)
+        if cat is None and parents:
+            cat = parents[-1][1]
+        parents.append((level, cat))
         start = m.end()
         end = headers[i + 1].start() if i + 1 < len(headers) else len(content)
-        block = content[start:end]
-        if "{|" not in block:
+        tables = split_tables(content[start:end])
+        if not tables:
             continue
-        if title in SECTION_MAP:
-            cat = SECTION_MAP[title]
-        elif title.endswith("Class AAs"):
-            cat = "class:" + title[: -len(" Class AAs")]
-        else:
+        if cat is None:
+            if warnings is not None:
+                warnings.append(f'section "{title}" has a table but maps to no category - add it to SECTION_MAP if it lists AAs')
             continue
         bucket = wiki.setdefault(cat, {})
-        for name, ranks_s, cost_s, desc in parse_table(block):
-            entry = {
-                "ranks": ranks_s.strip(),
-                "costs": [c.strip() for c in cost_s.split("/")],
-                "description": desc,
-            }
-            bucket.setdefault(name, []).append(entry)
+        for table in tables:
+            for name, ranks_s, cost_s, desc in parse_table(table):
+                entry = {
+                    "ranks": ranks_s.strip(),
+                    "costs": [c.strip() for c in cost_s.split("/")],
+                    "description": desc,
+                }
+                bucket.setdefault(name, []).append(entry)
     return wiki
 
 
@@ -209,7 +240,10 @@ def main():
 
     print(f"Fetching '{PAGE_TITLE}' from {WIKI_API} ...")
     page = fetch_page()
-    wiki = parse_sections(page["content"])
+    warnings = []
+    wiki = parse_sections(page["content"], warnings)
+    for w in warnings:
+        print(f"WARNING: {w}")
     flat = flatten(wiki)
     total = sum(len(v) for v in wiki.values())
     print(f"Parsed {total} AA rows across {len(wiki)} categories. pageid={page['pageid']} revid={page['revid']}")

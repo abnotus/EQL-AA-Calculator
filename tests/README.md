@@ -41,6 +41,7 @@ python tests/test_assign_aa_ids.py
 python tests/test_slugify.py
 python tests/test_verify_from_log.py
 python tests/test_data_integrity.py
+python tests/test_scrape_parser.py
 ```
 
 This is deliberately *not* pinned to any AA's current confidence tier: the
@@ -62,6 +63,8 @@ an actual pending wiki rename to exercise it against.
 "smart apostrophe" must strip the same way a straight one does, or the same
 AA name slugifies differently depending only on which glyph the wiki page
 happens to use that day.
+
+`test_scrape_parser.py` tests `wiki-sync/scrape_wiki.py`'s table parsing against synthetic wikitext, with no network: every table in a section, a sub-heading inheriting its parent's category, a `|- style=...` row separator, and a warning for an unmapped section holding a table.
 
 `test_data_integrity.py` tests `wiki-sync/common.py`'s `data_integrity_problems` against synthetic `data.src.js` files: an AA written across two lines (the build's line parser can't see it, so it would ship with no share-code id) and two names that slugify to the same key must both be reported.
 
