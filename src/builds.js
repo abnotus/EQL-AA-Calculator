@@ -336,18 +336,20 @@ export function saveWithNameCheck(name) {
 
 // Gate in front of anything about to fully replace the current working
 // state (a share link, a text import, loading a different slot). Proceeds
-// silently if there's nothing at risk or the build already matches a saved
-// slot; otherwise offers to save it under a name first, falling back to a
-// plain replace-confirmation if that's declined.
+// silently if there's nothing at risk (no picks and no waypoints) or the
+// build already matches a saved slot; otherwise offers to save it under a
+// name first, falling back to a plain replace-confirmation if that's
+// declined.
 //
-// extraRisk covers a risk source that doesn't fit "spentPoints() > 0"
+// extraRisk covers a risk source that doesn't fit the above
 // (applySharedBuildFromUrl's droppedRanks check). trustMatch lets a caller
 // say the active-slot match itself isn't trustworthy - opening a share
 // link while the active slot is the reused "Imported Build" one is about
 // to overwrite that very slot, so its match shouldn't count as backed up.
 export function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, trustMatch = true } = {}) {
   const isBackedUp = trustMatch && activeBuildMatchesCurrent();
-  if ((spentPoints() <= 0 && !extraRisk) || isBackedUp) return true;
+  const nothingAtRisk = spentPoints() <= 0 && !state.waypoints.length && !extraRisk;
+  if (nothingAtRisk || isBackedUp) return true;
   const wantsSave = confirm(`Your current build isn't saved. Save it as a named build before ${verb}ing ${target}?`);
   if (wantsSave) {
     const name = prompt("Name this build:", "");

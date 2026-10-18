@@ -162,6 +162,28 @@ with sync_playwright() as p:
     print("PASS: the missing-key tolerance only forgives emptiness - a real non-empty difference still warns")
     page2.close()
 
+    # --- A plan with waypoints but no picks yet is still something to
+    # lose: replacing it must offer to save first, like any spent build. ---
+    page3 = browser.new_page(viewport={"width": 1400, "height": 900})
+    page3.on("pageerror", lambda exc: errors.append(str(exc)))
+    dialogs3 = []
+    page3.on("dialog", lambda d: (dialogs3.append(d.message), d.dismiss()))
+    page3.goto(BASE)
+    page3.wait_for_selector("#treeWrap .node")
+    page3.click('button[data-tab="progression"]')
+    page3.click("#addWaypointBtn")
+    page3.fill("#waypointPtsInput", "40")
+    page3.fill("#waypointLabelInput", "Sky")
+    page3.click("#saveWaypointBtn")
+    page3.click("#importBtn")
+    page3.fill("#importText", "5VACLIARgDEBCABC+Q==")
+    page3.click("#doImportBtn")
+    page3.wait_for_timeout(200)
+    print("dialogs importing over a waypoint-only plan:", dialogs3)
+    assert dialogs3 and "isn't saved" in dialogs3[0], f"FAIL: a waypoint-only plan was replaced without a save prompt, got {dialogs3}"
+    print("PASS: a plan holding only waypoints still gets the save-first prompt")
+    page3.close()
+
     print("ERRORS:", errors)
     assert not errors
     browser.close()

@@ -2335,7 +2335,8 @@
   }
   function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, trustMatch = true } = {}) {
     const isBackedUp = trustMatch && activeBuildMatchesCurrent();
-    if (spentPoints() <= 0 && !extraRisk || isBackedUp) return true;
+    const nothingAtRisk = spentPoints() <= 0 && !state.waypoints.length && !extraRisk;
+    if (nothingAtRisk || isBackedUp) return true;
     const wantsSave = confirm(`Your current build isn't saved. Save it as a named build before ${verb}ing ${target}?`);
     if (wantsSave) {
       const name = prompt("Name this build:", "");
