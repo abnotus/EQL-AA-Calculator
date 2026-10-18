@@ -86,7 +86,7 @@ cost via Python's negative indexing.
 `test_browse_unowned_filter.py`, `test_quick_evacuation_shared_rank.py`,
 `test_quick_evacuation_migration.py`, `test_quick_evacuation_inactive_class.py`,
 `test_quick_evacuation_owned_merge.py`, `test_renamed_aa_key_migration.py`,
-`test_era_badge.py` drive the actual app in a real Chrome instance via
+`test_era_badge.py`, `test_owned_tracking_undo.py` drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
 **Prerequisites:**

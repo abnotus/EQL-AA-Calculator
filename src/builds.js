@@ -475,6 +475,7 @@ export function buildsSharingCurrentOwnedProfile() {
 // saved slot, if any) at targetBuildId's own profile. From then on the two
 // read/write the same data until Split pulls them apart again.
 export function linkOwnedToBuild(targetBuildId) {
+  clearLastMutation();
   linkOwnedProfile(ownedProfileIdOfBuild(targetBuildId));
   persistActiveBuildOwnedProfile();
   saveLocal();
@@ -484,6 +485,7 @@ export function linkOwnedToBuild(targetBuildId) {
 // into the live session's own profile. sourceBuildId's own data is never
 // modified.
 export function mergeOwnedFromBuild(sourceBuildId) {
+  clearLastMutation();
   return mergeOwnedProfileInto(ownedProfileIdOfBuild(sourceBuildId));
 }
 
@@ -491,6 +493,7 @@ export function mergeOwnedFromBuild(sourceBuildId) {
 // gets its own fresh, independent profile, seeded with a copy of whatever
 // it's showing right now. Whatever it used to share with is unaffected.
 export function splitOwnedFromCurrent() {
+  clearLastMutation();
   splitOwnedProfile();
   persistActiveBuildOwnedProfile();
   saveLocal();
