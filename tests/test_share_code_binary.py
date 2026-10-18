@@ -35,6 +35,12 @@ V4_CODE = "fZM_j9swDMW_SqH5DaJI6s_arUOnjoaHFAkOQdO7Q3A39NsXj459cZEr9LNhSbQtku9Nh
 # later widening of that same field for new (v6) exports.
 V5_LEGACY_CODE = "5VACLIARgDEBCABC+Q=="
 
+# A v6 code from the build before v7: Adamant Will planned 3 owned 1,
+# Combat Agility planned and owned 2, and a purple waypoint at 10 pts
+# labelled "v6". v7 widened the delta count and color fields, so this pins
+# that v6 still decodes with its own widths.
+V6_LEGACY_CODE = "5WACLIDQRiAKPAQQCAArgQB2Nnod"
+
 # Real slugs and their true max ranks from data.src.js, so seeded builds are
 # values the app would actually accept (deserializeRanks clamps to aa.ranks,
 # so an over-max seed would come back changed and look like a codec bug).
@@ -69,20 +75,34 @@ def make_build(rnd):
 
     # "higher" (owned > planned, e.g. holding a rank in-game while planning
     # to respec it down) exercises the delta field's negative case.
+    # "unplanned" adds an owned AA the plan no longer has at all (refunded to
+    # 0 after training it), which rides v7's owned-only pairs.
     owned = {"general": {}, "archetype": {}, "special": {}, "classes": {}}
-    mode = rnd.choice(["none", "some", "all", "lower", "higher"])
+    mode = rnd.choice(["none", "some", "all", "lower", "higher", "unplanned"])
     maxrank = dict(GENERAL) | dict(ARCHETYPE)
     if mode != "none":
         for scope in ("general", "archetype"):
             for slug, r in ranks[scope].items():
                 if mode == "some" and rnd.random() < 0.5:
                     continue
-                if mode == "lower":
+                if mode == "unplanned":
+                    owned[scope][slug] = r
+                elif mode == "lower":
                     owned[scope][slug] = max(1, r - 1)
                 elif mode == "higher":
                     owned[scope][slug] = min(maxrank[slug], r + 1)
                 else:
                     owned[scope][slug] = r
+
+    if mode == "unplanned":
+        spare = [(slug, mx) for slug, mx in GENERAL if slug not in ranks["general"]]
+        spare_arc = [(slug, mx) for slug, mx in ARCHETYPE if slug not in ranks["archetype"]]
+        if spare:
+            slug, mx = rnd.choice(spare)
+            owned["general"][slug] = rnd.randint(1, mx)
+        if spare_arc:
+            slug, mx = rnd.choice(spare_arc)
+            owned["archetype"][slug] = rnd.randint(1, mx)
 
     waypoints = []
     for _ in range(rnd.choice([0, 1, 4])):
@@ -172,7 +192,7 @@ with sync_playwright() as p:
     # --- 1. Property test ---
     rnd = random.Random(20260828)
     checked = 0
-    for i in range(18):
+    for i in range(24):
         payload, owned = make_build(rnd)
         src = new_page(payload, owned)
         code = export_code(src)
@@ -393,6 +413,17 @@ with sync_playwright() as p:
     assert legacy_back["owned"] == {"adamant-will": 1}, \
         f"FAIL: the pinned v5 legacy build's owned rank (a delta of 2 from planned) must survive - got {legacy_back['owned']}"
     print("PASS: a v5 link with an owned/planned delta still decodes correctly after v6's field widening")
+
+    # --- 8. v6 links still work after v7 widened the delta count and color.
+    pg = new_page(url=f"{BASE}?build={as_url_code(V6_LEGACY_CODE)}")
+    v6_back = read_state(pg)
+    pg.close()
+    print("v6 legacy link - ranks:", json.dumps(v6_back["ranks"]["general"]),
+          "owned:", json.dumps(v6_back["owned"]["general"]), "waypoints:", v6_back["waypoints"])
+    assert v6_back["ranks"]["general"] == {"adamant-will": 3, "combat-agility": 2},         f"FAIL: the pinned v6 build's planned ranks must survive - got {v6_back['ranks']['general']}"
+    assert v6_back["owned"]["general"] == {"adamant-will": 1, "combat-agility": 2},         f"FAIL: the pinned v6 build's owned ranks must survive - got {v6_back['owned']['general']}"
+    assert v6_back["waypoints"] == [[10, "v6", "purple"]],         f"FAIL: the pinned v6 build's waypoint must survive - got {v6_back['waypoints']}"
+    print("PASS: a v6 link still decodes correctly after v7's field widening")
 
     print("ERRORS:", errors)
     assert not errors

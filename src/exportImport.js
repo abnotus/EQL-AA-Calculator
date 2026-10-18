@@ -12,7 +12,7 @@ import { idForKey, entryForId } from "./keys.js";
 // localStorage only and stays name-keyed (readable, no size pressure
 // there).
 //
-// v5/v6 (v6 current, both written by packV5 - see BUILD_CODE_VERSION
+// v5-v7 (v7 current, all written by packV5 - see BUILD_CODE_VERSION
 // below) drop JSON entirely for packed bits, sized per field from each
 // value's real enforced ceiling. JSON spends most of its bytes on
 // structure - commas, brackets, and decimal digits for values that need
@@ -34,8 +34,13 @@ import { idForKey, entryForId } from "./keys.js";
 // bit-for-bit as it always has (including that gap - a v5 code already
 // carrying a too-wide delta was already wrong before this, not newly so),
 // same "every link ever issued keeps working" guarantee the JSON versions
-// get. Only the writer (packV5) and new exports moved to v6.
-const BUILD_CODE_VERSION = 6;
+// get.
+//
+// v7 appends (id, rank) pairs for AAs that are owned but not planned (a
+// rank refunded to 0 after training it), which v5/v6 dropped. It also
+// widens the waypoint color to 4 bits (v6's 3 held exactly the 7 colors
+// plus "none") and the delta count to 9 bits, the width of an id count.
+const BUILD_CODE_VERSION = 7;
 
 // A real build's own code is tiny - the largest known real-world build
 // (183 picks) is a few hundred characters even uncompressed as v4 JSON.
@@ -252,12 +257,16 @@ const V5_MAGIC = 0xe5;
 //   id        - aaIds.js is append-only and never reuses an id, so the
 //               ceiling grows with every wiki scrape; 9 bits leaves room.
 //   pts       - MAX_WAYPOINT_PTS is 100000.
+//   color     - a WAYPOINT_COLORS position + 1, 0 for none. The position is
+//               what's stored, so that list is append-only.
 //   labelLen  - sanitizeWaypoints caps labels at 60 UTF-16 units, which is
 //               up to 240 UTF-8 bytes.
 const V5_BITS = {
   version: 4, idMode: 1, classSlot: 5, level: 6, id: 9, count: 9,
-  rank: 5, rankDelta: 6, poCount: 11, deltaCount: 8, wpCount: 8, pts: 17, color: 3, labelLen: 8
+  rank: 5, rankDelta: 6, poCount: 11, deltaCount: 9, wpCount: 8, pts: 17, color: 4, labelLen: 8
 };
+// The v5/v6 widths of the fields v7 widened.
+const V6_BITS = { deltaCount: 8, color: 3 };
 const V5_CLASS_NONE = 31; // CLASS_LIST.indexOf miss; applyLoaded rejects the set anyway
 
 function bitWriter() {
@@ -401,6 +410,10 @@ function packV5(idMode) {
   w.put(diffs.length, V5_BITS.deltaCount);
   diffs.forEach(([i, d]) => { w.put(i, diffWidth); w.put(d, V5_BITS.rankDelta); });
 
+  const ownedOnly = Array.from(owned.keys()).filter((id) => !planned.has(id)).sort((a, b) => a - b);
+  w.put(ownedOnly.length, V5_BITS.count);
+  ownedOnly.forEach((id) => { w.put(id, V5_BITS.id); w.put(owned.get(id), V5_BITS.rank); });
+
   const labels = [];
   w.put(state.waypoints.length, V5_BITS.wpCount);
   state.waypoints.forEach((wp) => {
@@ -435,7 +448,8 @@ function expandBinaryPayload(bytes) {
 
   const r = bitReader(bytes, 1);
   const v = r.take(V5_BITS.version);
-  if (v !== 5 && v !== 6) throw new Error(`unsupported binary build code version ${v}`);
+  if (v < 5 || v > 7) throw new Error(`unsupported binary build code version ${v}`);
+  const widths = v >= 7 ? V5_BITS : { ...V5_BITS, ...V6_BITS };
   const idMode = r.take(V5_BITS.idMode);
   const selectedClasses = [];
   for (let i = 0; i < 3; i++) {
@@ -470,7 +484,7 @@ function expandBinaryPayload(bytes) {
     ownedIds.push(id);
     ownedRanks.push(plannedRanks[i]); // same-as-planned unless a delta says otherwise
   });
-  const deltaCount = r.take(V5_BITS.deltaCount);
+  const deltaCount = r.take(widths.deltaCount);
   const diffWidth = indexWidth(ownedIds.length);
   // v5 wrote/read this delta as a plain 5-bit unsigned value (V5_BITS.rank) -
   // decoded exactly that way here regardless of what today's writer does, so
@@ -482,13 +496,20 @@ function expandBinaryPayload(bytes) {
     const d = v >= 6 ? r.takeSigned(V5_BITS.rankDelta) : r.take(V5_BITS.rank);
     if (i < ownedRanks.length) ownedRanks[i] -= d;
   }
+  if (v >= 7) {
+    const ownedOnlyCount = r.take(V5_BITS.count);
+    for (let k = 0; k < ownedOnlyCount; k++) {
+      ownedIds.push(r.take(V5_BITS.id));
+      ownedRanks.push(r.take(V5_BITS.rank));
+    }
+  }
 
   const wpCount = r.take(V5_BITS.wpCount);
   const wpMeta = [];
   for (let i = 0; i < wpCount; i++) {
     wpMeta.push({
       pts: r.take(V5_BITS.pts),
-      color: r.take(V5_BITS.color),
+      color: r.take(widths.color),
       len: r.take(V5_BITS.labelLen)
     });
   }
