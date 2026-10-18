@@ -1443,7 +1443,8 @@
   }
   function isHiddenScoped(scope, className, idx) {
     const canonical = sharedCanonical(scope, className, idx);
-    return !!getHiddenStore(canonical.scope, canonical.className)[canonical.idx];
+    const store = canonical.scope === "class" ? state.hiddenAAs.classes[canonical.className] : state.hiddenAAs[canonical.scope];
+    return !!(store && store[canonical.idx]);
   }
   function isHidden(catKey, idx) {
     const { scope, className } = categoryToScopeClassName(catKey);
@@ -1463,7 +1464,9 @@
   function isSuppressedScoped(scope, className, idx) {
     if (!isHiddenScoped(scope, className, idx)) return false;
     if (state.showHidden) return false;
-    return effectiveRankScoped(scope, className, idx) === 0;
+    const canonical = sharedCanonical(scope, className, idx);
+    const store = canonical.scope === "class" ? state.ranks.classes[canonical.className] : state.ranks[canonical.scope];
+    return !(store && store[canonical.idx] > 0);
   }
   function isSuppressed(catKey, idx) {
     const { scope, className } = categoryToScopeClassName(catKey);

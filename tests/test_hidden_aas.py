@@ -231,6 +231,18 @@ with sync_playwright() as p:
     page.fill("#globalSearch", "")
     page.click("#browseToggle")
 
+    # An auto-granted AA always holds its free rank, which used to count as
+    # "points spent" and kept it visible however it was hidden.
+    page.click('button[data-tab="general"]')
+    page.wait_for_timeout(150)
+    origin = page.locator("#treeWrap .node", has=page.locator(".name", has_text="Origin"))
+    origin.click()
+    page.click("#hideToggleBtn")
+    page.wait_for_timeout(100)
+    print("auto-granted Origin nodes after hiding it:", origin.count())
+    assert origin.count() == 0, "FAIL: hiding an auto-granted AA should take it out of the tree"
+    print("PASS: an auto-granted AA can be hidden, since its free rank isn't points spent")
+
     print("ERRORS:", errors)
     assert not errors
     browser.close()

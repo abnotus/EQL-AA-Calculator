@@ -358,9 +358,12 @@ function getHiddenStore(scope, className) {
 // Scope/className form, for callers (Browse) that need to check an AA
 // outside the 3 active class slots, where categoryToScopeClassName would
 // return null - same split as costGuess/costGuessScoped.
+// A read, so it doesn't create an empty class store the way
+// getHiddenStore does for a write.
 export function isHiddenScoped(scope, className, idx) {
   const canonical = sharedCanonical(scope, className, idx);
-  return !!getHiddenStore(canonical.scope, canonical.className)[canonical.idx];
+  const store = canonical.scope === "class" ? state.hiddenAAs.classes[canonical.className] : state.hiddenAAs[canonical.scope];
+  return !!(store && store[canonical.idx]);
 }
 
 export function isHidden(catKey, idx) {
@@ -386,12 +389,16 @@ export function setHidden(catKey, idx, hidden) {
 // Whether an AA should be left out of the tree, Browse, and the tab match
 // badges entirely. Hiding declutters what to look at; it never suppresses
 // real build state, so an AA you've actually spent points on always stays
-// visible. Show Hidden is the one override switch - including for search,
-// so a hidden AA is unfindable rather than merely absent from browsing.
+// visible. Free ranks (auto-granted, or an autoRanks floor) aren't points
+// spent, so they don't count. Show Hidden is the one override switch -
+// including for search, so a hidden AA is unfindable rather than merely
+// absent from browsing.
 export function isSuppressedScoped(scope, className, idx) {
   if (!isHiddenScoped(scope, className, idx)) return false;
   if (state.showHidden) return false;
-  return effectiveRankScoped(scope, className, idx) === 0;
+  const canonical = sharedCanonical(scope, className, idx);
+  const store = canonical.scope === "class" ? state.ranks.classes[canonical.className] : state.ranks[canonical.scope];
+  return !(store && store[canonical.idx] > 0);
 }
 
 export function isSuppressed(catKey, idx) {
