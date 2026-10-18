@@ -1939,6 +1939,20 @@ main {
     height: 32px;
   }
 
+  /* main clips overflow, so a toolbar or panel wider than the screen can't
+     be scrolled to. */
+  .view-panel {
+    min-width: 0;
+  }
+
+  .progression-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .progression-hint {
+    flex-basis: 100%;
+  }
+
   .progression-row {
     flex-wrap: wrap;
     row-gap: 8px;

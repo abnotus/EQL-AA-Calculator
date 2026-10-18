@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-# Progression layout: the Move To popover on a ⚠ row sits above later
-# rows. The ⚠ dimming once put opacity on .step-controls, which made it a
-# stacking context, so a click on the popover landed on the next row's
-# buttons instead.
+# Two Progression layout checks:
+# 1. The Move To popover on a ⚠ row sits above later rows. The ⚠ dimming
+#    once put opacity on .step-controls, which made it a stacking context,
+#    so a click on the popover landed on the next row's buttons instead.
+# 2. At phone width every toolbar control and row button stays on screen.
+#    main clips overflow, so anything pushed past the right edge was out of
+#    reach.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -59,6 +62,23 @@ with sync_playwright() as p:
     assert len(after) == len(before), "FAIL: the click removed a rank instead of moving the row"
     assert after[1].startswith("Combat Agility"), f"FAIL: the row didn't move to the bottom: {after}"
     print("PASS: the Move To popover on a warned row receives its own clicks")
+    page.close()
+
+    page = browser.new_page(viewport={"width": 390, "height": 800})
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+    page.goto(BASE)
+    page.wait_for_selector("#treeWrap .node")
+    buy(page, "general", "Combat Agility")
+    page.click('button[data-tab="progression"]')
+    page.wait_for_selector(".progression-row")
+    width = page.evaluate("document.documentElement.clientWidth")
+    targets = ["#undoLastBtn", "#clearOwnedBtn", "#manageOwnedTrackingBtn", "#ownedSummary",
+               ".progression-row .step-cost", ".progression-row .step-remove", ".progression-row .step-move"]
+    for sel in targets:
+        b = page.locator(sel).first.bounding_box()
+        print(f"{sel}: right edge {b['x'] + b['width']:.0f} of {width}")
+        assert b["x"] >= 0 and b["x"] + b["width"] <= width + 0.5, f"FAIL: {sel} is off screen at {width}px"
+    print("PASS: Progression controls fit at phone width")
     page.close()
 
     assert not errors, errors
