@@ -165,35 +165,14 @@ function expandCompactPayload(compact) {
   };
 }
 
-// purchaseOrder is highly repetitive (one entry per rank bought, not per AA —
-// a maxed 6-rank AA repeats the same scope/className/key six times), so
-// compression beats every hand-rolled format short of assigning every AA a
-// stable numeric id, which is a bigger change than this one. CompressionStream
-// is the standard streams-based API for this; no library needed. Needs
-// Firefox 113+ / Safari 16.4+ (mid-2023) - no feature-detection fallback,
-// since that's an old floor for this app's audience; an unsupported browser
-// fails on both encode and decode (share links / export text), not just one.
+// Codes before v5 were JSON run through CompressionStream: gzip at first,
+// then raw DEFLATE ("deflate-raw", gzip without its header and trailer).
+// Only the decoding side is still needed. DecompressionStream needs
+// Firefox 113+ / Safari 16.4+ (mid-2023); there's no fallback. It's piped
+// through a Blob's stream rather than a manual writer, so a rejected input
+// fails in the one promise the caller awaits instead of also leaving an
+// unhandled writer.write() rejection behind.
 //
-// Raw DEFLATE ("deflate-raw"), not gzip - same underlying compression, but
-// without gzip's 10-byte header + 8-byte trailer (magic bytes, mtime, a
-// CRC32, ...) that a code embedded in a URL/text blob has no use for.
-// Same browser floor either way - every engine's initial CompressionStream
-// shipped all three formats together, deflate-raw included. Saves a fixed
-// ~24 base64 characters per code regardless of build size, which is most
-// noticeable proportionally on an already-short link for a small build.
-//
-// Piped through a Blob's stream rather than manually writing to a
-// writer - decodeBuildCode below tries more than one format in sequence
-// on the same rejected input, and a manual writer.write()'s own promise
-// goes unawaited/unhandled the moment the stream rejects, independently
-// of the awaited read side a try/catch actually guards. Piping avoids
-// that split entirely: every failure surfaces as the one promise this
-// function already returns.
-async function compress(bytes, format) {
-  const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream(format));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
-}
-
 // Reads the decompressed stream chunk-by-chunk rather than materializing
 // it in one shot (new Response(stream).arrayBuffer(), the previous
 // approach) specifically so a decompression bomb - a small, legitimately-
@@ -230,10 +209,10 @@ async function decompress(bytes, format) {
 // also gives up the integrity check DEFLATE was providing incidentally (a
 // truncated stream fails to inflate), which is why V5 carries its own CRC.
 //
-// Byte 0 is a magic number no earlier format can start with: every one of
-// them decodes to text beginning "[" (0x5B) or "{" (0x7B). decodeBuildCode
-// checks it before attempting any decompression, so a v5 payload can never
-// be mistaken for deflate-raw input that happens to inflate into garbage.
+// Byte 0 is a magic number. Plain JSON codes start with "[" or "{", and
+// gzip with 0x1f, but a deflate-raw code can start with 0xE5 too (see
+// decodeBuildCode), so a failed binary decode falls through to the older
+// formats rather than being final.
 const V5_MAGIC = 0xe5;
 
 // Field widths. Each is sized from the real enforced ceiling, not from
@@ -255,7 +234,7 @@ const V5_MAGIC = 0xe5;
 //   color     - a WAYPOINT_COLORS position + 1, 0 for none. The position is
 //               what's stored, so that list is append-only.
 //   labelLen  - sanitizeWaypoints caps labels at 60 UTF-16 units, which is
-//               up to 240 UTF-8 bytes.
+//               up to 180 UTF-8 bytes (3 per unit at most).
 const V5_BITS = {
   version: 4, idMode: 1, classSlot: 5, level: 6, id: 9, count: 9,
   rank: 5, rankDelta: 6, poCount: 11, deltaCount: 9, wpCount: 8, pts: 17, color: 4, labelLen: 8
