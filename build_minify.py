@@ -151,6 +151,15 @@ def check_aa_ids_current(entries):
         return [f"  Could not find AA_ID_TABLE in {ids_path} - has its format changed?"]
     table = json.loads(m.group(1))
 
+    # Two keys on one id would make an old share link resolve to whichever
+    # entry the decoder happened to see last.
+    by_id = {}
+    for k, v in table.items():
+        by_id.setdefault(v, []).append(k)
+    shared = {v: ks for v, ks in by_id.items() if len(ks) > 1}
+    if shared:
+        return [f"  id {v} is assigned to more than one key in {ids_path}: {', '.join(ks)}" for v, ks in sorted(shared.items())]
+
     missing = [k for k in expected_id_keys if k not in table]
     if not missing:
         return []
