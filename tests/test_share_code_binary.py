@@ -35,6 +35,11 @@ V4_CODE = "fZM_j9swDMW_SqH5DaJI6s_arUOnjoaHFAkOQdO7Q3A39NsXj459cZEr9LNhSbQtku9Nh
 # later widening of that same field for new (v6) exports.
 V5_LEGACY_CODE = "5VACLIARgDEBCABC+Q=="
 
+# A v5 code with owned above planned: Adamant Will planned 1 owned 3, and
+# Combat Agility planned and owned 2. v5 wrote the delta (-2) as its low 5
+# bits (30); reading that unsigned gave owned 1 - 30, clamped to 0.
+V5_OWNED_ABOVE_CODE = "5VACLIDQQiAG8BeAALD5"
+
 # A v4 deflate-raw code whose first byte happens to be 0xE5 (a dynamic-
 # Huffman first block with HLIT=28; owned equal to planned makes the long
 # repeat that needs). Before the fallback it hit the v5+ path, failed the
@@ -432,6 +437,15 @@ with sync_playwright() as p:
     assert legacy_back["owned"] == {"adamant-will": 1}, \
         f"FAIL: the pinned v5 legacy build's owned rank (a delta of 2 from planned) must survive - got {legacy_back['owned']}"
     print("PASS: a v5 link with an owned/planned delta still decodes correctly after v6's field widening")
+
+    # --- 7b. A v5 link with owned above planned keeps the owned rank.
+    pg = new_page(url=f"{BASE}?build={as_url_code(V5_OWNED_ABOVE_CODE)}")
+    above_back = read_state(pg)
+    pg.close()
+    print("v5 owned-above-planned link - owned:", json.dumps(above_back["owned"]["general"]))
+    assert above_back["owned"]["general"] == {"adamant-will": 3, "combat-agility": 2}, (
+        f"FAIL: v5 owned above planned should decode exactly - got {above_back['owned']['general']}")
+    print("PASS: a v5 link with owned above planned recovers the owned rank")
 
     # --- 8. v6 links still work after v7 widened the delta count and color.
     pg = new_page(url=f"{BASE}?build={as_url_code(V6_LEGACY_CODE)}")

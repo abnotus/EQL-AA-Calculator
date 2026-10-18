@@ -28,13 +28,8 @@ import { idForKey, entryForId } from "./keys.js";
 // separately in decodeBuildCode.
 //
 // v6 exists solely to widen the owned/planned delta field from 5 to 6
-// signed bits (V5_BITS.rankDelta) - v5's 5 bits could only hold a delta
-// in [-16, 15], one bit short of the true [-31, 31] range, silently
-// corrupting anything outside it. expandBinaryPayload still decodes v5
-// bit-for-bit as it always has (including that gap - a v5 code already
-// carrying a too-wide delta was already wrong before this, not newly so),
-// same "every link ever issued keeps working" guarantee the JSON versions
-// get.
+// signed bits (V5_BITS.rankDelta). v5's 5 bits hold the delta modulo 32,
+// which expandBinaryPayload undoes exactly, since both ranks fit in 5 bits.
 //
 // v7 appends (id, rank) pairs for AAs that are owned but not planned (a
 // rank refunded to 0 after training it), which v5/v6 dropped. It also
@@ -486,15 +481,18 @@ function expandBinaryPayload(bytes) {
   });
   const deltaCount = r.take(widths.deltaCount);
   const diffWidth = indexWidth(ownedIds.length);
-  // v5 wrote/read this delta as a plain 5-bit unsigned value (V5_BITS.rank) -
-  // decoded exactly that way here regardless of what today's writer does, so
-  // an already-issued v5 code keeps decoding exactly as it always did. v6
-  // widened it to 6 signed bits (V5_BITS.rankDelta) to cover the full delta
-  // range - see BUILD_CODE_VERSION's own comment.
+  // v5 wrote the delta's low 5 bits (two's complement for owned above
+  // planned). Both ranks fit in 5 bits, so the owned rank is recovered
+  // exactly modulo 32. v6+ stores 6 signed bits (V5_BITS.rankDelta).
   for (let k = 0; k < deltaCount; k++) {
     const i = r.take(diffWidth);
-    const d = v >= 6 ? r.takeSigned(V5_BITS.rankDelta) : r.take(V5_BITS.rank);
-    if (i < ownedRanks.length) ownedRanks[i] -= d;
+    if (v >= 6) {
+      const d = r.takeSigned(V5_BITS.rankDelta);
+      if (i < ownedRanks.length) ownedRanks[i] -= d;
+    } else {
+      const raw = r.take(V5_BITS.rank);
+      if (i < ownedRanks.length) ownedRanks[i] = (ownedRanks[i] - raw) & 31;
+    }
   }
   if (v >= 7) {
     const ownedOnlyCount = r.take(V5_BITS.count);

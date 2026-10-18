@@ -3920,8 +3920,13 @@
     const diffWidth = indexWidth(ownedIds.length);
     for (let k = 0; k < deltaCount; k++) {
       const i = r.take(diffWidth);
-      const d = v >= 6 ? r.takeSigned(V5_BITS.rankDelta) : r.take(V5_BITS.rank);
-      if (i < ownedRanks.length) ownedRanks[i] -= d;
+      if (v >= 6) {
+        const d = r.takeSigned(V5_BITS.rankDelta);
+        if (i < ownedRanks.length) ownedRanks[i] -= d;
+      } else {
+        const raw = r.take(V5_BITS.rank);
+        if (i < ownedRanks.length) ownedRanks[i] = ownedRanks[i] - raw & 31;
+      }
     }
     if (v >= 7) {
       const ownedOnlyCount = r.take(V5_BITS.count);
