@@ -15,7 +15,7 @@ import {
   isSuppressed, isSuppressedScoped,
   effectiveRankScoped, countOtherClassesPicked, otherClassesWithPicks, spentForClass,
   ownedPoints, spentOnInactiveClasses, estimatedExtraOwnedPoints, isClassEligible, ownedRank,
-  autoRanksOffset, autoRanksOffsetScoped
+  autoRanksOffset, autoRanksOffsetScoped, rankLevelReqs, hasPerRankLevels
 } from "./logic.js";
 import {
   listBuilds, getActiveBuildId, loadBuild, renameBuild, deleteBuild,
@@ -271,7 +271,8 @@ export function renderTree(catKey) {
     const hidden = isHidden(catKey, idx);
     if (isSuppressed(catKey, idx)) return;
     const autoIneligible = aa.auto && !isClassEligible(aa);
-    const autoBelowLevel = aa.auto && !autoIneligible && rank < aa.ranks;
+    const autoBelowLevel = aa.auto && !autoIneligible && rank === 0;
+    const autoPartial = aa.auto && !autoIneligible && rank > 0 && rank < aa.ranks;
     const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
     const locked = !!lockReason || autoBelowLevel || autoIneligible;
     const invalidReason = rank > 0 ? heldRankInvalidReason(catKey, idx) : null;
@@ -299,6 +300,7 @@ export function renderTree(catKey) {
     if (invalidReason) node.title = invalidReason;
     else if (autoIneligible) node.title = `Requires one of: ${aa.eligibleClasses.join(", ")}.`;
     else if (autoBelowLevel) node.title = `Automatically granted at level ${aa.levelReq} — no points needed.`;
+    else if (autoPartial) node.title = `Automatically granted — rank ${rank + 1} at level ${rankLevelReqs(aa)[rank]}.`;
     else if (lockReason) node.title = lockReason.text;
     else if (aa.auto) node.title = "Automatically granted — no AA points needed.";
     if (state.selectedNode && state.selectedNode.category === catKey && state.selectedNode.idx === idx) {
@@ -404,16 +406,18 @@ function renderSidePanel() {
     <button id="incBtn" ${atMax || aa.auto ? "disabled" : ""} class="${blockReason ? "blocked" : ""}">+</button>
   </div>`;
   if (aa.auto) {
-    const levelReq = parseInt(aa.levelReq, 10) || 1;
+    const levels = rankLevelReqs(aa);
     if (!isClassEligible(aa)) {
       html += `<div class="req-line warn">Requires one of: ${escapeHtml(aa.eligibleClasses.join(", "))}.</div>`;
-    } else if (state.charLevel < levelReq) {
-      html += `<div class="req-line warn">Automatically granted at level ${levelReq} &mdash; not yet active at level ${state.charLevel}.</div>`;
+    } else if (rank === 0) {
+      html += `<div class="req-line warn">Automatically granted at level ${levels[0]} &mdash; not yet active at level ${state.charLevel}.</div>`;
+    } else if (rank < aa.ranks) {
+      html += `<div class="req-line">Automatically granted &mdash; no AA points required. Rank ${rank + 1} comes at level ${levels[rank]}.</div>`;
     } else {
       html += `<div class="req-line">Automatically granted &mdash; no AA points required, always active once unlocked.</div>`;
-      if (aa.ranks > 1) {
-        html += `<div class="req-line" style="color:#63636a;">The wiki doesn't document per-rank level breakpoints for this ability, so it's shown at max rank once level ${levelReq}+ is reached.</div>`;
-      }
+    }
+    if (aa.ranks > 1 && !hasPerRankLevels(aa) && rank > 0) {
+      html += `<div class="req-line" style="color:#63636a;">The wiki doesn't document per-rank level breakpoints for this ability, so it's shown at max rank once level ${levels[0]}+ is reached.</div>`;
     }
   } else {
     if (blockReason) {

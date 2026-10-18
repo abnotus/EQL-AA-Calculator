@@ -181,10 +181,40 @@ export function getList(catKey) {
   return AA_DATA[catKey] || [];
 }
 
+// The level each rank needs: levelReq for rank 1, raised by any "Rank N
+// requires level L" clause in the description, the wiki's phrasing for
+// per-rank breakpoints. A rank never needs less than the one before it.
+const rankLevelCache = new WeakMap();
+export function rankLevelReqs(aa) {
+  let levels = rankLevelCache.get(aa);
+  if (!levels) {
+    const stated = {};
+    for (const m of String(aa.description || "").matchAll(/\brank (\d+) requires level (\d+)/gi)) {
+      stated[parseInt(m[1], 10)] = parseInt(m[2], 10);
+    }
+    levels = [];
+    for (let r = 1; r <= aa.ranks; r++) {
+      const floor = r === 1 ? (parseInt(aa.levelReq, 10) || 1) : levels[r - 2];
+      levels.push(Math.max(floor, stated[r] || 0));
+    }
+    rankLevelCache.set(aa, levels);
+  }
+  return levels;
+}
+
+export function hasPerRankLevels(aa) {
+  const levels = rankLevelReqs(aa);
+  return levels[levels.length - 1] !== levels[0];
+}
+
+// How many of the AA's ranks the current character level reaches.
+function ranksAtLevel(aa) {
+  return rankLevelReqs(aa).filter((level) => state.charLevel >= level).length;
+}
+
 // Auto-granted AAs (0-cost on the wiki) are trained automatically as the
-// character levels — the wiki documents one unlock level, not per-rank
-// breakpoints, so these sit at max rank once unlocked rather than
-// trickling in.
+// character levels, each rank at its own level when the description gives
+// per-rank breakpoints, otherwise all at once at levelReq.
 //
 // `autoRanks: N` is rarer: only the first N ranks are free (e.g. Symphonic
 // Aura's rank 1 is free, rank 2+ cost points). effectiveRank returns the
@@ -208,18 +238,16 @@ export function effectiveRankScoped(scope, className, idx) {
   // report the AA as "picked" despite never being granted.
   const classActive = scope !== "class" || state.selectedClasses.includes(className);
   if (aa && aa.auto) {
-    const levelReq = parseInt(aa.levelReq, 10) || 1;
-    // An archetype/general auto-grant with eligibleClasses (e.g. Point Blank
-    // Fire) must still respect it - unlike a class-scoped auto AA, nothing
-    // else gates who this free rank goes to.
-    return classActive && isClassEligible(aa) && state.charLevel >= levelReq ? aa.ranks : 0;
+    // An archetype/general auto-grant with eligibleClasses must still
+    // respect it - unlike a class-scoped auto AA, nothing else gates who
+    // this free rank goes to.
+    return classActive && isClassEligible(aa) ? ranksAtLevel(aa) : 0;
   }
   const canonical = sharedCanonical(scope, className, idx);
   const store = canonical.scope === "class" ? (state.ranks.classes[canonical.className] || {}) : (state.ranks[canonical.scope] || {});
   const purchased = store[canonical.idx] || 0;
   if (aa && aa.autoRanks) {
-    const levelReq = parseInt(aa.levelReq, 10) || 1;
-    const freeRanks = classActive && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+    const freeRanks = classActive ? Math.min(aa.autoRanks, ranksAtLevel(aa)) : 0;
     return Math.max(freeRanks, purchased);
   }
   return purchased;
@@ -879,8 +907,12 @@ export function structuralLockReason(catKey, idx) {
   if (!isClassEligible(aa)) {
     return { kind: "classEligibility", text: `Requires one of: ${aa.eligibleClasses.join(", ")}.` };
   }
-  const levelReq = parseInt(aa.levelReq, 10) || 1;
-  if (state.charLevel < levelReq) return { kind: "level", text: `Requires character level ${levelReq}.` };
+  const nextRank = Math.min(effectiveRank(catKey, idx) + 1, aa.ranks);
+  const levelReq = rankLevelReqs(aa)[nextRank - 1];
+  if (state.charLevel < levelReq) {
+    const who = nextRank > 1 && hasPerRankLevels(aa) ? `Rank ${nextRank} requires` : "Requires";
+    return { kind: "level", text: `${who} character level ${levelReq}.` };
+  }
   if (aa.classRankCap) {
     const cap = classRankCapFor(aa);
     const nextRank = effectiveRank(catKey, idx) + 1;
@@ -1167,9 +1199,7 @@ export function moveEntry(fromIdx, toIdx) {
 // changeRank (what a refund can't go below) and attemptDecrement (the
 // UI-facing gate in front of it), so the two can't drift apart.
 function autoFloor(aa) {
-  if (!aa.autoRanks) return 0;
-  const levelReq = parseInt(aa.levelReq, 10) || 1;
-  return state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+  return aa.autoRanks ? Math.min(aa.autoRanks, ranksAtLevel(aa)) : 0;
 }
 
 // Pure state mutation — no rendering, no user feedback. Returns whether a change

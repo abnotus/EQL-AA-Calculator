@@ -1308,6 +1308,30 @@
     if (slot >= 0) return AA_DATA.classes[state.selectedClasses[slot]] || [];
     return AA_DATA[catKey] || [];
   }
+  var rankLevelCache = /* @__PURE__ */ new WeakMap();
+  function rankLevelReqs(aa) {
+    let levels = rankLevelCache.get(aa);
+    if (!levels) {
+      const stated = {};
+      for (const m of String(aa.description || "").matchAll(/\brank (\d+) requires level (\d+)/gi)) {
+        stated[parseInt(m[1], 10)] = parseInt(m[2], 10);
+      }
+      levels = [];
+      for (let r = 1; r <= aa.ranks; r++) {
+        const floor = r === 1 ? parseInt(aa.levelReq, 10) || 1 : levels[r - 2];
+        levels.push(Math.max(floor, stated[r] || 0));
+      }
+      rankLevelCache.set(aa, levels);
+    }
+    return levels;
+  }
+  function hasPerRankLevels(aa) {
+    const levels = rankLevelReqs(aa);
+    return levels[levels.length - 1] !== levels[0];
+  }
+  function ranksAtLevel(aa) {
+    return rankLevelReqs(aa).filter((level) => state.charLevel >= level).length;
+  }
   function effectiveRank(catKey, idx) {
     const { scope, className } = categoryToScopeClassName(catKey);
     return effectiveRankScoped(scope, className, idx);
@@ -1316,15 +1340,13 @@
     const aa = aaAt(scope, className, idx);
     const classActive = scope !== "class" || state.selectedClasses.includes(className);
     if (aa && aa.auto) {
-      const levelReq = parseInt(aa.levelReq, 10) || 1;
-      return classActive && isClassEligible(aa) && state.charLevel >= levelReq ? aa.ranks : 0;
+      return classActive && isClassEligible(aa) ? ranksAtLevel(aa) : 0;
     }
     const canonical = sharedCanonical(scope, className, idx);
     const store = canonical.scope === "class" ? state.ranks.classes[canonical.className] || {} : state.ranks[canonical.scope] || {};
     const purchased = store[canonical.idx] || 0;
     if (aa && aa.autoRanks) {
-      const levelReq = parseInt(aa.levelReq, 10) || 1;
-      const freeRanks = classActive && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+      const freeRanks = classActive ? Math.min(aa.autoRanks, ranksAtLevel(aa)) : 0;
       return Math.max(freeRanks, purchased);
     }
     return purchased;
@@ -1688,12 +1710,16 @@
     if (!isClassEligible(aa)) {
       return { kind: "classEligibility", text: `Requires one of: ${aa.eligibleClasses.join(", ")}.` };
     }
-    const levelReq = parseInt(aa.levelReq, 10) || 1;
-    if (state.charLevel < levelReq) return { kind: "level", text: `Requires character level ${levelReq}.` };
+    const nextRank = Math.min(effectiveRank(catKey, idx) + 1, aa.ranks);
+    const levelReq = rankLevelReqs(aa)[nextRank - 1];
+    if (state.charLevel < levelReq) {
+      const who = nextRank > 1 && hasPerRankLevels(aa) ? `Rank ${nextRank} requires` : "Requires";
+      return { kind: "level", text: `${who} character level ${levelReq}.` };
+    }
     if (aa.classRankCap) {
       const cap = classRankCapFor(aa);
-      const nextRank = effectiveRank(catKey, idx) + 1;
-      if (nextRank > cap) return { kind: "classCap", text: `Capped at rank ${cap} for your currently selected classes.` };
+      const nextRank2 = effectiveRank(catKey, idx) + 1;
+      if (nextRank2 > cap) return { kind: "classCap", text: `Capped at rank ${cap} for your currently selected classes.` };
     }
     if (aa.prereq) {
       const attempt = tryResolvePrereq(aa.prereq, catKey);
@@ -1880,9 +1906,7 @@
     saveLocal();
   }
   function autoFloor(aa) {
-    if (!aa.autoRanks) return 0;
-    const levelReq = parseInt(aa.levelReq, 10) || 1;
-    return state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+    return aa.autoRanks ? Math.min(aa.autoRanks, ranksAtLevel(aa)) : 0;
   }
   function changeRank(category, idx, delta) {
     const { scope, className } = categoryToScopeClassName(category);
@@ -2493,7 +2517,8 @@
       const hidden = isHidden(catKey, idx);
       if (isSuppressed(catKey, idx)) return;
       const autoIneligible = aa.auto && !isClassEligible(aa);
-      const autoBelowLevel = aa.auto && !autoIneligible && rank < aa.ranks;
+      const autoBelowLevel = aa.auto && !autoIneligible && rank === 0;
+      const autoPartial = aa.auto && !autoIneligible && rank > 0 && rank < aa.ranks;
       const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
       const locked = !!lockReason || autoBelowLevel || autoIneligible;
       const invalidReason = rank > 0 ? heldRankInvalidReason(catKey, idx) : null;
@@ -2516,6 +2541,7 @@
       if (invalidReason) node.title = invalidReason;
       else if (autoIneligible) node.title = `Requires one of: ${aa.eligibleClasses.join(", ")}.`;
       else if (autoBelowLevel) node.title = `Automatically granted at level ${aa.levelReq} \u2014 no points needed.`;
+      else if (autoPartial) node.title = `Automatically granted \u2014 rank ${rank + 1} at level ${rankLevelReqs(aa)[rank]}.`;
       else if (lockReason) node.title = lockReason.text;
       else if (aa.auto) node.title = "Automatically granted \u2014 no AA points needed.";
       if (state.selectedNode && state.selectedNode.category === catKey && state.selectedNode.idx === idx) {
@@ -2620,16 +2646,18 @@
     <button id="incBtn" ${atMax || aa.auto ? "disabled" : ""} class="${blockReason ? "blocked" : ""}">+</button>
   </div>`;
     if (aa.auto) {
-      const levelReq = parseInt(aa.levelReq, 10) || 1;
+      const levels = rankLevelReqs(aa);
       if (!isClassEligible(aa)) {
         html += `<div class="req-line warn">Requires one of: ${escapeHtml(aa.eligibleClasses.join(", "))}.</div>`;
-      } else if (state.charLevel < levelReq) {
-        html += `<div class="req-line warn">Automatically granted at level ${levelReq} &mdash; not yet active at level ${state.charLevel}.</div>`;
+      } else if (rank === 0) {
+        html += `<div class="req-line warn">Automatically granted at level ${levels[0]} &mdash; not yet active at level ${state.charLevel}.</div>`;
+      } else if (rank < aa.ranks) {
+        html += `<div class="req-line">Automatically granted &mdash; no AA points required. Rank ${rank + 1} comes at level ${levels[rank]}.</div>`;
       } else {
         html += `<div class="req-line">Automatically granted &mdash; no AA points required, always active once unlocked.</div>`;
-        if (aa.ranks > 1) {
-          html += `<div class="req-line" style="color:#63636a;">The wiki doesn't document per-rank level breakpoints for this ability, so it's shown at max rank once level ${levelReq}+ is reached.</div>`;
-        }
+      }
+      if (aa.ranks > 1 && !hasPerRankLevels(aa) && rank > 0) {
+        html += `<div class="req-line" style="color:#63636a;">The wiki doesn't document per-rank level breakpoints for this ability, so it's shown at max rank once level ${levels[0]}+ is reached.</div>`;
       }
     } else {
       if (blockReason) {
