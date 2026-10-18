@@ -2930,6 +2930,9 @@
   var modalSelectedColor = null;
   var PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
   var dragSrcIndex = null;
+  function isOwnDrag(e) {
+    return dragSrcIndex !== null && e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE);
+  }
   var AUTOSCROLL_EDGE_PX = 70;
   var AUTOSCROLL_MAX_SPEED = 18;
   var autoScrollDir = 0;
@@ -3371,7 +3374,7 @@
       dragSrcIndex = null;
     });
     el.progressionContent.addEventListener("dragover", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+      if (!isOwnDrag(e)) return;
       const rowEl = e.target.closest(".progression-row");
       if (rowEl) {
         e.preventDefault();
@@ -3420,7 +3423,7 @@
       }
     });
     el.progressionContent.addEventListener("drop", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+      if (!isOwnDrag(e)) return;
       const rowEl = e.target.closest(".progression-row");
       if (rowEl) {
         e.preventDefault();
@@ -3506,12 +3509,12 @@
       closeMoveMenu();
     });
     el.progressionWrap.addEventListener("dragover", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+      if (!isOwnDrag(e)) return;
       updateAutoScroll(e);
     });
     document.addEventListener("dragend", stopAutoScroll);
     el.progressionWrap.addEventListener("dragover", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
+      if (!isOwnDrag(e) || e.target !== el.progressionWrap) return;
       if (!isBelowLastRow(e)) {
         clearDragOverMarks();
         return;
@@ -3526,7 +3529,7 @@
       }
     });
     el.progressionWrap.addEventListener("drop", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
+      if (!isOwnDrag(e) || e.target !== el.progressionWrap) return;
       if (!isBelowLastRow(e)) return;
       e.preventDefault();
       moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
@@ -3534,7 +3537,7 @@
       stopAutoScroll();
     });
     el.progressionContent.addEventListener("dragover", (e) => {
-      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+      if (!isOwnDrag(e) || e.target !== el.progressionContent) return;
       clearDragOverMarks();
     });
   }

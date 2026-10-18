@@ -711,9 +711,15 @@ let modalSelectedColor = null;
 // skip it), it stays non-null after the drag has already ended, so a later,
 // unrelated drag over the list would read as a stale reorder. PROGRESSION_DRAG_TYPE
 // is a custom dataTransfer MIME type set only in this module's dragstart, so
-// dragover/drop gate on e.dataTransfer.types instead of trusting dragSrcIndex.
+// dragover/drop gate on e.dataTransfer.types (isOwnDrag) instead of trusting
+// dragSrcIndex. The type alone isn't enough either: a row dragged in from
+// another tab carries it too, with no dragSrcIndex here, so both must hold.
 const PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
 let dragSrcIndex = null;
+
+function isOwnDrag(e) {
+  return dragSrcIndex !== null && e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE);
+}
 // Native HTML5 drag doesn't auto-scroll an inner scrollable container, so
 // dragging near #progressionWrap's top/bottom edge scrolls it manually,
 // faster the closer to the edge (see updateAutoScroll/autoScrollStep). Must
@@ -1389,7 +1395,7 @@ export function wireProgressionRowEvents() {
     dragSrcIndex = null;
   });
   el.progressionContent.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+    if (!isOwnDrag(e)) return;
     const rowEl = e.target.closest(".progression-row");
     if (rowEl) {
       e.preventDefault();
@@ -1449,7 +1455,7 @@ export function wireProgressionRowEvents() {
     }
   });
   el.progressionContent.addEventListener("drop", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+    if (!isOwnDrag(e)) return;
     const rowEl = e.target.closest(".progression-row");
     if (rowEl) {
       e.preventDefault();
@@ -1597,7 +1603,7 @@ export function wireProgressionDropZone() {
   // this one doesn't gate on e.target since edge-proximity is a property of
   // the wrap as a whole, not of whatever's directly under the cursor.
   el.progressionWrap.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+    if (!isOwnDrag(e)) return;
     updateAutoScroll(e);
   });
   // dragend fires on the source row and bubbles to document even if the
@@ -1608,7 +1614,7 @@ export function wireProgressionDropZone() {
   document.addEventListener("dragend", stopAutoScroll);
 
   el.progressionWrap.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
+    if (!isOwnDrag(e) || e.target !== el.progressionWrap) return;
     if (!isBelowLastRow(e)) { clearDragOverMarks(); return; }
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
@@ -1622,7 +1628,7 @@ export function wireProgressionDropZone() {
     }
   });
   el.progressionWrap.addEventListener("drop", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
+    if (!isOwnDrag(e) || e.target !== el.progressionWrap) return;
     if (!isBelowLastRow(e)) return;
     e.preventDefault();
     moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
@@ -1634,7 +1640,7 @@ export function wireProgressionDropZone() {
   // from sitting lit over a zone where a drop wouldn't do anything. No
   // preventDefault: this must stay a non-drop target, not a silent no-op one.
   el.progressionContent.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+    if (!isOwnDrag(e) || e.target !== el.progressionContent) return;
     clearDragOverMarks();
   });
 }
