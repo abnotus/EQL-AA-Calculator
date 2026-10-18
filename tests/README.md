@@ -131,8 +131,9 @@ Each fabricates its own "?" and its guess via `page.route()` interception - `tes
 shared brace-matching logic (two targets: a whole AA object in `data.js`,
 which is minified but not mangled so the real file can be intercepted
 directly; and a guess-table entry's value in `app.src.js`, the unminified
-sibling of `app.js`, needed because `app.js`'s bundling *does* mangle
-`COST_GUESS_TABLE`/`EFFECT_GUESS_TABLE`'s own names). Each test file keeps
+bundle that `build_minify.py` minifies into `app.js`, needed because
+minification mangles `COST_GUESS_TABLE`/`EFFECT_GUESS_TABLE`'s own names).
+These tests therefore run the shipped bundle's code, unminified. Each test file keeps
 its own hardcoded fixture content inline (self-contained, same as every
 other test here) and just calls into the shared helpers. A future wiki
 edit to either host AA is invisible to these tests - they never read the
