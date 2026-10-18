@@ -4012,8 +4012,8 @@
       }
     }
     const parsed = JSON.parse(new TextDecoder().decode(jsonBytes));
-    const v = Array.isArray(parsed) ? parsed[0] : parsed && parsed.v;
-    if (v >= 2) return expandCompactPayload(parsed);
+    const isCompact = Array.isArray(parsed) ? parsed[0] >= 2 : !!parsed && parsed.v === 2 && !looksLikeBuildPayload(parsed);
+    if (isCompact) return expandCompactPayload(parsed);
     if (!looksLikeBuildPayload(parsed)) throw new Error("decoded payload isn't a recognizable build");
     return parsed;
   }

@@ -14,9 +14,9 @@
 #
 # Rather than relying on some other test's hardcoded fixture happening to
 # still be old-format (incidental, not deliberate coverage), this builds one
-# fixed v4 payload and re-encodes it four historical ways - gzip container,
-# uncompressed plain JSON, a v2 keyed object, and a v3 positional-but-pair-
-# shaped array - directly from the browser's own CompressionStream, then
+# fixed v4 payload and re-encodes it five historical ways - gzip container,
+# uncompressed plain JSON, a v2 keyed object, a v3 positional-but-pair-
+# shaped array, and v1.0.0's plain-base64 verbose save - directly from the browser's own CompressionStream, then
 # feeds each into Import and confirms they all load to the same build.
 #
 # It deliberately does NOT derive those from the app's own current export:
@@ -95,7 +95,20 @@ with sync_playwright() as p:
       // v3: positional array container, but still pair-shaped r/o.
       const v3 = [3, payload[1], payload[2], rPairs, payload[4], oPairs, payload[6]];
 
+      // v1.0.0 (live 2026-07-09 to 07-10): plain base64 of the verbose save,
+      // whose own v is SAVE_FORMAT_VERSION 4, not a compact version.
+      const general = { scope: "general", className: null };
+      const bard = { scope: "class", className: "Bard" };
+      const v1 = {
+        v: 4, selectedClasses: ["Bard", "Beastlord", "Berserker"], charLevel: 50,
+        ranks: { general: { "adamant-will": 1, "alchemy-mastery": 1 }, archetype: {}, special: {},
+                 classes: { Bard: { "instrument-mastery": 2 } } },
+        purchaseOrder: [{ ...general, key: "adamant-will" }, { ...general, key: "alchemy-mastery" },
+                        { ...bard, key: "instrument-mastery" }, { ...bard, key: "instrument-mastery" }]
+      };
+
       return {
+        v1Verbose: bytesToB64(enc(v1)),
         v4Deflate: bytesToB64(await pipe(v4Bytes, CompressionStream, "deflate-raw")),
         gzip:      bytesToB64(await pipe(v4Bytes, CompressionStream, "gzip")),
         plain:     bytesToB64(v4Bytes),
@@ -122,7 +135,8 @@ with sync_playwright() as p:
     assert baseline != "0 / 0", "FAIL: the v4 baseline payload didn't import anything"
 
     for key, label in [("gzip", "gzip container"), ("plain", "uncompressed JSON"),
-                       ("v2Gzip", "v2 keyed object"), ("v3Gzip", "v3 pair-shaped")]:
+                       ("v2Gzip", "v2 keyed object"), ("v3Gzip", "v3 pair-shaped"),
+                       ("v1Verbose", "v1.0.0 verbose save")]:
         got = import_and_read(codes[key], label)
         assert got == baseline, \
             f"FAIL: {label} should load identically to the v4 baseline - got {got}, expected {baseline}"

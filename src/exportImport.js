@@ -612,16 +612,17 @@ async function decodeJsonBuildCode(bytes) {
     }
   }
   const parsed = JSON.parse(new TextDecoder().decode(jsonBytes));
-  // A compact payload (v2 keyed-object, v3+ positional-array - see
+  // A compact payload (a v3+ positional array, or v2's keyed object - see
   // expandCompactPayload) needs expanding back to the name-keyed shape
-  // applyLoaded understands; anything else (a verbose SAVE_FORMAT_VERSION
-  // payload, or an old legacy shape) is already in that shape and passes
-  // through as-is - applyLoaded's own v check handles that case from here.
-  // Range check rather than an explicit per-version list - every compact
-  // version so far (2, 3, 4, ...) has stayed compact-shaped, so there's
-  // been no reason yet to expect that to stop.
-  const v = Array.isArray(parsed) ? parsed[0] : parsed && parsed.v;
-  if (v >= 2) return expandCompactPayload(parsed);
+  // applyLoaded understands. The verbose save shape passes through as-is.
+  // Its own v is a SAVE_FORMAT_VERSION, which v1.0.0's links (plain base64
+  // of the verbose save, v: 4) carried, so v alone can't tell the two
+  // apart: a keyed object is compact only at v 2 and without the verbose
+  // fields.
+  const isCompact = Array.isArray(parsed)
+    ? parsed[0] >= 2
+    : !!parsed && parsed.v === 2 && !looksLikeBuildPayload(parsed);
+  if (isCompact) return expandCompactPayload(parsed);
   // expandCompactPayload always fills every field, but the verbose form has
   // no version marker, so valid JSON with none of a build's fields (such as
   // a truncated "{}") is rejected here instead of loading as an empty build.
