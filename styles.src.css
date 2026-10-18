@@ -1272,15 +1272,19 @@ main {
    that should stay legible - isn't flattened along with everything else by
    the parent's own opacity. A row for a class outside your current 3 slots
    gets its own separate step-inactive-warn icon instead of any dimming -
-   see the row template in render.js. */
-.progression-row.prereq-warn-row > *:not(.step-warn) { opacity: 0.6; }
+   see the row template in render.js. .step-controls dims its buttons, not
+   itself: opacity on the wrapper would make it a stacking context and trap
+   the Move To popover under the next row's controls. */
+.progression-row.prereq-warn-row > *:not(.step-warn):not(.step-controls),
+.progression-row.prereq-warn-row .step-controls .step-btn:not(:disabled) { opacity: 0.6; }
 
 /* .dragging's 0.4 is on the row itself; without this override, a warned
    row's own child-dimming compounds with it while being dragged (0.4 × 0.6
    = 0.24, reachable any time you grab an already-out-of-order row, and
    near-invisible). Let .dragging's row-level dim be the only one in effect
    while actively dragging instead. */
-.progression-row.dragging.prereq-warn-row > *:not(.step-warn) { opacity: 1; }
+.progression-row.dragging.prereq-warn-row > *:not(.step-warn):not(.step-controls),
+.progression-row.dragging.prereq-warn-row .step-controls .step-btn:not(:disabled) { opacity: 1; }
 
 .progression-row.dragging { opacity: 0.4; }
 
