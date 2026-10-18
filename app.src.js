@@ -4258,6 +4258,11 @@
       spentAAs.forEach(({ aa, rank }) => lines.push(`  ${aa.name}: rank ${rank}/${aa.ranks}${aa.auto ? " (auto-granted)" : ""}`));
       lines.push("");
     });
+    otherClassesWithPicks().forEach((className) => {
+      lines.push(`== ${className} AA (not one of your current 3 classes) ==`);
+      picksForClass(className).forEach(({ aa, rank }) => lines.push(`  ${aa.name}: rank ${rank}/${aa.ranks}`));
+      lines.push("");
+    });
     if (state.purchaseOrder.length) {
       lines.push("== Progression (pick order) ==");
       computeProgressionTimeline(computeProgressionSteps()).forEach((entry) => {
@@ -4338,13 +4343,39 @@
     URL.revokeObjectURL(a.href);
     showToast("Saved as .txt");
   }
+  var CODE_LINE = /^(?:[A-Za-z0-9+/=_-]|%[0-9A-Fa-f]{2})+$/;
+  var BUILD_CODE_START = /BUILD_CODE:\s*([A-Za-z0-9+/=_-]+)/;
+  var BUILD_PARAM_START = /[?&]build=((?:[A-Za-z0-9+/=_-]|%[0-9A-Fa-f]{2})+)/;
+  var WRAP_WIDTH = 60;
+  function codeFromLine(lines, i, pattern) {
+    const m = lines[i].match(pattern);
+    if (!m) return null;
+    let code = m[1];
+    let line = lines[i];
+    const runsToEnd = m.index + m[0].length === line.length;
+    while (runsToEnd && line.length >= WRAP_WIDTH && i + 1 < lines.length && CODE_LINE.test(lines[i + 1])) {
+      i++;
+      line = lines[i];
+      code += line;
+    }
+    return code;
+  }
   function extractBuildCode(text) {
-    const trimmed = text.trim();
-    const m = trimmed.match(/BUILD_CODE:(\S+)/);
-    if (m) return m[1];
-    const urlMatch = trimmed.match(/[?&]build=([^&\s]+)/);
-    if (urlMatch) return urlMatch[1];
-    const compact = trimmed.replace(/\s+/g, "");
+    const lines = text.split(/\r?\n/).map((line) => line.replace(/^\s*(?:>\s?)+/, "").trim());
+    for (let i = 0; i < lines.length; i++) {
+      const code = codeFromLine(lines, i, BUILD_CODE_START);
+      if (code) return code;
+    }
+    for (let i = 0; i < lines.length; i++) {
+      const raw = codeFromLine(lines, i, BUILD_PARAM_START);
+      if (!raw) continue;
+      try {
+        return decodeURIComponent(raw);
+      } catch (e) {
+        return raw;
+      }
+    }
+    const compact = lines.join("").replace(/^[^A-Za-z0-9+/_-]+|[^A-Za-z0-9+/=_-]+$/g, "");
     if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
     return null;
   }

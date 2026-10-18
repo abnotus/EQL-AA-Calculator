@@ -90,7 +90,7 @@ cost via Python's negative indexing.
 `test_browse_unowned_filter.py`, `test_quick_evacuation_shared_rank.py`,
 `test_quick_evacuation_migration.py`, `test_quick_evacuation_inactive_class.py`,
 `test_quick_evacuation_owned_merge.py`, `test_renamed_aa_key_migration.py`,
-`test_era_badge.py`, `test_owned_tracking_undo.py`, `test_progression_layout.py`, `test_progression_to_go.py`, `test_import_owned_profile.py`, `test_hostile_share_keys.py`, `test_per_rank_levels.py`, `test_class_select_keyboard.py`, `test_owned_two_tabs.py`, `test_toast_visibility.py`, `test_keyboard_focus.py`, `test_progression_foreign_drop.py` drive the actual app in a real Chrome instance via
+`test_era_badge.py`, `test_owned_tracking_undo.py`, `test_progression_layout.py`, `test_progression_to_go.py`, `test_import_owned_profile.py`, `test_hostile_share_keys.py`, `test_per_rank_levels.py`, `test_class_select_keyboard.py`, `test_owned_two_tabs.py`, `test_toast_visibility.py`, `test_keyboard_focus.py`, `test_progression_foreign_drop.py`, `test_import_pasted_text.py` drive the actual app in a real Chrome instance via
 [Playwright](https://playwright.dev/python/).
 
 **Prerequisites:**

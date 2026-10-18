@@ -2,7 +2,7 @@
 
 import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, serializeRanks, serializePurchaseOrder, payloadOwnedHasContent, adoptImportedOwnedAsNewProfile, WAYPOINT_COLORS, MAX_PURCHASE_ORDER } from "./state.js";
 import { el, openModal, closeModal } from "./dom.js";
-import { getList, effectiveRank, labelFor, spentPoints, ownedPoints, computeProgressionSteps, computeProgressionTimeline, clearLastMutation, reconcilePurchaseOrderCounts, loadIssuesSuffix } from "./logic.js";
+import { getList, effectiveRank, labelFor, spentPoints, ownedPoints, computeProgressionSteps, computeProgressionTimeline, clearLastMutation, reconcilePurchaseOrderCounts, loadIssuesSuffix, otherClassesWithPicks, picksForClass } from "./logic.js";
 import { clearActiveBuild, saveImportedBuild, confirmReplaceCurrentBuild, isActiveBuildTheImportedSlot } from "./builds.js";
 import { renderAll, showToast, costDisplayScoped } from "./render.js";
 import { idForKey, entryForId } from "./keys.js";
@@ -766,6 +766,11 @@ export async function buildExportText() {
     spentAAs.forEach(({ aa, rank }) => lines.push(`  ${aa.name}: rank ${rank}/${aa.ranks}${aa.auto ? " (auto-granted)" : ""}`));
     lines.push("");
   });
+  otherClassesWithPicks().forEach((className) => {
+    lines.push(`== ${className} AA (not one of your current 3 classes) ==`);
+    picksForClass(className).forEach(({ aa, rank }) => lines.push(`  ${aa.name}: rank ${rank}/${aa.ranks}`));
+    lines.push("");
+  });
 
   if (state.purchaseOrder.length) {
     lines.push("== Progression (pick order) ==");
@@ -881,18 +886,53 @@ export function saveExportAsTxt() {
 // whole pasted share link (?build=... pulled out of it), or just the bare
 // code on its own — standard base64 (export text) or base64url (share
 // links), so pasting any of the things this app itself produces works.
+// Also what mail and chat do to them: lines quoted with "> ", a code
+// wrapped onto further lines, a link inside <...> or (...) or ending a
+// sentence, and a percent-encoded link.
+const CODE_LINE = /^(?:[A-Za-z0-9+/=_-]|%[0-9A-Fa-f]{2})+$/;
+const BUILD_CODE_START = /BUILD_CODE:\s*([A-Za-z0-9+/=_-]+)/;
+const BUILD_PARAM_START = /[?&]build=((?:[A-Za-z0-9+/=_-]|%[0-9A-Fa-f]{2})+)/;
+// Mail and chat wrap at 64-80 columns. A code continues on the next line
+// only if its line was at least this long and ended with the code, so a
+// short last line, or prose after the code, isn't joined on.
+const WRAP_WIDTH = 60;
+
+function codeFromLine(lines, i, pattern) {
+  const m = lines[i].match(pattern);
+  if (!m) return null;
+  let code = m[1];
+  let line = lines[i];
+  const runsToEnd = m.index + m[0].length === line.length;
+  while (runsToEnd && line.length >= WRAP_WIDTH && i + 1 < lines.length && CODE_LINE.test(lines[i + 1])) {
+    i++;
+    line = lines[i];
+    code += line;
+  }
+  return code;
+}
+
 function extractBuildCode(text) {
-  const trimmed = text.trim();
-  const m = trimmed.match(/BUILD_CODE:(\S+)/);
-  if (m) return m[1];
-  const urlMatch = trimmed.match(/[?&]build=([^&\s]+)/);
-  if (urlMatch) return urlMatch[1];
+  const lines = text.split(/\r?\n/).map((line) => line.replace(/^\s*(?:>\s?)+/, "").trim());
+  for (let i = 0; i < lines.length; i++) {
+    const code = codeFromLine(lines, i, BUILD_CODE_START);
+    if (code) return code;
+  }
+  for (let i = 0; i < lines.length; i++) {
+    const raw = codeFromLine(lines, i, BUILD_PARAM_START);
+    if (!raw) continue;
+    try {
+      return decodeURIComponent(raw);
+    } catch (e) {
+      return raw;
+    }
+  }
   // Maybe they pasted just the bare code, possibly line-wrapped by whatever they copied
-  // it from — strip all embedded whitespace before checking if it looks like base64/base64url.
-  // The length floor only exists to stop a short scrap of prose being taken for a code;
-  // it has to stay under the smallest real one, and v5 packs a minimal build into
-  // roughly 16 characters (a v4 code for the same build was over 40).
-  const compact = trimmed.replace(/\s+/g, "");
+  // it from — strip all embedded whitespace and any punctuation around it before checking
+  // if it looks like base64/base64url. The length floor only exists to stop a short scrap
+  // of prose being taken for a code; it has to stay under the smallest real one, and v5
+  // packs a minimal build into roughly 16 characters (a v4 code for the same build was
+  // over 40).
+  const compact = lines.join("").replace(/^[^A-Za-z0-9+/_-]+|[^A-Za-z0-9+/=_-]+$/g, "");
   if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
   return null;
 }
