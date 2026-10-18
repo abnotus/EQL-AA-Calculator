@@ -211,6 +211,20 @@ def id_key(scope, className, key):
     return f"{scope}:{className or ''}:{key}"
 
 
+def write_generated(path, content):
+    """Writes a generated file. With --check on the command line it only
+    compares instead, exiting 0 if the file is current and 1 if not -
+    build_minify.py runs the guess scripts that way."""
+    if "--check" in sys.argv:
+        current = path.read_text(encoding="utf-8") if path.exists() else None
+        if current != content:
+            print(f"{path.name} is out of date with data.src.js")
+            sys.exit(1)
+        sys.exit(0)
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(content)
+
+
 def js_string(s):
     return json.dumps(s)
 

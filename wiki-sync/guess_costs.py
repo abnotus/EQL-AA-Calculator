@@ -69,7 +69,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (  # noqa: E402
     DATA_SRC, AA_IDS_SRC,
     DATA_ENTRY_NAME, DATA_ENTRY_AUTO, DATA_ENTRY_AUTORANKS,
-    iter_data_entries, check_parse_sanity, slug_key_for, id_key, js_string,
+    iter_data_entries, check_parse_sanity, slug_key_for, id_key, js_string, write_generated,
     vote_guesses, guess_to_js_literal,
 )
 
@@ -198,8 +198,7 @@ def write_output(table):
         f"{body}\n"
         "};\n"
     )
-    with open(OUT_FILE, "w", encoding="utf-8", newline="\n") as f:
-        f.write(content)
+    write_generated(OUT_FILE, content)
 
 
 def main():

@@ -36,6 +36,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "wik
 from common import data_integrity_problems, id_key, parse_identity_entries, slug_key_for  # noqa: E402
 
 APP_ENTRY = "src/main.js"
+GUESS_SCRIPTS = ["wiki-sync/guess_costs.py", "wiki-sync/guess_effects.py"]
 
 # Reads a list of jobs as JSON on stdin and prints their outputs as JSON. A
 # "bundle" job bundles an entry point without minifying; a "minify" job
@@ -203,6 +204,16 @@ def main():
         for p in id_problems:
             print(p)
         return 1
+
+    # Effect guesses are keyed by progression position, so a description
+    # edited without rerunning guess_effects.py can attach a guess to the
+    # wrong slot.
+    for script in GUESS_SCRIPTS:
+        check = subprocess.run([sys.executable, script, "--check"], capture_output=True, text=True, encoding="utf-8")
+        if check.returncode != 0:
+            print(f"ERROR: {check.stdout.strip() or check.stderr.strip()}")
+            print(f'  Run "python {script}" to regenerate it, then rebuild.')
+            return 1
 
     [app_src] = run_esbuild([{"kind": "bundle", "entry": APP_ENTRY, "banner": APP_SRC_BANNER}])
     with open("styles.src.css", "r", encoding="utf-8") as f:
