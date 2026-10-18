@@ -2,7 +2,7 @@
 
 import { state, AA_CATEGORY_KEYS, CLASS_SLOT_KEYS, LAST_SEEN_VERSION_KEY, WAYPOINT_COLORS, MAX_WAYPOINT_PTS, MAX_CHAR_LEVEL } from "./state.js";
 import { USER_CHANGELOG } from "./changelogData.js";
-import { el } from "./dom.js";
+import { el, openModal, closeModal } from "./dom.js";
 import {
   escapeHtml, iconLetter, eraBadge, highlightRankValue, applyPerRankTotal, labelFor, shortCategoryLabel,
   getList, effectiveRank, structuralLockReason, resolvePrereqTarget, getBlockReason,
@@ -909,13 +909,12 @@ export function openWaypointModal(existingPts = null) {
   el.waypointLabelInput.value = existing && existing.label ? existing.label : "";
   el.deleteWaypointBtn.classList.toggle("hidden", !existing);
   renderColorSwatches();
-  el.waypointModal.classList.remove("hidden");
-  el.waypointPtsInput.focus();
+  openModal(el.waypointModal, el.waypointPtsInput);
   el.waypointPtsInput.select();
 }
 
 export function closeWaypointModal() {
-  el.waypointModal.classList.add("hidden");
+  closeModal(el.waypointModal);
 }
 
 export function handleSaveWaypoint() {
@@ -1203,7 +1202,7 @@ export function renderProgression(totals) {
     // itself the way an unmet prereq or a class cap overshoot is, so it
     // doesn't get prereq-warn-row's per-child dim, just its own ⚠.
     const inactiveWarnTitle = s.active ? "" : `Not one of your current 3 classes — swap ${s.classesLabel || ""} back in to keep training this.`;
-    const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${s.active ? "" : " inactive"}${segClass}" draggable="true" data-index="${s.index}">
+    const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${s.active ? "" : " inactive"}${segClass}" draggable="true" data-index="${s.index}" data-key="${key}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.visiblePos}</span>
       <span class="step-info">
@@ -1236,7 +1235,36 @@ export function renderProgression(totals) {
     return row + nextRankBoxHtml(s.category, s.categoryIdx, s.aa, s.stepRank, " progression-next-rank");
   });
 
+  const focus = progressionFocus();
   el.progressionContent.innerHTML = htmlParts.join("");
+  restoreProgressionFocus(focus);
+}
+
+const STEP_BUTTON_KINDS = ["step-own", "step-expand", "step-add", "step-remove", "step-move"];
+
+// Which row (by expandKey, so it follows a moved row) and which of its
+// buttons had focus before a re-render replaced them.
+function progressionFocus() {
+  const active = document.activeElement;
+  const row = active && active.closest && active.closest(".progression-row");
+  if (!row || !el.progressionContent.contains(row)) return null;
+  const btn = active.closest(".step-btn");
+  const kind = !btn ? null : btn.getAttribute("data-move") || STEP_BUTTON_KINDS.find((k) => btn.classList.contains(k));
+  return { key: row.getAttribute("data-key"), index: parseInt(row.getAttribute("data-index"), 10), kind };
+}
+
+// Puts focus back on the same button of the same row, or the row's first
+// usable button if that one is now disabled, or the row now at the old
+// position if the row itself is gone.
+function restoreProgressionFocus(focus) {
+  if (!focus) return;
+  const rows = Array.from(el.progressionContent.querySelectorAll(".progression-row"));
+  const row = rows.find((r) => r.getAttribute("data-key") === focus.key) || rows[Math.min(focus.index, rows.length - 1)];
+  if (!row) return;
+  const selector = focus.kind === "up" || focus.kind === "down" ? `.step-btn[data-move="${focus.kind}"]` : `.${focus.kind}`;
+  const same = focus.kind ? row.querySelector(selector) : null;
+  const target = same && !same.disabled ? same : row.querySelector(".step-btn:not([disabled])");
+  if (target) target.focus();
 }
 
 // Delegated on the never-recreated #progressionContent rather than per-row/
@@ -1674,7 +1702,7 @@ export function openChangelogModal() {
       <div class="changelog-version">v${escapeHtml(entry.version)} <span class="changelog-date">${escapeHtml(entry.date)}</span></div>
       <ul>${entry.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
     </div>`).join("") || '<div class="empty">Nothing here yet.</div>';
-  el.changelogModal.classList.remove("hidden");
+  openModal(el.changelogModal, el.closeChangelogBtn);
   el.changelogContent.scrollTop = 0;
   updateChangelogFade();
   el.changelogContent.onscroll = updateChangelogFade;
@@ -1685,7 +1713,7 @@ export function openChangelogModal() {
 }
 
 export function closeChangelogModal() {
-  el.changelogModal.classList.add("hidden");
+  closeModal(el.changelogModal);
 }
 
 function renderBuildsList() {
@@ -1746,12 +1774,11 @@ function renderBuildsList() {
 export function openBuildsModal() {
   el.buildSaveName.value = "";
   renderBuildsList();
-  el.buildsModal.classList.remove("hidden");
-  el.buildSaveName.focus();
+  openModal(el.buildsModal, el.buildSaveName);
 }
 
 export function closeBuildsModal() {
-  el.buildsModal.classList.add("hidden");
+  closeModal(el.buildsModal);
 }
 
 // Populates the status line ("sharing with X" vs "tracking its own") and
@@ -1777,11 +1804,11 @@ function renderOwnedTrackingModal() {
 
 export function openOwnedTrackingModal() {
   renderOwnedTrackingModal();
-  el.ownedTrackingModal.classList.remove("hidden");
+  openModal(el.ownedTrackingModal);
 }
 
 export function closeOwnedTrackingModal() {
-  el.ownedTrackingModal.classList.add("hidden");
+  closeModal(el.ownedTrackingModal);
 }
 
 export function handleOwnedTrackingLink() {
@@ -1815,11 +1842,11 @@ export function handleOwnedTrackingSplit() {
 
 export function openResetModal() {
   el.resetClearOwnedCheckbox.checked = false;
-  el.resetModal.classList.remove("hidden");
+  openModal(el.resetModal, el.cancelResetBtn);
 }
 
 export function closeResetModal() {
-  el.resetModal.classList.add("hidden");
+  closeModal(el.resetModal);
 }
 
 export function handleConfirmReset() {

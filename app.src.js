@@ -898,6 +898,41 @@
     el.confirmResetBtn = document.getElementById("confirmResetBtn");
     el.cancelResetBtn = document.getElementById("cancelResetBtn");
   }
+  var FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+  var modalReturnFocus = /* @__PURE__ */ new Map();
+  function openModal(overlay, target) {
+    if (overlay.classList.contains("hidden")) modalReturnFocus.set(overlay, document.activeElement);
+    overlay.classList.remove("hidden");
+    const first = target || overlay.querySelector(FOCUSABLE);
+    if (first) first.focus();
+  }
+  function closeModal(overlay) {
+    if (overlay.classList.contains("hidden")) return;
+    overlay.classList.add("hidden");
+    const back = modalReturnFocus.get(overlay);
+    modalReturnFocus.delete(overlay);
+    if (back && back.isConnected && typeof back.focus === "function") back.focus();
+  }
+  function trapModalFocus(e) {
+    if (e.key !== "Tab") return;
+    const overlay = Array.from(document.querySelectorAll(".modal-overlay:not(.hidden)")).pop();
+    if (!overlay) return;
+    const items = Array.from(overlay.querySelectorAll(FOCUSABLE)).filter((n) => n.getClientRects().length > 0);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = document.activeElement;
+    if (!overlay.contains(active)) {
+      e.preventDefault();
+      first.focus();
+    } else if (e.shiftKey && active === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
 
   // src/changelogData.js
   var USER_CHANGELOG = [
@@ -2999,12 +3034,11 @@
     el.waypointLabelInput.value = existing && existing.label ? existing.label : "";
     el.deleteWaypointBtn.classList.toggle("hidden", !existing);
     renderColorSwatches();
-    el.waypointModal.classList.remove("hidden");
-    el.waypointPtsInput.focus();
+    openModal(el.waypointModal, el.waypointPtsInput);
     el.waypointPtsInput.select();
   }
   function closeWaypointModal() {
-    el.waypointModal.classList.add("hidden");
+    closeModal(el.waypointModal);
   }
   function handleSaveWaypoint() {
     const rawPts = parseInt(el.waypointPtsInput.value.trim(), 10);
@@ -3165,7 +3199,7 @@
       if (s.classEligibilityWarn) warnTitles.push(`Requires one of: ${s.aa.eligibleClasses.join(", ")}.`);
       const rowWarn = warnTitles.length > 0;
       const inactiveWarnTitle = s.active ? "" : `Not one of your current 3 classes \u2014 swap ${s.classesLabel || ""} back in to keep training this.`;
-      const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${s.active ? "" : " inactive"}${segClass}" draggable="true" data-index="${s.index}">
+      const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${s.active ? "" : " inactive"}${segClass}" draggable="true" data-index="${s.index}" data-key="${key}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.visiblePos}</span>
       <span class="step-info">
@@ -3194,7 +3228,28 @@
       if (!expanded) return row;
       return row + nextRankBoxHtml(s.category, s.categoryIdx, s.aa, s.stepRank, " progression-next-rank");
     });
+    const focus = progressionFocus();
     el.progressionContent.innerHTML = htmlParts.join("");
+    restoreProgressionFocus(focus);
+  }
+  var STEP_BUTTON_KINDS = ["step-own", "step-expand", "step-add", "step-remove", "step-move"];
+  function progressionFocus() {
+    const active = document.activeElement;
+    const row = active && active.closest && active.closest(".progression-row");
+    if (!row || !el.progressionContent.contains(row)) return null;
+    const btn = active.closest(".step-btn");
+    const kind = !btn ? null : btn.getAttribute("data-move") || STEP_BUTTON_KINDS.find((k) => btn.classList.contains(k));
+    return { key: row.getAttribute("data-key"), index: parseInt(row.getAttribute("data-index"), 10), kind };
+  }
+  function restoreProgressionFocus(focus) {
+    if (!focus) return;
+    const rows = Array.from(el.progressionContent.querySelectorAll(".progression-row"));
+    const row = rows.find((r) => r.getAttribute("data-key") === focus.key) || rows[Math.min(focus.index, rows.length - 1)];
+    if (!row) return;
+    const selector = focus.kind === "up" || focus.kind === "down" ? `.step-btn[data-move="${focus.kind}"]` : `.${focus.kind}`;
+    const same = focus.kind ? row.querySelector(selector) : null;
+    const target = same && !same.disabled ? same : row.querySelector(".step-btn:not([disabled])");
+    if (target) target.focus();
   }
   function wireProgressionRowEvents() {
     el.progressionContent.addEventListener("click", (e) => {
@@ -3503,7 +3558,7 @@
       <div class="changelog-version">v${escapeHtml(entry.version)} <span class="changelog-date">${escapeHtml(entry.date)}</span></div>
       <ul>${entry.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
     </div>`).join("") || '<div class="empty">Nothing here yet.</div>';
-    el.changelogModal.classList.remove("hidden");
+    openModal(el.changelogModal, el.closeChangelogBtn);
     el.changelogContent.scrollTop = 0;
     updateChangelogFade();
     el.changelogContent.onscroll = updateChangelogFade;
@@ -3516,7 +3571,7 @@
     }
   }
   function closeChangelogModal() {
-    el.changelogModal.classList.add("hidden");
+    closeModal(el.changelogModal);
   }
   function renderBuildsList() {
     const builds = listBuilds();
@@ -3584,11 +3639,10 @@
   function openBuildsModal() {
     el.buildSaveName.value = "";
     renderBuildsList();
-    el.buildsModal.classList.remove("hidden");
-    el.buildSaveName.focus();
+    openModal(el.buildsModal, el.buildSaveName);
   }
   function closeBuildsModal() {
-    el.buildsModal.classList.add("hidden");
+    closeModal(el.buildsModal);
   }
   function renderOwnedTrackingModal() {
     const activeId = getActiveBuildId();
@@ -3602,10 +3656,10 @@
   }
   function openOwnedTrackingModal() {
     renderOwnedTrackingModal();
-    el.ownedTrackingModal.classList.remove("hidden");
+    openModal(el.ownedTrackingModal);
   }
   function closeOwnedTrackingModal() {
-    el.ownedTrackingModal.classList.add("hidden");
+    closeModal(el.ownedTrackingModal);
   }
   function handleOwnedTrackingLink() {
     const id = el.ownedTrackingBuildSelect.value;
@@ -3633,10 +3687,10 @@
   }
   function openResetModal() {
     el.resetClearOwnedCheckbox.checked = false;
-    el.resetModal.classList.remove("hidden");
+    openModal(el.resetModal, el.cancelResetBtn);
   }
   function closeResetModal() {
-    el.resetModal.classList.add("hidden");
+    closeModal(el.resetModal);
   }
   function handleConfirmReset() {
     const clearOwnedToo = el.resetClearOwnedCheckbox.checked;
@@ -4204,7 +4258,7 @@
   async function openExportModal() {
     el.exportText.value = "Generating\u2026";
     el.shareLinkInput.value = "";
-    el.exportModal.classList.remove("hidden");
+    openModal(el.exportModal, el.exportText);
     await regenerateExportContent();
   }
   var exportGeneration = 0;
@@ -4218,7 +4272,7 @@
     el.exportText.select();
   }
   function closeExportModal() {
-    el.exportModal.classList.add("hidden");
+    closeModal(el.exportModal);
   }
   function copyFrom(inputEl, text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -4305,11 +4359,10 @@
   }
   function openImportModal() {
     el.importText.value = "";
-    el.importModal.classList.remove("hidden");
-    el.importText.focus();
+    openModal(el.importModal, el.importText);
   }
   function closeImportModal() {
-    el.importModal.classList.add("hidden");
+    closeModal(el.importModal);
   }
   async function doImport() {
     const text = el.importText.value.trim();
@@ -4373,6 +4426,7 @@
     el.exportModal.addEventListener("click", (e) => {
       if (e.target === el.exportModal) closeExportModal();
     });
+    document.addEventListener("keydown", trapModalFocus);
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
       if (!el.exportModal.classList.contains("hidden")) closeExportModal();

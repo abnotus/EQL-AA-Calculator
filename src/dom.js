@@ -86,3 +86,45 @@ export function cacheDom() {
   el.confirmResetBtn = document.getElementById("confirmResetBtn");
   el.cancelResetBtn = document.getElementById("cancelResetBtn");
 }
+
+const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+const modalReturnFocus = new Map();
+
+// Shows a modal overlay and moves focus into it (to `target`, or its first
+// control), remembering what had focus so closeModal can put it back.
+export function openModal(overlay, target) {
+  if (overlay.classList.contains("hidden")) modalReturnFocus.set(overlay, document.activeElement);
+  overlay.classList.remove("hidden");
+  const first = target || overlay.querySelector(FOCUSABLE);
+  if (first) first.focus();
+}
+
+export function closeModal(overlay) {
+  if (overlay.classList.contains("hidden")) return;
+  overlay.classList.add("hidden");
+  const back = modalReturnFocus.get(overlay);
+  modalReturnFocus.delete(overlay);
+  if (back && back.isConnected && typeof back.focus === "function") back.focus();
+}
+
+// Keeps Tab and Shift+Tab inside the open modal, wrapping at either end.
+export function trapModalFocus(e) {
+  if (e.key !== "Tab") return;
+  const overlay = Array.from(document.querySelectorAll(".modal-overlay:not(.hidden)")).pop();
+  if (!overlay) return;
+  const items = Array.from(overlay.querySelectorAll(FOCUSABLE)).filter((n) => n.getClientRects().length > 0);
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+  const active = document.activeElement;
+  if (!overlay.contains(active)) {
+    e.preventDefault();
+    first.focus();
+  } else if (e.shiftKey && active === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && active === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}

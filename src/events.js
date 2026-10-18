@@ -1,7 +1,7 @@
 // All addEventListener wiring, run once from main.js after cacheDom().
 
 import { state, CLASS_SLOT_KEYS, DISCLAIMER_DISMISSED_KEY, MAX_CHAR_LEVEL, saveLocal, ownedStorageKeyFor, refreshOwnedFromStorage } from "./state.js";
-import { el } from "./dom.js";
+import { el, trapModalFocus } from "./dom.js";
 import { clearAllOwned } from "./logic.js";
 import {
   renderAll, showToast, renderBrowse, undoLast,
@@ -88,6 +88,7 @@ export function wireEvents() {
   el.saveExportBtn.addEventListener("click", saveExportAsTxt);
   el.closeExportBtn.addEventListener("click", closeExportModal);
   el.exportModal.addEventListener("click", (e) => { if (e.target === el.exportModal) closeExportModal(); });
+  document.addEventListener("keydown", trapModalFocus);
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (!el.exportModal.classList.contains("hidden")) closeExportModal();

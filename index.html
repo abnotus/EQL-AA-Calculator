@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EverQuest Legends - AA Calculator</title>
-<link rel="stylesheet" href="styles.css?v=aa1283fb" />
+<link rel="stylesheet" href="styles.css?v=39a52e9c" />
 </head>
 <body>
 
@@ -113,8 +113,8 @@
 <button id="versionTag" class="version-tag" title="What's new"></button>
 
 <div id="changelogModal" class="modal-overlay hidden">
-  <div class="modal">
-    <h2>What's New</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="changelogModalTitle">
+    <h2 id="changelogModalTitle">What's New</h2>
     <div class="changelog-content-wrap">
       <div id="changelogContent" class="changelog-content"></div>
       <div id="changelogFade" class="changelog-fade hidden"></div>
@@ -126,8 +126,8 @@
 </div>
 
 <div id="buildsModal" class="modal-overlay hidden">
-  <div class="modal">
-    <h2>Builds</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="buildsModalTitle">
+    <h2 id="buildsModalTitle">Builds</h2>
     <p class="modal-hint">Save named snapshots of your current build to switch between them later &mdash; stored locally in this browser, not synced anywhere.</p>
     <div class="builds-save-row">
       <input type="text" id="buildSaveName" placeholder="Name this build..." spellcheck="false" maxlength="60" />
@@ -141,8 +141,8 @@
 </div>
 
 <div id="ownedTrackingModal" class="modal-overlay hidden">
-  <div class="modal">
-    <h2>Manage Owned Tracking</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ownedTrackingModalTitle">
+    <h2 id="ownedTrackingModalTitle">Manage Owned Tracking</h2>
     <p class="modal-hint">Owned progress is tracked separately per build by default. Link this build to another to share the same live progress, merge in progress from another build without disturbing it, or split off your own independent copy.</p>
     <div id="ownedTrackingStatus" class="owned-tracking-status"></div>
     <div class="owned-tracking-row">
@@ -160,8 +160,8 @@
 </div>
 
 <div id="exportModal" class="modal-overlay hidden">
-  <div class="modal">
-    <h2>Export Build</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+    <h2 id="exportModalTitle">Export Build</h2>
     <p class="modal-hint">Copy this text to share your build, or save it as a .txt file. Pasting it back in via Import restores everything &mdash; owned progress included, always landing in its own separate tracking on the receiving end, never overwriting theirs.</p>
     <textarea id="exportText" readonly spellcheck="false"></textarea>
     <div class="modal-actions">
@@ -180,8 +180,8 @@
 </div>
 
 <div id="importModal" class="modal-overlay hidden">
-  <div class="modal">
-    <h2>Import Build</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
+    <h2 id="importModalTitle">Import Build</h2>
     <p class="modal-hint">Paste just the build code, a whole share link, or the full exported text (the code gets pulled out of any of those) &mdash; or load a .txt file exported earlier.</p>
     <textarea id="importText" spellcheck="false" placeholder="Paste the build code, or the full exported text..."></textarea>
     <div class="modal-actions">
@@ -193,8 +193,8 @@
 </div>
 
 <div id="resetModal" class="modal-overlay hidden">
-  <div class="modal">
-    <h2>Reset Build</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
+    <h2 id="resetModalTitle">Reset Build</h2>
     <p class="modal-hint">Clears every planned pick across every class you've used, not just your current 3 (picks for a class you've swapped away from are trimmed the same way, in the Other Classes tab). AAs marked as owned are kept by default, since those aren't just plans anymore &mdash; check the box below to clear everything, owned included.</p>
     <label class="modal-checkbox-row">
       <input type="checkbox" id="resetClearOwnedCheckbox" />
@@ -208,7 +208,7 @@
 </div>
 
 <div id="waypointModal" class="modal-overlay hidden">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="waypointModalTitle">
     <h2 id="waypointModalTitle">Add Waypoint</h2>
     <p class="modal-hint">Mark a point total worth returning to &mdash; it shows up as a labeled divider right where your training order crosses it. Give it a color to have that stretch of steps stand out at a glance.</p>
     <div class="waypoint-modal-fields">
@@ -233,7 +233,7 @@
   </div>
 </div>
 
-<script src="data.js?v=aa1283fb"></script>
-<script src="app.js?v=aa1283fb"></script>
+<script src="data.js?v=39a52e9c"></script>
+<script src="app.js?v=39a52e9c"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 // Build export/import: the text format, the share-code encoding, share links, and modal wiring.
 
 import { state, AA_CATEGORY_KEYS, applyLoaded, saveLocal, SAVE_FORMAT_VERSION, serializeRanks, serializePurchaseOrder, payloadOwnedHasContent, adoptImportedOwnedAsNewProfile, WAYPOINT_COLORS, MAX_PURCHASE_ORDER } from "./state.js";
-import { el } from "./dom.js";
+import { el, openModal, closeModal } from "./dom.js";
 import { getList, effectiveRank, labelFor, spentPoints, ownedPoints, computeProgressionSteps, computeProgressionTimeline, clearLastMutation, reconcilePurchaseOrderCounts, loadIssuesSuffix } from "./logic.js";
 import { clearActiveBuild, saveImportedBuild, confirmReplaceCurrentBuild, isActiveBuildTheImportedSlot } from "./builds.js";
 import { renderAll, showToast, costDisplayScoped } from "./render.js";
@@ -812,7 +812,7 @@ export async function buildExportText() {
 export async function openExportModal() {
   el.exportText.value = "Generating…";
   el.shareLinkInput.value = "";
-  el.exportModal.classList.remove("hidden");
+  openModal(el.exportModal, el.exportText);
   await regenerateExportContent();
 }
 
@@ -832,7 +832,7 @@ async function regenerateExportContent() {
 }
 
 export function closeExportModal() {
-  el.exportModal.classList.add("hidden");
+  closeModal(el.exportModal);
 }
 
 function copyFrom(inputEl, text) {
@@ -954,12 +954,11 @@ export async function importBuildFromText(text) {
 
 export function openImportModal() {
   el.importText.value = "";
-  el.importModal.classList.remove("hidden");
-  el.importText.focus();
+  openModal(el.importModal, el.importText);
 }
 
 export function closeImportModal() {
-  el.importModal.classList.add("hidden");
+  closeModal(el.importModal);
 }
 
 export async function doImport() {
