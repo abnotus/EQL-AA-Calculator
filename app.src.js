@@ -3981,7 +3981,21 @@
   async function decodeBuildCode(code) {
     if (code.length > MAX_ENCODED_CODE_LENGTH) throw new Error("build code exceeds the size limit");
     const bytes = base64ToBytes(code);
-    if (bytes.length && bytes[0] === V5_MAGIC) return expandBinaryPayload(bytes);
+    let binaryError = null;
+    if (bytes.length && bytes[0] === V5_MAGIC) {
+      try {
+        return expandBinaryPayload(bytes);
+      } catch (e) {
+        binaryError = e;
+      }
+    }
+    try {
+      return await decodeJsonBuildCode(bytes);
+    } catch (e) {
+      throw binaryError || e;
+    }
+  }
+  async function decodeJsonBuildCode(bytes) {
     let jsonBytes;
     if (bytes.length >= 2 && bytes[0] === GZIP_MAGIC_0 && bytes[1] === GZIP_MAGIC_1) {
       jsonBytes = await decompress(bytes, "gzip");

@@ -35,6 +35,12 @@ V4_CODE = "fZM_j9swDMW_SqH5DaJI6s_arUOnjoaHFAkOQdO7Q3A39NsXj459cZEr9LNhSbQtku9Nh
 # later widening of that same field for new (v6) exports.
 V5_LEGACY_CODE = "5VACLIARgDEBCABC+Q=="
 
+# A v4 deflate-raw code whose first byte happens to be 0xE5 (a dynamic-
+# Huffman first block with HLIT=28; owned equal to planned makes the long
+# repeat that needs). Before the fallback it hit the v5+ path, failed the
+# checksum and was reported invalid.
+V4_E5_CODE = "5VLJkQQhDEtID19tTCxd5J_GlmVmanLYB2WQT8m8gVcgkAPbeN8KrMQyPIUoKI9AtaCeyMQjUOkTWAILpCASGoEV6LDCFmggDdoeC5TAC5YIg0CtKwrcoJbYCVVDwgPaRxLbDl7HA4Wi7QOHf-_z_lil1YvpxX7vU8Wh5-AloaiePbLpctwkttqQYzO-IPmGNL8etKJptACZ5LGYsZOEZIrvpH4Wo18fT9K90BoNLFrtGNiZlEKlqNdTrV0H7tu_2LlVZiuTO_NKRkaCtbd8R1lX0ukpI7LN6DelifoscVuzW8n1WTKn9xXcYs3LC4miDBGzYdaQoTjCDcJvMeC1Fr3pYv-UlnOPt50evz8sZxHVktFHBuRiEx_nn_zac_4A"
+
 # A v6 code from the build before v7: Adamant Will planned 3 owned 1,
 # Combat Agility planned and owned 2, and a purple waypoint at 10 pts
 # labelled "v6". v7 widened the delta count and color fields, so this pins
@@ -389,6 +395,19 @@ with sync_playwright() as p:
     assert n == 180, f"FAIL: the pinned v4 build should still load its 180 rows, got {n}"
     print("PASS: v4 share links keep working unchanged")
 
+    # --- 6b. A v4 code that starts with the v5 magic byte still decodes.
+    assert base64.urlsafe_b64decode(V4_E5_CODE + "=" * (-len(V4_E5_CODE) % 4))[0] == 0xE5
+    pg = new_page(url=f"{BASE}?build={V4_E5_CODE}")
+    toast_el = pg.locator("#toast")
+    e5_toast = toast_el.inner_text() if toast_el.is_visible() else ""
+    e5_back = read_state(pg)
+    pg.close()
+    print(f"v4 code starting 0xE5: toast {e5_toast[:60]!r}..., {len(e5_back['order'] or [])} purchase-order entries")
+    assert "invalid" not in e5_toast.lower(), f"FAIL: a v4 code starting 0xE5 was rejected: {e5_toast!r}"
+    assert e5_back["order"] and e5_back["owned"]["general"], \
+        "FAIL: the v4 code starting 0xE5 should load its build and owned progress"
+    print("PASS: a v4 code whose first byte is 0xE5 falls through to the deflate path")
+
     # --- 7. Pre-v6 (v5) links still work, including one with an
     # owned/planned delta - the exact field v6 widened. An already-issued
     # v5 code must keep decoding with v5's OWN original 5-bit width, not
@@ -420,9 +439,12 @@ with sync_playwright() as p:
     pg.close()
     print("v6 legacy link - ranks:", json.dumps(v6_back["ranks"]["general"]),
           "owned:", json.dumps(v6_back["owned"]["general"]), "waypoints:", v6_back["waypoints"])
-    assert v6_back["ranks"]["general"] == {"adamant-will": 3, "combat-agility": 2},         f"FAIL: the pinned v6 build's planned ranks must survive - got {v6_back['ranks']['general']}"
-    assert v6_back["owned"]["general"] == {"adamant-will": 1, "combat-agility": 2},         f"FAIL: the pinned v6 build's owned ranks must survive - got {v6_back['owned']['general']}"
-    assert v6_back["waypoints"] == [[10, "v6", "purple"]],         f"FAIL: the pinned v6 build's waypoint must survive - got {v6_back['waypoints']}"
+    assert v6_back["ranks"]["general"] == {"adamant-will": 3, "combat-agility": 2}, \
+        f"FAIL: the pinned v6 build's planned ranks must survive - got {v6_back['ranks']['general']}"
+    assert v6_back["owned"]["general"] == {"adamant-will": 1, "combat-agility": 2}, \
+        f"FAIL: the pinned v6 build's owned ranks must survive - got {v6_back['owned']['general']}"
+    assert v6_back["waypoints"] == [[10, "v6", "purple"]], \
+        f"FAIL: the pinned v6 build's waypoint must survive - got {v6_back['waypoints']}"
     print("PASS: a v6 link still decodes correctly after v7's field widening")
 
     print("ERRORS:", errors)

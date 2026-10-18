@@ -576,12 +576,27 @@ async function decodeBuildCode(code) {
   // comment for why this exists at all.
   if (code.length > MAX_ENCODED_CODE_LENGTH) throw new Error("build code exceeds the size limit");
   const bytes = base64ToBytes(code);
-  // v5 is packed bits, not JSON, and isn't compressed - so it has to be
-  // recognized here, ahead of both the decompression attempts and the
-  // unconditional JSON.parse below. Checking the magic byte rather than
-  // trying-and-failing also rules out raw binary that happens to be valid
-  // deflate-raw input and would otherwise inflate into garbage.
-  if (bytes.length && bytes[0] === V5_MAGIC) return expandBinaryPayload(bytes);
+  // v5+ is packed bits, not JSON, and isn't compressed, so it's tried first
+  // when the magic byte matches. An older deflate-raw code also starts with
+  // 0xE5 when its first block is dynamic-Huffman with HLIT=28, so a binary
+  // decode that fails its checksum or version check falls through to the
+  // older formats, and reports its own error only if those fail too.
+  let binaryError = null;
+  if (bytes.length && bytes[0] === V5_MAGIC) {
+    try {
+      return expandBinaryPayload(bytes);
+    } catch (e) {
+      binaryError = e;
+    }
+  }
+  try {
+    return await decodeJsonBuildCode(bytes);
+  } catch (e) {
+    throw binaryError || e;
+  }
+}
+
+async function decodeJsonBuildCode(bytes) {
   let jsonBytes;
   if (bytes.length >= 2 && bytes[0] === GZIP_MAGIC_0 && bytes[1] === GZIP_MAGIC_1) {
     // An older share code/export, from when this app compressed with gzip
