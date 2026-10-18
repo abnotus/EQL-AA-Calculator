@@ -950,7 +950,7 @@
         "Undo Last no longer changes another build's owned progress after Link or Merge. Having the calculator open in two tabs no longer mixes up their owned tracking.",
         "Pasting a build code that mail or chat wrapped, quoted or put inside a link now imports. The readable export now also lists picks for classes you aren't using right now.",
         "Keyboard use is smoother: focus stays put on Progression and inside dialogs, and waypoints can be edited from the keyboard. Messages now show above open dialogs and stay up long enough to read.",
-        "Smaller fixes: auto-granted AAs can be hidden, Quick Evacuation bought as a Wizard no longer adds a Druid section, Thief's Intuition no longer shows a made-up total at rank 4, and a plan with only waypoints now asks before being replaced."
+        "Smaller fixes: auto-granted AAs can be hidden, Quick Evacuation bought as a Wizard no longer adds a Druid section, Thief's Intuition at rank 4 now shows the wiki's 1/3/5/5 seconds instead of a miscalculated 20, and a plan with only waypoints now asks before being replaced."
       ]
     },
     {
