@@ -129,14 +129,24 @@ def find_key_collisions(keyed):
     return sorted(ik for ik, n in counts.items() if n > 1)
 
 
+# AAs the user has confirmed were removed from the game, not renamed. Their
+# ids stay in aaIds.js (never reused) but aren't re-listed as possible
+# renames every time a new AA is added.
+CONFIRMED_REMOVALS = {
+    "class:Paladin:valiant-steed",
+    "class:Shadow Knight:abyssal-steed",
+}
+
+
 def compute_vanished(existing, current_id_keys):
     """Ids `existing` still has that no current AA's identity key resolves
-    to. A genuine removal is exactly this with no corresponding new id
-    assigned in the same run; a rename looks the same on this side, but
-    ALSO shows up as a new id, since the renamed AA's new slug doesn't
-    match its old table entry and gets appended as if it were a brand-new
-    AA. This can't tell those two apart on its own - see main()'s warning."""
-    return sorted(k for k in existing if k not in current_id_keys)
+    to, other than CONFIRMED_REMOVALS. A genuine removal is exactly this
+    with no corresponding new id assigned in the same run; a rename looks
+    the same on this side, but ALSO shows up as a new id, since the renamed
+    AA's new slug doesn't match its old table entry and gets appended as if
+    it were a brand-new AA. This can't tell those two apart on its own - see
+    main()'s warning."""
+    return sorted(k for k in existing if k not in current_id_keys and k not in CONFIRMED_REMOVALS)
 
 
 def main():

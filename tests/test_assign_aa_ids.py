@@ -38,6 +38,12 @@ print("steady-state case (nothing vanished):", result2)
 assert result2 == []
 print("PASS: an unchanged table reports nothing vanished")
 
+# --- A confirmed removal (Valiant Steed, Abyssal Steed) isn't re-listed
+# as a possible rename on every later run. ---
+result_removed = aid.compute_vanished({"class:Paladin:valiant-steed": 108, "general::combat-fury": 1}, {"general::combat-fury"})
+assert result_removed == [], f"FAIL: a confirmed removal shouldn't be listed as vanished, got {result_removed}"
+print("PASS: confirmed removals aren't re-listed as vanished")
+
 # --- The rename shape: the old slug is gone, a new one exists that isn't
 # in `existing` yet - compute_vanished only reports the "gone" half;
 # main() cross-references this against `added` to decide whether to warn,
