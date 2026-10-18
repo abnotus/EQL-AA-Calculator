@@ -1871,7 +1871,11 @@ main {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s;
-  z-index: 50;
+  /* Above .modal-overlay, since modals (Import, Builds, Manage tracking)
+     report their own results here. */
+  z-index: 110;
+  width: max-content;
+  max-width: min(600px, calc(100vw - 32px));
 }
 
 #toast.show { opacity: 1; }

@@ -1648,11 +1648,13 @@ function updateVersionDot() {
   el.versionTag.classList.toggle("unread", lastSeen !== current);
 }
 
+// Long load notices need time to read, so the toast stays up longer the
+// more it says.
 export function showToast(msg) {
   el.toast.textContent = msg;
   el.toast.classList.add("show");
   clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
+  showToast._t = setTimeout(() => el.toast.classList.remove("show"), Math.min(12000, 2200 + 50 * String(msg).length));
 }
 
 // The changelog list routinely needs scrolling to read in full, and this

@@ -3490,7 +3490,7 @@
     el.toast.textContent = msg;
     el.toast.classList.add("show");
     clearTimeout(showToast._t);
-    showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
+    showToast._t = setTimeout(() => el.toast.classList.remove("show"), Math.min(12e3, 2200 + 50 * String(msg).length));
   }
   function updateChangelogFade() {
     const el2 = el.changelogContent;
