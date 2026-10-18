@@ -692,14 +692,16 @@ export function payloadOwnedHasContent(owned) {
 // seeded from whatever owned data it carries (possibly none), rather than
 // touching whatever the current session was already tracking.
 // exportImport.js's maybeImportOwned is the only caller.
+// The new profile is written before the session moves onto it, so a failed
+// write leaves tracking where it was ({ saved: false }).
 export function adoptImportedOwnedAsNewProfile(ownedField) {
   const newId = genId();
   migrateSharedQuickEvacuation(ownedField);
   const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
+  if (!saveOwnedProfileTo(newId, result.ranks)) return { dropped: result.dropped, saved: false };
   state.ownedProfileId = newId;
   state.owned = result.ranks;
-  saveOwned();
-  return { dropped: result.dropped };
+  return { dropped: result.dropped, saved: true };
 }
 
 // --- Ongoing owned-tracking controls: Link / Merge / Split -----------------
@@ -720,9 +722,12 @@ export function linkOwnedProfile(targetProfileId) {
 // Inverse of Link: starts a fresh, independent profile seeded with a copy
 // of whatever's currently showing. Whatever the session used to share
 // with is completely unaffected - this only ever writes to the new key.
+// Returns false, changing nothing, if that write failed.
 export function splitOwnedProfile() {
-  state.ownedProfileId = genId();
-  saveOwned();
+  const newId = genId();
+  if (!saveOwnedProfileTo(newId, state.owned)) return false;
+  state.ownedProfileId = newId;
+  return true;
 }
 
 // One-directional, non-destructive union: anything owned in sourceProfileId

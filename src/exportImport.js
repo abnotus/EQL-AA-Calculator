@@ -904,10 +904,11 @@ function extractBuildCode(text) {
 function maybeImportOwned(json) {
   const hadOwned = payloadOwnedHasContent(json.owned);
   const result = adoptImportedOwnedAsNewProfile(hadOwned ? json.owned : {});
-  return { dropped: result.dropped, hadOwned };
+  return { dropped: result.dropped, hadOwned, saved: result.saved };
 }
 
 function ownedNoticeSuffix(ownedOutcome) {
+  if (!ownedOutcome.saved) return " — couldn't set up its owned tracking, local storage may be full or unavailable";
   if (!ownedOutcome.hadOwned) return "";
   return " — owned progress included (tracked separately from your existing progress)";
 }

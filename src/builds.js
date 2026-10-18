@@ -523,9 +523,11 @@ export function mergeOwnedFromBuild(sourceBuildId) {
 // Inverse of Link - the live session (and its active saved slot, if any)
 // gets its own fresh, independent profile, seeded with a copy of whatever
 // it's showing right now. Whatever it used to share with is unaffected.
+// Returns false if the new profile couldn't be written.
 export function splitOwnedFromCurrent() {
   clearLastMutation();
-  splitOwnedProfile();
+  if (!splitOwnedProfile()) return false;
   persistActiveBuildOwnedProfile();
   saveLocal();
+  return true;
 }

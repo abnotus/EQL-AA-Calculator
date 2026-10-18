@@ -114,6 +114,46 @@ with sync_playwright() as p:
         "FAIL: the slot's own data was deleted even though the index write (which was supposed to drop the reference) failed - dangling reference"
     print("PASS: a delete whose index write fails leaves the slot and index consistent, not a dangling reference")
 
+    # --- Split whose new-profile write fails must not repoint the session
+    # or the slot at a profile that was never written (the boot sweep would
+    # then delete the old one). ---
+    page2 = browser.new_page(viewport={"width": 1400, "height": 900})
+    page2.on("pageerror", lambda exc: errors.append(str(exc)))
+    page2.on("dialog", lambda d: d.accept())
+    page2.goto(BASE)
+    page2.wait_for_selector("#treeWrap .node")
+    page2.locator("#treeWrap .node").first.click()
+    page2.click("#incBtn")
+    page2.click("#buildsBtn")
+    page2.fill("#buildSaveName", "Split Me")
+    page2.click("#buildSaveBtn")
+    page2.click("#closeBuildsBtn")
+    profile_before = page2.evaluate("JSON.parse(localStorage.getItem('eql_aa_builder_v1')).ownedProfileId")
+    page2.evaluate("""() => {
+        const real = Storage.prototype.setItem;
+        const known = new Set(Object.keys(localStorage));
+        Storage.prototype.setItem = function (k, v) {
+            if (k.startsWith('eql_aa_owned_') && !known.has(k)) throw new DOMException('quota', 'QuotaExceededError');
+            return real.call(this, k, v);
+        };
+    }""")
+    page2.click('button[data-tab="progression"]')
+    page2.click("#manageOwnedTrackingBtn")
+    page2.click("#ownedTrackingSplitBtn")
+    page2.wait_for_timeout(100)
+    toast = page2.locator("#toast").inner_text()
+    profile_after = page2.evaluate("JSON.parse(localStorage.getItem('eql_aa_builder_v1')).ownedProfileId")
+    slot_profile = page2.evaluate("""() => {
+        const id = JSON.parse(localStorage.getItem('eql_aa_builds_index_v1'))[0].id;
+        return JSON.parse(localStorage.getItem('eql_aa_build_' + id)).ownedProfileId;
+    }""")
+    print(f"Split with a failing write: toast {toast!r}, session {profile_before} -> {profile_after}, slot {slot_profile}")
+    assert profile_after == profile_before and slot_profile == profile_before, \
+        "FAIL: a Split whose write failed repointed the session or slot at a profile that doesn't exist"
+    assert "couldn't" in toast.lower(), f"FAIL: a failed Split should say so, got {toast!r}"
+    print("PASS: a Split whose write fails leaves tracking where it was and says so")
+    page2.close()
+
     print("ERRORS:", errors)
     assert not errors
     browser.close()

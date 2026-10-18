@@ -1837,10 +1837,10 @@ export function handleOwnedTrackingMerge() {
 }
 
 export function handleOwnedTrackingSplit() {
-  splitOwnedFromCurrent();
+  const split = splitOwnedFromCurrent();
   renderOwnedTrackingModal();
   renderAll();
-  showToast("Now tracking its own independent owned progress");
+  showToast(split ? "Now tracking its own independent owned progress" : "Couldn't split — local storage may be full or unavailable.");
 }
 
 export function openResetModal() {

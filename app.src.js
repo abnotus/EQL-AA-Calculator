@@ -773,18 +773,20 @@
     const newId = genId();
     migrateSharedQuickEvacuation(ownedField);
     const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
+    if (!saveOwnedProfileTo(newId, result.ranks)) return { dropped: result.dropped, saved: false };
     state.ownedProfileId = newId;
     state.owned = result.ranks;
-    saveOwned();
-    return { dropped: result.dropped };
+    return { dropped: result.dropped, saved: true };
   }
   function linkOwnedProfile(targetProfileId) {
     state.ownedProfileId = targetProfileId;
     loadAndApplyOwned(null);
   }
   function splitOwnedProfile() {
-    state.ownedProfileId = genId();
-    saveOwned();
+    const newId = genId();
+    if (!saveOwnedProfileTo(newId, state.owned)) return false;
+    state.ownedProfileId = newId;
+    return true;
   }
   function mergeOwnedProfileInto(sourceProfileId) {
     const sourceRaw = loadOwnedProfileRaw(sourceProfileId);
@@ -2448,9 +2450,10 @@
   }
   function splitOwnedFromCurrent() {
     clearLastMutation();
-    splitOwnedProfile();
+    if (!splitOwnedProfile()) return false;
     persistActiveBuildOwnedProfile();
     saveLocal();
+    return true;
   }
 
   // src/render.js
@@ -3704,10 +3707,10 @@
     showToast(result.merged ? `Merged in ${result.merged} owned rank${result.merged === 1 ? "" : "s"} from "${name}"` : `Nothing new to merge in from "${name}"`);
   }
   function handleOwnedTrackingSplit() {
-    splitOwnedFromCurrent();
+    const split = splitOwnedFromCurrent();
     renderOwnedTrackingModal();
     renderAll();
-    showToast("Now tracking its own independent owned progress");
+    showToast(split ? "Now tracking its own independent owned progress" : "Couldn't split \u2014 local storage may be full or unavailable.");
   }
   function openResetModal() {
     el.resetClearOwnedCheckbox.checked = false;
@@ -4348,9 +4351,10 @@
   function maybeImportOwned(json) {
     const hadOwned = payloadOwnedHasContent(json.owned);
     const result = adoptImportedOwnedAsNewProfile(hadOwned ? json.owned : {});
-    return { dropped: result.dropped, hadOwned };
+    return { dropped: result.dropped, hadOwned, saved: result.saved };
   }
   function ownedNoticeSuffix(ownedOutcome) {
+    if (!ownedOutcome.saved) return " \u2014 couldn't set up its owned tracking, local storage may be full or unavailable";
     if (!ownedOutcome.hadOwned) return "";
     return " \u2014 owned progress included (tracked separately from your existing progress)";
   }
