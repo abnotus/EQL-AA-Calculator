@@ -859,16 +859,14 @@ function extractBuildCode(text) {
   return null;
 }
 
-// Owned rides every export unconditionally (packV5), but importing
-// one never touches the receiver's own owned tracking directly - an
-// incoming `o` field always lands in its own brand-new profile
-// (adoptImportedOwnedAsNewProfile) instead, silent and unconfirmed, since
-// nothing existing is ever at risk of being overwritten. A no-op if the
-// sender genuinely had nothing owned yet (no `o` field to begin with).
+// Every import gets its own brand-new profile, silent and unconfirmed since
+// nothing existing is overwritten: a copy of the owned progress the code
+// carries, or an empty one. Keeping the live profile instead would show the
+// previous build's marks (often an earlier friend's link) against this one.
 function maybeImportOwned(json) {
-  if (!payloadOwnedHasContent(json.owned)) return { imported: false, dropped: 0, hadOwned: false };
-  const result = adoptImportedOwnedAsNewProfile(json.owned);
-  return { imported: true, dropped: result.dropped, hadOwned: true };
+  const hadOwned = payloadOwnedHasContent(json.owned);
+  const result = adoptImportedOwnedAsNewProfile(hadOwned ? json.owned : {});
+  return { dropped: result.dropped, hadOwned };
 }
 
 function ownedNoticeSuffix(ownedOutcome) {

@@ -4154,9 +4154,9 @@
     return null;
   }
   function maybeImportOwned(json) {
-    if (!payloadOwnedHasContent(json.owned)) return { imported: false, dropped: 0, hadOwned: false };
-    const result = adoptImportedOwnedAsNewProfile(json.owned);
-    return { imported: true, dropped: result.dropped, hadOwned: true };
+    const hadOwned = payloadOwnedHasContent(json.owned);
+    const result = adoptImportedOwnedAsNewProfile(hadOwned ? json.owned : {});
+    return { dropped: result.dropped, hadOwned };
   }
   function ownedNoticeSuffix(ownedOutcome) {
     if (!ownedOutcome.hadOwned) return "";

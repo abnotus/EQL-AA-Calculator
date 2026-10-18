@@ -674,12 +674,10 @@ export function payloadOwnedHasContent(owned) {
   return Object.keys(classes).some((className) => Object.keys(classes[className] || {}).length > 0);
 }
 
-// An import (share link or pasted text) that carries its own owned data
-// always gets a brand-new profile seeded from it, rather than touching
-// whatever the current session was already tracking - silent, no
-// confirmation, since nothing existing is ever at risk of being
-// overwritten this way. exportImport.js's maybeImportOwned is the only
-// caller.
+// An import (share link or pasted text) always gets a brand-new profile,
+// seeded from whatever owned data it carries (possibly none), rather than
+// touching whatever the current session was already tracking.
+// exportImport.js's maybeImportOwned is the only caller.
 export function adoptImportedOwnedAsNewProfile(ownedField) {
   const newId = genId();
   migrateSharedQuickEvacuation(ownedField);
