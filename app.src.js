@@ -277,12 +277,6 @@
     const autoPos = autoSiblings.findIndex((e) => e.i === idx);
     return autoPos === 0 ? `${base}-auto` : `${base}-auto-${autoPos + 1}`;
   }
-  function idxForEntryKey(rawEntries, key) {
-    for (let i = 0; i < rawEntries.length; i++) {
-      if (keyForEntryIdx(rawEntries, i) === key) return i;
-    }
-    return -1;
-  }
   var SHARED_SCOPES = ["general", "archetype", "special"];
   var hasOwn = (obj, key) => !!obj && Object.prototype.hasOwnProperty.call(obj, key);
   function listIn(table, scope, className) {
@@ -331,12 +325,21 @@
     const renamedIdx = entryKeyMaps(scope, className).keyToIdx.get(renamed);
     return renamedIdx === void 0 ? -1 : renamedIdx;
   }
+  var legacyKeyCache = /* @__PURE__ */ new Map();
+  function legacyKeys(scope, className) {
+    const cacheKey = `${scope}:${className || ""}`;
+    let keys = legacyKeyCache.get(cacheKey);
+    if (!keys) {
+      const entries = legacyEntries(scope, className);
+      keys = entries.map((_, i) => keyForEntryIdx(entries, i));
+      legacyKeyCache.set(cacheKey, keys);
+    }
+    return keys;
+  }
   function currentIdxForLegacyIdx(scope, className, legacyIdx) {
-    const entries = legacyEntries(scope, className);
-    if (legacyIdx < 0 || legacyIdx >= entries.length) return -1;
-    const key = keyForEntryIdx(entries, legacyIdx);
-    if (!key) return -1;
-    return idxForEntryKey(currentEntries(scope, className), key);
+    const keys = legacyKeys(scope, className);
+    if (!Number.isInteger(legacyIdx) || legacyIdx < 0 || legacyIdx >= keys.length) return -1;
+    return keys[legacyIdx] ? idxForKey(scope, className, keys[legacyIdx]) : -1;
   }
   var idToEntryCache = null;
   function idToEntry() {

@@ -123,13 +123,6 @@ function keyForEntryIdx(rawEntries, idx) {
   return autoPos === 0 ? `${base}-auto` : `${base}-auto-${autoPos + 1}`;
 }
 
-function idxForEntryKey(rawEntries, key) {
-  for (let i = 0; i < rawEntries.length; i++) {
-    if (keyForEntryIdx(rawEntries, i) === key) return i;
-  }
-  return -1;
-}
-
 const SHARED_SCOPES = ["general", "archetype", "special"];
 const hasOwn = (obj, key) => !!obj && Object.prototype.hasOwnProperty.call(obj, key);
 
@@ -211,17 +204,27 @@ export function idxForKey(scope, className, key) {
 }
 
 // idx captured against the frozen pre-key ordering -> idx into today's
-// AA_DATA, for migrating old index-based saves. -1 if that AA was renamed
-// or removed since the snapshot was taken. Routed through the same
-// auto-aware key both directions use (not a plain name lookup), so
-// same-named rows (e.g. Cleric's two "Divine Aura" entries) map to their
-// matching occurrence instead of both collapsing onto the first one.
+// AA_DATA, for migrating old index-based saves. -1 if that AA was removed
+// since the snapshot was taken. Routed through the same auto-aware key both
+// directions use (not a plain name lookup), so same-named rows (e.g.
+// Cleric's two "Divine Aura" entries) map to their matching occurrence,
+// and through idxForKey, so RENAMED_KEYS applies here too.
+const legacyKeyCache = new Map();
+function legacyKeys(scope, className) {
+  const cacheKey = `${scope}:${className || ""}`;
+  let keys = legacyKeyCache.get(cacheKey);
+  if (!keys) {
+    const entries = legacyEntries(scope, className);
+    keys = entries.map((_, i) => keyForEntryIdx(entries, i));
+    legacyKeyCache.set(cacheKey, keys);
+  }
+  return keys;
+}
+
 export function currentIdxForLegacyIdx(scope, className, legacyIdx) {
-  const entries = legacyEntries(scope, className);
-  if (legacyIdx < 0 || legacyIdx >= entries.length) return -1;
-  const key = keyForEntryIdx(entries, legacyIdx);
-  if (!key) return -1;
-  return idxForEntryKey(currentEntries(scope, className), key);
+  const keys = legacyKeys(scope, className);
+  if (!Number.isInteger(legacyIdx) || legacyIdx < 0 || legacyIdx >= keys.length) return -1;
+  return keys[legacyIdx] ? idxForKey(scope, className, keys[legacyIdx]) : -1;
 }
 
 let idToEntryCache = null;
