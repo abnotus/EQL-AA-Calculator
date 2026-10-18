@@ -81,7 +81,6 @@ with sync_playwright() as p:
     """)
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
-    page.wait_for_timeout(200)
 
     raw_after = page.evaluate("localStorage.getItem('eql_aa_build_testslot1')")
     print("raw slot payload after boot:", raw_after)

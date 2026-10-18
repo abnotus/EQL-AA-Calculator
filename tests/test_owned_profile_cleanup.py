@@ -54,7 +54,6 @@ with sync_playwright() as p:
     """)
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
-    page.wait_for_timeout(200)
 
     orphan_after = page.evaluate("localStorage.getItem('eql_aa_owned_orphan123')")
     print("orphaned profile after boot (should be gone):", orphan_after)
@@ -82,7 +81,6 @@ with sync_playwright() as p:
     page.evaluate("localStorage.setItem('eql_aa_owned_v1', JSON.stringify(" + json.dumps(json.dumps(EMPTY_OWNED)) + "))")
     page.reload()
     page.wait_for_selector("#treeWrap .node")
-    page.wait_for_timeout(200)
     legacy_source_after = page.evaluate("localStorage.getItem('eql_aa_owned_v1')")
     print("legacy source key (eql_aa_owned_v1) after a second boot:", legacy_source_after is not None)
     assert legacy_source_after is not None, "FAIL: the raw legacy source key must never be swept as if its '_v1' suffix were a profile id"

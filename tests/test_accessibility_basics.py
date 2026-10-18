@@ -20,7 +20,6 @@ with sync_playwright() as p:
 
     page.fill("#levelInput", "99")
     page.press("#levelInput", "Enter")
-    page.wait_for_timeout(40)
     shown = page.locator("#levelInput").input_value()
     print("Char Level shown after entering 99:", shown)
     assert shown == "50", f"FAIL: the field should show the clamped level, got {shown!r}"
@@ -32,17 +31,14 @@ with sync_playwright() as p:
     page.click("#addWaypointBtn")
     page.fill("#waypointPtsInput", "1")
     page.click("#saveWaypointBtn")
-    page.wait_for_timeout(60)
 
     page.locator(".waypoint-chip .chip-label").focus()
     page.keyboard.press("Enter")
-    page.wait_for_timeout(60)
     assert page.locator("#waypointModal").is_visible(), "FAIL: Enter on a waypoint chip should open its editor"
     page.keyboard.press("Escape")
     page.locator(".progression-divider").first.focus()
     assert page.evaluate("document.activeElement.classList.contains('progression-divider')"), "FAIL: a divider can't take focus"
     page.keyboard.press("Enter")
-    page.wait_for_timeout(60)
     assert page.locator("#waypointModal").is_visible(), "FAIL: Enter on a divider should open its editor"
     page.keyboard.press("Escape")
     print("PASS: a waypoint can be edited by keyboard from its chip and its divider")

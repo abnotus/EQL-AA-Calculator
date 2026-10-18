@@ -34,18 +34,14 @@ with sync_playwright() as p:
     page.select_option("#classSelect0", "Wizard")
     page.select_option("#classSelect1", "Bard")
     page.select_option("#classSelect2", "Cleric")
-    page.wait_for_timeout(120)
 
     page.click('button[data-tab="classSlot0"]')  # Wizard
-    page.wait_for_timeout(80)
     qe = page.locator(".node", has=page.locator(".name", has_text="Quick Evacuation"))
     qe.click()
     page.click("#incBtn")
-    page.wait_for_timeout(80)
     assert "1 / 3" in qe.inner_html(), "FAIL: buying from Wizard's tab should still work with Druid inactive"
 
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(100)
     row = page.locator(".progression-row", has=page.locator(".step-name", has_text="Quick Evacuation"))
     row_classes = row.get_attribute("class")
     print("progression row classes:", row_classes)
@@ -69,38 +65,28 @@ with sync_playwright() as p:
 
     # --- The +/- controls actually work (not just enabled). ---
     add_btn.click()
-    page.wait_for_timeout(80)
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(80)
     assert "2 / 3" in qe.inner_html(), "FAIL: Progression's own + button should have bought another rank"
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(80)
     rows = page.locator(".progression-row", has=page.locator(".step-name", has_text="Quick Evacuation"))
     last_remove = rows.last.locator(".step-remove")
     last_remove.click()
-    page.wait_for_timeout(80)
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(80)
     assert "1 / 3" in qe.inner_html(), "FAIL: Progression's own - button should have refunded a rank"
     print("PASS: Progression's +/- controls actually change the shared rank with Druid inactive")
 
     # --- Undo Last works too. ---
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(80)
     qe.click()
     page.click("#incBtn")
-    page.wait_for_timeout(80)
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(100)
     undo_btn = page.locator("#undoLastBtn")
     assert undo_btn.get_attribute("disabled") is None, "FAIL: Undo Last should be enabled"
     undo_btn.click()
-    page.wait_for_timeout(100)
     toast = page.locator("#toast").text_content()
     print("toast after Undo Last:", repr(toast))
     assert not toast or "n't undo" not in toast, f"FAIL: Undo Last should succeed, got: {toast!r}"
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(80)
     print("Wizard tab node after Undo Last:", qe.inner_html())
     assert "1 / 3" in qe.inner_html(), "FAIL: Undo Last should have reverted the rank back to 1/3"
     print("PASS: Undo Last works for a sharedWithClass AA bought while its canonical class is inactive")
@@ -109,12 +95,10 @@ with sync_playwright() as p:
     # section in Other Classes or Summary, and the topbar doesn't count it
     # as coming from an unselected class. ---
     page.click('button[data-tab="otherClasses"]')
-    page.wait_for_timeout(80)
     other = page.locator("#otherClassesContent").inner_text()
     print("Other Classes with Wizard's Quick Evacuation:", other[:80])
     assert "druid" not in other.lower(), f"FAIL: a phantom Druid section showed up: {other!r}"
     page.click('button[data-tab="summary"]')
-    page.wait_for_timeout(80)
     summary_titles = page.locator("#summaryContent .summary-section-title").all_inner_texts()
     assert "druid" not in [t.lower() for t in summary_titles], f"FAIL: Summary shows a phantom Druid section: {summary_titles}"
     title = page.locator("#spentValue").get_attribute("title") or ""

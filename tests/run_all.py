@@ -25,12 +25,8 @@ launch, not the few real page interactions in between, and every test
 already launches its own fully isolated browser (a fresh profile per
 `chromium.launch()` call, not shared across processes) with no state
 shared between test FILES, so running several at once is safe. 4 is a
-deliberately conservative default, not a measured ceiling - pushing past
-it (tried up to 8 during development) got faster per run but ran enough
-headless Chrome processes at once to occasionally blow a page's own
-wait_for_selector timeout on CPU contention alone, not a real bug;
-AACALC_TEST_RETRIES below absorbs exactly that, so raising this is
-reasonable on a beefier machine. Pass 1 to fall back to one at a time.
+conservative default; 8 also runs clean and a little faster. Pass 1 to
+fall back to one at a time.
 
 GitHub Actions runs this after every push (.github/workflows/checks.yml);
 a test that passed only on retry is listed in the summary and, there,
@@ -153,13 +149,9 @@ def run_once(test_path):
         return ("timeout", out, err)
 
 
-# Running several Playwright tests at once (see MAX_WORKERS above) means
-# each one's browser gets a smaller, less predictable slice of the
-# machine than it would alone - occasionally enough to blow past a
-# wait_for_selector's own timeout on nothing more than CPU contention, not
-# a real bug. One retry absorbs that class of flake cheaply (an actual
-# bug fails the same way both times) - pass AACALC_TEST_RETRIES=0 to turn
-# it off and see a flake's first-attempt failure directly.
+# A safety net for a machine busy with other work: the suite passes
+# without it, and an actual bug fails the same way both times. Pass
+# AACALC_TEST_RETRIES=0 to turn it off and see a first-attempt failure.
 MAX_RETRIES = int(os.environ.get("AACALC_TEST_RETRIES", "1"))
 
 

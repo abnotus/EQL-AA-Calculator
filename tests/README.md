@@ -17,10 +17,9 @@ default 4 - each test already launches its own fully isolated browser, so
 this is safe; see `run_all.py`'s own header comment for the tradeoffs of
 raising it) as its own subprocess with a timeout so one stalled test can't
 hang the whole run. A failed or timed-out test gets one automatic retry
-(`AACALC_TEST_RETRIES`, default 1) before being reported, since enough
-headless Chrome processes running at once can occasionally blow a
-`wait_for_selector` timeout on CPU contention alone rather than a real
-bug - a genuine failure fails the same way both times. Prints a pass/fail
+(`AACALC_TEST_RETRIES`, default 1) before being reported, as a safety net
+for a machine busy with other work. The suite passes without it
+(`AACALC_TEST_RETRIES=0`), so a test that needed it is worth a look. Prints a pass/fail
 line per test (in the order each one finishes, not file order, with
 `(passed on retry N)` noted when one needed it) plus a summary with the
 total wall-clock time, and exits non-zero if anything still failed or
@@ -121,6 +120,24 @@ several unconfirmed-cost ranks already spent, an inactive-class step) rather
 than clicking through the UI to build it up live — faster, and pins the
 exact scenario being tested instead of leaving it implicit in a sequence of
 clicks.
+
+**Waiting.** The tests wait on conditions, not fixed sleeps. The app's
+click, change and key handlers render synchronously, so a value read right
+after `click`, `fill` or `select_option` is already current. The
+asynchronous parts each get their own wait:
+
+- The search box's debounce: the page installs Playwright's clock before
+  loading, and `page.clock.run_for(150)` after a `fill` fires it.
+- Export: wait for `#shareLinkInput` to hold a `build=` link.
+- Import: wait for the import modal to close, the confirm dialog
+  (`expect_event("dialog")`), or a toast. Clear the toast first when the
+  previous one could carry the same text.
+- Another tab's `localStorage` write: wait for it to show up in this tab's
+  storage or DOM.
+- Auto-scroll: count animation frames.
+
+`test_toast_visibility.py` keeps one timed wait, since how long the toast
+stays up is what it checks.
 
 ## Fabricated guess fixtures
 

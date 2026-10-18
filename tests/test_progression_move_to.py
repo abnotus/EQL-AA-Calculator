@@ -35,10 +35,8 @@ with sync_playwright() as p:
     for i in range(5):
         nodes.nth(i).click()
         page.click("#incBtn")
-        page.wait_for_timeout(60)
 
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
     rows = page.locator(".progression-row")
     names0 = [rows.nth(i).locator(".step-name").inner_text() for i in range(rows.count())]
     print("initial order:", names0)
@@ -47,21 +45,17 @@ with sync_playwright() as p:
     # --- No waypoints yet: the menu should only offer Top/Bottom of list,
     # no section group. ---
     rows.first.locator(".step-move").click()
-    page.wait_for_timeout(80)
     items0 = rows.first.locator(".move-menu-item").all_text_contents()
     print("menu items with no waypoints:", items0)
     assert items0 == ["Top of list", "Bottom of list"], "FAIL: section options must be absent entirely when there are no waypoints"
     page.keyboard.press("Escape")
-    page.wait_for_timeout(80)
     print("PASS: no waypoints -> no section group in the menu")
 
     # --- Bottom of list: move the first row to the end. ---
     first_name = names0[0]
     rows_a = page.locator(".progression-row")
     rows_a.first.locator(".step-move").click()
-    page.wait_for_timeout(80)
     rows_a.first.locator(".move-menu-item", has_text="Bottom of list").click()
-    page.wait_for_timeout(100)
     rows_b = page.locator(".progression-row")
     names_b = [rows_b.nth(i).locator(".step-name").inner_text() for i in range(rows_b.count())]
     print("order after 'Bottom of list' on the original first row:", names_b)
@@ -73,9 +67,7 @@ with sync_playwright() as p:
     rows_c = page.locator(".progression-row")
     last_row = rows_c.last
     last_row.locator(".step-move").click()
-    page.wait_for_timeout(80)
     last_row.locator(".move-menu-item", has_text="Top of list").click()
-    page.wait_for_timeout(100)
     rows_d = page.locator(".progression-row")
     names_d = [rows_d.nth(i).locator(".step-name").inner_text() for i in range(rows_d.count())]
     print("order after 'Top of list':", names_d)
@@ -86,10 +78,8 @@ with sync_playwright() as p:
     rows_e = page.locator(".progression-row")
     row0 = rows_e.first
     row0.locator(".step-move").click()
-    page.wait_for_timeout(80)
     row0.locator(".move-menu-position-input").fill("3")
     row0.locator(".move-menu-go").click()
-    page.wait_for_timeout(100)
     rows_f = page.locator(".progression-row")
     names_f = [rows_f.nth(i).locator(".step-name").inner_text() for i in range(rows_f.count())]
     print("order after moving the original first row to position 3:", names_f)
@@ -99,10 +89,8 @@ with sync_playwright() as p:
     rows_g = page.locator(".progression-row")
     target_name = names_f[0]
     rows_g.first.locator(".step-move").click()
-    page.wait_for_timeout(80)
     rows_g.first.locator(".move-menu-position-input").fill("999")
     rows_g.first.locator(".move-menu-go").click()
-    page.wait_for_timeout(100)
     rows_h = page.locator(".progression-row")
     names_h = [rows_h.nth(i).locator(".step-name").inner_text() for i in range(rows_h.count())]
     print("order after an over-max position (999):", names_h)
@@ -112,10 +100,8 @@ with sync_playwright() as p:
     rows_i = page.locator(".progression-row")
     target_name2 = names_h[-1]
     rows_i.last.locator(".step-move").click()
-    page.wait_for_timeout(80)
     rows_i.last.locator(".move-menu-position-input").fill("0")
     rows_i.last.locator(".move-menu-go").click()
-    page.wait_for_timeout(100)
     rows_j = page.locator(".progression-row")
     names_j = [rows_j.nth(i).locator(".step-name").inner_text() for i in range(rows_j.count())]
     print("order after an under-min position (0):", names_j)
@@ -138,21 +124,17 @@ with sync_playwright() as p:
     for i in range(6):
         nodes2.nth(i).click()
         page2.click("#incBtn")
-        page2.wait_for_timeout(60)
 
     page2.click('button[data-tab="progression"]')
-    page2.wait_for_timeout(150)
     rows2_ = page2.locator(".progression-row")
     total_pts = int(rows2_.last.locator(".cost-total").inner_text().split()[0].lstrip("~"))
     third = max(1, total_pts // 3)
 
     def add_waypoint(pts, label):
         page2.click("#addWaypointBtn")
-        page2.wait_for_timeout(80)
         page2.fill("#waypointPtsInput", str(pts))
         page2.fill("#waypointLabelInput", label)
         page2.click("#saveWaypointBtn")
-        page2.wait_for_timeout(150)
 
     add_waypoint(third, "Early")
     add_waypoint(third * 2, "Late")
@@ -177,12 +159,10 @@ with sync_playwright() as p:
     last_row2 = page2.locator(".progression-row").last
     last_name2 = last_row2.locator(".step-name").inner_text()
     last_row2.locator(".step-move").click()
-    page2.wait_for_timeout(80)
     menu_items2 = last_row2.locator(".move-menu-item").all_text_contents()
     print("menu items with 2 waypoints:", menu_items2)
     assert menu_items2 == ["Top of list", "Bottom of list", "Early — top", "Early — bottom", "Late — top", "Late — bottom"]
     last_row2.locator(".move-menu-item", has_text="Early — top").click()
-    page2.wait_for_timeout(100)
 
     order2 = page2.evaluate("""() => {
         return Array.from(document.querySelectorAll('#progressionContent > *')).map((el) => {
@@ -217,13 +197,11 @@ with sync_playwright() as p:
 
     page3.click('button[data-tab="general"]')
     gen_nodes = page3.locator(".node")
-    gen_nodes.nth(0).click(); page3.click("#incBtn"); page3.wait_for_timeout(60)
+    gen_nodes.nth(0).click(); page3.click("#incBtn")
     page3.click('button[data-tab="classSlot0"]')
-    page3.wait_for_timeout(80)
-    page3.locator(".node").first.click(); page3.click("#incBtn"); page3.wait_for_timeout(60)
+    page3.locator(".node").first.click(); page3.click("#incBtn")
     page3.click('button[data-tab="general"]')
-    page3.wait_for_timeout(80)
-    gen_nodes.nth(1).click(); page3.click("#incBtn"); page3.wait_for_timeout(60)
+    gen_nodes.nth(1).click(); page3.click("#incBtn")
 
     select = page3.locator("#classSelect0")
     old_class = select.input_value()
@@ -231,10 +209,8 @@ with sync_playwright() as p:
     others = [page3.locator("#classSelect1").input_value(), page3.locator("#classSelect2").input_value()]
     new_class = next(o for o in opts if o != old_class and o not in others)
     select.select_option(new_class)
-    page3.wait_for_timeout(150)
 
     page3.click('button[data-tab="progression"]')
-    page3.wait_for_timeout(150)
     rows3_ = page3.locator(".progression-row")
     print("visible row count with the swapped-out class's entry still shown:", rows3_.count())
     assert rows3_.count() == 3
@@ -274,9 +250,7 @@ with sync_playwright() as p:
     # Move the first row to "Bottom of list" - it's a fully normal row now,
     # so this lands it after BOTH other rows, including the inactive one.
     rows3_.nth(0).locator(".step-move").click()
-    page3.wait_for_timeout(80)
     rows3_.nth(0).locator(".move-menu-item", has_text="Bottom of list").click()
-    page3.wait_for_timeout(100)
     rows3_after = page3.locator(".progression-row")
     names3_after = [rows3_after.nth(i).locator(".step-name").inner_text() for i in range(3)]
     print("order after Bottom of list:", names3_after)
@@ -290,9 +264,7 @@ with sync_playwright() as p:
     inactive_row = page3.locator(".progression-row.inactive")
     assert inactive_row.count() == 1
     inactive_row.locator(".step-move").click()
-    page3.wait_for_timeout(80)
     inactive_row.locator(".move-menu-item", has_text="Bottom of list").click()
-    page3.wait_for_timeout(100)
     rows3_final = page3.locator(".progression-row")
     names3_final = [rows3_final.nth(i).locator(".step-name").inner_text() for i in range(3)]
     print("order after moving the inactive row to Bottom of list:", names3_final)
@@ -332,9 +304,7 @@ with sync_playwright() as p:
         for i in range(3):
             gnodes.nth(i).click()
             pg.click("#incBtn")
-            pg.wait_for_timeout(60)
         pg.click('button[data-tab="progression"]')
-        pg.wait_for_timeout(150)
         rows = pg.locator(".progression-row")
         c1 = int(rows.nth(0).locator(".cost-total").inner_text().split()[0].lstrip("~"))
         c2 = int(rows.nth(1).locator(".cost-total").inner_text().split()[0].lstrip("~"))
@@ -345,17 +315,13 @@ with sync_playwright() as p:
         # literal bottom, past step2. Same formula the app itself uses
         # (waypointSections, render.js): baseline + moving_cost <= c2.
         pg.click("#addWaypointBtn")
-        pg.wait_for_timeout(80)
         pg.fill("#waypointPtsInput", "0")
         pg.fill("#waypointLabelInput", "Section")
         pg.click("#saveWaypointBtn")
-        pg.wait_for_timeout(150)
         pg.click("#addWaypointBtn")
-        pg.wait_for_timeout(80)
         pg.fill("#waypointPtsInput", str(c2))
         pg.fill("#waypointLabelInput", "After")
         pg.click("#saveWaypointBtn")
-        pg.wait_for_timeout(150)
         baselines = [0, c1, c2]
         fits = [b + moving_cost <= c2 for b in baselines]
         print(f"c1={c1} c2={c2} moving_cost={moving_cost} fits={list(zip(baselines, fits))}")
@@ -371,7 +337,6 @@ with sync_playwright() as p:
 
     moving_row = page4.locator(".progression-row").filter(has=page4.locator(".step-name", has_text=moving_name)).last
     moving_row.locator(".step-move").click()
-    page4.wait_for_timeout(80)
     section_top = moving_row.locator(".move-menu-item", has_text="Section — top")
     section_bottom = moving_row.locator(".move-menu-item", has_text="Section — bottom")
     top_disabled = section_top.get_attribute("disabled") is not None
@@ -382,7 +347,6 @@ with sync_playwright() as p:
 
     if fits[0]:
         section_top.click()
-        page4.wait_for_timeout(100)
         rows4b = page4.locator(".progression-row")
         names4b = [rows4b.nth(i).locator(".step-name").inner_text() for i in range(3)]
         print("order after 'Section — top':", names4b)
@@ -407,9 +371,7 @@ with sync_playwright() as p:
     if fits5[0]:
         moving_row5 = page5.locator(".progression-row").filter(has=page5.locator(".step-name", has_text=moving_name5)).last
         moving_row5.locator(".step-move").click()
-        page5.wait_for_timeout(80)
         page5.locator(".move-menu-item", has_text="Section — bottom").click()
-        page5.wait_for_timeout(100)
         rows5 = page5.locator(".progression-row")
         names5 = [rows5.nth(i).locator(".step-name").inner_text() for i in range(3)]
         print(f"order after 'Section — bottom' (fits[1]={fits5[1]}):", names5)
@@ -446,10 +408,8 @@ with sync_playwright() as p:
     page6.click('button[data-tab="general"]')
     page6.locator(".node").first.click()
     page6.click("#incBtn")
-    page6.wait_for_timeout(80)
 
     page6.click('button[data-tab="progression"]')
-    page6.wait_for_timeout(150)
     moving_row6 = page6.locator(".progression-row").first
     moving_name6 = moving_row6.locator(".step-name").inner_text()
     moving_cost6 = int(moving_row6.locator(".cost-this").inner_text().split()[0].lstrip("+~"))
@@ -457,21 +417,16 @@ with sync_playwright() as p:
     assert moving_cost6 >= 1, "FAIL: test assumes a real AA rank always costs at least 1 point"
 
     page6.click("#addWaypointBtn")
-    page6.wait_for_timeout(80)
     page6.fill("#waypointPtsInput", "0")
     page6.fill("#waypointLabelInput", "Tiny")
     page6.click("#saveWaypointBtn")
-    page6.wait_for_timeout(150)
     page6.click("#addWaypointBtn")
-    page6.wait_for_timeout(80)
     page6.fill("#waypointPtsInput", str(moving_cost6 - 1))
     page6.fill("#waypointLabelInput", "TooSoon")
     page6.click("#saveWaypointBtn")
-    page6.wait_for_timeout(150)
 
     moving_row6b = page6.locator(".progression-row").filter(has=page6.locator(".step-name", has_text=moving_name6)).last
     moving_row6b.locator(".step-move").click()
-    page6.wait_for_timeout(80)
     top6 = moving_row6b.locator(".move-menu-item", has_text="Tiny — top")
     bottom6 = moving_row6b.locator(".move-menu-item", has_text="Tiny — bottom")
     print("Tiny — top disabled:", top6.get_attribute("disabled") is not None)
@@ -504,30 +459,24 @@ with sync_playwright() as p:
     for i in range(4):
         gnodes7.nth(i).click()
         page7.click("#incBtn")
-        page7.wait_for_timeout(60)
 
     page7.click('button[data-tab="progression"]')
-    page7.wait_for_timeout(150)
     rows7 = page7.locator(".progression-row")
     p_name, q_name, r_name, s_name = [rows7.nth(i).locator(".step-name").inner_text() for i in range(4)]
     q_cumulative = int(rows7.nth(1).locator(".cost-total").inner_text().split()[0].lstrip("~"))
     print(f"P={p_name} Q={q_name} R={r_name} S={s_name}, divider set at Q's cumulative={q_cumulative}")
 
     page7.click("#addWaypointBtn")
-    page7.wait_for_timeout(80)
     page7.fill("#waypointPtsInput", str(q_cumulative))
     page7.fill("#waypointLabelInput", "Section")
     page7.click("#saveWaypointBtn")
-    page7.wait_for_timeout(150)
 
     p_row = page7.locator(".progression-row").filter(has=page7.locator(".step-name", has_text=p_name)).first
     p_row.locator(".step-move").click()
-    page7.wait_for_timeout(80)
     section_top7 = p_row.locator(".move-menu-item", has_text="Section — top")
     assert section_top7.get_attribute("disabled") is None, \
         "FAIL: test setup should always let P fit at Section's own top slot (no later divider bounds it)"
     section_top7.click()
-    page7.wait_for_timeout(100)
 
     names7 = [page7.locator(".progression-row").nth(i).locator(".step-name").inner_text() for i in range(4)]
     print("order after moving P into 'Section — top':", names7)
@@ -590,27 +539,21 @@ with sync_playwright() as p:
     for i in range(3):
         gnodes8.nth(i).click()
         page8.click("#incBtn")
-        page8.wait_for_timeout(60)
 
     page8.click('button[data-tab="progression"]')
-    page8.wait_for_timeout(150)
     rows8 = page8.locator(".progression-row")
     a_name, b_name, c_name = [rows8.nth(i).locator(".step-name").inner_text() for i in range(3)]
     b_cumulative = int(rows8.nth(1).locator(".cost-total").inner_text().split()[0].lstrip("~"))
     print(f"A={a_name} B={b_name} C={c_name}, divider set at B's cumulative={b_cumulative}")
 
     page8.click("#addWaypointBtn")
-    page8.wait_for_timeout(80)
     page8.fill("#waypointPtsInput", str(b_cumulative))
     page8.fill("#waypointLabelInput", "Section")
     page8.click("#saveWaypointBtn")
-    page8.wait_for_timeout(150)
 
     a_row = page8.locator(".progression-row").filter(has=page8.locator(".step-name", has_text=a_name)).first
     a_row.locator(".step-move").click()
-    page8.wait_for_timeout(80)
     page8.locator(".move-menu-item", has_text="Section — top").click()
-    page8.wait_for_timeout(100)
 
     order8 = page8.evaluate("""() => {
         return Array.from(document.querySelectorAll('#progressionContent > *')).map((el) => {

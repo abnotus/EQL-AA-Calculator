@@ -36,13 +36,11 @@ with sync_playwright() as p:
     # rank 8. ---
     for _ in range(6):
         page.click("#incBtn")
-        page.wait_for_timeout(15)
     current = page.locator("#sidePanel .current")
     print("rank after 6 clicks:", current.inner_text())
     assert current.inner_text() == "6 / 8"
 
     page.click("#incBtn")  # 7th click - must be blocked
-    page.wait_for_timeout(30)
     print("rank after blocked 7th click:", current.inner_text())
     assert current.inner_text() == "6 / 8", "FAIL: purchase went through past the class cap"
     block_line = page.locator("#sidePanel .req-line.warn").first
@@ -57,11 +55,9 @@ with sync_playwright() as p:
     # --- Swap Class 3 to Warrior (a tank) - cap rises to 8, both remaining
     # ranks become purchasable. ---
     page.select_option("#classSelect2", "Warrior")
-    page.wait_for_timeout(150)
     assert current.inner_text() == "6 / 8", "FAIL: rank should be untouched by the class swap itself"
     for _ in range(2):
         page.click("#incBtn")
-        page.wait_for_timeout(15)
     print("rank after buying through to 8 with Warrior selected:", current.inner_text())
     assert current.inner_text() == "8 / 8"
     assert "maxed" in node.get_attribute("class") and "invalidated" not in node.get_attribute("class")
@@ -73,7 +69,6 @@ with sync_playwright() as p:
     # dimmed rank-bar segment for the 2 ranks (7-8) beyond the new cap of 6
     # (2 of 8 total ranks = 25% of the bar's width). ---
     page.select_option("#classSelect2", "Cleric")
-    page.wait_for_timeout(150)
     print("rank after swapping the qualifying class back out:", current.inner_text())
     assert current.inner_text() == "8 / 8", "FAIL: an owned/purchased rank must never be silently stripped by a class swap"
     node_classes = node.get_attribute("class")
@@ -108,7 +103,6 @@ with sync_playwright() as p:
     # broken prerequisite already gets, per classCapWarn in
     # computeProgressionSteps. ---
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
     prog_rows = page.locator(".progression-row", has=page.locator(".step-name", has_text="Steadfast Will"))
     print("Steadfast Will Progression row count:", prog_rows.count())
     assert prog_rows.count() == 8
@@ -128,7 +122,6 @@ with sync_playwright() as p:
     # panel uses (heldRankInvalidReason), since Summary shows the current
     # overall picture rather than a click-ordered sequence. ---
     page.click('button[data-tab="summary"]')
-    page.wait_for_timeout(150)
     summary_card = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Steadfast Will"))
     summary_warn = summary_card.locator(".req-line.warn")
     print("Summary card warn line count:", summary_warn.count())
@@ -147,12 +140,10 @@ with sync_playwright() as p:
     # away and back drops the side panel's selection. ---
     page.click('button[data-tab="general"]')
     node.click()
-    page.wait_for_timeout(50)
 
     # --- Ranger gets its own distinct cap (7, not the tank classes' 8) -
     # confirms byClass isn't just a boolean tank/not-tank check. ---
     page.select_option("#classSelect2", "Ranger")
-    page.wait_for_timeout(150)
     print("node class list with Ranger selected (rank 8 still exceeds Ranger's cap of 7):", node.get_attribute("class"))
     assert "invalidated" in node.get_attribute("class"), "FAIL: Ranger's cap is 7, not 8 - rank 8 should still be flagged"
     invalid_line2 = page.locator("#sidePanel .req-line.warn").first
@@ -166,7 +157,6 @@ with sync_playwright() as p:
     # default (6) without either the Ranger check above or the default-cap
     # check at the top of this file catching it. ---
     page.select_option("#classSelect2", "Monk")
-    page.wait_for_timeout(150)
     print("node class list with Monk selected (rank 8 still exceeds Monk's cap of 7):", node.get_attribute("class"))
     assert "invalidated" in node.get_attribute("class"), "FAIL: Monk's cap is 7, not 8 - rank 8 should still be flagged"
     invalid_line3 = page.locator("#sidePanel .req-line.warn").first
@@ -174,7 +164,6 @@ with sync_playwright() as p:
     assert invalid_line3.inner_text() == "⚠ No longer valid: exceeds the rank 7 cap for your currently selected classes."
 
     page.click("#decBtn")
-    page.wait_for_timeout(30)
     print("rank after dropping to 7 with Monk selected:", current.inner_text())
     assert current.inner_text() == "7 / 8"
     assert "invalidated" not in node.get_attribute("class"), "FAIL: rank 7 is within Monk's own cap of 7, shouldn't be flagged invalid"
@@ -214,7 +203,6 @@ with sync_playwright() as p:
     """)
     page2.goto(BASE)
     page2.wait_for_selector("#treeWrap .node")
-    page2.wait_for_timeout(200)
     print("boot-time dialogs/toasts:", dialogs2)
     toast = page2.locator("#toast")
     toast_text = toast.inner_text() if toast.count() and toast.is_visible() else ""

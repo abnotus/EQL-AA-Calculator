@@ -57,7 +57,6 @@ with sync_playwright() as p:
 
     page.goto(f"{BASE}?build={BUILD_CODE}")
     page.wait_for_selector("#treeWrap .node")
-    page.wait_for_timeout(300)
 
     classes = [page.locator(f"#classSelect{i}").input_value() for i in range(3)]
     print("selected classes:", classes)
@@ -67,7 +66,6 @@ with sync_playwright() as p:
     # --- Progression: every pick renders, active or not - none silently
     # dropped for a build this size. ---
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(250)
     rows = page.locator(".progression-row")
     row_count = rows.count()
     print("Progression row count:", row_count)
@@ -106,7 +104,6 @@ with sync_playwright() as p:
     # --- Other Classes: the same 13 inactive picks (Bard/Monk/Rogue/Shaman/
     # Wizard), grouped. ---
     page.click('button[data-tab="otherClasses"]')
-    page.wait_for_timeout(200)
     section_titles = page.locator("#otherClassesContent .summary-section-title").all_inner_texts()
     print("Other Classes sections:", section_titles)
     assert sorted(section_titles) == ["BARD", "MONK", "ROGUE", "SHAMAN", "WIZARD"], \
@@ -121,7 +118,6 @@ with sync_playwright() as p:
     # spent figure - no more silent divergence, even blended with real
     # estimates on a build this size. ---
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(200)
     last_total = page.locator(".progression-row").last.locator(".cost-total").inner_text().strip()
     spent_text = page.locator("#spentValue").inner_text()
     spent_only = spent_text.split("/")[-1].strip()

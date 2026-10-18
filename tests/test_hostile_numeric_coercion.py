@@ -30,11 +30,20 @@
 #     no decodeBuildCode/expandCompactRanks step in between at all.
 import os, sys, io, json, base64
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 STORAGE_KEY = "eql_aa_builder_v1"
 HOSTILE = {"toString": None}
+
+
+def wait_for_boot(page):
+    # A boot this test guards against crashing never renders the tree, so
+    # stop waiting after a while and let the asserts below say why.
+    try:
+        page.wait_for_selector("#treeWrap .node", timeout=10000)
+    except PlaywrightTimeoutError:
+        pass
 
 
 def compact_build_code(l=50, w=None):
@@ -58,7 +67,7 @@ with sync_playwright() as p:
     # straight through expandCompactPayload unfiltered) ---
     code = compact_build_code(l=HOSTILE)
     page.goto(f"{BASE}?build={code}")
-    page.wait_for_timeout(500)
+    wait_for_boot(page)
     tree_count = page.locator("#treeWrap .node").count()
     level_value = page.locator("#levelInput").input_value()
     print(f"charLevel case: tree node count={tree_count}, #levelInput value={level_value!r}, errors={errors}")
@@ -72,7 +81,7 @@ with sync_playwright() as p:
     errors.clear()
     code = compact_build_code(w=[[HOSTILE, "test", None]])
     page.goto(f"{BASE}?build={code}")
-    page.wait_for_timeout(500)
+    wait_for_boot(page)
     tree_count = page.locator("#treeWrap .node").count()
     chip_count = page.locator(".waypoint-chip").count()
     print(f"waypoint case: tree node count={tree_count}, waypoint chips={chip_count}, errors={errors}")
@@ -100,7 +109,7 @@ with sync_playwright() as p:
         [STORAGE_KEY, local_payload]
     )
     page.reload()
-    page.wait_for_timeout(500)
+    wait_for_boot(page)
     tree_count = page.locator("#treeWrap .node").count()
     print(f"rank case: tree node count={tree_count}, errors={errors}")
     assert not errors, f"FAIL: a hostile rank value threw instead of degrading gracefully: {errors}"
@@ -142,7 +151,7 @@ with sync_playwright() as p:
     """, legacy_payload)
     url_code = code.replace("+", "-").replace("/", "_").rstrip("=")
     page.goto(f"{BASE}?build={url_code}")
-    page.wait_for_timeout(500)
+    wait_for_boot(page)
     tree_count = page.locator("#treeWrap .node").count()
     print(f"decodeDropped case: tree node count={tree_count}, errors={errors}")
     assert not errors, f"FAIL: a hostile decodeDropped value threw instead of degrading gracefully: {errors}"
@@ -167,7 +176,7 @@ with sync_playwright() as p:
         ["eql_aa_owned_legacy", owned_payload]
     )
     page.reload()
-    page.wait_for_timeout(500)
+    wait_for_boot(page)
     tree_count = page.locator("#treeWrap .node").count()
     print(f"shared owned rank case: tree node count={tree_count}, errors={errors}")
     assert not errors, f"FAIL: a hostile shared owned rank threw instead of degrading gracefully: {errors}"

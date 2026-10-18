@@ -59,6 +59,8 @@ with sync_playwright() as p:
     page.route("**/data.js*", lambda route: route.fulfill(body=patched_data_js(), content_type="application/javascript; charset=utf-8"))
     page.route("**/app.js*", lambda route: route.fulfill(body=patched_app_src(), content_type="application/javascript; charset=utf-8"))
 
+    # The search box applies after a debounce; run_for fires it on the spot.
+    page.clock.install()
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
     page.click('button[data-tab="general"]')
@@ -66,7 +68,6 @@ with sync_playwright() as p:
     bm = page.locator(".node", has=page.locator(".name", has_text="Baking Mastery"))
     bm.click()
     page.click("#incBtn")  # rank1, real value 10
-    page.wait_for_timeout(30)
 
     # --- Side panel: rank1 is real (bolded, no estimate); ranks 2 and 3's
     # "?"s each show their own guess, styled and tooltipped independently,
@@ -86,10 +87,8 @@ with sync_playwright() as p:
     # Being the next rank it is also rank-highlighted, so this is the
     # combined case in situ. ---
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(100)
     row = page.locator(".progression-row", has=page.locator(".step-name", has_text="Baking Mastery"))
     row.locator(".step-expand").click()
-    page.wait_for_timeout(100)
     prog_desc = page.locator(".progression-next-rank .desc").inner_html()
     print("Progression next-rank desc:", prog_desc)
     assert "~25" in prog_desc and "is-estimate" in prog_desc and "tier-medium" in prog_desc
@@ -102,7 +101,6 @@ with sync_playwright() as p:
     page.click('button[data-tab="general"]')
     bm.click()
     page.click("#incBtn")
-    page.wait_for_timeout(30)
     span = page.locator("#sidePanel .desc .is-estimate.rank-highlight").first
     cls = span.get_attribute("class")
     print("combined rank-highlight + is-estimate class:", cls)
@@ -118,13 +116,14 @@ with sync_playwright() as p:
     # with no rank-highlight class at all (there's no "current rank" here). ---
     page.click("#browseToggle")
     page.fill("#globalSearch", "Baking Mastery")
-    page.wait_for_timeout(100)
+    page.clock.run_for(150)
     card = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Baking Mastery")).first
     browse_html = card.locator(".desc").inner_html()
     print("Browse desc html:", browse_html)
     assert "~25" in browse_html and "~50" in browse_html and "is-estimate" in browse_html
     assert "rank-highlight" not in browse_html, "FAIL: Browse has no current rank, nothing should be bolded"
     page.fill("#globalSearch", "")
+    page.clock.run_for(150)
     page.click("#browseToggle")
     print("PASS: Browse shows the guess with no rank-highlighting (no current rank concept there)")
 
@@ -132,7 +131,6 @@ with sync_playwright() as p:
     # hold, same guess/bold treatment as the side panel. Current rank (2)
     # happens to be a guessed slot too, same combined case as above. ---
     page.click('button[data-tab="summary"]')
-    page.wait_for_timeout(100)
     summary_card = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Baking Mastery"))
     summary_html = summary_card.locator(".desc").inner_html()
     print("Summary desc html:", summary_html)

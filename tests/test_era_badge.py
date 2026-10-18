@@ -38,6 +38,8 @@ with sync_playwright() as p:
     page.on("dialog", lambda d: d.accept())
     page.route("**/data.js*", lambda route: route.fulfill(body=patched_data_js(), content_type="application/javascript; charset=utf-8"))
 
+    # The search box applies after a debounce; run_for fires it on the spot.
+    page.clock.install()
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
 
@@ -70,24 +72,25 @@ with sync_playwright() as p:
     # none at all. ---
     page.click("#browseToggle")
     page.fill("#globalSearch", "Rapid Feign")
-    page.wait_for_timeout(250)
+    page.clock.run_for(150)
     rf_card = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Rapid Feign"))
     rf_card_badge = rf_card.locator(".name .era-badge")
     print("Rapid Feign browse badge:", rf_card_badge.inner_text(), rf_card_badge.get_attribute("class"))
     assert rf_card_badge.inner_text() == "K" and "era-kunark" in rf_card_badge.get_attribute("class")
 
     page.fill("#globalSearch", "Baking Mastery")
-    page.wait_for_timeout(250)
+    page.clock.run_for(150)
     bm_card = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Baking Mastery"))
     bm_card_badge = bm_card.locator(".name .era-badge")
     print("Baking Mastery browse badge:", bm_card_badge.inner_text(), bm_card_badge.get_attribute("class"))
     assert bm_card_badge.inner_text() == "V" and "era-velious" in bm_card_badge.get_attribute("class")
 
     page.fill("#globalSearch", "Combat Fury")
-    page.wait_for_timeout(250)
+    page.clock.run_for(150)
     cf_card = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Combat Fury"))
     assert cf_card.locator(".era-badge").count() == 0, "FAIL: a plain real AA must never show an era badge"
     page.fill("#globalSearch", "")
+    page.clock.run_for(150)
     page.click("#browseToggle")
     print("PASS: Browse cards show the same two badges inline, and a plain AA shows none")
 
@@ -100,12 +103,10 @@ with sync_playwright() as p:
     page.click('button[data-tab="classSlot0"]')
     rf_node.click()
     page.click("#incBtn")
-    page.wait_for_timeout(30)
     page.click('button[data-tab="general"]')
     cf_node = page.locator(".node", has=page.locator(".name", has_text="Combat Fury"))
     cf_node.click()
     page.click("#incBtn")
-    page.wait_for_timeout(30)
 
     page.click('button[data-tab="summary"]')
     summary_rf_badge = page.locator("#summaryContent .browse-card .name .era-badge")

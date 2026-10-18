@@ -164,14 +164,13 @@ with sync_playwright() as p:
             )
         pg.goto(url)
         pg.wait_for_selector("#treeWrap .node")
-        pg.wait_for_timeout(120)
         return pg
 
     def export_code(pg):
         """The BUILD_CODE line's raw value - standard base64, as the export
         text embeds it."""
         pg.click("#exportBtn")
-        pg.wait_for_timeout(250)
+        pg.wait_for_function("document.querySelector('#shareLinkInput').value.includes('build=')")
         text = pg.locator("#exportText").input_value()
         pg.click("#closeExportBtn")
         return next(l.split("BUILD_CODE:")[1].strip()
@@ -393,7 +392,6 @@ with sync_playwright() as p:
     pg = new_page(url=f"{BASE}?build={V4_CODE}")
     rows = pg.locator(".progression-row")
     pg.click('button[data-tab="progression"]')
-    pg.wait_for_timeout(200)
     n = pg.locator(".progression-row").count()
     pg.close()
     print("v4 link still decodes, Progression rows:", n)

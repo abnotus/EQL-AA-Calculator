@@ -36,7 +36,6 @@ def swap_class0_to_something_else(page):
     others = [page.locator("#classSelect1").input_value(), page.locator("#classSelect2").input_value()]
     new = next(o for o in options if o != old and o not in others)
     select.select_option(new)
-    page.wait_for_timeout(150)
     return old, new
 
 
@@ -51,17 +50,13 @@ with sync_playwright() as p:
 
     # --- Buy class-slot-0's first AA to rank 1, mark it owned. ---
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(100)
     node = page.locator(".node").first
     node_name = node.locator(".name").inner_text()
     node.click()
     page.click("#incBtn")
-    page.wait_for_timeout(80)
 
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
     page.locator(".progression-row").first.locator(".step-own").click()
-    page.wait_for_timeout(80)
     owned_before = page.locator("#ownedSummary").inner_text()
     print("owned summary before swap:", owned_before)
     assert owned_before == "3 pts owned, 0 to go" or owned_before.endswith("owned, 0 to go")
@@ -82,7 +77,6 @@ with sync_playwright() as p:
     # --- Clear Owned: wipes owned globally, including the now-inactive
     # class, without touching the plan itself. ---
     clear_owned_btn.click()
-    page.wait_for_timeout(150)
     owned_after_clear = page.locator("#ownedSummary").inner_text()
     print("owned summary after Clear Owned:", owned_after_clear)
     assert owned_after_clear.startswith("0 pt"), f"FAIL: expected owned to zero out, got {owned_after_clear!r}"
@@ -104,11 +98,8 @@ with sync_playwright() as p:
     # rendered tree - not just raw storage - so a display-only bug can't
     # slip past.
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(100)
     page.locator("#classSelect0").select_option(old_class)
-    page.wait_for_timeout(200)
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(100)
     restored = page.locator(".node", has=page.locator(".name", has_text=node_name))
     rank_text = restored.locator(".ranktext").inner_text()
     print("rank after Clear Owned + swap back:", rank_text)
@@ -129,27 +120,21 @@ with sync_playwright() as p:
     page2.wait_for_selector("#treeWrap .node")
 
     page2.click('button[data-tab="classSlot0"]')
-    page2.wait_for_timeout(100)
     n2 = page2.locator(".node").first
     n2_name = n2.locator(".name").inner_text()
     n2.click()
     page2.click("#incBtn")
-    page2.wait_for_timeout(60)
     page2.click("#incBtn")
-    page2.wait_for_timeout(60)  # rank 2
+    # rank 2
 
     page2.click('button[data-tab="progression"]')
-    page2.wait_for_timeout(150)
     page2.locator(".progression-row").nth(0).locator(".step-own").click()  # own rank 1 only
-    page2.wait_for_timeout(80)
 
     old_class2, _ = swap_class0_to_something_else(page2)
 
     page2.click("#resetBtn")
-    page2.wait_for_timeout(100)
     assert not page2.locator("#resetClearOwnedCheckbox").is_checked()
     page2.click("#confirmResetBtn")
-    page2.wait_for_timeout(150)
 
     build_after_reset = json.loads(page2.evaluate("localStorage.getItem('eql_aa_builder_v1')"))
     print("ranks.classes after Reset Build (keep owned), inactive class trimmed to 1:", build_after_reset["ranks"]["classes"])
@@ -157,11 +142,8 @@ with sync_playwright() as p:
         "FAIL: Reset Build (keep owned) should trim an inactive class's plan to its owned watermark too"
 
     page2.click('button[data-tab="classSlot0"]')
-    page2.wait_for_timeout(100)
     page2.locator("#classSelect0").select_option(old_class2)
-    page2.wait_for_timeout(200)
     page2.click('button[data-tab="classSlot0"]')
-    page2.wait_for_timeout(100)
     restored2 = page2.locator(".node", has=page2.locator(".name", has_text=n2_name))
     rank_after_reset = restored2.locator(".ranktext").inner_text()
     print("rendered rank after Reset Build (keep owned) + swap back:", rank_after_reset)
@@ -181,24 +163,18 @@ with sync_playwright() as p:
     page3.wait_for_selector("#treeWrap .node")
 
     page3.click('button[data-tab="classSlot0"]')
-    page3.wait_for_timeout(100)
     n3 = page3.locator(".node").first
     n3.click()
     page3.click("#incBtn")
-    page3.wait_for_timeout(60)
 
     page3.click('button[data-tab="progression"]')
-    page3.wait_for_timeout(150)
     page3.locator(".progression-row").first.locator(".step-own").click()
-    page3.wait_for_timeout(80)
 
     old_class3, _ = swap_class0_to_something_else(page3)
 
     page3.click("#resetBtn")
-    page3.wait_for_timeout(100)
     page3.locator("#resetClearOwnedCheckbox").check()
     page3.click("#confirmResetBtn")
-    page3.wait_for_timeout(150)
 
     build_after_full_reset = json.loads(page3.evaluate("localStorage.getItem('eql_aa_builder_v1')"))
     owned_after_full_reset = json.loads(page3.evaluate("localStorage.getItem('eql_aa_owned_legacy')"))

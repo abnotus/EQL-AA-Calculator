@@ -55,10 +55,8 @@ with sync_playwright() as p:
     )
 
     page.click("#buildsBtn")
-    page.wait_for_timeout(100)
     page.fill("#buildSaveName", "From This Tab")
     page.click("#buildSaveBtn")
-    page.wait_for_timeout(150)
     toast_text = page.locator("#toast").inner_text()
     print("toast after saving in this tab following the simulated external write:", toast_text)
     assert "saved" in toast_text.lower(), f"FAIL: expected a normal success toast, got: {toast_text!r}"

@@ -42,7 +42,6 @@ with sync_playwright() as p:
     page.select_option("#classSelect0", "Cleric")
     page.select_option("#classSelect1", "Druid")
     page.select_option("#classSelect2", "Wizard")
-    page.wait_for_timeout(150)
     node_classes = node.get_attribute("class")
     print("node class list, ineligible combo:", node_classes)
     assert "auto" not in node_classes.split()
@@ -63,7 +62,6 @@ with sync_playwright() as p:
 
     # --- Must not count toward Summary/exports while ineligible. ---
     page.click('button[data-tab="summary"]')
-    page.wait_for_timeout(150)
     summary_card = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Intimidation"))
     print("Summary card count while ineligible:", summary_card.count())
     assert summary_card.count() == 0, "FAIL: an ungranted auto AA must not appear in Summary as owned"
@@ -72,7 +70,6 @@ with sync_playwright() as p:
     # --- Swap a qualifying class back in - the free grant returns. ---
     page.click('button[data-tab="archetype"]')
     page.select_option("#classSelect0", "Bard")
-    page.wait_for_timeout(150)
     node_classes2 = node.get_attribute("class")
     print("node class list, class swapped back to eligible:", node_classes2)
     assert "auto" in node_classes2.split()

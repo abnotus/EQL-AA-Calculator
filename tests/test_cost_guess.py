@@ -52,7 +52,6 @@ with sync_playwright() as p:
     am.click()
     for _ in range(2):
         page.click("#incBtn")  # ranks 1-2, real costs 3+6 = 9
-        page.wait_for_timeout(20)
 
     spent_before = page.locator("#spentValue").inner_text()
     print("points spent after ranks 1-2 (real cost 9):", spent_before)
@@ -106,12 +105,10 @@ with sync_playwright() as p:
     # verified by that same "9 confirmed" figure being exactly the real
     # total from before this purchase's guess was added. ---
     page.click("#incBtn")  # buy rank 3 (real cost "?", math treats as 0)
-    page.wait_for_timeout(50)
     spent_after = page.locator("#spentValue").inner_text()
     print("spentValue after buying the guessed rank (blends in the guess for display):", spent_after)
     assert spent_after == "0 / ~18", "FAIL: expected the headline to blend real 9 + guessed 9"
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(50)
     total_el = page.locator(".progression-row .cost-total").last
     blended_total = total_el.inner_text()
     total_title = total_el.get_attribute("title")
@@ -128,7 +125,7 @@ with sync_playwright() as p:
     # "~1" manual guesses reading as "0 pt(s), (frozen) total" in an
     # exported build. ---
     page.click("#exportBtn")
-    page.wait_for_timeout(300)
+    page.wait_for_function("document.querySelector('#shareLinkInput').value.includes('build=')")
     export_text = page.locator("#exportText").input_value()
     line = next(l for l in export_text.split("\n") if "Rapid Feign rank 3" in l)
     print("export text line for the guessed rank 3:", line)
@@ -149,7 +146,6 @@ with sync_playwright() as p:
     cf = page.locator(".node", has=page.locator(".name", has_text="Combat Fury"))
     cf.click()
     page.click("#incBtn")  # rank1, cost 1 (real)
-    page.wait_for_timeout(30)
     cf_tag = cf.locator(".costtag")
     print("Combat Fury tree costtag (rank2, now confirmed real data):", cf_tag.inner_text(), cf_tag.get_attribute("class"))
     assert cf_tag.inner_text() == "2"

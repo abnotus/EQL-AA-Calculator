@@ -50,14 +50,12 @@ with sync_playwright() as p:
         """)
         page.goto(BASE)
         page.wait_for_selector("#treeWrap .node")
-        page.wait_for_timeout(200)
 
         toast = page.locator("#toast").text_content()
         print("toast after boot:", repr(toast))
         assert not toast or "no longer exist" not in toast, f"FAIL: renamed AA's rank was reported as dropped: {toast!r}"
 
         page.click('button[data-tab="classSlot0"]')  # Berserker
-        page.wait_for_timeout(100)
         node = page.locator(".node", has=page.locator(".name", has_text="Tireless Sprint"))
         assert node.count() == 1, "FAIL: expected exactly one Tireless Sprint node"
         html = node.inner_html()
@@ -66,7 +64,6 @@ with sync_playwright() as p:
 
         # --- Progression carries the purchase through too, not just the tree. ---
         page.click('button[data-tab="progression"]')
-        page.wait_for_timeout(100)
         rows = page.locator(".progression-row", has=page.locator(".step-name", has_text="Tireless Sprint"))
         assert rows.count() == 1, f"FAIL: expected 1 Progression row for the migrated purchase, got {rows.count()}"
 

@@ -31,6 +31,8 @@ with sync_playwright() as p:
     errors = []
     page.on("pageerror", lambda exc: errors.append(str(exc)))
     page.on("dialog", lambda d: d.accept())
+    # The search box applies after a debounce; run_for fires it on the spot.
+    page.clock.install()
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
     page.click('button[data-tab="general"]')
@@ -49,7 +51,6 @@ with sync_playwright() as p:
     # .hide-toggle-btn), not the raw textContent set in render.js.
     assert hide_btn.inner_text() == "HIDE"
     hide_btn.click()
-    page.wait_for_timeout(80)
     print("Packrat node present right after hiding (rank 0):", node.count())
     assert node.count() == 0, "FAIL: a hidden, unranked AA should be gone from the tree"
     print("Show Hidden toggle visible once something is hidden:", toggle.is_visible())
@@ -63,7 +64,7 @@ with sync_playwright() as p:
     # (countMatches - a hidden AA matching the query must not inflate the
     # badge while the grid shows nothing for it). ---
     page.fill("#globalSearch", "packrat")
-    page.wait_for_timeout(150)
+    page.clock.run_for(150)
     print("Packrat node present while searching for it, hidden, Show Hidden off:", node.count())
     assert node.count() == 0, "FAIL: hidden AAs must stay hidden from search too, by design"
     general_tab = page.locator('button[data-tab="general"]')
@@ -71,12 +72,11 @@ with sync_playwright() as p:
     print("General tab search-match badge while the only match is hidden:", badge.count(), badge.inner_text() if badge.count() else None)
     assert badge.count() == 0, "FAIL: tab badge counted a hidden match the grid isn't actually showing"
     page.fill("#globalSearch", "")
-    page.wait_for_timeout(80)
+    page.clock.run_for(150)
     print("PASS: search doesn't surface a hidden AA, in the grid or the tab's match badge")
 
     # --- Show Hidden reveals it again, dimmed with a HIDDEN tag. ---
     toggle.click()
-    page.wait_for_timeout(80)
     print("Packrat node present with Show Hidden on:", node.count())
     assert node.count() == 1
     print("node classes:", node.get_attribute("class"))
@@ -92,7 +92,6 @@ with sync_playwright() as p:
     assert "active" in hide_btn.get_attribute("class")
 
     toggle.click()  # back off
-    page.wait_for_timeout(80)
     print("Packrat gone again with Show Hidden off:", node.count())
     assert node.count() == 0
     print("PASS: Show Hidden off hides it again")
@@ -100,12 +99,10 @@ with sync_playwright() as p:
     # --- Browse tab: same AA, same hidden state (shared storage, not a
     # separate per-view flag) - hide/unhide from the card itself. ---
     page.click("#browseToggle")
-    page.wait_for_timeout(150)
     browse_card = page.locator(".browse-card", has=page.locator(".name", has_text="Packrat"))
     print("Packrat card in Browse with Show Hidden off:", browse_card.count())
     assert browse_card.count() == 0
     toggle.click()
-    page.wait_for_timeout(150)
     print("Packrat card visible with Show Hidden on:", browse_card.count())
     assert browse_card.count() == 1
     assert "hidden-aa" in browse_card.get_attribute("class")
@@ -113,7 +110,6 @@ with sync_playwright() as p:
     print("browse card button label:", unhide_btn.inner_text())
     assert unhide_btn.inner_text() == "UNHIDE"
     unhide_btn.click()
-    page.wait_for_timeout(150)
     print("toggle auto-reset off once the last hidden AA was unhidden:", toggle.is_visible())
     assert not toggle.is_visible(), "FAIL: toggle should disappear (and showHidden reset) once nothing's hidden"
     print("PASS: unhiding from a Browse card works, and the toggle auto-resets once nothing's left hidden")
@@ -124,14 +120,13 @@ with sync_playwright() as p:
     # a renderTabs() the badge silently keeps its pre-hide count until some
     # unrelated action triggers a full render. ---
     page.fill("#globalSearch", "mastery")
-    page.wait_for_timeout(200)
+    page.clock.run_for(150)
     general_badge = page.locator('button[data-tab="general"] .search-badge')
     before = general_badge.inner_text()
     print("General tab search badge before hiding a match:", before)
     alchemy_card = page.locator(".browse-card", has=page.locator(".name", has_text="Alchemy Mastery"))
     assert alchemy_card.count() == 1
     alchemy_card.locator(".hide-toggle-btn").first.click()
-    page.wait_for_timeout(200)
     after = general_badge.inner_text()
     print("General tab search badge immediately after hiding it:", after)
     assert int(after) == int(before) - 1, \
@@ -141,12 +136,10 @@ with sync_playwright() as p:
     # rank 0, so with Show Hidden off its card is gone from Browse entirely -
     # flip the toggle back on to reach it, then unhiding auto-resets it.
     toggle.click()
-    page.wait_for_timeout(150)
     page.locator(".browse-card", has=page.locator(".name", has_text="Alchemy Mastery")).locator(".hide-toggle-btn").first.click()
-    page.wait_for_timeout(150)
     assert not toggle.is_visible(), "FAIL: expected the toggle to auto-reset once nothing is hidden again"
     page.fill("#globalSearch", "")
-    page.wait_for_timeout(150)
+    page.clock.run_for(150)
 
     # --- Ranked exception: a hidden AA you've spent points on always stays
     # visible, even with Show Hidden off. ---
@@ -154,11 +147,9 @@ with sync_playwright() as p:
     node2 = page.locator(".node", has=page.locator(".name", has_text="Alchemy Mastery"))
     node2.click()
     page.locator("#hideToggleBtn").click()
-    page.wait_for_timeout(80)
     print("Alchemy Mastery gone once hidden (rank 0):", node2.count())
     assert node2.count() == 0
     page.click("#incBtn")
-    page.wait_for_timeout(80)
     print("Alchemy Mastery reappears once ranked, despite being hidden:", node2.count())
     assert node2.count() == 1, "FAIL: a hidden AA you've actually spent points on must never disappear"
     assert "hidden-aa" in node2.get_attribute("class"), "FAIL: still flagged as hidden even though shown as an exception"
@@ -167,7 +158,6 @@ with sync_playwright() as p:
     # Summary/Progression never filter on hidden at all - they show the
     # actual picked state, not a browsing view.
     page.click('button[data-tab="summary"]')
-    page.wait_for_timeout(150)
     summary_card = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Alchemy Mastery"))
     print("Alchemy Mastery shows in Summary despite being hidden:", summary_card.count())
     assert summary_card.count() == 1
@@ -179,12 +169,11 @@ with sync_playwright() as p:
     print("hidden storage after hiding Alchemy Mastery:", hidden_storage)
     assert hidden_storage and "alchemy-mastery" in hidden_storage
     page.click("#exportBtn")
-    page.wait_for_timeout(100)
+    page.wait_for_function("document.querySelector('#shareLinkInput').value.includes('build=')")
     export_text = page.locator("#exportText").input_value()
     print("hidden info absent from export text:", "alchemy-mastery" not in export_text.lower() and "hidden" not in export_text.lower())
     assert "hidden" not in export_text.lower(), "FAIL: hidden state must never leak into the export payload"
     page.click("#closeExportBtn")
-    page.wait_for_timeout(80)
 
     page.reload()
     page.wait_for_selector("#treeWrap .node")
@@ -203,14 +192,11 @@ with sync_playwright() as p:
     # suppressing a hidden-but-purchased AA on an inactive class - fixed to
     # use effectiveRankScoped instead of catKey ? effectiveRank(...) : 0. ---
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(100)
     class0_node = page.locator(".node").first
     class0_name = class0_node.locator(".name").inner_text()
     class0_node.click()
     page.click("#incBtn")
-    page.wait_for_timeout(80)
     page.locator("#hideToggleBtn").click()
-    page.wait_for_timeout(80)
 
     class0_select = page.locator("#classSelect0")
     old_class = class0_select.input_value()
@@ -218,27 +204,25 @@ with sync_playwright() as p:
     other_slots = [page.locator("#classSelect1").input_value(), page.locator("#classSelect2").input_value()]
     new_class = next(o for o in options if o != old_class and o not in other_slots)
     class0_select.select_option(new_class)
-    page.wait_for_timeout(150)
 
     page.click("#browseToggle")
     page.fill("#globalSearch", class0_name)
-    page.wait_for_timeout(150)
+    page.clock.run_for(150)
     inactive_hidden_card = page.locator(".browse-card", has=page.locator(".name", has_text=class0_name))
     print("hidden-but-ranked AA on an inactive class, visible in Browse with Show Hidden off:", inactive_hidden_card.count())
     assert inactive_hidden_card.count() == 1, \
         "FAIL: a hidden AA you've spent points on must stay visible even once its class is swapped away, not just while active"
     print("PASS: hiding + an inactive class's ranked AA don't combine to wrongly suppress it")
     page.fill("#globalSearch", "")
+    page.clock.run_for(150)
     page.click("#browseToggle")
 
     # An auto-granted AA always holds its free rank, which used to count as
     # "points spent" and kept it visible however it was hidden.
     page.click('button[data-tab="general"]')
-    page.wait_for_timeout(150)
     origin = page.locator("#treeWrap .node", has=page.locator(".name", has_text="Origin"))
     origin.click()
     page.click("#hideToggleBtn")
-    page.wait_for_timeout(100)
     print("auto-granted Origin nodes after hiding it:", origin.count())
     assert origin.count() == 0, "FAIL: hiding an auto-granted AA should take it out of the tree"
     print("PASS: an auto-granted AA can be hidden, since its free rank isn't points spent")

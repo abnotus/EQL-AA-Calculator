@@ -61,7 +61,6 @@ with sync_playwright() as p:
 
     page.click("#buildsBtn")
     page.locator(".build-row", has=page.locator(".build-name", has_text="Friend A")).locator('[data-action="load"]').click()
-    page.wait_for_timeout(120)
     if page.locator("#buildsModal").is_visible():
         page.click("#closeBuildsBtn")
     back_a = owned_summary(page)

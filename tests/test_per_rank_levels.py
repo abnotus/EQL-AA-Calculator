@@ -15,7 +15,6 @@ def set_level(page, level):
     page.fill("#levelInput", str(level))
     page.press("#levelInput", "Enter")
     page.locator("#levelInput").blur()
-    page.wait_for_timeout(60)
 
 
 def node(page, name):
@@ -31,7 +30,6 @@ with sync_playwright() as p:
     page.wait_for_selector("#treeWrap .node")
     page.select_option("#classSelect0", "Magician")
     page.select_option("#classSelect1", "Berserker")
-    page.wait_for_timeout(80)
 
     page.click('button[data-tab="classSlot1"]')
     for level, want in ((11, "0 / 3"), (20, "1 / 3"), (30, "2 / 3"), (50, "3 / 3")):
@@ -51,7 +49,6 @@ with sync_playwright() as p:
     node(page, "Turn Summoned").click()
     page.click("#incBtn")
     page.click("#incBtn")
-    page.wait_for_timeout(60)
     got = node(page, "Turn Summoned").locator(".ranktext").inner_text()
     toast = page.locator("#toast").inner_text()
     print(f"Turn Summoned after two clicks at level 50: {got}, toast {toast!r}")

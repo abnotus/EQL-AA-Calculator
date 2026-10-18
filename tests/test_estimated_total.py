@@ -101,7 +101,6 @@ with sync_playwright() as p:
     # number too, same as the fresh-page case above (just non-zero). ---
     page.goto(f"{BASE}?build={BUILD}")
     page.wait_for_selector("#treeWrap .node")
-    page.wait_for_timeout(200)
 
     sv = page.locator("#spentValue")
     print("spentValue with BUILD alone (now fully confirmed):", sv.inner_text(), sv.get_attribute("class"))
@@ -120,12 +119,10 @@ with sync_playwright() as p:
     # lifetime-scoped and unaffected by a later class swap. ---
     page.select_option("#classSelect2", "Bard")
     page.click('button[data-tab="classSlot2"]')
-    page.wait_for_timeout(100)
     ts_node = page.locator(".node", has=page.locator(".name", has_text="Instrument Mastery"))
     ts_node.click()
     for _ in range(3):
         page.click("#incBtn")
-        page.wait_for_timeout(15)
     print("spentValue after buying Instrument Mastery to rank 3:", sv.inner_text(), sv.get_attribute("title"))
     # Owned (95) has no estimate contribution here - only the planned side
     # does, so exactly one of the two numbers gets the estimate span/color,
@@ -149,7 +146,6 @@ with sync_playwright() as p:
     # own tooltip, proving the two displays agree rather than showing two
     # different numbers for the same underlying build. ---
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
     prog_total_el = page.locator(".progression-row .cost-total").last
     prog_total = prog_total_el.inner_text()
     prog_title = prog_total_el.get_attribute("title")
@@ -197,7 +193,6 @@ with sync_playwright() as p:
     # "~", no estimate styling lingering once nothing's actually estimated
     # anymore. ---
     ts_rows.nth(2).locator(".step-own").click()
-    page.wait_for_timeout(150)
     print("owned summary after marking Instrument Mastery fully owned:", owned_summary.inner_text())
     assert owned_summary.inner_text() == "~113 pts owned, 140 to go", \
         f"FAIL: owned should blend in rank 3's guess (9) on top of the real 104 (95 + ranks 1-2's real 3+6), and to-go should drop to a plain real 140 - got {owned_summary.inner_text()!r}"
@@ -231,7 +226,6 @@ with sync_playwright() as p:
     BUILD_STALE = "H4sIAAAAAAAC_31QSQ7CMAz8i88-xE2alP6AAy-oOFS0QpXYVCE4IP7O2OkiDiBPO4lje2y_6EF1wXSgutlwYvF7phPVpWMa4Wsiw9MkDvhXdi7ELoVnccqRRSlxBfJiNx8s1JeZchG_MQrO8kOwSAipsywyeY5KuaaohrJLeEVjN3SESACqiF0BT5qAissZsGSZ4xxmzFbpRZuACPSmSP2iWQXTVmfoEAbMv0BHyggzygko-xuY5arbnfcqX4tM6yL_bcn6XdaEkk8tiVZpexnuQ3siqIzt5diTisC_G7pje-7hH_uONOVOtTjn3h86SJr-CAIAAA"
     page2.goto(f"{BASE}?build={BUILD_STALE}")
     page2.wait_for_selector("#treeWrap .node")
-    page2.wait_for_timeout(200)
     assert not errors2, f"FAIL: loading a build with a stale 't' field threw: {errors2}"
     sv_stale = page2.locator("#spentValue")
     print("stale-field build spentValue:", sv_stale.inner_text(), sv_stale.get_attribute("title"))
@@ -261,11 +255,8 @@ with sync_playwright() as p:
     ca_node.click()
     for _ in range(3):
         page3.click("#incBtn")
-        page3.wait_for_timeout(15)
     page3.click('button[data-tab="progression"]')
-    page3.wait_for_timeout(150)
     page3.locator(".progression-row", has=page3.locator(".step-name", has_text="Combat Agility")).nth(2).locator(".step-own").click()
-    page3.wait_for_timeout(150)
     print("owned summary with Combat Agility bought and owned to rank 3:", page3.locator("#ownedSummary").inner_text())
     assert page3.locator("#ownedSummary").inner_text() == "12 pts owned, 0 to go"
 
@@ -273,11 +264,9 @@ with sync_playwright() as p:
     ca_node.click()
     for _ in range(2):
         page3.click("#decBtn")
-        page3.wait_for_timeout(15)
     print("Combat Agility rank after refunding below its own owned watermark:", page3.locator("#sidePanel .current").inner_text())
     assert page3.locator("#sidePanel .current").inner_text() == "1 / 3"
     page3.click('button[data-tab="progression"]')
-    page3.wait_for_timeout(150)
     owned_summary3 = page3.locator("#ownedSummary").inner_text()
     print("owned summary after refunding below owned (must not go negative):", owned_summary3)
     assert owned_summary3 == "12 pts owned, 0 to go", \

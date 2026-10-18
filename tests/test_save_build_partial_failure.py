@@ -54,10 +54,8 @@ with sync_playwright() as p:
         BUILDS_INDEX_KEY
     )
     page.click("#buildsBtn")
-    page.wait_for_timeout(100)
     page.fill("#buildSaveName", "Should Not Persist")
     page.click("#buildSaveBtn")
-    page.wait_for_timeout(150)
     toast_text = page.locator("#toast").inner_text()
     print("toast after a save whose index write fails:", toast_text)
     assert "couldn't save" in toast_text.lower(), \
@@ -77,10 +75,8 @@ with sync_playwright() as p:
     page.reload()
     page.wait_for_selector("#treeWrap .node")
     page.click("#buildsBtn")
-    page.wait_for_timeout(100)
     page.fill("#buildSaveName", "Delete Test")
     page.click("#buildSaveBtn")
-    page.wait_for_timeout(150)
     index_raw = page.evaluate("(key) => localStorage.getItem(key)", BUILDS_INDEX_KEY)
     build_id = next(b["id"] for b in json.loads(index_raw) if b["name"] == "Delete Test")
     slot_key = f"eql_aa_build_{build_id}"
@@ -98,7 +94,6 @@ with sync_playwright() as p:
         BUILDS_INDEX_KEY
     )
     page.click(f'button[data-action="delete"][data-id="{build_id}"]')
-    page.wait_for_timeout(150)
     delete_toast = page.locator("#toast").inner_text()
     print("toast after a delete whose index write fails:", delete_toast)
     assert "couldn't save" in delete_toast.lower(), \
@@ -140,7 +135,6 @@ with sync_playwright() as p:
     page2.click('button[data-tab="progression"]')
     page2.click("#manageOwnedTrackingBtn")
     page2.click("#ownedTrackingSplitBtn")
-    page2.wait_for_timeout(100)
     toast = page2.locator("#toast").inner_text()
     profile_after = page2.evaluate("JSON.parse(localStorage.getItem('eql_aa_builder_v1')).ownedProfileId")
     slot_profile = page2.evaluate("""() => {

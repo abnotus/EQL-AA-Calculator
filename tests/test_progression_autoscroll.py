@@ -22,9 +22,14 @@
 # forever; with them, scrollTop goes stable within a couple of frames.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
+# scrollTop after the given number of animation frames.
+AFTER_FRAMES = """(el, frames) => new Promise((resolve) => {
+    const step = () => (--frames > 0 ? requestAnimationFrame(step) : resolve(el.scrollTop));
+    requestAnimationFrame(step);
+})"""
 # Real Paladin/Enchanter/Druid share link (same one test_real_world_build.py
 # pins to), reused here purely for its row count (180 rows, easily enough to
 # need scrolling) - not its guess/estimate content, waypoints, or owned
@@ -42,7 +47,6 @@ with sync_playwright() as p:
     page.goto(f"{BASE}?build={BUILD}")
     page.wait_for_selector("#treeWrap .node")
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
 
     wrap = page.locator("#progressionWrap")
     wrap_handle = wrap.element_handle()
@@ -82,7 +86,10 @@ with sync_playwright() as p:
         """,
         [src_row, wrap_handle],
     )
-    page.wait_for_timeout(150)
+    try:
+        page.wait_for_function("([el, start]) => el.scrollTop < start", arg=[wrap_handle, mid_scroll], timeout=5000)
+    except PlaywrightTimeoutError:
+        pass
     scrolling_scroll = wrap.evaluate("el => el.scrollTop")
     print("scrollTop after dragover at the top edge (should have scrolled up):", scrolling_scroll)
     assert scrolling_scroll < mid_scroll, \
@@ -102,11 +109,11 @@ with sync_playwright() as p:
         """,
         [target_row],
     )
-    page.wait_for_timeout(80)
-    after_drop = wrap.evaluate("el => el.scrollTop")
-    page.wait_for_timeout(300)
-    settled = wrap.evaluate("el => el.scrollTop")
-    print("scrollTop right after drop:", after_drop, "| after waiting another 300ms with no more dragover:", settled)
+    # The auto-scroll loop moves scrollTop once per animation frame, so a
+    # loop still running shows up as movement across frames.
+    after_drop = wrap.evaluate(AFTER_FRAMES, 2)
+    settled = wrap.evaluate(AFTER_FRAMES, 20)
+    print("scrollTop right after drop:", after_drop, "| 20 animation frames later with no more dragover:", settled)
     assert settled == after_drop, (
         f"FAIL: auto-scroll kept running after a drop that never fired dragend "
         f"(scrollTop drifted from {after_drop} to {settled}) - stopAutoScroll() "

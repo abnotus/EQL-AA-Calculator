@@ -44,7 +44,6 @@ with sync_playwright() as p:
     """)
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
-    page.wait_for_timeout(200)
 
     # --- The legacy key's content is now also reachable under the
     # well-known "legacy" profile id. ---
@@ -72,7 +71,6 @@ with sync_playwright() as p:
     # own ownedProfileId can be inspected directly in storage.
     page.fill("#levelInput", "45")
     page.locator("#levelInput").press("Tab")
-    page.wait_for_timeout(100)
     build_storage = json.loads(page.evaluate("localStorage.getItem('eql_aa_builder_v1')"))
     print("current session ownedProfileId after boot:", build_storage.get("ownedProfileId"))
     assert build_storage.get("ownedProfileId") == "legacy"

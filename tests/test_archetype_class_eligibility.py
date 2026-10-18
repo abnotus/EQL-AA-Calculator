@@ -32,6 +32,8 @@ with sync_playwright() as p:
     errors = []
     page.on("pageerror", lambda exc: errors.append(str(exc)))
     page.on("dialog", lambda d: d.accept())
+    # The search box applies after a debounce; run_for fires it on the spot.
+    page.clock.install()
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
     page.click('button[data-tab="archetype"]')
@@ -57,7 +59,6 @@ with sync_playwright() as p:
     inc_btn = page.locator("#incBtn")
     assert "blocked" in inc_btn.get_attribute("class")
     page.click("#incBtn")
-    page.wait_for_timeout(30)
     current = page.locator("#sidePanel .current")
     print("rank after blocked click:", current.inner_text())
     assert current.inner_text() == "0 / 1", "FAIL: purchase went through despite no qualifying class"
@@ -65,12 +66,10 @@ with sync_playwright() as p:
 
     # --- Swap Class 3 to Ranger - a qualifying class unlocks it entirely. ---
     page.select_option("#classSelect2", "Ranger")
-    page.wait_for_timeout(150)
     print("node class list with Ranger selected:", node.get_attribute("class"))
     assert "locked-classlock" not in node.get_attribute("class")
     assert node.locator(".costtag.classlock-tag").count() == 0
     page.click("#incBtn")
-    page.wait_for_timeout(30)
     print("rank after buying with Ranger selected:", current.inner_text())
     assert current.inner_text() == "1 / 1"
     assert "maxed" in node.get_attribute("class")
@@ -80,7 +79,6 @@ with sync_playwright() as p:
     # must persist (not get silently stripped), flagged the same way an
     # exceeded classRankCap already is. ---
     page.select_option("#classSelect2", "Cleric")
-    page.wait_for_timeout(150)
     print("rank after swapping the qualifying class back out:", current.inner_text())
     assert current.inner_text() == "1 / 1", "FAIL: an owned/purchased rank must never be silently stripped by a class swap"
     node_classes = node.get_attribute("class")
@@ -99,13 +97,10 @@ with sync_playwright() as p:
     # class" (CLASS, top-left) and "held rank now ineligible" (⚠) at the
     # same time - they used to render stacked in the same corner. ---
     page.select_option("#classSelect2", "Warrior")
-    page.wait_for_timeout(150)
     bop = page.locator(".node", has=page.locator(".name", has_text="Burst of Power"))
     bop.click()
     page.click("#incBtn")  # rank 1 of 3, legal while Warrior is slotted
-    page.wait_for_timeout(60)
     page.select_option("#classSelect2", "Cleric")
-    page.wait_for_timeout(200)
     bop_classes = bop.get_attribute("class")
     print("Burst of Power classes (held rank 1/3, no longer eligible):", bop_classes)
     assert "locked-classlock" in bop_classes and "invalidated" in bop_classes, \
@@ -128,10 +123,8 @@ with sync_playwright() as p:
     # held-but-ineligible rank would put heldRankInvalidReason's "No longer
     # valid" line ahead of the block reason it asserts on.
     page.click("#decBtn")
-    page.wait_for_timeout(60)
     assert page.locator("#sidePanel .current").inner_text() == "0 / 3"
     node.click()
-    page.wait_for_timeout(60)
 
     # --- Progression tab: the row warns with the same shared machinery
     # prereqWarn/classCapWarn already use, wording distinct from
@@ -139,7 +132,6 @@ with sync_playwright() as p:
     # of a slot, not a specific AA's own restriction; archetype AAs are
     # never class-scoped, so they're always "active"). ---
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
     prog_row = page.locator(".progression-row", has=page.locator(".step-name", has_text="Innate Camouflage"))
     assert prog_row.count() == 1
     print("Progression row classes:", prog_row.get_attribute("class"))
@@ -156,7 +148,7 @@ with sync_playwright() as p:
     # the current combo doesn't qualify. ---
     page.click("#browseToggle")
     page.fill("#globalSearch", "Innate Camouflage")
-    page.wait_for_timeout(150)
+    page.clock.run_for(150)
     browse_card = page.locator(".browse-card", has=page.locator(".name", has_text="Innate Camouflage"))
     assert browse_card.count() == 1
     eligible_info = browse_card.locator(".eligible-info")
@@ -165,12 +157,12 @@ with sync_playwright() as p:
     assert "warn" in eligible_info.get_attribute("class")
 
     page.select_option("#classSelect2", "Ranger")
-    page.wait_for_timeout(150)
     eligible_info2 = browse_card.locator(".eligible-info")
     print("Browse eligible-info class (Ranger selected, eligible):", eligible_info2.get_attribute("class"))
     assert "warn" not in eligible_info2.get_attribute("class")
     print("PASS: Browse shows the eligible-classes reference text always, warn-styled only when the current combo doesn't qualify")
     page.fill("#globalSearch", "")
+    page.clock.run_for(150)
     page.click("#browseToggle")
 
     # --- Check-order invariant: classEligibility must be checked BEFORE
@@ -196,7 +188,6 @@ with sync_playwright() as p:
     for _ in range(20):
         page.fill("#levelInput", "30")
         level_input.press("Tab")
-        page.wait_for_timeout(50)
         if level_input.input_value() == "30":
             break
     expect(level_input).to_have_value("30")
@@ -218,10 +209,6 @@ with sync_playwright() as p:
     # class. ---
     page.select_option("#classSelect2", "Berserker")
     bop_block2 = page.locator("#sidePanel .req-line.warn").first
-    # The class swap triggers a full renderAll (side panel included) - a
-    # fixed sleep here raced the render on a slow run (this locator briefly
-    # still showing the pre-swap eligibility-block text), so wait for the
-    # actual expected text instead of a guessed delay.
     expect(bop_block2).to_have_text("Requires character level 46.")
     print("Burst of Power block reason, eligible but still under level 46:", bop_block2.inner_text())
     assert "locked-classlock" not in bop_node.get_attribute("class")
@@ -230,7 +217,6 @@ with sync_playwright() as p:
 
     page.fill("#levelInput", "50")
     page.locator("#levelInput").press("Tab")
-    page.wait_for_timeout(100)
 
     print("ERRORS:", errors)
     assert not errors
@@ -258,7 +244,6 @@ with sync_playwright() as p:
     """)
     page2.goto(BASE)
     page2.wait_for_selector("#treeWrap .node")
-    page2.wait_for_timeout(200)
     print("boot-time dialogs/toasts:", dialogs2)
     toast = page2.locator("#toast")
     toast_text = toast.inner_text() if toast.count() and toast.is_visible() else ""

@@ -122,11 +122,9 @@ with sync_playwright() as p:
 
     def import_and_read(code, label):
         page.click("#importBtn")
-        page.wait_for_timeout(100)
         page.fill("#importText", code)
         page.click("#doImportBtn")
         page.wait_for_selector("#importModal", state="hidden", timeout=10000)
-        page.wait_for_timeout(150)
         spent = page.locator("#spentValue").inner_text()
         print(f"  imported {label}: spentValue={spent}")
         return spent
@@ -145,10 +143,9 @@ with sync_playwright() as p:
     # --- The app's own current export is v5 binary, and shorter. Exported
     # from the state the imports above left behind, so it's the same build. ---
     page.click("#exportBtn")
-    page.wait_for_timeout(300)
+    page.wait_for_function("document.querySelector('#shareLinkInput').value.includes('build=')")
     current_code = extract_code(page.locator("#exportText").input_value())
     page.click("#closeExportBtn")
-    page.wait_for_timeout(80)
     import base64
     first = base64.b64decode(current_code + "=" * (-len(current_code) % 4))[0]
     print(f"current export: {len(current_code)} chars, first byte 0x{first:02x}")
@@ -183,11 +180,9 @@ with sync_playwright() as p:
     """, bogus_payload)
 
     page.click("#importBtn")
-    page.wait_for_timeout(100)
     page.fill("#importText", bogus_code)
     page.click("#doImportBtn")
     page.wait_for_selector("#importModal", state="hidden", timeout=10000)
-    page.wait_for_timeout(200)
     toast = page.locator("#toast")
     toast_text = toast.inner_text() if toast.count() and toast.is_visible() else ""
     print("toast after importing a payload with one unresolved id:", repr(toast_text))
@@ -195,7 +190,6 @@ with sync_playwright() as p:
         f"FAIL: expected the unresolved id to be reported as a dropped pick, got {toast_text!r}"
 
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
     rows = page.locator(".progression-row")
     names = [rows.nth(i).locator(".step-name").inner_text() for i in range(rows.count())]
     print("Progression rows after import:", names)

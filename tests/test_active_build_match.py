@@ -70,13 +70,10 @@ with sync_playwright() as p:
     """)
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
-    page.wait_for_timeout(200)
 
     page.click("#buildsBtn")
-    page.wait_for_timeout(100)
     load_btn = page.locator(".build-row", has=page.locator(".build-name", has_text="Weird Order Build")).locator('button[data-action="load"]')
     load_btn.click()
-    page.wait_for_timeout(100)
     print("dialogs loading a matching-but-differently-shaped active slot:", dialogs)
     assert dialogs == [], f"FAIL: a slot that matches content-wise (just shaped differently) should not warn, got {dialogs}"
     print("PASS: reordered fields + stale/unknown keys in the active slot don't cause a false 'unsaved' warning")
@@ -91,12 +88,9 @@ with sync_playwright() as p:
     aw = page.locator(".node", has=page.locator(".name", has_text="Adamant Will"))
     aw.click()
     page.click("#incBtn")  # a real, new pick - genuinely diverges from the slot
-    page.wait_for_timeout(50)
     page.click("#buildsBtn")
-    page.wait_for_timeout(100)
     load_btn2 = page.locator(".build-row", has=page.locator(".build-name", has_text="Weird Order Build")).locator('button[data-action="load"]')
     load_btn2.click()
-    page.wait_for_timeout(100)
     print("dialogs after a real change then Load (must warn):", dialogs)
     assert len(dialogs) >= 1 and "isn't saved" in dialogs[0], f"FAIL: a genuinely different build should still warn, got {dialogs}"
     print("PASS: a real difference from the active slot still triggers the unsaved-changes warning")
@@ -131,12 +125,9 @@ with sync_playwright() as p:
     """)
     page2.goto(BASE)
     page2.wait_for_selector("#treeWrap .node")
-    page2.wait_for_timeout(200)
     page2.click("#buildsBtn")
-    page2.wait_for_timeout(100)
     load_btn3 = page2.locator(".build-row", has=page2.locator(".build-name", has_text="Pre-Waypoint Build")).locator('button[data-action="load"]')
     load_btn3.click()
-    page2.wait_for_timeout(100)
     print("dialogs loading an untouched pre-1.5.0 slot with no waypoints key at all:", dialogs2)
     assert dialogs2 == [], f"FAIL: a slot missing 'waypoints' entirely should match live state that also has none, got {dialogs2}"
     print("PASS: a stored slot missing a key entirely matches live state when today's value for that key is empty")
@@ -146,17 +137,12 @@ with sync_playwright() as p:
     # missing key regardless of content. ---
     dialogs2.clear()
     page2.click('button[data-tab="progression"]')
-    page2.wait_for_timeout(50)
     page2.click("#addWaypointBtn")
-    page2.wait_for_timeout(50)
     page2.fill("#waypointPtsInput", "40")
     page2.click("#saveWaypointBtn")
-    page2.wait_for_timeout(50)
     page2.click("#buildsBtn")
-    page2.wait_for_timeout(100)
     load_btn4 = page2.locator(".build-row", has=page2.locator(".build-name", has_text="Pre-Waypoint Build")).locator('button[data-action="load"]')
     load_btn4.click()
-    page2.wait_for_timeout(100)
     print("dialogs after adding a waypoint then loading the waypoints-less slot (must warn):", dialogs2)
     assert len(dialogs2) >= 1 and "isn't saved" in dialogs2[0], f"FAIL: a real waypoint the stored slot can't have should still warn, got {dialogs2}"
     print("PASS: the missing-key tolerance only forgives emptiness - a real non-empty difference still warns")
@@ -177,8 +163,9 @@ with sync_playwright() as p:
     page3.click("#saveWaypointBtn")
     page3.click("#importBtn")
     page3.fill("#importText", "5VACLIARgDEBCABC+Q==")
-    page3.click("#doImportBtn")
-    page3.wait_for_timeout(200)
+    # The save-first prompt comes after the code decodes, asynchronously.
+    with page3.expect_event("dialog"):
+        page3.click("#doImportBtn")
     print("dialogs importing over a waypoint-only plan:", dialogs3)
     assert dialogs3 and "isn't saved" in dialogs3[0], f"FAIL: a waypoint-only plan was replaced without a save prompt, got {dialogs3}"
     print("PASS: a plan holding only waypoints still gets the save-first prompt")

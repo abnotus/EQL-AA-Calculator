@@ -9,7 +9,7 @@
 #    stale tab erased marks the other tab had made on the same profile.
 import os, sys, io, json
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 
@@ -27,22 +27,25 @@ def buy(page, name):
     page.click('button[data-tab="general"]')
     page.locator("#treeWrap .node", has=page.locator(".name", has_text=name)).click()
     page.click("#incBtn")
-    page.wait_for_timeout(40)
 
 
 def toggle_owned(page, name):
     page.click('button[data-tab="progression"]')
     row = page.locator(".progression-row", has=page.locator(".step-name", has_text=name))
     row.locator(".step-own").click()
-    page.wait_for_timeout(60)
 
 
 def save_build_as(page, name):
     page.click("#buildsBtn")
     page.fill("#buildSaveName", name)
     page.click("#buildSaveBtn")
-    page.wait_for_timeout(60)
     page.click("#closeBuildsBtn")
+
+
+def sees(page, key_prefix, text):
+    # Another tab's localStorage write reaches this one asynchronously.
+    page.wait_for_function("""([prefix, text]) => Object.keys(localStorage).some(
+        (k) => k.startsWith(prefix) && localStorage.getItem(k).includes(text))""", arg=[key_prefix, text])
 
 
 def slot_profile(page, name):
@@ -63,14 +66,15 @@ with sync_playwright() as p:
     buy(tab1, "Combat Agility")
     save_build_as(tab1, "Main")
     tab2 = open_tab(ctx, errors)
+    sees(tab2, "eql_aa_builds_index_v1", '"Main"')
     save_build_as(tab2, "Other")
+    sees(tab1, "eql_aa_builds_index_v1", '"Other"')
     other_before = slot_profile(tab1, "Other")
     main_before = slot_profile(tab1, "Main")
 
     tab1.click('button[data-tab="progression"]')
     tab1.click("#manageOwnedTrackingBtn")
     tab1.click("#ownedTrackingSplitBtn")
-    tab1.wait_for_timeout(80)
     tab1.click("#closeOwnedTrackingBtn")
     other_after = slot_profile(tab1, "Other")
     main_after = slot_profile(tab1, "Main")
@@ -87,16 +91,17 @@ with sync_playwright() as p:
     buy(tab1, "Fear Resistance")
     tab2 = open_tab(ctx, errors)
     toggle_owned(tab1, "Combat Agility")
+    sees(tab2, "eql_aa_owned_", "combat-agility")
     toggle_owned(tab2, "Fear Resistance")
+    sees(tab1, "eql_aa_owned_", "fear-resistance")
     tab3 = open_tab(ctx, errors)
     tab3.click('button[data-tab="progression"]')
     owned = tab3.locator(".progression-row .step-name.owned").all_inner_texts()
     print("owned after one mark in each tab:", owned)
     assert len(owned) == 2, f"FAIL: a mark from one tab was lost: {owned}"
+    # Tab 2's mark reaches tab 1 through a storage event, delivered asynchronously.
     tab1.click('button[data-tab="progression"]')
-    tab1.wait_for_timeout(60)
-    assert tab1.locator(".progression-row .step-name.owned").count() == 2, \
-        "FAIL: tab 1 should pick up tab 2's mark"
+    expect(tab1.locator(".progression-row .step-name.owned"), "FAIL: tab 1 should pick up tab 2's mark").to_have_count(2)
     print("PASS: marks made in two tabs on one profile are both kept, and both tabs show them")
     ctx.close()
 

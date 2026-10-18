@@ -40,19 +40,16 @@ with sync_playwright() as p:
     key = last.get_attribute("data-key")
     last.locator('.step-btn[data-move="up"]').focus()
     page.keyboard.press("Enter")
-    page.wait_for_timeout(60)
     info = active_info(page)
     print("focus after moving the last row up:", info)
     assert info["rowKey"] == key and info["move"] == "up", f"FAIL: focus should stay on the moved row's up arrow: {info}"
     page.keyboard.press("Enter")
-    page.wait_for_timeout(60)
     info = active_info(page)
     assert info["rowKey"] == key and info["rowIndex"] == "2", f"FAIL: a second Enter should move the same row again: {info}"
     print("PASS: focus follows the moved row, so repeated Enter keeps moving it")
 
     page.focus("#resetBtn")
     page.keyboard.press("Enter")
-    page.wait_for_timeout(60)
     assert active_info(page)["modal"] == "resetModal", f"FAIL: Reset Build should take focus: {active_info(page)}"
     for _ in range(8):
         page.keyboard.press("Tab")
@@ -60,14 +57,12 @@ with sync_playwright() as p:
     page.keyboard.press("Shift+Tab")
     assert active_info(page)["modal"] == "resetModal", "FAIL: Shift+Tab left the open modal"
     page.keyboard.press("Escape")
-    page.wait_for_timeout(60)
     assert active_info(page)["id"] == "resetBtn", f"FAIL: closing should return focus to Reset Build: {active_info(page)}"
     print("PASS: a modal takes focus, keeps Tab inside, and returns focus on close")
 
     page.click('button[data-tab="progression"]')
     page.focus("#manageOwnedTrackingBtn")
     page.keyboard.press("Enter")
-    page.wait_for_timeout(60)
     assert active_info(page)["modal"] == "ownedTrackingModal", f"FAIL: Manage tracking should take focus: {active_info(page)}"
     page.keyboard.press("Escape")
 

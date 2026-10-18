@@ -89,7 +89,6 @@ with sync_playwright() as p:
     # --- Import it through the real UI path - the actual attack surface,
     # not a localStorage shortcut. ---
     page.click("#importBtn")
-    page.wait_for_timeout(100)
     page.fill("#importText", malicious["code"])
     start = time.time()
     page.click("#doImportBtn")

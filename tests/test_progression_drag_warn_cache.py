@@ -59,20 +59,15 @@ with sync_playwright() as p:
     # up [FR, FR, FR, War Cry], the same known-good prereq pair
     # test_cross_class_prereq_dependency.py already pins. ---
     page.select_option("#classSelect0", "Warrior")
-    page.wait_for_timeout(100)
     page.click('button[data-tab="general"]')
     page.locator(".node", has=page.locator(".name", has_text="Fear Resistance")).click()
     for _ in range(3):
         page.click("#incBtn")
-        page.wait_for_timeout(15)
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(100)
     page.locator(".node", has=page.locator(".name", has_text="War Cry")).click()
     page.click("#incBtn")
-    page.wait_for_timeout(30)
 
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
     rows = page.locator(".progression-row")
     assert rows.count() == 4, f"FAIL: expected 4 Progression rows (3x Fear Resistance + War Cry), got {rows.count()}"
     row0 = rows.nth(0).element_handle()  # first Fear Resistance step
@@ -84,13 +79,11 @@ with sync_playwright() as p:
     # trained, so this must warn. ---
     dispatch_dragstart(page, row3, "__aaDT1")
     dispatch_dragover_top_half(page, row0, "__aaDT1")
-    page.wait_for_timeout(30)
     warned_1 = "drag-warn" in (rows.nth(0).get_attribute("class") or "")
     print("row0 drag-warn after dragging War Cry to the front (toIndex 0):", warned_1)
     assert warned_1, "FAIL: dragging War Cry ahead of its own Fear Resistance prereq should warn - can't test cache staleness if this baseline isn't even true"
 
     page.evaluate("(rowEl) => rowEl.dispatchEvent(new DragEvent('dragend', { bubbles: true }))", row3)
-    page.wait_for_timeout(30)
 
     # --- Drag 2: a brand-new drag, dragging a plain Fear Resistance step
     # (no prereq of its own) to the SAME toIndex 0 - reordering which Fear
@@ -100,7 +93,6 @@ with sync_playwright() as p:
     # still be sitting in the cache and this would wrongly warn too. ---
     dispatch_dragstart(page, row1, "__aaDT2")
     dispatch_dragover_top_half(page, row0, "__aaDT2")
-    page.wait_for_timeout(30)
     warned_2 = "drag-warn" in (rows.nth(0).get_attribute("class") or "")
     print("row0 drag-warn after a new drag of a plain Fear Resistance step to the same toIndex 0:", warned_2)
     assert not warned_2, "FAIL: a stale drag-warn cache from the previous drag leaked into this new drag at the same insertion point"

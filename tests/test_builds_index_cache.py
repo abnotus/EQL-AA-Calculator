@@ -36,16 +36,13 @@ with sync_playwright() as p:
     # already open would hit the modal-overlay backdrop sitting on top of it
     # instead of the button underneath.
     page.click("#buildsBtn")
-    page.wait_for_timeout(50)
 
     def save_build(name):
         page.fill("#buildSaveName", name)
         page.click("#buildSaveBtn")
-        page.wait_for_timeout(50)
 
     save_build("Build One")
     save_build("Build Two")
-    page.wait_for_timeout(50)
 
     rows = page.locator("#buildsList .build-row")
     assert rows.count() == 2, f"FAIL: expected 2 saved builds listed, got {rows.count()}"
@@ -57,7 +54,6 @@ with sync_playwright() as p:
     dialogs.clear()
     delete_btn = page.locator(".build-row", has=page.locator(".build-name", has_text="Build One")).locator('button[data-action="delete"]')
     delete_btn.click()
-    page.wait_for_timeout(50)
     assert len(dialogs) == 1 and "can't be undone" in dialogs[0], f"FAIL: expected a delete confirmation, got {dialogs}"
 
     rows_after = page.locator("#buildsList .build-row")

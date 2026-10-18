@@ -18,7 +18,6 @@ def buy(page, tab, name, times=1):
     page.locator("#treeWrap .node", has=page.locator(".name", has_text=name)).first.click()
     for _ in range(times):
         page.click("#incBtn")
-    page.wait_for_timeout(60)
 
 
 def step_names(page):
@@ -39,7 +38,6 @@ with sync_playwright() as p:
     buy(page, "archetype", "Thief's Intuition", 2)
     buy(page, "general", "Combat Agility")
     page.select_option("#classSelect0", "Cleric")
-    page.wait_for_timeout(80)
     page.click('button[data-tab="progression"]')
     page.wait_for_selector(".progression-row")
     before = step_names(page)
@@ -56,7 +54,6 @@ with sync_playwright() as p:
     )
     assert hit_in_menu, "FAIL: the Move To item is covered by a later row's controls"
     item.click()
-    page.wait_for_timeout(80)
     after = step_names(page)
     print("steps after Bottom of list:", after)
     assert len(after) == len(before), "FAIL: the click removed a rank instead of moving the row"

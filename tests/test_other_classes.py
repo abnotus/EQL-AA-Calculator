@@ -36,20 +36,18 @@ with sync_playwright() as p:
     # --- Spend on class slot 0's first two AAs, in a specific order/rank
     # so "reappears exactly as left" is actually checkable later. ---
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(100)
     class0_nodes = page.locator(".node")
     node_a = class0_nodes.nth(0)
     node_a_name = node_a.locator(".name").inner_text()
     node_a.click()
     page.click("#incBtn")
-    page.wait_for_timeout(60)
     page.click("#incBtn")
-    page.wait_for_timeout(60)  # node A at rank 2
+    # node A at rank 2
     node_b = class0_nodes.nth(1)
     node_b_name = node_b.locator(".name").inner_text()
     node_b.click()
     page.click("#incBtn")
-    page.wait_for_timeout(60)  # node B at rank 1
+    # node B at rank 1
 
     spent_before = page.locator("#spentValue").inner_text()
     print("spentValue before swap:", spent_before)
@@ -62,7 +60,6 @@ with sync_playwright() as p:
 
     # --- Swap: no confirm dialog anymore, no data loss. ---
     class0_select.select_option(new_class)
-    page.wait_for_timeout(150)
     print("dialogs fired during swap (should be none):", dialogs)
     assert not dialogs, "FAIL: swapping a class with spent points should no longer prompt a confirm dialog"
 
@@ -76,7 +73,6 @@ with sync_playwright() as p:
     # AAs, but the slot itself should show 0 selected/maxed nodes matching
     # the old names. ---
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(100)
     stale_nodes = page.locator(".node", has=page.locator(".name", has_text=node_a_name))
     print("old class's node A still present under the new class's tree:", stale_nodes.count())
     assert stale_nodes.count() == 0
@@ -85,7 +81,6 @@ with sync_playwright() as p:
     # muted and read-only. node A was bought to rank 2 (2 purchaseOrder
     # entries -> 2 rows), node B to rank 1 (1 row). ---
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
     prog_a = page.locator(".progression-row", has=page.locator(".step-name", has_text=node_a_name))
     prog_b = page.locator(".progression-row", has=page.locator(".step-name", has_text=node_b_name))
     print("Progression rows for the swapped-out class's picks (should be 2 and 1, muted):", prog_a.count(), prog_b.count())
@@ -100,7 +95,6 @@ with sync_playwright() as p:
     # --- Other Classes tab: both picks show up, grouped under the old
     # class's name, with the right subtotal. ---
     page.click('button[data-tab="otherClasses"]')
-    page.wait_for_timeout(150)
     section_title = page.locator("#otherClassesContent .summary-section-title", has_text=old_class)
     print("Other Classes section for the old class:", section_title.count())
     assert section_title.count() == 1
@@ -131,7 +125,6 @@ with sync_playwright() as p:
     # same per-class heading/subtotal/cards, behind a lighter divider line
     # rather than its own section-title h3. ---
     page.click('button[data-tab="summary"]')
-    page.wait_for_timeout(150)
     divider = page.locator("#summaryContent .summary-other-classes-divider")
     print("Summary shows the other-classes divider:", divider.count())
     assert divider.count() == 1
@@ -147,7 +140,7 @@ with sync_playwright() as p:
     # no opt-in checkbox needed - it's just more of the same ranks/
     # purchaseOrder payload every build already carries). ---
     page.click("#exportBtn")
-    page.wait_for_timeout(100)
+    page.wait_for_function("document.querySelector('#shareLinkInput').value.includes('build=')")
     export_text = page.locator("#exportText").input_value()
     print("export text mentions the old class's picks:", node_a_name in export_text or "BUILD_CODE" in export_text)
     # The export text embeds a compact code rather than raw names, but the
@@ -157,15 +150,12 @@ with sync_playwright() as p:
     share_link = page.locator("#shareLinkInput").input_value()
     print("share link:", share_link)
     page.click("#closeExportBtn")
-    page.wait_for_timeout(80)
 
     page2 = browser.new_page(viewport={"width": 1400, "height": 900})
     page2.on("dialog", lambda d: d.accept())
     page2.goto(share_link)
     page2.wait_for_selector("#treeWrap .node")
-    page2.wait_for_timeout(200)
     page2.click('button[data-tab="otherClasses"]')
-    page2.wait_for_timeout(150)
     reloaded_a = page2.locator("#otherClassesContent .browse-card", has=page2.locator(".name", has_text=node_a_name))
     reloaded_b = page2.locator("#otherClassesContent .browse-card", has=page2.locator(".name", has_text=node_b_name))
     print("reloaded-from-share-link Other Classes cards present:", reloaded_a.count(), reloaded_b.count())
@@ -177,7 +167,6 @@ with sync_playwright() as p:
     # left (rank 2 for A, rank 1 for B). ---
     page.click('button[data-tab="classSlot0"]')
     class0_select.select_option(old_class)
-    page.wait_for_timeout(150)
     restored_a = page.locator(".node", has=page.locator(".name", has_text=node_a_name))
     restored_b = page.locator(".node", has=page.locator(".name", has_text=node_b_name))
     rank_a = restored_a.locator(".ranktext").inner_text()
@@ -187,7 +176,6 @@ with sync_playwright() as p:
     assert rank_b.strip().startswith("1 /")
 
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
     prog_a2 = page.locator(".progression-row", has=page.locator(".step-name", has_text=node_a_name))
     prog_b2 = page.locator(".progression-row", has=page.locator(".step-name", has_text=node_b_name))
     print("Progression rows restored after swapping back:", prog_a2.count(), prog_b2.count())
@@ -211,9 +199,7 @@ with sync_playwright() as p:
     page3.on("dialog", lambda d: d.accept())
     page3.goto(f"{BASE}?build={inactive_only_build}")
     page3.wait_for_selector("#treeWrap .node")
-    page3.wait_for_timeout(200)
     page3.click('button[data-tab="summary"]')
-    page3.wait_for_timeout(150)
     empty_state = page3.locator("#summaryContent .empty")
     print("Summary empty-state count with only an inactive-class pick (should be 0):", empty_state.count())
     assert empty_state.count() == 0, "FAIL: Summary should not show its empty state when only an inactive-class pick exists"

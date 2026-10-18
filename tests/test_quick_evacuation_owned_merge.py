@@ -52,22 +52,17 @@ with sync_playwright() as p:
     """)
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
-    page.wait_for_timeout(200)
 
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(100)
     before = page.locator("#ownedSummary").inner_text()
     print("owned summary before merge:", before)
     assert before.startswith("3 "), f"FAIL: expected 3 pts owned (Druid's rank 1) before any merge, got {before!r}"
 
     # --- Merge Build B (Wizard-side owned rank 2) into the current profile. ---
     page.click("#manageOwnedTrackingBtn")
-    page.wait_for_timeout(100)
     page.select_option("#ownedTrackingBuildSelect", label="Build B")
     page.click("#ownedTrackingMergeBtn")
-    page.wait_for_timeout(150)
     page.click("#closeOwnedTrackingBtn")
-    page.wait_for_timeout(80)
 
     after = page.locator("#ownedSummary").inner_text()
     print("owned summary after merge:", after)
@@ -75,10 +70,8 @@ with sync_playwright() as p:
 
     # --- Druid's own tab (the canonical copy) reflects the raised rank. ---
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(100)
     node = page.locator(".node", has=page.locator(".name", has_text="Quick Evacuation"))
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(80)
     row = page.locator(".progression-row", has=page.locator(".step-name", has_text="Quick Evacuation"))
     # No row exists yet (nothing's been purchased, only owned) - check via
     # the raw merged storage instead, same as the live reproduction did.

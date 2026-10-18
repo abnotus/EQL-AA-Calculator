@@ -19,14 +19,12 @@ def progression(page):
 def toggle_first_owned(page):
     progression(page)
     page.locator(".progression-row .step-own").first.click()
-    page.wait_for_timeout(80)
 
 
 def save_build_as(page, name):
     page.click("#buildsBtn")
     page.fill("#buildSaveName", name)
     page.click("#buildSaveBtn")
-    page.wait_for_timeout(80)
     page.click("#closeBuildsBtn")
 
 
@@ -34,7 +32,6 @@ def load_build(page, name):
     page.click("#buildsBtn")
     row = page.locator(".build-row", has=page.locator(".build-name", has_text=name))
     row.locator('[data-action="load"]').click()
-    page.wait_for_timeout(120)
     if page.locator("#buildsModal").is_visible():
         page.click("#closeBuildsBtn")
 
@@ -44,7 +41,6 @@ def tracking_action(page, build_name, button_id):
     page.click("#manageOwnedTrackingBtn")
     page.select_option("#ownedTrackingBuildSelect", label=build_name)
     page.click(button_id)
-    page.wait_for_timeout(100)
     page.click("#closeOwnedTrackingBtn")
 
 
@@ -74,7 +70,6 @@ with sync_playwright() as p:
         tracking_action(page, "B", button_id)
         assert page.locator("#undoLastBtn").is_disabled(), f"FAIL: {label} should clear the pending Undo"
         page.locator("#undoLastBtn").click(force=True)
-        page.wait_for_timeout(80)
 
         load_build(page, "B")
         progression(page)
@@ -96,11 +91,9 @@ with sync_playwright() as p:
     page.click("#decBtn")
     page.click('button[data-tab="progression"]')
     page.click("#undoLastBtn")
-    page.wait_for_timeout(60)
     assert page.locator(".progression-row").count() == 1, "FAIL: Undo should restore the removed rank"
     assert not page.locator("#undoLastBtn").is_disabled(), "FAIL: undoing a removal should re-arm Undo"
     page.click("#undoLastBtn")
-    page.wait_for_timeout(60)
     assert page.locator(".progression-row").count() == 0, "FAIL: a second Undo should remove the rank again"
     print("PASS: Undo Last toggles after undoing a removed rank too")
     page.close()

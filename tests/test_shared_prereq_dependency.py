@@ -30,7 +30,6 @@ with sync_playwright() as p:
     page.wait_for_selector("#treeWrap .node")
     page.select_option("#classSelect0", "Wizard")
     page.select_option("#classSelect1", "Druid")
-    page.wait_for_timeout(80)
 
     page.click('button[data-tab="classSlot0"]')
     node(page, "Quick Evacuation").click()
@@ -43,7 +42,6 @@ with sync_playwright() as p:
     page.click('button[data-tab="classSlot0"]')
     node(page, "Quick Evacuation").click()
     page.click("#decBtn")
-    page.wait_for_timeout(60)
     rank = node(page, "Quick Evacuation").locator(".ranktext").inner_text()
     toast = page.locator("#toast").inner_text()
     print(f"Quick Evacuation after lowering it from Wizard's tab: {rank}, toast {toast!r}")

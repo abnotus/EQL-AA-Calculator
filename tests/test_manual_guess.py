@@ -61,12 +61,10 @@ with sync_playwright() as p:
     # with no guess at all. ---
     page.select_option("#classSelect0", "Monk")
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(100)
     rf = page.locator(".node", has=page.locator(".name", has_text="Rapid Feign"))
     rf.click()
     for _ in range(2):
         page.click("#incBtn")  # buy ranks 1-2, real costs 3+6 = 9
-        page.wait_for_timeout(20)
 
     spent_before = page.locator("#spentValue").inner_text()
     print("points spent after ranks 1-2 (real cost 9):", spent_before)
@@ -104,12 +102,10 @@ with sync_playwright() as p:
     # same way too (~18, matching the topbar) instead of staying frozen at
     # the real 9. ---
     page.click("#incBtn")  # buy rank 3 (real cost "?", math treats as 0)
-    page.wait_for_timeout(50)
     spent_after = page.locator("#spentValue").inner_text()
     print("spentValue after buying the manually-guessed rank (blends in the guess for display):", spent_after)
     assert spent_after == "0 / ~18", "FAIL: expected the headline to blend real 9 + guessed 9"
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(50)
     total_el = page.locator(".progression-row .cost-total").last
     blended_total = total_el.inner_text()
     print("Progression's blended running total after buying the manually-guessed rank:", blended_total)

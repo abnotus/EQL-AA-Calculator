@@ -28,14 +28,14 @@ with sync_playwright() as p:
     page.on("pageerror", lambda exc: errors.append(str(exc)))
     page.on("dialog", lambda d: d.accept())
 
+    # The search box applies after a debounce; run_for fires it on the spot.
+    page.clock.install()
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
     page.select_option("#classSelect0", "Magician")
-    page.wait_for_timeout(120)
     page.click('button[data-tab="classSlot0"]')
     ce = page.locator(".node", has=page.locator(".name", has_text="Conjurer's Efficiency"))
     ce.click()
-    page.wait_for_timeout(60)
     desc = page.locator("#sidePanel .desc").first
 
     # --- Unbought: every rank is listed, none is current. ---
@@ -47,7 +47,6 @@ with sync_playwright() as p:
     # --- Each rank in turn marks its own line, and only its own. ---
     for rank in range(1, 6):
         page.click("#incBtn")
-        page.wait_for_timeout(40)
         html = desc.inner_html()
         marked = re.findall(r'rank-line is-current-rank">Rank (\d+):', html)
         print(f"rank {rank}: marked line(s) = {marked}")
@@ -63,7 +62,7 @@ with sync_playwright() as p:
     # --- Browse is rank-agnostic: still one line per rank, none marked. ---
     page.click("#browseToggle")
     page.fill("#globalSearch", "Conjurer's Efficiency")
-    page.wait_for_timeout(120)
+    page.clock.run_for(150)
     card = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Conjurer's Efficiency"))
     browse_html = card.locator(".desc").inner_html()
     print("browse line count:", browse_html.count('class="rank-line'))
@@ -74,7 +73,7 @@ with sync_playwright() as p:
     # ("Rank 2 requires level 30") must NOT be split: the clause list has
     # to start at the description's first character. ---
     page.fill("#globalSearch", "Unbound Life")
-    page.wait_for_timeout(120)
+    page.clock.run_for(150)
     ul = page.locator("#browseGrid .browse-card", has=page.locator(".name", has_text="Unbound Life"))
     ul_html = ul.locator(".desc").inner_html()
     print("Unbound Life desc:", ul_html)
@@ -85,7 +84,7 @@ with sync_playwright() as p:
     # "1/3/5/5 seconds per rank" is a progression, not a flat amount per
     # rank, so it must not be totalled into "1/3/5/20 seconds (5 per rank)".
     page.fill("#globalSearch", "")
-    page.wait_for_timeout(200)
+    page.clock.run_for(150)
     page.select_option("#classSelect2", "Rogue")
     page.click('button[data-tab="archetype"]')
     page.locator("#treeWrap .node", has=page.locator(".name", has_text="Thief's Intuition")).click()

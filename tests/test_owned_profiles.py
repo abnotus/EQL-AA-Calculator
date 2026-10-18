@@ -17,17 +17,13 @@ BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.htm
 
 def buy_and_own(page, tab, label):
     page.click(f'button[data-tab="{tab}"]')
-    page.wait_for_timeout(100)
     node = page.locator(".node").first
     name = node.locator(".name").inner_text()
     node.click()
     page.click("#incBtn")
-    page.wait_for_timeout(80)
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(120)
     row = page.locator(".progression-row", has=page.locator(".step-name", has_text=name))
     row.locator(".step-own").click()
-    page.wait_for_timeout(80)
     summary = page.locator("#ownedSummary").inner_text()
     print(f"{label} ({name}) owned, summary now:", summary)
     return name, summary
@@ -39,32 +35,24 @@ def owned_summary(page):
 
 def save_build_as(page, name):
     page.click("#buildsBtn")
-    page.wait_for_timeout(100)
     page.fill("#buildSaveName", name)
     page.click("#buildSaveBtn")
-    page.wait_for_timeout(100)
     page.click("#closeBuildsBtn")
-    page.wait_for_timeout(80)
 
 
 def load_build(page, name):
     page.click("#buildsBtn")
-    page.wait_for_timeout(100)
     row = page.locator(".build-row", has=page.locator(".build-name", has_text=name))
     row.locator('[data-action="load"]').click()
-    page.wait_for_timeout(150)
     # A successful load closes the modal itself (render.js); only close it
     # here if something left it open (e.g. the load was declined/failed).
     if page.locator("#buildsModal").is_visible():
         page.click("#closeBuildsBtn")
-    page.wait_for_timeout(80)
 
 
 def open_tracking_modal(page):
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(80)
     page.click("#manageOwnedTrackingBtn")
-    page.wait_for_timeout(100)
 
 
 def tracking_status(page):
@@ -112,7 +100,6 @@ with sync_playwright() as p:
 
     load_build(page, "Build A")
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(100)
     owned_after_load_a = owned_summary(page)
     print("owned summary after loading Build A back:", owned_after_load_a)
     assert owned_after_load_a == owned_x_only, \
@@ -132,7 +119,6 @@ with sync_playwright() as p:
     open_tracking_modal(page)
     page.select_option("#ownedTrackingBuildSelect", label="Build B")
     page.click("#ownedTrackingMergeBtn")
-    page.wait_for_timeout(120)
     page.click("#closeOwnedTrackingBtn")
     owned_a_after_merge = owned_summary(page)
     print("Build A's owned summary after merging in Build B:", owned_a_after_merge)
@@ -152,7 +138,6 @@ with sync_playwright() as p:
     print("tracking status before Link:", status_before_link)
     page.select_option("#ownedTrackingBuildSelect", label="Build B")
     page.click("#ownedTrackingLinkBtn")
-    page.wait_for_timeout(120)
     status_after_link = tracking_status(page)
     print("tracking status after Link:", status_after_link)
     assert "Build B" in status_after_link, f"FAIL: status should mention sharing with Build B, got {status_after_link!r}"
@@ -169,7 +154,6 @@ with sync_playwright() as p:
     # changes on A must no longer reach B. ---
     open_tracking_modal(page)
     page.click("#ownedTrackingSplitBtn")
-    page.wait_for_timeout(120)
     status_after_split = tracking_status(page)
     print("Build B's tracking status after Split:", status_after_split)
     assert "Build A" not in status_after_split and "sharing" not in status_after_split.lower(), \
@@ -202,7 +186,7 @@ with sync_playwright() as p:
     _, sender_owned = buy_and_own(sender, "general", "sender AA")
 
     sender.click("#exportBtn")
-    sender.wait_for_timeout(300)
+    sender.wait_for_function("document.querySelector('#shareLinkInput').value.includes('build=')")
     export_text = sender.locator("#exportText").input_value()
     sender.close()
 
@@ -213,10 +197,9 @@ with sync_playwright() as p:
     receiver.wait_for_selector("#treeWrap .node")
 
     receiver.click("#importBtn")
-    receiver.wait_for_timeout(100)
     receiver.fill("#importText", export_text)
     receiver.click("#doImportBtn")
-    receiver.wait_for_timeout(200)
+    receiver.wait_for_selector("#importModal", state="hidden")
 
     print("dialogs during import-with-owned-data:", dialogs)
     assert dialogs == [], f"FAIL: importing owned data must never show a confirm dialog, got {dialogs}"
@@ -228,7 +211,6 @@ with sync_playwright() as p:
         f"FAIL: unexpected toast wording: {toast_text!r}"
 
     receiver.click('button[data-tab="progression"]')
-    receiver.wait_for_timeout(100)
     receiver_owned_after = owned_summary(receiver)
     print("receiver's owned summary after import:", receiver_owned_after)
     assert receiver_owned_after == sender_owned, \

@@ -31,10 +31,8 @@ with sync_playwright() as p:
     # (or, if idx happened to be in range, General's category label instead
     # of Archetype's). ---
     page.click('button[data-tab="archetype"]')
-    page.wait_for_timeout(100)
     first_node_name = page.locator("#treeWrap .node .name").first.inner_text()
     page.locator("#treeWrap .node").first.click()
-    page.wait_for_timeout(50)
     header_name = page.locator("#sidePanel .sidepanel-header h2").inner_text()
     meta_text = page.locator("#sidePanel .meta").inner_text()
     print(f"clicked Archetype node '{first_node_name}' -> side panel shows '{header_name}' ({meta_text})")
@@ -46,10 +44,8 @@ with sync_playwright() as p:
     # name rather than "Archetype" or "General". ---
     class_name = page.locator("#classSelect0").input_value()
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(100)
     class_node_name = page.locator("#treeWrap .node .name").first.inner_text()
     page.locator("#treeWrap .node").first.click()
-    page.wait_for_timeout(50)
     class_header_name = page.locator("#sidePanel .sidepanel-header h2").inner_text()
     class_meta_text = page.locator("#sidePanel .meta").inner_text()
     print(f"clicked {class_name} node '{class_node_name}' -> side panel shows '{class_header_name}' ({class_meta_text})")

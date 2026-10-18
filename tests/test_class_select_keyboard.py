@@ -27,7 +27,6 @@ with sync_playwright() as p:
     page.focus("#classSelect0")
     for _ in range(3):
         page.keyboard.press("ArrowDown")
-        page.wait_for_timeout(40)
     print("after ArrowDown x3 on Class 1:", classes(page))
     assert page.locator("#classSelect0").input_value() == "Cleric", "FAIL: the keypresses didn't step the select"
     assert classes(page) == ["Cleric", "Beastlord", "Berserker"], f"FAIL: stepping cascaded swaps: {classes(page)}"
@@ -36,7 +35,6 @@ with sync_playwright() as p:
     # Once focus leaves, a new choice works against the current selection.
     page.locator("#classSelect0").blur()
     page.select_option("#classSelect0", "Beastlord")
-    page.wait_for_timeout(60)
     print("after picking Beastlord for Class 1:", classes(page))
     assert classes(page) == ["Beastlord", "Cleric", "Berserker"], f"FAIL: a plain swap broke: {classes(page)}"
     print("PASS: a plain duplicate pick still swaps the two slots")

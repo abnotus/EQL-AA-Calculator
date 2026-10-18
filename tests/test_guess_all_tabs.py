@@ -52,6 +52,8 @@ with sync_playwright() as p:
     page.route("**/data.js*", lambda route: route.fulfill(body=patched_data_js(), content_type="application/javascript; charset=utf-8"))
     page.route("**/app.js*", lambda route: route.fulfill(body=patched_app_src(), content_type="application/javascript; charset=utf-8"))
 
+    # The search box applies after a debounce; run_for fires it on the spot.
+    page.clock.install()
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
 
@@ -64,7 +66,7 @@ with sync_playwright() as p:
     # the scoped guess lookup isn't specific to an active class. ---
     page.click("#browseToggle")
     page.fill("#globalSearch", "Rapid Feign")
-    page.wait_for_timeout(100)
+    page.clock.run_for(150)
     card = page.locator(".browse-card", has=page.locator(".name", has_text="Rapid Feign"))
     info_html = card.locator(".info").inner_html()
     print("Rapid Feign browse info html:", info_html)
@@ -73,6 +75,7 @@ with sync_playwright() as p:
     print("PASS: Browse shows Rapid Feign's rank-3 estimate for a class outside the active 3 slots, not a bare '?'")
 
     page.fill("#globalSearch", "")
+    page.clock.run_for(150)
     page.click("#browseToggle")
 
     # --- Progression tab: buy Rapid Feign up through the guessed rank 3
@@ -86,10 +89,8 @@ with sync_playwright() as p:
     am.click()
     for _ in range(3):
         page.click("#incBtn")
-        page.wait_for_timeout(20)
 
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(100)
     row3 = page.locator(".progression-row").nth(2)
     cost_this = row3.locator(".cost-this")
     print("Progression row3 cost-this:", cost_this.inner_text(), cost_this.get_attribute("class"))
@@ -139,9 +140,7 @@ with sync_playwright() as p:
     inactive_page.on("dialog", lambda d: d.accept())
     inactive_page.goto(f"{BASE}?build={inactive_build}")
     inactive_page.wait_for_selector("#treeWrap .node")
-    inactive_page.wait_for_timeout(200)
     inactive_page.click('button[data-tab="progression"]')
-    inactive_page.wait_for_timeout(150)
     inactive_row = inactive_page.locator(".progression-row", has=inactive_page.locator(".step-name", has_text="Cannibalization"))
     print("Progression row count for the inactive-class pick (should be 1, muted):", inactive_row.count())
     assert inactive_row.count() == 1, "FAIL: an inactive-class pick should still render inline in Progression, muted"
@@ -150,7 +149,6 @@ with sync_playwright() as p:
     assert inactive_row.locator(".step-remove").get_attribute("disabled") is not None
 
     inactive_page.click('button[data-tab="otherClasses"]')
-    inactive_page.wait_for_timeout(150)
     other_classes_html = inactive_page.locator("#otherClassesContent").inner_html()
     print("Other Classes tab shows Cannibalization:", "Cannibalization" in other_classes_html)
     assert "Cannibalization" in other_classes_html

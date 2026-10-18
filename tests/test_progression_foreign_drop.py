@@ -34,7 +34,6 @@ with sync_playwright() as p:
         target.dispatchEvent(new DragEvent('dragover', opts));
         target.dispatchEvent(new DragEvent('drop', opts));
     }""")
-    page.wait_for_timeout(80)
     after = page.locator(".progression-row .step-name").all_inner_texts()
     print("before:", before)
     print("after a foreign drop:", after)

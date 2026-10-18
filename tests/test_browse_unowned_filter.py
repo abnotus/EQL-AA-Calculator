@@ -39,16 +39,12 @@ with sync_playwright() as p:
     for name in ["Adamant Will", "Alchemy Mastery"]:
         page.locator(".node", has=page.locator(".name", has_text=name)).first.click()
         page.click("#incBtn")
-        page.wait_for_timeout(50)
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
     for i in range(2):
         page.locator(".progression-row").nth(i).locator(".step-own").click()
-        page.wait_for_timeout(50)
 
     page.click("#browseToggle")
     page.select_option("#browseFilter", "general")
-    page.wait_for_timeout(150)
 
     # --- Default view: both owned cards are styled and labeled, unowned
     # ones aren't. auto_count is read here (not hardcoded) since which/how
@@ -75,7 +71,6 @@ with sync_playwright() as p:
     # General). ---
     toggle = page.locator("#browseUnownedToggle")
     toggle.click()
-    page.wait_for_timeout(150)
     assert "active" in toggle.get_attribute("class")
     remaining = page.locator(".browse-card").count()
     expected = total_general - 2 - auto_count
@@ -97,7 +92,6 @@ with sync_playwright() as p:
 
     # --- Toggling off restores exactly the owned cards that were hidden. ---
     toggle.click()
-    page.wait_for_timeout(150)
     assert "active" not in (toggle.get_attribute("class") or "")
     restored = page.locator(".browse-card").count()
     print("General cards after toggling off:", restored)
@@ -111,21 +105,15 @@ with sync_playwright() as p:
     # (1), or it would silently disappear from Unowned Only despite no
     # purchased rank being owned. ---
     page.click('button[data-tab="classSlot0"]')
-    page.wait_for_timeout(100)
     page.locator(".node", has=page.locator(".name", has_text="Symphonic Aura")).first.click()
     page.click("#incBtn")
-    page.wait_for_timeout(80)
     page.click('button[data-tab="progression"]')
-    page.wait_for_timeout(150)
     sa_row = page.locator(".progression-row", has=page.locator(".step-name", has_text="Symphonic Aura"))
     sa_row.locator(".step-own").click()
-    page.wait_for_timeout(80)
     sa_row.locator(".step-own").click()
-    page.wait_for_timeout(80)
 
     page.click("#browseToggle")
     page.select_option("#browseFilter", "Bard")
-    page.wait_for_timeout(150)
     sa_card = page.locator(".browse-card", has=page.locator(".name", has_text="Symphonic Aura"))
     assert "owned" not in (sa_card.get_attribute("class") or "").split(), \
         "FAIL: Symphonic Aura still shows as owned after mark/unmark - owned watermark stuck at the free-rank floor"
@@ -135,12 +123,10 @@ with sync_playwright() as p:
 
     if "active" not in toggle.get_attribute("class"):
         toggle.click()
-        page.wait_for_timeout(150)
     assert page.locator(".browse-card", has=page.locator(".name", has_text="Symphonic Aura")).count() == 1, \
         "FAIL: Unowned Only hid Symphonic Aura despite no purchased rank being owned"
     print("PASS: Unowned Only still shows an autoRanks AA after a mark/unmark round trip on its purchasable rank")
     toggle.click()
-    page.wait_for_timeout(150)
 
     print("ERRORS:", errors)
     assert not errors

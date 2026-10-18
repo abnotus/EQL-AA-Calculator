@@ -42,7 +42,6 @@ with sync_playwright() as p:
 
     # Dismiss it now - should set the NEW (v5) key, and hide the banner.
     page2.click("#dismissBannerBtn")
-    page2.wait_for_timeout(100)
     print("banner hidden after dismiss:", banner2.is_hidden())
     assert banner2.is_hidden()
     new_key_value = page2.evaluate("localStorage.getItem('eql_aa_disclaimer_dismissed_v5')")

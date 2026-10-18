@@ -31,7 +31,7 @@
 # vector for either of these regardless.
 import os, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 BASE = f"http://localhost:{os.environ.get('AACALC_TEST_PORT', '8743')}/index.html"
 
@@ -52,6 +52,16 @@ with sync_playwright() as p:
     page.on("dialog", lambda d: d.accept())
     page.goto(BASE)
     page.wait_for_selector("#treeWrap .node")
+    toast = page.locator("#toast")
+
+    # Import decodes asynchronously and reports through the toast. Two of
+    # these fail with the same message, so the toast is cleared first and
+    # the next message is the one waited for.
+    def import_and_wait():
+        page.evaluate("() => { document.getElementById('toast').textContent = ''; }")
+        page.click("#doImportBtn")
+        expect(toast).not_to_have_text("")
+        return toast.inner_text()
 
     def to_base64url(page, text):
         return page.evaluate(
@@ -71,9 +81,7 @@ with sync_playwright() as p:
     # not about the payload shape being bogus to begin with. ---
     page.click("#importBtn")
     page.evaluate("(t) => { document.getElementById('importText').value = t; }", to_base64url(page, VALID_MINIMAL_BUILD))
-    page.click("#doImportBtn")
-    page.wait_for_timeout(200)
-    baseline_toast = page.locator("#toast").inner_text()
+    baseline_toast = import_and_wait()
     print("toast for the unpadded minimal build:", baseline_toast)
     assert "imported" in baseline_toast.lower(), \
         f"FAIL: the minimal payload should import cleanly on its own - got {baseline_toast!r}"
@@ -87,11 +95,9 @@ with sync_playwright() as p:
     page.click("#importBtn")  # the baseline import above succeeded, which closes the modal
     page.evaluate("(c) => { document.getElementById('importText').value = c; }", encoded_uncompressed)
     start1 = page.evaluate("() => performance.now()")
-    page.click("#doImportBtn")
-    page.wait_for_timeout(300)
+    toast1 = import_and_wait()
     elapsed1_ms = page.evaluate("() => performance.now()") - start1
     print(f"settled {elapsed1_ms:.0f}ms after importing the oversized-but-valid code")
-    toast1 = page.locator("#toast").inner_text()
     print("toast:", toast1)
     assert "failed to read" in toast1.lower(), \
         f"FAIL: an otherwise-valid build padded past the length cap must still be rejected - got {toast1!r}"
@@ -125,11 +131,9 @@ with sync_playwright() as p:
     # failed, which leaves the modal open rather than closing it.
     page.evaluate("(c) => { document.getElementById('importText').value = c; }", bomb_code)
     start2 = page.evaluate("() => performance.now()")
-    page.click("#doImportBtn")
-    page.wait_for_timeout(300)
+    toast2 = import_and_wait()
     elapsed2_ms = page.evaluate("() => performance.now()") - start2
     print(f"settled {elapsed2_ms:.0f}ms after importing the bomb code (must not hang)")
-    toast2 = page.locator("#toast").inner_text()
     print("toast:", toast2)
     assert "failed to read" in toast2.lower(), \
         f"FAIL: a decompression bomb (otherwise-valid payload padded past the decompressed-size cap) must be rejected - got {toast2!r}"
