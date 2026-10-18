@@ -3170,13 +3170,10 @@ function cleanupOrphanedOwnedProfiles() {
 }
 
 // Deliberately just the plan - selectedClasses/charLevel/ranks/
-// purchaseOrder/waypoints. A slot's owned-tracking pointer
-// (ownedProfileId) is real data too, but it's assigned by saveBuildAs
-// below with its own logic (fresh + seeded for a new slot, preserved
-// as-is for an overwrite), not read off the current session the way
-// everything here is - keeping it out of this function is also what lets
-// deepEqualIgnoringExtraKeys below ignore it automatically when deciding
-// whether a slot is already backed up.
+// purchaseOrder/waypoints. A slot's ownedProfileId is assigned by
+// saveBuildAs below, and leaving it out here lets
+// deepEqualIgnoringExtraKeys ignore it when deciding whether a slot is
+// already backed up.
 function buildPayload() {
   return {
     v: SAVE_FORMAT_VERSION,
@@ -3255,23 +3252,18 @@ function activeBuildMatchesCurrent() {
 // go unnoticed, leaving a slot that looks saved this session but is gone
 // after reload.
 //
-// A brand-new slot gets its own fresh owned profile, seeded with a copy of
-// whatever the current session is showing right now (not empty - you've
-// likely already been tracking progress against this exact plan). The
-// current session's own state.ownedProfileId is left untouched either way
-// - saving a snapshot doesn't change what's live, only what the snapshot
-// itself will show if loaded later. Overwriting an existing slot leaves
-// its ownedProfileId exactly as it already was. mirrorProfileId is an
-// override for saveImportedBuild below, where the slot needs to track
-// exactly the same profile the live session is using, not an independent
-// fork of it (see that function's own comment for why).
-function saveBuildAs(name, id = null, mirrorProfileId = null) {
+// The saved slot becomes the active one, and the session moves onto the
+// slot's owned profile, so marks made after saving land in the slot just
+// saved. A slot that already shares the session's profile (re-saving the
+// loaded build) keeps it, links included. Any other slot, new or
+// overwritten, gets a fresh profile seeded with what the session shows.
+// mirrorCurrentProfile (saveImportedBuild) skips the fork.
+function saveBuildAs(name, id = null, mirrorCurrentProfile = false) {
   const targetId = id || genId();
   const payload = buildPayload();
-  if (mirrorProfileId) {
-    payload.ownedProfileId = mirrorProfileId;
-  } else if (id) {
-    payload.ownedProfileId = ownedProfileIdOfBuild(id);
+  const keepProfile = mirrorCurrentProfile || (id && ownedProfileIdOfBuild(id) === state.ownedProfileId);
+  if (keepProfile) {
+    payload.ownedProfileId = state.ownedProfileId;
   } else {
     payload.ownedProfileId = genId();
     if (!saveOwnedProfileTo(payload.ownedProfileId, state.owned)) return null;
@@ -3292,6 +3284,10 @@ function saveBuildAs(name, id = null, mirrorProfileId = null) {
   }
   if (!saveIndex(index)) return null;
   setActiveBuildId(targetId);
+  if (state.ownedProfileId !== payload.ownedProfileId) {
+    state.ownedProfileId = payload.ownedProfileId;
+    saveLocal();
+  }
   return targetId;
 }
 
@@ -3377,7 +3373,7 @@ function isActiveBuildTheImportedSlot() {
 // after this auto-save), not a snapshot frozen at import time.
 function saveImportedBuild() {
   const existing = findImportedSlot();
-  return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null, state.ownedProfileId);
+  return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null, true);
 }
 
 // Replaces the current working state with a saved slot's contents — same

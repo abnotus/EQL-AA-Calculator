@@ -102,8 +102,13 @@ with sync_playwright() as p:
     name_x, owned_x_only = buy_and_own(page, "classSlot0", "AA_X")
     save_build_as(page, "Build A")
 
-    name_y, owned_x_and_y = buy_and_own(page, "classSlot1", "AA_Y")
+    # Save As moves the session onto the new slot's own profile, so a mark
+    # made straight after saving belongs to the slot just saved, not to
+    # whatever the session was tracking before.
+    save_build_as(page, "Build B")
+    name_y, owned_x_and_y = buy_and_own(page, "classSlot1", "AA_Y (into Build B)")
     assert owned_x_and_y != owned_x_only, "FAIL: marking a second AA owned should change the summary"
+    owned_b_before_merge = owned_x_and_y
 
     load_build(page, "Build A")
     page.click('button[data-tab="progression"]')
@@ -112,16 +117,16 @@ with sync_playwright() as p:
     print("owned summary after loading Build A back:", owned_after_load_a)
     assert owned_after_load_a == owned_x_only, \
         f"FAIL: Build A's own profile should still show only AA_X, expected {owned_x_only!r}, got {owned_after_load_a!r}"
-    print("PASS: a newly saved build got its own independent owned profile, unaffected by marks made after saving")
 
-    # --- Merge: Build B forks from A (currently {X}), then gets AA_Y marked
-    # owned while B itself is loaded (so it lands in B's own profile, not
-    # A's) - B ends up {X, Y}, A stays {X}. Merging B into A must produce
-    # the union {X, Y} without touching B. ---
-    save_build_as(page, "Build B")
     load_build(page, "Build B")
-    buy_and_own(page, "classSlot1", "AA_Y (into Build B)")
-    owned_b_before_merge = owned_summary(page)
+    owned_after_load_b = owned_summary(page)
+    print("owned summary after loading Build B back:", owned_after_load_b)
+    assert owned_after_load_b == owned_x_and_y, \
+        f"FAIL: AA_Y was marked right after saving Build B, so B should show it, expected {owned_x_and_y!r}, got {owned_after_load_b!r}"
+    print("PASS: each saved build has its own owned profile, and marks made after Save As land in the slot just saved")
+
+    # --- Merge: B ends up {X, Y}, A stays {X}. Merging B into A must
+    # produce the union {X, Y} without touching B. ---
 
     load_build(page, "Build A")
     open_tracking_modal(page)
