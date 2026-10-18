@@ -1,0 +1,44 @@
+name: checks
+
+on:
+  push:
+    paths-ignore:
+      - "**.md"
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          npm ci
+          pip install playwright
+
+      - name: Build
+        run: python build_minify.py
+
+      - name: Built files are committed and current
+        run: |
+          git status --porcelain
+          git diff --exit-code
+
+      - name: Tests
+        # The browser tests launch the runner's preinstalled Google Chrome
+        # (channel="chrome").
+        run: python tests/run_all.py

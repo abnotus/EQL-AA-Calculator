@@ -24,7 +24,8 @@ bug - a genuine failure fails the same way both times. Prints a pass/fail
 line per test (in the order each one finishes, not file order, with
 `(passed on retry N)` noted when one needed it) plus a summary with the
 total wall-clock time, and exits non-zero if anything still failed or
-timed out after its retry. There's no CI (see below).
+timed out after its retry. A test that passed only on retry is listed again
+in the summary. CI runs the same script (see below).
 
 ## Data-independent unit tests
 
@@ -173,11 +174,13 @@ The same build also shows up as a lighter-weight fixture in
 
 ## CI
 
-There is none, by decision. Every push to `main` deploys the site through
-GitHub Pages' branch deploy, so a CI run would only report after the deploy;
-instead `python build_minify.py` and `python tests/run_all.py` run before
-every push, and the live site is checked after it. The browser tests launch
-with `channel="chrome"`, so any runner would need Chrome installed.
+`.github/workflows/checks.yml` runs on every push that changes more than
+Markdown, on Ubuntu: `npm ci`, `python build_minify.py`, a check that the
+build left nothing uncommitted (the generated files are committed, so a
+stale `app.js` fails here), then `python tests/run_all.py` against the
+runner's preinstalled Chrome. Every push to `main` deploys the site through
+GitHub Pages' branch deploy, so CI only reports after that deploy: it backs
+up the build and full test run before pushing, it doesn't replace them.
 
 ## When to run which
 
