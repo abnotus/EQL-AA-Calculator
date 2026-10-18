@@ -105,6 +105,22 @@ with sync_playwright() as p:
     assert "1 / 3" in qe.inner_html(), "FAIL: Undo Last should have reverted the rank back to 1/3"
     print("PASS: Undo Last works for a sharedWithClass AA bought while its canonical class is inactive")
 
+    # --- Stored under Druid, but it's a Wizard pick here: no phantom Druid
+    # section in Other Classes or Summary, and the topbar doesn't count it
+    # as coming from an unselected class. ---
+    page.click('button[data-tab="otherClasses"]')
+    page.wait_for_timeout(80)
+    other = page.locator("#otherClassesContent").inner_text()
+    print("Other Classes with Wizard's Quick Evacuation:", other[:80])
+    assert "druid" not in other.lower(), f"FAIL: a phantom Druid section showed up: {other!r}"
+    page.click('button[data-tab="summary"]')
+    page.wait_for_timeout(80)
+    summary_titles = page.locator("#summaryContent .summary-section-title").all_inner_texts()
+    assert "druid" not in [t.lower() for t in summary_titles], f"FAIL: Summary shows a phantom Druid section: {summary_titles}"
+    title = page.locator("#spentValue").get_attribute("title") or ""
+    assert "not currently selected" not in title, f"FAIL: the topbar counts it as an unselected class: {title!r}"
+    print("PASS: Quick Evacuation bought as a Wizard counts as a Wizard pick everywhere")
+
     print("ERRORS:", errors)
     assert not errors, f"FAIL: page errors {errors}"
     browser.close()

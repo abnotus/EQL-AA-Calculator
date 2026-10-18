@@ -13,7 +13,7 @@ import {
   estimatedExtraPoints, effectGuess, effectGuessScoped, guessTitle, classRankCapFor, effectiveDisplayRank,
   isHidden, isHiddenScoped, setHidden, setHiddenScoped, hasAnyHidden,
   isSuppressed, isSuppressedScoped,
-  effectiveRankScoped, countOtherClassesPicked, otherClassesWithPicks, spentForClass,
+  countOtherClassesPicked, otherClassesWithPicks, spentForClass, picksForClass,
   ownedPoints, spentOnInactiveClasses, estimatedExtraOwnedPoints, isClassEligible, ownedRank,
   autoRanksOffset, autoRanksOffsetScoped, rankLevelReqs, hasPerRankLevels
 } from "./logic.js";
@@ -648,10 +648,7 @@ function renderSummary(totals) {
 // tree can currently show, which an inactive-class pick isn't.
 function otherClassesSectionsHtml(classNames) {
   return classNames.map((className) => {
-    const list = AA_DATA.classes[className] || [];
-    const picked = list
-      .map((aa, idx) => ({ aa, idx, rank: effectiveRankScoped("class", className, idx) }))
-      .filter((x) => x.rank > 0);
+    const picked = picksForClass(className);
     const subtotal = spentForClass(className);
     const cards = picked.map(({ aa, idx, rank }) => {
       const displayRank = effectiveDisplayRank(aa, rank);

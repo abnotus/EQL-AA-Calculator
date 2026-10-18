@@ -286,15 +286,9 @@ function getRanksStoreScoped(scope, className) {
 // of its own - this resolves (scope, className, idx) to wherever it
 // actually reads/writes. Every other AA maps to itself.
 //
-// spentForClass/spentOnInactiveClasses (the Other Classes per-class
-// subtotals) deliberately aren't routed through this: they walk a class's
-// raw store directly rather than per-idx, so a shared AA's cost always
-// attributes to its canonical class alone. The one visible quirk is a pair
-// split across exactly one active, one inactive class: the Other Classes
-// tab can list the inactive one as holding points the player can actually
-// still edit live, from the other, active copy. Narrow enough (one AA pair
-// in the whole dataset) that threading a redirect through every per-class
-// sum isn't worth it for a single-pair special case.
+// The per-class views (Other Classes, the topbar's unselected-classes note)
+// go through classPicks instead, which counts a shared pick toward
+// whichever class in its pair is selected.
 function sharedCanonical(scope, className, idx) {
   const aa = aaAt(scope, className, idx);
   if (!aa || !aa.sharedWithClass) return { scope, className, idx };
@@ -685,21 +679,54 @@ export function spentPoints() {
   return sumAcrossAllClasses(state.ranks, (scope, className, list, store) => sumRealCost(list, store));
 }
 
-// Real points spent on one specific class alone, active or not — the
-// Other Classes tab's per-class subtotal. Sums the one class directly
-// with sumRealCost rather than deriving it from spentPoints().
-export function spentForClass(className) {
-  return sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className] || {});
+// Purchased class-scoped picks, grouped by the class they count toward:
+// className -> [{ idx, aa, rank }], idx into that class's own list. A
+// sharedWithClass pick is stored under its canonical class but counts
+// toward whichever class in its pair is selected, so a Wizard without
+// Druid sees Quick Evacuation as a Wizard pick, not a phantom Druid one.
+function classPicks() {
+  const out = new Map();
+  Object.keys(state.ranks.classes).forEach((stored) => {
+    const store = state.ranks.classes[stored];
+    Object.keys(store).forEach((idxStr) => {
+      const idx = parseInt(idxStr, 10);
+      const aa = aaAt("class", stored, idx);
+      if (!aa || aa.auto || !(store[idxStr] > 0)) return;
+      const target = activeEntryTarget({ scope: "class", className: stored, idx });
+      const className = target.category ? state.selectedClasses[CLASS_SLOT_KEYS.indexOf(target.category)] : stored;
+      const ownIdx = target.category ? target.idx : idx;
+      if (!out.has(className)) out.set(className, []);
+      out.get(className).push({ idx: ownIdx, aa: aaAt("class", className, ownIdx), rank: store[idxStr] });
+    });
+  });
+  return out;
 }
 
-// Sum of spentForClass across every class NOT currently active — the
-// slice of spentPoints()'s lifetime total that lives "elsewhere" right
-// now. Surfaced in the topbar tooltip so it's legible which classes a
-// blended total actually spans, not just a bare number.
+export function picksForClass(className) {
+  return (classPicks().get(className) || []).slice().sort((a, b) => a.idx - b.idx);
+}
+
+function pickCost({ aa, rank }) {
+  let total = 0;
+  for (let i = 0; i < rank; i++) total += costNum(aa.costs[i]);
+  return total;
+}
+
+// Real points spent on one specific class alone, active or not — the
+// Other Classes tab's per-class subtotal.
+export function spentForClass(className) {
+  return picksForClass(className).reduce((sum, pick) => sum + pickCost(pick), 0);
+}
+
+// The slice of spentPoints()'s lifetime total that lives on classes not
+// currently selected. Surfaced in the topbar tooltip so it's legible which
+// classes a blended total actually spans, not just a bare number.
 export function spentOnInactiveClasses() {
-  return Object.keys(state.ranks.classes)
-    .filter((className) => !state.selectedClasses.includes(className))
-    .reduce((sum, className) => sum + spentForClass(className), 0);
+  let total = 0;
+  classPicks().forEach((picks, className) => {
+    if (!state.selectedClasses.includes(className)) total += picks.reduce((sum, pick) => sum + pickCost(pick), 0);
+  });
+  return total;
 }
 
 // Lifetime total of points marked owned, across every class ever picked —
@@ -1352,13 +1379,7 @@ export function countPicked() {
 // classes NOT one of the 3 active slots, since countPicked/Summary already
 // cover those.
 export function countOtherClassesPicked() {
-  let n = 0;
-  Object.keys(state.ranks.classes).forEach((className) => {
-    if (state.selectedClasses.includes(className)) return;
-    const list = AA_DATA.classes[className] || [];
-    list.forEach((aa, idx) => { if (effectiveRankScoped("class", className, idx) > 0) n++; });
-  });
-  return n;
+  return otherClassesWithPicks().reduce((n, className) => n + picksForClass(className).length, 0);
 }
 
 // Every className outside the 3 active slots that currently has at least
@@ -1366,12 +1387,8 @@ export function countOtherClassesPicked() {
 // sorted for a stable render order (Object.keys' own order otherwise just
 // reflects insertion history, which is meaningless here).
 export function otherClassesWithPicks() {
-  return Object.keys(state.ranks.classes)
+  return Array.from(classPicks().keys())
     .filter((className) => !state.selectedClasses.includes(className))
-    .filter((className) => {
-      const list = AA_DATA.classes[className] || [];
-      return list.some((aa, idx) => effectiveRankScoped("class", className, idx) > 0);
-    })
     .sort();
 }
 

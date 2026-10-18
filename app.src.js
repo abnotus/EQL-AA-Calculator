@@ -1636,11 +1636,40 @@
   function spentPoints() {
     return sumAcrossAllClasses(state.ranks, (scope, className, list, store) => sumRealCost(list, store));
   }
+  function classPicks() {
+    const out = /* @__PURE__ */ new Map();
+    Object.keys(state.ranks.classes).forEach((stored) => {
+      const store = state.ranks.classes[stored];
+      Object.keys(store).forEach((idxStr) => {
+        const idx = parseInt(idxStr, 10);
+        const aa = aaAt("class", stored, idx);
+        if (!aa || aa.auto || !(store[idxStr] > 0)) return;
+        const target = activeEntryTarget({ scope: "class", className: stored, idx });
+        const className = target.category ? state.selectedClasses[CLASS_SLOT_KEYS.indexOf(target.category)] : stored;
+        const ownIdx = target.category ? target.idx : idx;
+        if (!out.has(className)) out.set(className, []);
+        out.get(className).push({ idx: ownIdx, aa: aaAt("class", className, ownIdx), rank: store[idxStr] });
+      });
+    });
+    return out;
+  }
+  function picksForClass(className) {
+    return (classPicks().get(className) || []).slice().sort((a, b) => a.idx - b.idx);
+  }
+  function pickCost({ aa, rank }) {
+    let total = 0;
+    for (let i = 0; i < rank; i++) total += costNum(aa.costs[i]);
+    return total;
+  }
   function spentForClass(className) {
-    return sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className] || {});
+    return picksForClass(className).reduce((sum, pick) => sum + pickCost(pick), 0);
   }
   function spentOnInactiveClasses() {
-    return Object.keys(state.ranks.classes).filter((className) => !state.selectedClasses.includes(className)).reduce((sum, className) => sum + spentForClass(className), 0);
+    let total = 0;
+    classPicks().forEach((picks, className) => {
+      if (!state.selectedClasses.includes(className)) total += picks.reduce((sum, pick) => sum + pickCost(pick), 0);
+    });
+    return total;
   }
   function ownedPoints() {
     return sumAcrossAllClasses(state.owned, (scope, className, list, store) => sumRealCost(list, store));
@@ -2047,21 +2076,10 @@
     return n;
   }
   function countOtherClassesPicked() {
-    let n = 0;
-    Object.keys(state.ranks.classes).forEach((className) => {
-      if (state.selectedClasses.includes(className)) return;
-      const list = AA_DATA.classes[className] || [];
-      list.forEach((aa, idx) => {
-        if (effectiveRankScoped("class", className, idx) > 0) n++;
-      });
-    });
-    return n;
+    return otherClassesWithPicks().reduce((n, className) => n + picksForClass(className).length, 0);
   }
   function otherClassesWithPicks() {
-    return Object.keys(state.ranks.classes).filter((className) => !state.selectedClasses.includes(className)).filter((className) => {
-      const list = AA_DATA.classes[className] || [];
-      return list.some((aa, idx) => effectiveRankScoped("class", className, idx) > 0);
-    }).sort();
+    return Array.from(classPicks().keys()).filter((className) => !state.selectedClasses.includes(className)).sort();
   }
   function computeProgressionSteps(order = state.purchaseOrder) {
     const totalCounts = {};
@@ -2879,8 +2897,7 @@
   }
   function otherClassesSectionsHtml(classNames) {
     return classNames.map((className) => {
-      const list = AA_DATA.classes[className] || [];
-      const picked = list.map((aa, idx) => ({ aa, idx, rank: effectiveRankScoped("class", className, idx) })).filter((x) => x.rank > 0);
+      const picked = picksForClass(className);
       const subtotal = spentForClass(className);
       const cards = picked.map(({ aa, idx, rank }) => {
         const displayRank = effectiveDisplayRank(aa, rank);
