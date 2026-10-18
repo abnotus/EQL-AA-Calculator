@@ -4,6 +4,21 @@
 // add a new entry at the top whenever a user-relevant change ships.
 export const USER_CHANGELOG = [
   {
+    version: "2.1.3",
+    date: "2026-10-18",
+    items: [
+      "Owned marks you make right after saving a build now belong to that build. A share link or import without owned progress now starts with nothing marked, instead of showing the previous build's marks.",
+      "Share links now include AAs you've trained but no longer plan to take. Some older links that were reported as invalid, or opened empty, now load properly.",
+      "AAs that unlock ranks at different levels now follow them: Turn Summoned's rank 2 needs level 59, and the Unbound AAs gain each rank at its own level.",
+      "Progression's \"to go\" now counts only planned ranks you haven't trained yet.",
+      "On phones, all of Progression's buttons now fit on screen. The ⋯ Move To menu on a ⚠ row no longer clicks the row below it.",
+      "Undo Last no longer changes another build's owned progress after Link or Merge. Having the calculator open in two tabs no longer mixes up their owned tracking.",
+      "Pasting a build code that mail or chat wrapped, quoted or put inside a link now imports. The readable export now also lists picks for classes you aren't using right now.",
+      "Keyboard use is smoother: focus stays put on Progression and inside dialogs, and waypoints can be edited from the keyboard. Messages now show above open dialogs and stay up long enough to read.",
+      "Smaller fixes: auto-granted AAs can be hidden, Quick Evacuation bought as a Wizard no longer adds a Druid section, Thief's Intuition no longer shows a made-up total at rank 4, and a plan with only waypoints now asks before being replaced."
+    ]
+  },
+  {
     version: "2.1.2",
     date: "2026-10-02",
     items: [
