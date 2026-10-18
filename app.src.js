@@ -780,7 +780,7 @@
   }
   function linkOwnedProfile(targetProfileId) {
     state.ownedProfileId = targetProfileId;
-    loadAndApplyOwned(null);
+    return loadAndApplyOwned(null);
   }
   function splitOwnedProfile() {
     const newId = genId();
@@ -2372,10 +2372,10 @@
     clearLastMutation();
     const repaired = reconcilePurchaseOrderCounts();
     state.ownedProfileId = ownedProfileIdOr(parsed.ownedProfileId);
-    loadAndApplyOwned(null);
+    const ownedResult = loadAndApplyOwned(null);
     setActiveBuildId(id);
     saveLocal();
-    return { droppedRanks: result.droppedRanks, repaired };
+    return { droppedRanks: result.droppedRanks + ownedResult.droppedOwned, repaired };
   }
   function renameBuild(id, name) {
     const index = loadIndex();
@@ -2413,9 +2413,10 @@
   }
   function linkOwnedToBuild(targetBuildId) {
     clearLastMutation();
-    linkOwnedProfile(ownedProfileIdOfBuild(targetBuildId));
+    const { droppedOwned } = linkOwnedProfile(ownedProfileIdOfBuild(targetBuildId));
     persistActiveBuildOwnedProfile();
     saveLocal();
+    return droppedOwned;
   }
   function mergeOwnedFromBuild(sourceBuildId) {
     clearLastMutation();
@@ -3673,10 +3674,10 @@
     const id = el.ownedTrackingBuildSelect.value;
     if (!id) return;
     const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
-    linkOwnedToBuild(id);
+    const dropped = linkOwnedToBuild(id);
     renderOwnedTrackingModal();
     renderAll();
-    showToast(`Now sharing owned progress with "${name}"`);
+    showToast(`Now sharing owned progress with "${name}"${loadIssuesSuffix({ droppedRanks: dropped }, 0)}`);
   }
   function handleOwnedTrackingMerge() {
     const id = el.ownedTrackingBuildSelect.value;

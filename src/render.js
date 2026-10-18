@@ -1826,10 +1826,10 @@ export function handleOwnedTrackingLink() {
   const id = el.ownedTrackingBuildSelect.value;
   if (!id) return;
   const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
-  linkOwnedToBuild(id);
+  const dropped = linkOwnedToBuild(id);
   renderOwnedTrackingModal();
   renderAll();
-  showToast(`Now sharing owned progress with "${name}"`);
+  showToast(`Now sharing owned progress with "${name}"${loadIssuesSuffix({ droppedRanks: dropped }, 0)}`);
 }
 
 export function handleOwnedTrackingMerge() {

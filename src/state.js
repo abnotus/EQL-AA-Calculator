@@ -714,7 +714,7 @@ export function adoptImportedOwnedAsNewProfile(ownedField) {
 // key, so marking something owned in either shows up in both immediately.
 export function linkOwnedProfile(targetProfileId) {
   state.ownedProfileId = targetProfileId;
-  loadAndApplyOwned(null);
+  return loadAndApplyOwned(null);
 }
 
 // Inverse of Link: starts a fresh, independent profile seeded with a copy

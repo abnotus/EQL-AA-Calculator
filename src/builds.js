@@ -433,10 +433,10 @@ export function loadBuild(id) {
   // linked (see linkOwnedToBuild below), not implicitly just by both
   // being builds.
   state.ownedProfileId = ownedProfileIdOr(parsed.ownedProfileId);
-  loadAndApplyOwned(null);
+  const ownedResult = loadAndApplyOwned(null);
   setActiveBuildId(id);
   saveLocal();
-  return { droppedRanks: result.droppedRanks, repaired };
+  return { droppedRanks: result.droppedRanks + ownedResult.droppedOwned, repaired };
 }
 
 // "collision" on a name clash with a *different* slot, "missing" if the id
@@ -505,11 +505,13 @@ export function buildsSharingCurrentOwnedProfile() {
 // "Just use one or the other" - repoints the live session (and its active
 // saved slot, if any) at targetBuildId's own profile. From then on the two
 // read/write the same data until Split pulls them apart again.
+// Returns how many of that profile's owned picks no longer exist.
 export function linkOwnedToBuild(targetBuildId) {
   clearLastMutation();
-  linkOwnedProfile(ownedProfileIdOfBuild(targetBuildId));
+  const { droppedOwned } = linkOwnedProfile(ownedProfileIdOfBuild(targetBuildId));
   persistActiveBuildOwnedProfile();
   saveLocal();
+  return droppedOwned;
 }
 
 // "Combine progress from save slots" - one-time, one-directional union
