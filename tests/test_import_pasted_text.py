@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 # Text import accepts what mail and chat do to a code or link: a code line
 # wrapped at 76 columns, a reply quoting it with "> ", a link ending a
-# sentence, a link inside <...> or a Markdown link, and a percent-encoded
-# link. All of those were rejected. The readable export also left out the
-# picks of classes not currently selected; it lists them now.
+# sentence, a link inside <...> (wrapped or not) or a Markdown link, a
+# percent-encoded link, and a code or link followed directly by a one-word
+# line. The readable export also lists the picks of classes not currently
+# selected.
 import os, sys, io, json, urllib.parse
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 from playwright.sync_api import sync_playwright
@@ -44,8 +45,14 @@ with sync_playwright() as p:
     line = "BUILD_CODE:" + code
     wrapped = "\n".join(line[i:i + 76] for i in range(0, len(line), 76))
     std_code = code + "=" * (-len(code) % 4)
+    bracketed = f"see <{url}>"
+    wrapped_link = "\n".join(bracketed[i:i + 76] for i in range(0, len(bracketed), 76))
+    assert len(wrapped_link.splitlines()[-1]) > 1, "FAIL: setup needs code on the wrapped link's last line"
     variants = {
         "wrapped at 76 columns": wrapped + "\nThanks",
+        "code line then a one-word line": line + "\nthanks",
+        "link then a name": url + "\nBob",
+        "wrapped link in angle brackets": wrapped_link,
         "quoted reply": "\n".join("> " + l for l in (wrapped + "\nThanks").splitlines()),
         "link ending a sentence": f"Try my build: {url}.",
         "link in angle brackets": f"see <{url}>",

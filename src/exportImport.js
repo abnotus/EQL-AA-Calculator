@@ -868,7 +868,7 @@ export function saveExportAsTxt() {
 // Also what mail and chat do to them: lines quoted with "> ", a code
 // wrapped onto further lines, a link inside <...> or (...) or ending a
 // sentence, and a percent-encoded link.
-const CODE_LINE = /^(?:[A-Za-z0-9+/=_-]|%[0-9A-Fa-f]{2})+$/;
+const CODE_LINE = /^((?:[A-Za-z0-9+/=_-]|%[0-9A-Fa-f]{2})+)[)>\]"'.,!?;:]*$/;
 const BUILD_CODE_START = /BUILD_CODE:\s*([A-Za-z0-9+/=_-]+)/;
 const BUILD_PARAM_START = /[?&]build=((?:[A-Za-z0-9+/=_-]|%[0-9A-Fa-f]{2})+)/;
 // Mail and chat wrap at 64-80 columns. A code continues on the next line
@@ -876,34 +876,45 @@ const BUILD_PARAM_START = /[?&]build=((?:[A-Za-z0-9+/=_-]|%[0-9A-Fa-f]{2})+)/;
 // short last line, or prose after the code, isn't joined on.
 const WRAP_WIDTH = 60;
 
-function codeFromLine(lines, i, pattern) {
+// A one-word line after a full-width code line ("thanks", a name) looks
+// just like a wrapped tail, and only decoding tells them apart. So when
+// lines were joined, the code without the last one is offered as well.
+function codeCandidates(lines, i, pattern) {
   const m = lines[i].match(pattern);
   if (!m) return null;
   let code = m[1];
+  let withoutLast = null;
   let line = lines[i];
-  const runsToEnd = m.index + m[0].length === line.length;
-  while (runsToEnd && line.length >= WRAP_WIDTH && i + 1 < lines.length && CODE_LINE.test(lines[i + 1])) {
+  let runsToEnd = m.index + m[0].length === line.length;
+  while (runsToEnd && line.length >= WRAP_WIDTH && i + 1 < lines.length) {
+    const next = lines[i + 1].match(CODE_LINE);
+    if (!next) break;
     i++;
     line = lines[i];
-    code += line;
+    withoutLast = code;
+    code += next[1];
+    runsToEnd = next[1].length === line.length;
   }
-  return code;
+  return withoutLast === null ? [code] : [code, withoutLast];
 }
 
+// Returns the codes to try, most likely first.
 function extractBuildCode(text) {
   const lines = text.split(/\r?\n/).map((line) => line.replace(/^\s*(?:>\s?)+/, "").trim());
   for (let i = 0; i < lines.length; i++) {
-    const code = codeFromLine(lines, i, BUILD_CODE_START);
-    if (code) return code;
+    const codes = codeCandidates(lines, i, BUILD_CODE_START);
+    if (codes) return codes;
   }
   for (let i = 0; i < lines.length; i++) {
-    const raw = codeFromLine(lines, i, BUILD_PARAM_START);
-    if (!raw) continue;
-    try {
-      return decodeURIComponent(raw);
-    } catch (e) {
-      return raw;
-    }
+    const raws = codeCandidates(lines, i, BUILD_PARAM_START);
+    if (!raws) continue;
+    return raws.map((raw) => {
+      try {
+        return decodeURIComponent(raw);
+      } catch (e) {
+        return raw;
+      }
+    });
   }
   // Maybe they pasted just the bare code, possibly line-wrapped by whatever they copied
   // it from — strip all embedded whitespace and any punctuation around it before checking
@@ -912,7 +923,7 @@ function extractBuildCode(text) {
   // packs a minimal build into roughly 16 characters (a v4 code for the same build was
   // over 40).
   const compact = lines.join("").replace(/^[^A-Za-z0-9+/_-]+|[^A-Za-z0-9+/=_-]+$/g, "");
-  if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
+  if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return [compact];
   return null;
 }
 
@@ -945,18 +956,24 @@ function safeDecodeDropped(json) {
 }
 
 export async function importBuildFromText(text) {
-  const code = extractBuildCode(text);
-  if (!code) { showToast("No build code found in that text"); return false; }
+  const codes = extractBuildCode(text);
+  if (!codes) { showToast("No build code found in that text"); return false; }
   // Decode before gating: the replace-confirmation chain (possibly several
   // dialogs deep) is pointless work - and a strange thing to interrogate the
   // user with - if what they pasted turns out to be unreadable garbage.
   let json;
-  try {
-    // fromBase64Url is a no-op on plain base64 (only touches -/_ chars and
-    // pads to length%4, which export-text codes already satisfy), so it's
-    // safe to always apply regardless of which format `code` came from.
-    json = await decodeBuildCode(fromBase64Url(code));
-  } catch (e) {
+  let decoded = false;
+  for (const code of codes) {
+    try {
+      // fromBase64Url is a no-op on plain base64 (only touches -/_ chars and
+      // pads to length%4, which export-text codes already satisfy), so it's
+      // safe to always apply regardless of which format `code` came from.
+      json = await decodeBuildCode(fromBase64Url(code));
+      decoded = true;
+      break;
+    } catch (e) {}
+  }
+  if (!decoded) {
     showToast("Failed to read build text");
     return false;
   }

@@ -4341,40 +4341,47 @@
     URL.revokeObjectURL(a.href);
     showToast("Saved as .txt");
   }
-  var CODE_LINE = /^(?:[A-Za-z0-9+/=_-]|%[0-9A-Fa-f]{2})+$/;
+  var CODE_LINE = /^((?:[A-Za-z0-9+/=_-]|%[0-9A-Fa-f]{2})+)[)>\]"'.,!?;:]*$/;
   var BUILD_CODE_START = /BUILD_CODE:\s*([A-Za-z0-9+/=_-]+)/;
   var BUILD_PARAM_START = /[?&]build=((?:[A-Za-z0-9+/=_-]|%[0-9A-Fa-f]{2})+)/;
   var WRAP_WIDTH = 60;
-  function codeFromLine(lines, i, pattern) {
+  function codeCandidates(lines, i, pattern) {
     const m = lines[i].match(pattern);
     if (!m) return null;
     let code = m[1];
+    let withoutLast = null;
     let line = lines[i];
-    const runsToEnd = m.index + m[0].length === line.length;
-    while (runsToEnd && line.length >= WRAP_WIDTH && i + 1 < lines.length && CODE_LINE.test(lines[i + 1])) {
+    let runsToEnd = m.index + m[0].length === line.length;
+    while (runsToEnd && line.length >= WRAP_WIDTH && i + 1 < lines.length) {
+      const next = lines[i + 1].match(CODE_LINE);
+      if (!next) break;
       i++;
       line = lines[i];
-      code += line;
+      withoutLast = code;
+      code += next[1];
+      runsToEnd = next[1].length === line.length;
     }
-    return code;
+    return withoutLast === null ? [code] : [code, withoutLast];
   }
   function extractBuildCode(text) {
     const lines = text.split(/\r?\n/).map((line) => line.replace(/^\s*(?:>\s?)+/, "").trim());
     for (let i = 0; i < lines.length; i++) {
-      const code = codeFromLine(lines, i, BUILD_CODE_START);
-      if (code) return code;
+      const codes = codeCandidates(lines, i, BUILD_CODE_START);
+      if (codes) return codes;
     }
     for (let i = 0; i < lines.length; i++) {
-      const raw = codeFromLine(lines, i, BUILD_PARAM_START);
-      if (!raw) continue;
-      try {
-        return decodeURIComponent(raw);
-      } catch (e) {
-        return raw;
-      }
+      const raws = codeCandidates(lines, i, BUILD_PARAM_START);
+      if (!raws) continue;
+      return raws.map((raw) => {
+        try {
+          return decodeURIComponent(raw);
+        } catch (e) {
+          return raw;
+        }
+      });
     }
     const compact = lines.join("").replace(/^[^A-Za-z0-9+/_-]+|[^A-Za-z0-9+/=_-]+$/g, "");
-    if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
+    if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return [compact];
     return null;
   }
   function maybeImportOwned(json) {
@@ -4391,15 +4398,22 @@
     return typeof json.decodeDropped === "number" && Number.isFinite(json.decodeDropped) ? json.decodeDropped : 0;
   }
   async function importBuildFromText(text) {
-    const code = extractBuildCode(text);
-    if (!code) {
+    const codes = extractBuildCode(text);
+    if (!codes) {
       showToast("No build code found in that text");
       return false;
     }
     let json;
-    try {
-      json = await decodeBuildCode(fromBase64Url(code));
-    } catch (e) {
+    let decoded = false;
+    for (const code of codes) {
+      try {
+        json = await decodeBuildCode(fromBase64Url(code));
+        decoded = true;
+        break;
+      } catch (e) {
+      }
+    }
+    if (!decoded) {
       showToast("Failed to read build text");
       return false;
     }
