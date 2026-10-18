@@ -28,7 +28,7 @@ jobs:
       - name: Install
         run: |
           npm ci
-          pip install playwright
+          pip install playwright==1.62.0
 
       - name: Build
         run: python build_minify.py
@@ -37,6 +37,7 @@ jobs:
         run: |
           git status --porcelain
           git diff --exit-code
+          test -z "$(git status --porcelain)"
 
       - name: Tests
         # The browser tests launch the runner's preinstalled Google Chrome
