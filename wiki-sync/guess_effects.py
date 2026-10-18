@@ -267,9 +267,10 @@ def main():
     table = {}
     targets = 0
     tier_counts = Counter()
+    # Auto and autoRanks AAs stay out of the reference pool above, but they
+    # can still be guess targets themselves (Unbound Companion's "2/?/?%",
+    # say), at least through a manual entry.
     for i, e in enumerate(entries):
-        if e["auto"] or e["autoRanks"]:
-            continue
         progressions = extract_progressions(e["description"])
         if not any(p["unknown"] for p in progressions):
             continue

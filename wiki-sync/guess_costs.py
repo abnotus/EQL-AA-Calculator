@@ -223,9 +223,9 @@ def main():
     table = {}
     tier_counts = Counter()
     targets = 0
+    # Auto and autoRanks AAs stay out of the reference pool above, but they
+    # can still be guess targets themselves.
     for i, e in enumerate(entries):
-        if e["auto"] or e["autoRanks"]:
-            continue
         if not any(c == "?" for c in e["costs"][:e["ranks"]]):
             continue
         targets += 1
