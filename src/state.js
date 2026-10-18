@@ -9,6 +9,10 @@ import { keyForIdx, idxForKey, currentIdxForLegacyIdx, aaAt } from "./keys.js";
 // enough that a bogus value doesn't produce nonsense in the UI.
 export const MAX_WAYPOINT_PTS = 100000;
 
+// The game's level cap. Share codes store the level in 6 bits (up to 63), so
+// Kunark's 60 fits without a format change.
+export const MAX_CHAR_LEVEL = 50;
+
 // Bumped whenever the persisted shape changes. v4 introduced name-based keys
 // for ranks/purchaseOrder (see keys.js) — anything below that is index-based
 // against the frozen LEGACY_AA_ORDER snapshot and gets migrated on load.
@@ -98,7 +102,7 @@ export const AA_CATEGORY_KEYS = ["general", "archetype", ...CLASS_SLOT_KEYS, "sp
 
 export let state = {
   selectedClasses: [CLASS_LIST[0], CLASS_LIST[1], CLASS_LIST[2]],
-  charLevel: 50,
+  charLevel: MAX_CHAR_LEVEL,
   ranks: { general: {}, archetype: {}, special: {}, classes: {} },
   purchaseOrder: [], // [{ scope: 'general'|'archetype'|'special'|'class', className?: string, idx: number }, ...] in click order
   // Real-world "I've actually trained this" watermark, same shape as ranks
@@ -584,7 +588,7 @@ export function applyLoaded(loaded) {
   }
   const parsedLevel = safeParseInt(loaded.charLevel);
   if (Number.isFinite(parsedLevel)) {
-    state.charLevel = Math.max(1, Math.min(50, parsedLevel));
+    state.charLevel = Math.max(1, Math.min(MAX_CHAR_LEVEL, parsedLevel));
   }
   // v4+ saves store name keys, resolved straight against today's AA_DATA.
   // Anything older stored raw indexes against the ordering AA_DATA happened

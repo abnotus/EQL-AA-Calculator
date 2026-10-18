@@ -383,6 +383,7 @@
 
   // src/state.js
   var MAX_WAYPOINT_PTS = 1e5;
+  var MAX_CHAR_LEVEL = 50;
   var SAVE_FORMAT_VERSION = 4;
   var STORAGE_KEY = "eql_aa_builder_v1";
   var OWNED_STORAGE_KEY = "eql_aa_owned_v1";
@@ -415,7 +416,7 @@
   var AA_CATEGORY_KEYS = ["general", "archetype", ...CLASS_SLOT_KEYS, "special"];
   var state = {
     selectedClasses: [CLASS_LIST[0], CLASS_LIST[1], CLASS_LIST[2]],
-    charLevel: 50,
+    charLevel: MAX_CHAR_LEVEL,
     ranks: { general: {}, archetype: {}, special: {}, classes: {} },
     purchaseOrder: [],
     // [{ scope: 'general'|'archetype'|'special'|'class', className?: string, idx: number }, ...] in click order
@@ -719,7 +720,7 @@
     }
     const parsedLevel = safeParseInt(loaded.charLevel);
     if (Number.isFinite(parsedLevel)) {
-      state.charLevel = Math.max(1, Math.min(50, parsedLevel));
+      state.charLevel = Math.max(1, Math.min(MAX_CHAR_LEVEL, parsedLevel));
     }
     const isLegacy = !(typeof loaded.v === "number" && loaded.v >= 4);
     if (!isLegacy) {
@@ -3403,6 +3404,7 @@
     });
   }
   function populateStaticControls() {
+    el.levelInput.max = String(MAX_CHAR_LEVEL);
     el.browseFilter.innerHTML = `<option value="all">All Categories</option><option value="general">General</option><option value="archetype">Archetype</option><option value="special">Special</option><optgroup label="Class">` + CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("") + `</optgroup>`;
     if (USER_CHANGELOG[0]) el.versionTag.textContent = `v${USER_CHANGELOG[0].version}`;
     updateVersionDot();
@@ -4282,7 +4284,7 @@
     });
     el.levelInput.addEventListener("change", () => {
       const v = parseInt(el.levelInput.value, 10);
-      state.charLevel = isNaN(v) ? state.charLevel : Math.max(1, Math.min(50, v));
+      state.charLevel = isNaN(v) ? state.charLevel : Math.max(1, Math.min(MAX_CHAR_LEVEL, v));
       saveLocal();
       renderAll();
     });

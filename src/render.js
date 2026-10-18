@@ -1,6 +1,6 @@
 // All DOM rendering. Reads from `state` and the logic layer, writes to `el.*`.
 
-import { state, AA_CATEGORY_KEYS, CLASS_SLOT_KEYS, LAST_SEEN_VERSION_KEY, WAYPOINT_COLORS, MAX_WAYPOINT_PTS } from "./state.js";
+import { state, AA_CATEGORY_KEYS, CLASS_SLOT_KEYS, LAST_SEEN_VERSION_KEY, WAYPOINT_COLORS, MAX_WAYPOINT_PTS, MAX_CHAR_LEVEL } from "./state.js";
 import { USER_CHANGELOG } from "./changelogData.js";
 import { el } from "./dom.js";
 import {
@@ -1611,6 +1611,7 @@ export function wireProgressionDropZone() {
 }
 
 export function populateStaticControls() {
+  el.levelInput.max = String(MAX_CHAR_LEVEL);
   el.browseFilter.innerHTML =
     `<option value="all">All Categories</option>` +
     `<option value="general">General</option>` +
