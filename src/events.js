@@ -36,23 +36,30 @@ export function wireEvents() {
   });
 
   el.classSelects.forEach((sel, i) => {
+    // Arrow keys on a closed <select> fire change for every step in
+    // Chromium, so a swap is worked out against the selection from before
+    // the keyboard stepping began. Otherwise stepping past a class held in
+    // another slot swaps it out, and the next step swaps again.
+    let stepBase = null;
+    sel.addEventListener("keydown", () => { if (!stepBase) stepBase = state.selectedClasses.slice(); });
+    sel.addEventListener("pointerdown", () => { stepBase = null; });
+    sel.addEventListener("blur", () => { stepBase = null; });
     sel.addEventListener("change", () => {
-      const newValue = sel.value;
-      const oldValue = state.selectedClasses[i];
-      if (newValue === oldValue) return;
-      const dupSlot = state.selectedClasses.findIndex((c, j) => j !== i && c === newValue);
+      const base = stepBase || state.selectedClasses;
+      const next = base.slice();
+      next[i] = sel.value;
+      const dupSlot = base.findIndex((c, j) => j !== i && c === sel.value);
+      if (dupSlot >= 0) next[dupSlot] = base[i];
+      if (next.every((c, j) => c === state.selectedClasses[j])) return;
 
-      // A genuine replacement (oldValue leaving the 3-class combo) no
-      // longer wipes its picks - they just stop being "active"
+      // A genuine replacement (a class leaving the 3-class combo) doesn't
+      // wipe its picks - they just stop being "active"
       // (resolveEntryCategory), staying visible in the Other Classes tab
       // and counted in spentPoints() until swapped back in.
-
-      state.selectedClasses[i] = newValue;
-      if (dupSlot >= 0) {
-        state.selectedClasses[dupSlot] = oldValue;
-        if (state.activeTab === CLASS_SLOT_KEYS[dupSlot]) state.selectedNode = null;
-      }
-      if (state.activeTab === CLASS_SLOT_KEYS[i]) state.selectedNode = null;
+      CLASS_SLOT_KEYS.forEach((key, j) => {
+        if (state.activeTab === key && next[j] !== state.selectedClasses[j]) state.selectedNode = null;
+      });
+      state.selectedClasses = next;
       saveLocal();
       renderAll();
     });
