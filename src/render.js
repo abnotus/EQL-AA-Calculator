@@ -1114,23 +1114,21 @@ export function renderProgression(totals) {
   // progression list, so this is set before (and independent of) the
   // empty-purchaseOrder early return below.
   el.clearOwnedBtn.disabled = !hasAnyOwned();
-  // Lifetime-scoped (ownedPoints(), not a sum over just the rows rendered
-  // below) to match spentPoints()'s own lifetime scope - an AA owned on a
-  // swapped-away class is still real progress, and togoPts needs both
-  // sides on the same footing or it double-counts that AA as "still to
-  // go". Set ahead of both early returns below, same reasoning as above.
-  // Blends in estimates the same way the topbar headline does (see
-  // estimatedExtraOwnedPoints) - without this, an owned rank with an
-  // unconfirmed cost silently vanished from both "owned" and "to go",
-  // making the two figures fall short of the topbar's own blended total.
-  const { spent, spentExtra, ownedReal, ownedExtra } = totals || computePointTotals();
-  // Owned isn't capped to the current plan (a refund can drop a rank below
-  // its own owned watermark on purpose - owned is real-world truth,
-  // untouched by changeRank), so owned can exceed spent for an AA that's
-  // been refunded below what's already been trained. Clamped to 0 rather
-  // than showing a negative "to go" in that case.
-  const togoReal = Math.max(0, spent - ownedReal);
-  const togoExtra = Math.max(0, spentExtra - ownedExtra);
+  // Owned is lifetime-scoped (ownedPoints()), matching the topbar, and
+  // blends in estimates the same way (see estimatedExtraOwnedPoints). Set
+  // ahead of the empty-progression early return below.
+  const { ownedReal, ownedExtra } = totals || computePointTotals();
+  // "To go" is the cost of the planned steps not yet owned. Planned minus
+  // owned would let owned ranks outside the plan hide untrained ones.
+  const steps = computeProgressionSteps();
+  let togoReal = 0;
+  let togoExtra = 0;
+  steps.forEach((s, i) => {
+    if (s.owned) return;
+    const prev = i > 0 ? steps[i - 1] : { cumulative: 0, blendedCumulative: 0 };
+    togoReal += s.stepCost;
+    togoExtra += (s.blendedCumulative - prev.blendedCumulative) - (s.cumulative - prev.cumulative);
+  });
   function blendedFigure(real, extra) {
     return extra > 0
       ? `<span class="is-estimate" title="${real} confirmed + ${extra} estimated.">~${real + extra}</span>`
@@ -1151,7 +1149,6 @@ export function renderProgression(totals) {
   // for a swapped-away class renders muted and read-only (see the
   // .inactive row class below); the Other Classes tab groups those same
   // picks by class, it doesn't hold them exclusively.
-  const steps = computeProgressionSteps();
   // 1-indexed position. Nothing is filtered out of steps, so this always
   // equals s.index + 1 - kept as its own field so the row template,
   // moveMenuHtml, and waypointSections don't each repeat that arithmetic.

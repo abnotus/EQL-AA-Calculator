@@ -3045,9 +3045,16 @@
   function renderProgression(totals) {
     el.undoLastBtn.disabled = !canUndo();
     el.clearOwnedBtn.disabled = !hasAnyOwned();
-    const { spent, spentExtra, ownedReal, ownedExtra } = totals || computePointTotals();
-    const togoReal = Math.max(0, spent - ownedReal);
-    const togoExtra = Math.max(0, spentExtra - ownedExtra);
+    const { ownedReal, ownedExtra } = totals || computePointTotals();
+    const steps = computeProgressionSteps();
+    let togoReal = 0;
+    let togoExtra = 0;
+    steps.forEach((s, i) => {
+      if (s.owned) return;
+      const prev = i > 0 ? steps[i - 1] : { cumulative: 0, blendedCumulative: 0 };
+      togoReal += s.stepCost;
+      togoExtra += s.blendedCumulative - prev.blendedCumulative - (s.cumulative - prev.cumulative);
+    });
     function blendedFigure(real, extra) {
       return extra > 0 ? `<span class="is-estimate" title="${real} confirmed + ${extra} estimated.">~${real + extra}</span>` : `${real}`;
     }
@@ -3057,7 +3064,6 @@
       el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
       return;
     }
-    const steps = computeProgressionSteps();
     steps.forEach((s, i) => {
       s.visiblePos = i + 1;
     });
