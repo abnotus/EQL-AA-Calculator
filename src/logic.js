@@ -112,10 +112,12 @@ function markProgressions(escaped, rank, guessLookup, startIdx) {
 // For descriptions phrased as a flat "N per rank" (e.g. "4 points per rank"),
 // shows the total at the current rank with the per-rank amount noted alongside,
 // e.g. "24 points (4 per rank)" at rank 6. Left untouched at rank <= 1, where
-// total and per-rank are the same number.
+// total and per-rank are the same number. A number ending a slash
+// progression ("1/3/5/5 seconds per rank") already is the per-rank value,
+// so it isn't matched.
 export function applyPerRankTotal(text, rank) {
   if (!rank || rank < 2) return text;
-  return text.replace(/(\d+(?:\.\d+)?)(%)?\s*(points?|seconds?)?\s*(chance)?\s*\(?per rank\)?/gi,
+  return text.replace(/(?<![\d./])(\d+(?:\.\d+)?)(%)?\s*(points?|seconds?)?\s*(chance)?\s*\(?per rank\)?/gi,
     (match, numStr, pct, unit, chanceWord) => {
       const num = parseFloat(numStr);
       const total = num * rank;

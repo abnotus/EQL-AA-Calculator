@@ -82,6 +82,23 @@ with sync_playwright() as p:
     assert "rank-line" not in ul_html, "FAIL: prose mentioning a rank must not be split into lines"
     print("PASS: per-rank clauses split into marked lines; prose rank mentions stay inline")
 
+    # "1/3/5/5 seconds per rank" is a progression, not a flat amount per
+    # rank, so it must not be totalled into "1/3/5/20 seconds (5 per rank)".
+    page.fill("#globalSearch", "")
+    page.wait_for_timeout(200)
+    page.select_option("#classSelect2", "Rogue")
+    page.click('button[data-tab="archetype"]')
+    page.locator("#treeWrap .node", has=page.locator(".name", has_text="Thief's Intuition")).click()
+    for _ in range(4):
+        page.click("#incBtn")
+    page.click('button[data-tab="summary"]')
+    ti = page.locator("#summaryContent .browse-card", has=page.locator(".name", has_text="Thief's Intuition"))
+    ti_text = ti.locator(".desc").inner_text()
+    print("Thief's Intuition at rank 4:", ti_text[:90])
+    assert "1/3/5/5 seconds per rank" in ti_text and "20" not in ti_text, \
+        f"FAIL: a slash progression ending in 'per rank' was totalled as a flat amount: {ti_text!r}"
+    print("PASS: a slash progression isn't mistaken for a flat per-rank amount")
+
     print("ERRORS:", errors)
     assert not errors, f"FAIL: page errors {errors}"
     browser.close()

@@ -1296,7 +1296,7 @@
   function applyPerRankTotal(text, rank) {
     if (!rank || rank < 2) return text;
     return text.replace(
-      /(\d+(?:\.\d+)?)(%)?\s*(points?|seconds?)?\s*(chance)?\s*\(?per rank\)?/gi,
+      /(?<![\d./])(\d+(?:\.\d+)?)(%)?\s*(points?|seconds?)?\s*(chance)?\s*\(?per rank\)?/gi,
       (match, numStr, pct, unit, chanceWord) => {
         const num = parseFloat(numStr);
         const total = num * rank;
