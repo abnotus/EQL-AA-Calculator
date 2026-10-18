@@ -1,342 +1,755 @@
 {
   "Acrobatics": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-10-02"
   },
   "Act of Valor": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-23"
   },
   "Adamant Will": {
     "maxRankVerified": 4,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4
+    ],
     "verifiedAt": "2026-09-17"
   },
   "Baking Mastery": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-21"
   },
   "Blood Rune": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-10-02"
   },
   "Chaotic Stab": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Circular Breathing": {
     "maxRankVerified": 4,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Combat Agility": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Combat Stability": {
-    "maxRankVerified": 3,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 0,
+    "ranksVerified": [
+      2,
+      3
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Companion's Discipline": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Crafting Mastery": {
     "maxRankVerified": 6,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
     "verifiedAt": "2026-09-27"
   },
   "Critical Affliction": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Destructive Cascade": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Destructive Fury": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Divine Stun": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Double Riposte": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Dragon Force": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Escape": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-10-02"
   },
   "Fear Resistance": {
     "maxRankVerified": 4,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4
+    ],
     "verifiedAt": "2026-09-21"
   },
   "Finishing Blow": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "First Aid": {
     "maxRankVerified": 6,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
     "verifiedAt": "2026-09-23"
   },
   "Flesh to Bone": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-21"
   },
   "Foraging": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Full Potential": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-26"
   },
   "Fury of Magic": {
     "maxRankVerified": 4,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4
+    ],
     "verifiedAt": "2026-09-16"
+  },
+  "Gather Party": {
+    "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Harm Touch": {
     "maxRankVerified": 10,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
     "verifiedAt": "2026-10-02"
   },
   "Healing Adept": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Healing Boon": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Healing Gift": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Holy Steed": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Hunter's Attack Power": {
     "maxRankVerified": 6,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Improved Familiar": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-17"
   },
   "Improved Mend": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Innate Called Shot": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Innate Divine Healing": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Innate Eminence": {
     "maxRankVerified": 5,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Innate Fighters Tenacity": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Innate Lung Capacity": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-27"
   },
   "Innate Metabolism": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-26"
   },
   "Innate Power Strike": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Innate Regeneration": {
     "maxRankVerified": 7,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Innate Sneakiness": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Innate Spell Resistance": {
     "maxRankVerified": 5,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Instrument Mastery": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Intimidation": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Jam Fest": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Lay on Hands": {
-    "maxRankVerified": 10,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 2,
+    "ranksVerified": [
+      1,
+      2,
+      10
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Leech Touch": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-17"
   },
   "Mana Burn": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-17"
   },
   "Mass Group Buff": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-21"
   },
   "Master of All": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Mental Clarity": {
-    "maxRankVerified": 4,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 0,
+    "ranksVerified": [
+      4
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Natural Durability": {
     "maxRankVerified": 4,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4
+    ],
     "verifiedAt": "2026-09-16"
+  },
+  "Origin": {
+    "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Packrat": {
     "maxRankVerified": 10,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Permanent Illusion": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Persistent Casting": {
     "maxRankVerified": 6,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Pet Affinity": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Physical Enhancement": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Point Blank Fire": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-26"
   },
   "Purify Body": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-23"
   },
   "Quick Damage": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Rapid Feign": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Singing Mastery": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Slay Undead": {
-    "maxRankVerified": 3,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 0,
+    "ranksVerified": [
+      2,
+      3
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Soul Abrasion": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-26"
   },
   "Spell Casting Deftness": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Spell Casting Mastery": {
-    "maxRankVerified": 3,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 0,
+    "ranksVerified": [
+      3
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Spell Casting Reinforcement": {
     "maxRankVerified": 4,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Spell Casting Subtlety": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-26"
   },
   "Steadfast Will": {
-    "maxRankVerified": 8,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 0,
+    "ranksVerified": [
+      8
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Stoicism": {
     "maxRankVerified": 5,
+    "ranksVerified": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
     "verifiedAt": "2026-09-16"
+  },
+  "Tireless Sprint": {
+    "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Trickster's Misdirection": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-23"
   },
   "Unbound Affliction": {
-    "maxRankVerified": 1,
-    "verifiedAt": "2026-10-02"
+    "maxRankVerified": 2,
+    "ranksVerified": [
+      1,
+      2
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Unbound Alacrity": {
-    "maxRankVerified": 3,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 0,
+    "ranksVerified": [
+      3
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Unbound Boon": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-21"
   },
   "Unbound Cascade": {
-    "maxRankVerified": 3,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 0,
+    "ranksVerified": [
+      3
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Unbound Clarity": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Unbound Destruction": {
-    "maxRankVerified": 3,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 0,
+    "ranksVerified": [
+      2,
+      3
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Unbound Drain": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-10-02"
   },
   "Unbound Life": {
-    "maxRankVerified": 3,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 0,
+    "ranksVerified": [
+      3
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Unbound Nature": {
-    "maxRankVerified": 3,
-    "verifiedAt": "2026-09-16"
+    "maxRankVerified": 0,
+    "ranksVerified": [
+      2,
+      3
+    ],
+    "verifiedAt": "2026-10-18"
   },
   "Unbound Versatility": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-09-16"
   },
   "Unholy Steed": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-09-27"
   },
   "Weapon Mastery of the Scout": {
     "maxRankVerified": 3,
+    "ranksVerified": [
+      1,
+      2,
+      3
+    ],
     "verifiedAt": "2026-10-02"
   },
   "Widened Perception": {
     "maxRankVerified": 1,
+    "ranksVerified": [
+      1
+    ],
     "verifiedAt": "2026-10-02"
   }
 }
