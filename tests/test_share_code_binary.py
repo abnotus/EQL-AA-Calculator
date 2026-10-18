@@ -177,7 +177,8 @@ with sync_playwright() as p:
         src = new_page(payload, owned)
         code = export_code(src)
         src.close()
-        assert code.startswith("5") or True  # base64 of 0xE5 - checked properly below
+        # 0xE5 (V5_MAGIC) always base64-encodes to a leading "5".
+        assert code.startswith("5"), f"FAIL case {i}: export is not a v5+ binary code: {code}"
         dst = new_page(url=f"{BASE}?build={as_url_code(code)}")
         got = read_state(dst)
         toast_el = dst.locator("#toast")
