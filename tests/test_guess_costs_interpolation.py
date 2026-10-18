@@ -30,6 +30,14 @@ print("trailing/unbounded gap (Adamant Will's actual shape):", result2)
 assert result2 == {}, "FAIL: a trailing gap past every known rank must never get an interpolated guess"
 print("PASS: interpolate_bounded_gaps only fills a gap boxed in on both sides, never a trailing one")
 
+# --- Decimal anchors floor to their own precision, not to an integer. ---
+result3 = common.interpolate_bounded_gaps({0: 0.14, 2: 2.5}, [1])
+print("decimal anchors 0.14 / ? / 2.5:", result3)
+assert result3[1]["value"] == 1.32, f"FAIL: expected 1.32 (floored to 2 places), got {result3[1]['value']!r}"
+result4 = common.interpolate_bounded_gaps({0: 1, 2: 4}, [1])
+assert result4[1]["value"] == 2 and isinstance(result4[1]["value"], int), result4
+print("PASS: decimal anchors interpolate at their own precision; integer anchors still give an integer")
+
 # --- guess_for_entry: full pipeline, synthetic reference pool. ---
 # Unanimous 2-sibling agreement -> high.
 pool = [

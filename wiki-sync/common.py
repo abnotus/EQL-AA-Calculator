@@ -215,13 +215,19 @@ def js_string(s):
     return json.dumps(s)
 
 
+def decimal_places(value):
+    text = repr(value)
+    return len(text.split(".")[1]) if "." in text and not text.endswith(".0") else 0
+
+
 def interpolate_bounded_gaps(known, unknown):
     """A DIFFERENT, weaker kind of evidence than sibling matching: for an
     unknown rank strictly between two ranks THIS SAME AA already has real
     numbers for, linearly interpolate against those two anchors and floor
-    to an integer - e.g. a cost curve (1, ?, 4, 6) with no same-rank-count
-    sibling to corroborate against still has rank 2 boxed in on both sides
-    by real numbers (1 and 4), floor(1 + (4-1)*0.5) = 2.
+    to the anchors' precision - e.g. a cost curve (1, ?, 4, 6) with no
+    same-rank-count sibling to corroborate against still has rank 2 boxed
+    in on both sides by real numbers (1 and 4), floor(1 + (4-1)*0.5) = 2,
+    and an effect (0.14, ?, 2.5) gets 1.32 rather than 1.14.
 
     Deliberately only for a gap with a known value on BOTH sides - bounded
     interpolation and open-ended extrapolation are not the same risk. A
@@ -242,8 +248,13 @@ def interpolate_bounded_gaps(known, unknown):
             continue
         v_below, v_above = known[below], known[above]
         frac = (i - below) / (above - below)
+        places = max(decimal_places(v_below), decimal_places(v_above))
+        scale = 10 ** places
+        # The small epsilon keeps float error (2.9999999) from flooring a
+        # whole step down.
+        steps = math.floor((v_below + (v_above - v_below) * frac) * scale + 1e-9)
         result[i] = {
-            "value": v_below + math.floor((v_above - v_below) * frac),
+            "value": steps if places == 0 else round(steps / scale, places),
             "confidence": "low",
             "basedOn": [],
             "interpolated": True,
