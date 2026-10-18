@@ -6,7 +6,8 @@ committed for real so nobody has to retype or remember it.
 
     python tests/run_all.py
 
-Starts its own `python -m http.server` for the browser tests (killed again
+Starts its own `python -m http.server` (with a larger listen backlog, see
+SERVER_CODE) for the browser tests (killed again
 once the run finishes, whether or not everything passed) rather than
 assuming one is already running - AACALC_TEST_PORT (default 8743) picks
 the port, matching every individual test file's own default. `-m
@@ -52,6 +53,13 @@ BASE_URL = f"http://localhost:{PORT}/index.html"
 PER_TEST_TIMEOUT_SECONDS = 90
 SERVER_READY_TIMEOUT_SECONDS = 10
 MAX_WORKERS = int(os.environ.get("AACALC_TEST_WORKERS", str(min(4, os.cpu_count() or 4))))
+# `python -m http.server` with a listen backlog of 128 instead of
+# socketserver's 5. When the machine is busy the server stops accepting for
+# a moment, and Windows refuses connections past the backlog rather than
+# queueing them. Chrome doesn't retry a refused script, so the page never
+# boots and the test times out waiting for the tree.
+SERVER_CODE = ("import runpy, socketserver; socketserver.TCPServer.request_queue_size = 128; "
+               "runpy.run_module('http.server', run_name='__main__', alter_sys=True)")
 
 
 def port_is_taken():
@@ -88,7 +96,7 @@ def start_server():
     log_file = tempfile.NamedTemporaryFile(prefix="aacalc_test_server_", suffix=".log", delete=False)
     log_path = log_file.name
     proc = subprocess.Popen(
-        [sys.executable, "-m", "http.server", PORT],
+        [sys.executable, "-c", SERVER_CODE, PORT],
         cwd=str(REPO_ROOT),
         stdout=subprocess.DEVNULL,
         stderr=log_file,
