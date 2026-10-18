@@ -73,6 +73,8 @@ export function wireEvents() {
   el.levelInput.addEventListener("change", () => {
     const v = parseInt(el.levelInput.value, 10);
     state.charLevel = isNaN(v) ? state.charLevel : Math.max(1, Math.min(MAX_CHAR_LEVEL, v));
+    // The render skips a focused input, so show the clamped level here.
+    el.levelInput.value = String(state.charLevel);
     saveLocal();
     renderAll();
   });

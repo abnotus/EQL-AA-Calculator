@@ -865,7 +865,7 @@ function renderWaypointChips() {
     const dot = w.color ? `<span class="color-dot color-${w.color}"></span>` : "";
     const labelText = w.label ? `${w.pts} pts &middot; ${escapeHtml(w.label)}` : `${w.pts} pts`;
     return `<span class="waypoint-chip" data-pts="${w.pts}">
-      <span class="chip-label" data-pts="${w.pts}">${dot}${labelText}</span>
+      <button type="button" class="chip-label" data-pts="${w.pts}" title="Edit this waypoint">${dot}${labelText}</button>
       <button class="chip-remove" data-pts="${w.pts}" title="Remove this waypoint" aria-label="Remove waypoint">&times;</button>
     </span>`;
   }).join("");
@@ -1168,7 +1168,7 @@ export function renderProgression(totals) {
     if (entry.type === "divider") {
       const dot = entry.color ? `<span class="color-dot color-${entry.color}"></span>` : "";
       const labelText = entry.label ? `${escapeHtml(entry.label)} &middot; ` : "";
-      return `<div class="progression-divider${entry.unreached ? " unreached" : ""}" data-pts="${entry.pts}" title="Click to edit this waypoint">
+      return `<div class="progression-divider${entry.unreached ? " unreached" : ""}" data-pts="${entry.pts}" title="Click to edit this waypoint" role="button" tabindex="0" aria-label="Edit waypoint at ${entry.pts} pts">
         <span class="divider-line"></span>
         ${dot}<span class="divider-label">${labelText}${entry.pts} pts${entry.unreached ? " &middot; not reached yet" : ""}</span>
         <span class="divider-line"></span>
@@ -1205,6 +1205,7 @@ export function renderProgression(totals) {
     // itself the way an unmet prereq or a class cap overshoot is, so it
     // doesn't get prereq-warn-row's per-child dim, just its own ⚠.
     const inactiveWarnTitle = s.active ? "" : `Not one of your current 3 classes — swap ${s.classesLabel || ""} back in to keep training this.`;
+    const stepName = escapeHtml(`${s.name} rank ${s.stepRank}`);
     const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${s.active ? "" : " inactive"}${segClass}" draggable="true" data-index="${s.index}" data-key="${key}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.visiblePos}</span>
@@ -1219,14 +1220,14 @@ export function renderProgression(totals) {
         <span class="cost-total${totalIsEstimate ? " is-estimate" : ""}"${totalIsEstimate ? ` title="${escapeHtml(totalTitle)}"` : ""}>${totalIsEstimate ? `~${s.blendedCumulative}` : s.cumulative} total</span>
       </span>
       <span class="step-controls" draggable="false">
-        <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
-        <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === steps[0].index ? "disabled" : ""}>&uarr;</button>
-        <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps[steps.length - 1].index ? "disabled" : ""}>&darr;</button>
-        <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.classesLabel || "")} back into one of your 3 slots to preview this.` : canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
-        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.categoryIdx}" ${s.active && s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.classesLabel || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
-        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.categoryIdx}" ${s.active && s.isLast ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.classesLabel || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
+        <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" aria-pressed="${s.owned}" aria-label="Owned: ${stepName}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
+        <button class="step-btn" data-move="up" data-index="${s.index}" aria-label="Move ${stepName} up" ${s.index === steps[0].index ? "disabled" : ""}>&uarr;</button>
+        <button class="step-btn" data-move="down" data-index="${s.index}" aria-label="Move ${stepName} down" ${s.index === steps[steps.length - 1].index ? "disabled" : ""}>&darr;</button>
+        <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" aria-expanded="${expanded}" aria-label="Preview the next rank of ${escapeHtml(s.name)}" ${canExpand ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.classesLabel || "")} back into one of your 3 slots to preview this.` : canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
+        <button class="step-btn step-add" data-category="${s.category || ""}" data-idx="${s.categoryIdx}" aria-label="Add a rank of ${escapeHtml(s.name)}" ${s.active && s.isLast && s.aa && s.stepRank < s.aa.ranks ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.classesLabel || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Only this AA's current top rank can be extended here" : s.aa && s.stepRank >= s.aa.ranks ? "Already at max rank" : "Add another rank"}">+</button>
+        <button class="step-btn step-remove" data-category="${s.category || ""}" data-idx="${s.categoryIdx}" aria-label="Remove ${stepName}" ${s.active && s.isLast ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.classesLabel || "")} back into one of your 3 slots to keep training this.` : !s.isLast ? "Remove this AA's highest rank first" : s.stepRank === 1 ? "Remove this AA from your build" : "Remove this rank"}">${s.stepRank === 1 ? "&times;" : "&minus;"}</button>
         <span class="move-menu-wrap">
-          <button class="step-btn step-move${openMoveMenuKey === key ? " active" : ""}" data-key="${key}" title="Move to...">&#8943;</button>
+          <button class="step-btn step-move${openMoveMenuKey === key ? " active" : ""}" data-key="${key}" title="Move to..." aria-label="Move ${stepName} to..." aria-expanded="${openMoveMenuKey === key}">&#8943;</button>
           ${openMoveMenuKey === key ? moveMenuHtml(s, timeline, steps.length) : ""}
         </span>
       </span>
@@ -1373,6 +1374,13 @@ export function wireProgressionRowEvents() {
     }
     const divider = e.target.closest(".progression-divider");
     if (divider) openWaypointModal(parseInt(divider.getAttribute("data-pts"), 10));
+  });
+  el.progressionContent.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const divider = e.target.closest(".progression-divider");
+    if (!divider || e.target !== divider) return;
+    e.preventDefault();
+    openWaypointModal(parseInt(divider.getAttribute("data-pts"), 10));
   });
 
   el.progressionContent.addEventListener("dragstart", (e) => {
