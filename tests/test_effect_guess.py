@@ -47,7 +47,7 @@ def patched_data_js():
 
 
 def patched_app_src():
-    return insert_table_entry(read_app_src(), "const EFFECT_GUESS_TABLE = {", SYNTHETIC_ENTRY)
+    return insert_table_entry(read_app_src(), "var EFFECT_GUESS_TABLE = {", SYNTHETIC_ENTRY)
 
 
 with sync_playwright() as p:

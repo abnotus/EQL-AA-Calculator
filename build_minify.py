@@ -1,34 +1,32 @@
 #!/usr/bin/env python3
 """
-Build pipeline: src/*.js (real ES modules)  ->  app.src.js (generated)  ->  app.js (minified)
-                data.src.js (hand-edited)    ------------------------->  data.js (minified)
-                styles.src.css (hand-edited) ------------------------->  styles.css (minified)
+Build pipeline: src/main.js and its imports (real ES modules)  ->  app.src.js (bundled)  ->  app.js (minified)
+                data.src.js (hand-edited)    ------------------------------------------>  data.js (minified)
+                styles.src.css (hand-edited) ------------------------------------------>  styles.css (minified)
 
-The app's logic is authored as genuine ES modules under src/ (see SRC_MODULE_ORDER
-below for the current file set and assembly order - not repeated here, since a list
-in a docstring drifts the moment a module is added and nothing catches it) using real
-import/export, so editors and readers get proper module boundaries. But native `<script type="module">`
-is blocked by CORS when index.html is opened via file:// in Chrome, and this app is
-deliberately built to work by just double-clicking index.html with no local server.
-So instead: this script assembles the src/ modules back into a single classic script
-(stripping import/export syntax, since after concatenation everything shares one
-scope and no runtime module resolution is needed), writes that to app.src.js, then
-minifies app.src.js -> app.js exactly as before. Edit files under src/, not app.src.js
-directly — it's a generated artifact now (kept committed for readability/diffing).
+The app's logic is authored as genuine ES modules under src/. Native `<script
+type="module">` is blocked by CORS when index.html is opened via file:// in Chrome,
+and this app is deliberately built to work by just double-clicking index.html with
+no local server. So esbuild bundles src/main.js into one classic IIFE script,
+written unminified to app.src.js (committed for readability and diffing, and served
+by the guess-rendering tests in place of app.js), then minifies that same text into
+app.js. Edit files under src/, not app.src.js.
 
-Minification (app.js/data.js/styles.css) is done by esbuild - a real parser, not a
-regex/line-based stripper, so it handles template literals, strings, and comments
-correctly by construction and additionally mangles local identifiers for a real size
-win. This is the one piece of the pipeline that needs Node: `npm install` once (pulls
-just esbuild, a devDependency - the shipped app itself still has zero runtime
-dependencies and no server, exactly as before) before running this script. Edit
-data.src.js/styles.src.css directly; they're hand-authored sources, same as src/*.js.
+esbuild is the one piece of the pipeline that needs Node: `npm install` once (it's a
+devDependency; the shipped app has no runtime dependencies and no server). It runs
+through its JS API rather than its bin script, which npm replaces with a native
+binary on Linux and macOS.
+
+Every output is generated first and only written once all of them succeeded, each
+through a temporary file and a rename, so a failed build leaves the previous
+outputs in place.
 
 Also stamps a content-hash cache-busting query string (?v=xxxxxxxx) onto the
 app.js / data.js / styles.css references in index.html, so a normal page
 reload always picks up the latest deploy instead of a browser-cached copy.
 """
 import hashlib
+import json
 import os
 import re
 import subprocess
@@ -37,84 +35,52 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "wiki-sync"))
 from common import slug_key_for  # noqa: E402
 
-SRC_MODULE_ORDER = [
-    "src/aaIds.js",
-    "src/costGuesses.js",
-    "src/effectGuesses.js",
-    "src/keys.js",
-    "src/changelogData.js",
-    "src/state.js",
-    "src/logic.js",
-    "src/builds.js",
-    "src/dom.js",
-    "src/render.js",
-    "src/exportImport.js",
-    "src/events.js",
-    "src/main.js",
-]
+APP_ENTRY = "src/main.js"
 
-IMPORT_BLOCK = re.compile(r'^import\s*\{.*?\}\s*from\s*["\'][^"\']+["\'];?\s*$\n?', re.MULTILINE | re.DOTALL)
-EXPORT_PREFIX = re.compile(r"^(\s*)export\s+(async\s+function|function|const|let)\s")
+# Reads a list of jobs as JSON on stdin and prints their outputs as JSON. A
+# "bundle" job bundles an entry point without minifying; a "minify" job
+# minifies one file's text (js or css).
+ESBUILD_DRIVER = r"""
+const esbuild = require("esbuild");
+const jobs = JSON.parse(require("fs").readFileSync(0, "utf8"));
+Promise.all(jobs.map((j) => j.kind === "bundle"
+  ? esbuild.build({ entryPoints: [j.entry], bundle: true, format: "iife", write: false,
+      legalComments: "none", banner: { js: j.banner } })
+      .then((r) => r.outputFiles[0].text)
+  : esbuild.transform(j.code, { loader: j.loader, minify: true, legalComments: "none" })
+      .then((r) => r.code)))
+  .then((out) => process.stdout.write(JSON.stringify(out)))
+  .catch((e) => { console.error(e.message); process.exit(1); });
+"""
 
-
-def strip_module_syntax(src: str) -> str:
-    # Import statements (possibly spanning multiple lines) are only needed for real
-    # module resolution — once everything's concatenated into one scope, drop them.
-    no_imports = IMPORT_BLOCK.sub("", src)
-    # "export function/const/let" -> "function/const/let"; same-scope concatenation
-    # means nothing needs the export keyword anymore.
-    out_lines = []
-    for line in no_imports.split("\n"):
-        m = EXPORT_PREFIX.match(line)
-        if m:
-            line = f"{m.group(1)}{m.group(2)} " + line[m.end():]
-        out_lines.append(line)
-    return "\n".join(out_lines)
+APP_SRC_BANNER = (
+    "// GENERATED FILE - do not edit directly. Source lives in src/*.js; run\n"
+    "// build_minify.py, which bundles them into this file and minifies it into\n"
+    "// app.js (the file index.html actually loads).\n"
+    '"use strict";'
+)
 
 
-def assemble_app_src():
-    parts = []
-    for path in SRC_MODULE_ORDER:
-        with open(path, "r", encoding="utf-8") as f:
-            content = f.read()
-        parts.append(strip_module_syntax(content).strip("\n"))
-    body = "\n\n".join(parts)
-    assembled = (
-        "// GENERATED FILE — do not edit directly.\n"
-        "// Source lives in src/*.js (real ES modules). Edit those, then re-run\n"
-        "// build_minify.py, which assembles + strips them into this file and then\n"
-        "// minifies it into app.js (the file index.html actually loads).\n"
-        "(function () {\n"
-        '  "use strict";\n\n'
-        f"{body}\n"
-        "})();\n"
-    )
-    with open("app.src.js", "w", encoding="utf-8", newline="\n") as f:
-        f.write(assembled)
-    print(f"Assembled {len(SRC_MODULE_ORDER)} src/*.js modules -> app.src.js")
+def esbuild_available():
+    return os.path.isfile(os.path.join("node_modules", "esbuild", "package.json"))
 
 
-ESBUILD_BIN = os.path.join("node_modules", "esbuild", "bin", "esbuild")
-
-
-def esbuild_minify(src_path: str, out_path: str):
-    """
-    Minifies src_path -> out_path via esbuild (loader picked from the file
-    extension: .js or .css). No --bundle - these files have no imports left
-    to resolve by this point (app.src.js's were already stripped by
-    strip_module_syntax; data.src.js/styles.src.css never had any) - so this
-    is a plain single-file transform, not a bundling step.
-    """
-    if not os.path.exists(ESBUILD_BIN):
-        print(f"ERROR: esbuild not found at {ESBUILD_BIN} - run `npm install` first (devDependency only; the shipped app itself has none).")
-        sys.exit(1)
+def run_esbuild(jobs):
     result = subprocess.run(
-        ["node", ESBUILD_BIN, src_path, "--minify", f"--outfile={out_path}"],
-        capture_output=True, text=True
+        ["node", "-e", ESBUILD_DRIVER], input=json.dumps(jobs),
+        capture_output=True, text=True, encoding="utf-8"
     )
     if result.returncode != 0:
-        print(f"ERROR: esbuild failed on {src_path}:\n{result.stderr}")
+        print(f"ERROR: esbuild failed:\n{result.stderr}")
         sys.exit(1)
+    return json.loads(result.stdout)
+
+
+def write_atomic(path, text):
+    tmp = f"{path}.tmp"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+    os.replace(tmp, path)
 
 
 DATA_CATEGORY_START = re.compile(r'^(general|archetype|special):\s*\[')
@@ -282,6 +248,9 @@ def stamp_index_html(outputs):
 
 
 def main():
+    if not esbuild_available():
+        print("ERROR: esbuild isn't installed - run `npm install` first (devDependency only; the shipped app itself has none).")
+        return 1
     with open("data.src.js", "r", encoding="utf-8") as f:
         data_src_check = f.read()
     problems = check_prereq_disambiguation_invariant(data_src_check)
@@ -299,18 +268,21 @@ def main():
             print(p)
         return 1
 
-    assemble_app_src()
-    pairs = [("app.src.js", "app.js"), ("data.src.js", "data.js"), ("styles.src.css", "styles.css")]
-    outputs = {}
-    for src_name, out_name in pairs:
-        with open(src_name, "r", encoding="utf-8") as f:
-            before = len(f.read())
-        esbuild_minify(src_name, out_name)
-        with open(out_name, "r", encoding="utf-8") as f:
-            minified = f.read()
-        outputs[out_name] = minified
-        after = len(minified)
-        print(f"{src_name} -> {out_name}: {before} -> {after} bytes ({100 * after // before}%)")
+    [app_src] = run_esbuild([{"kind": "bundle", "entry": APP_ENTRY, "banner": APP_SRC_BANNER}])
+    with open("styles.src.css", "r", encoding="utf-8") as f:
+        styles_src = f.read()
+    sources = {"app.js": app_src, "data.js": data_src_check, "styles.css": styles_src}
+    loaders = {"app.js": "js", "data.js": "js", "styles.css": "css"}
+    minified = run_esbuild([{"kind": "minify", "code": sources[k], "loader": loaders[k]} for k in sources])
+    outputs = dict(zip(sources, minified))
+
+    write_atomic("app.src.js", app_src)
+    print(f"Bundled {APP_ENTRY} -> app.src.js")
+    names = {"app.js": "app.src.js", "data.js": "data.src.js", "styles.css": "styles.src.css"}
+    for out_name, text in outputs.items():
+        write_atomic(out_name, text)
+        before, after = len(sources[out_name]), len(text)
+        print(f"{names[out_name]} -> {out_name}: {before} -> {after} bytes ({100 * after // before}%)")
     stamp_index_html(outputs)
 
 

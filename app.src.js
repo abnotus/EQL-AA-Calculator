@@ -1,4126 +1,2715 @@
-// GENERATED FILE — do not edit directly.
-// Source lives in src/*.js (real ES modules). Edit those, then re-run
-// build_minify.py, which assembles + strips them into this file and then
-// minifies it into app.js (the file index.html actually loads).
-(function () {
-  "use strict";
+// GENERATED FILE - do not edit directly. Source lives in src/*.js; run
+// build_minify.py, which bundles them into this file and minifies it into
+// app.js (the file index.html actually loads).
+"use strict";
+(() => {
+  // src/aaIds.js
+  var AA_ID_TABLE = {
+    "general::adamant-will": 0,
+    "general::alchemy-mastery": 1,
+    "general::baking-mastery": 2,
+    "general::blacksmithing-mastery": 3,
+    "general::brewing-mastery": 4,
+    "general::circular-breathing": 5,
+    "general::combat-agility": 6,
+    "general::combat-fury": 7,
+    "general::combat-stability": 8,
+    "general::crafting-mastery": 9,
+    "general::fear-resistance": 10,
+    "general::first-aid": 11,
+    "general::fletching-mastery": 12,
+    "general::foraging": 13,
+    "general::gather-party": 14,
+    "general::innate-eminence": 15,
+    "general::innate-lung-capacity": 16,
+    "general::innate-metabolism": 17,
+    "general::innate-regeneration": 18,
+    "general::innate-spell-resistance": 19,
+    "general::jewel-craft-mastery": 20,
+    "general::natural-durability": 21,
+    "general::origin": 22,
+    "general::packrat": 23,
+    "general::permanent-illusion": 24,
+    "general::pottery-mastery": 25,
+    "general::quick-buff": 26,
+    "general::steadfast-will": 27,
+    "general::stoicism": 28,
+    "general::tailoring-mastery": 29,
+    "archetype::acrobatics": 30,
+    "archetype::ambidexterity": 31,
+    "archetype::burst-of-power": 32,
+    "archetype::companions-discipline": 33,
+    "archetype::critical-affliction": 34,
+    "archetype::destructive-cascade": 35,
+    "archetype::destructive-fury": 36,
+    "archetype::double-riposte": 37,
+    "archetype::exodus": 38,
+    "archetype::finishing-blow": 39,
+    "archetype::fury-of-magic": 40,
+    "archetype::healing-adept": 41,
+    "archetype::healing-boon": 42,
+    "archetype::healing-gift": 43,
+    "archetype::improved-bash": 44,
+    "archetype::innate-camouflage": 45,
+    "archetype::innate-invis-to-undead": 46,
+    "archetype::intimidation": 47,
+    "archetype::mass-group-buff": 48,
+    "archetype::master-of-all": 49,
+    "archetype::mastery-of-the-past": 50,
+    "archetype::mend-companion": 51,
+    "archetype::mental-clarity": 52,
+    "archetype::mnemonic-retention": 53,
+    "archetype::persistent-casting": 54,
+    "archetype::pet-affinity": 55,
+    "archetype::physical-enhancement": 56,
+    "archetype::quick-damage": 57,
+    "archetype::rampage": 58,
+    "archetype::spell-casting-deftness": 59,
+    "archetype::spell-casting-mastery": 60,
+    "archetype::spell-casting-reinforcement": 61,
+    "archetype::spell-casting-subtlety": 62,
+    "archetype::thiefs-intuition": 63,
+    "special::banestrike": 64,
+    "class:Bard:instrument-mastery": 65,
+    "class:Bard:jam-fest": 66,
+    "class:Bard:reaching-notes": 67,
+    "class:Bard:scribble-notes": 68,
+    "class:Bard:singing-mastery": 69,
+    "class:Bard:symphonic-aura": 70,
+    "class:Beastlord:frenzy-of-spirit": 71,
+    "class:Beastlord:hobble-of-spirits": 72,
+    "class:Beastlord:paragon-of-spirit": 73,
+    "class:Beastlord:playing-possum": 74,
+    "class:Berserker:blood-rune": 75,
+    "class:Berserker:innate-power-strike": 76,
+    "class:Berserker:tireless-sprint": 77,
+    "class:Berserker:unbound-fury": 78,
+    "class:Cleric:innate-divine-healing": 79,
+    "class:Cleric:divine-aura": 80,
+    "class:Cleric:bestow-divine-aura": 81,
+    "class:Cleric:purify-soul": 82,
+    "class:Cleric:turn-undead": 83,
+    "class:Cleric:unbound-boon": 84,
+    "class:Druid:enhanced-root": 85,
+    "class:Druid:quick-evacuation": 86,
+    "class:Druid:unbound-nature": 87,
+    "class:Enchanter:unbound-clarity": 88,
+    "class:Magician:companions-fury": 89,
+    "class:Magician:conjurers-efficiency": 90,
+    "class:Magician:elemental-form": 91,
+    "class:Magician:turn-summoned": 92,
+    "class:Magician:unbound-companion": 93,
+    "class:Monk:dragon-force": 94,
+    "class:Monk:improved-mend": 95,
+    "class:Monk:purify-body": 96,
+    "class:Monk:rapid-feign": 97,
+    "class:Necromancer:dead-mesmerization": 98,
+    "class:Necromancer:fear-storm": 99,
+    "class:Necromancer:flesh-to-bone": 100,
+    "class:Necromancer:life-burn": 101,
+    "class:Necromancer:unbound-affliction": 102,
+    "class:Paladin:act-of-valor": 103,
+    "class:Paladin:divine-stun": 104,
+    "class:Paladin:holy-steed": 105,
+    "class:Paladin:lay-on-hands": 106,
+    "class:Paladin:slay-undead": 107,
+    "class:Paladin:valiant-steed": 108,
+    "class:Ranger:hunters-attack-power": 109,
+    "class:Ranger:innate-called-shot": 110,
+    "class:Ranger:unbounded-strikethrough": 111,
+    "class:Ranger:weapon-mastery-of-the-scout": 112,
+    "class:Rogue:chaotic-stab": 113,
+    "class:Rogue:escape": 114,
+    "class:Rogue:innate-sneakiness": 115,
+    "class:Rogue:purge-poison": 116,
+    "class:Rogue:shroud-of-stealth": 117,
+    "class:Shadow Knight:unholy-steed": 118,
+    "class:Shadow Knight:abyssal-steed": 119,
+    "class:Shadow Knight:harm-touch": 120,
+    "class:Shadow Knight:leech-touch": 121,
+    "class:Shadow Knight:soul-abrasion": 122,
+    "class:Shaman:cannibalization": 123,
+    "class:Shaman:unbound-cascade": 124,
+    "class:Warrior:area-taunt": 125,
+    "class:Warrior:heroic-leap": 126,
+    "class:Warrior:innate-fighters-tenacity": 127,
+    "class:Warrior:unbound-wrath": 128,
+    "class:Warrior:war-cry": 129,
+    "class:Warrior:warriors-endurance": 130,
+    "class:Wizard:improved-familiar": 131,
+    "class:Wizard:mana-burn": 132,
+    "class:Wizard:quick-evacuation": 133,
+    "class:Wizard:strong-root": 134,
+    "class:Wizard:unbound-destruction": 135,
+    "class:Bard:unbound-versatility": 136,
+    "class:Beastlord:unbound-ferocity": 137,
+    "class:Enchanter:tricksters-misdirection": 138,
+    "class:Monk:unbound-alacrity": 139,
+    "class:Paladin:unbound-life": 140,
+    "class:Rogue:unbound-lethality": 141,
+    "class:Shadow Knight:unbound-drain": 142,
+    "general::full-potential": 143,
+    "archetype::point-blank-fire": 144,
+    "general::widened-perception": 145
+  };
 
-// Append-only numeric id table for every AA, generated by
-// wiki-sync/assign_aa_ids.py. DO NOT hand-edit the numbers, and
-// never remove or renumber an existing entry, even for an AA no
-// longer in data.src.js - see that script's docstring for why.
-// Consumed by keys.js (idForKey/entryForId), used only by the
-// compact share/export wire format.
-const AA_ID_TABLE = {
-  "general::adamant-will": 0,
-  "general::alchemy-mastery": 1,
-  "general::baking-mastery": 2,
-  "general::blacksmithing-mastery": 3,
-  "general::brewing-mastery": 4,
-  "general::circular-breathing": 5,
-  "general::combat-agility": 6,
-  "general::combat-fury": 7,
-  "general::combat-stability": 8,
-  "general::crafting-mastery": 9,
-  "general::fear-resistance": 10,
-  "general::first-aid": 11,
-  "general::fletching-mastery": 12,
-  "general::foraging": 13,
-  "general::gather-party": 14,
-  "general::innate-eminence": 15,
-  "general::innate-lung-capacity": 16,
-  "general::innate-metabolism": 17,
-  "general::innate-regeneration": 18,
-  "general::innate-spell-resistance": 19,
-  "general::jewel-craft-mastery": 20,
-  "general::natural-durability": 21,
-  "general::origin": 22,
-  "general::packrat": 23,
-  "general::permanent-illusion": 24,
-  "general::pottery-mastery": 25,
-  "general::quick-buff": 26,
-  "general::steadfast-will": 27,
-  "general::stoicism": 28,
-  "general::tailoring-mastery": 29,
-  "archetype::acrobatics": 30,
-  "archetype::ambidexterity": 31,
-  "archetype::burst-of-power": 32,
-  "archetype::companions-discipline": 33,
-  "archetype::critical-affliction": 34,
-  "archetype::destructive-cascade": 35,
-  "archetype::destructive-fury": 36,
-  "archetype::double-riposte": 37,
-  "archetype::exodus": 38,
-  "archetype::finishing-blow": 39,
-  "archetype::fury-of-magic": 40,
-  "archetype::healing-adept": 41,
-  "archetype::healing-boon": 42,
-  "archetype::healing-gift": 43,
-  "archetype::improved-bash": 44,
-  "archetype::innate-camouflage": 45,
-  "archetype::innate-invis-to-undead": 46,
-  "archetype::intimidation": 47,
-  "archetype::mass-group-buff": 48,
-  "archetype::master-of-all": 49,
-  "archetype::mastery-of-the-past": 50,
-  "archetype::mend-companion": 51,
-  "archetype::mental-clarity": 52,
-  "archetype::mnemonic-retention": 53,
-  "archetype::persistent-casting": 54,
-  "archetype::pet-affinity": 55,
-  "archetype::physical-enhancement": 56,
-  "archetype::quick-damage": 57,
-  "archetype::rampage": 58,
-  "archetype::spell-casting-deftness": 59,
-  "archetype::spell-casting-mastery": 60,
-  "archetype::spell-casting-reinforcement": 61,
-  "archetype::spell-casting-subtlety": 62,
-  "archetype::thiefs-intuition": 63,
-  "special::banestrike": 64,
-  "class:Bard:instrument-mastery": 65,
-  "class:Bard:jam-fest": 66,
-  "class:Bard:reaching-notes": 67,
-  "class:Bard:scribble-notes": 68,
-  "class:Bard:singing-mastery": 69,
-  "class:Bard:symphonic-aura": 70,
-  "class:Beastlord:frenzy-of-spirit": 71,
-  "class:Beastlord:hobble-of-spirits": 72,
-  "class:Beastlord:paragon-of-spirit": 73,
-  "class:Beastlord:playing-possum": 74,
-  "class:Berserker:blood-rune": 75,
-  "class:Berserker:innate-power-strike": 76,
-  "class:Berserker:tireless-sprint": 77,
-  "class:Berserker:unbound-fury": 78,
-  "class:Cleric:innate-divine-healing": 79,
-  "class:Cleric:divine-aura": 80,
-  "class:Cleric:bestow-divine-aura": 81,
-  "class:Cleric:purify-soul": 82,
-  "class:Cleric:turn-undead": 83,
-  "class:Cleric:unbound-boon": 84,
-  "class:Druid:enhanced-root": 85,
-  "class:Druid:quick-evacuation": 86,
-  "class:Druid:unbound-nature": 87,
-  "class:Enchanter:unbound-clarity": 88,
-  "class:Magician:companions-fury": 89,
-  "class:Magician:conjurers-efficiency": 90,
-  "class:Magician:elemental-form": 91,
-  "class:Magician:turn-summoned": 92,
-  "class:Magician:unbound-companion": 93,
-  "class:Monk:dragon-force": 94,
-  "class:Monk:improved-mend": 95,
-  "class:Monk:purify-body": 96,
-  "class:Monk:rapid-feign": 97,
-  "class:Necromancer:dead-mesmerization": 98,
-  "class:Necromancer:fear-storm": 99,
-  "class:Necromancer:flesh-to-bone": 100,
-  "class:Necromancer:life-burn": 101,
-  "class:Necromancer:unbound-affliction": 102,
-  "class:Paladin:act-of-valor": 103,
-  "class:Paladin:divine-stun": 104,
-  "class:Paladin:holy-steed": 105,
-  "class:Paladin:lay-on-hands": 106,
-  "class:Paladin:slay-undead": 107,
-  "class:Paladin:valiant-steed": 108,
-  "class:Ranger:hunters-attack-power": 109,
-  "class:Ranger:innate-called-shot": 110,
-  "class:Ranger:unbounded-strikethrough": 111,
-  "class:Ranger:weapon-mastery-of-the-scout": 112,
-  "class:Rogue:chaotic-stab": 113,
-  "class:Rogue:escape": 114,
-  "class:Rogue:innate-sneakiness": 115,
-  "class:Rogue:purge-poison": 116,
-  "class:Rogue:shroud-of-stealth": 117,
-  "class:Shadow Knight:unholy-steed": 118,
-  "class:Shadow Knight:abyssal-steed": 119,
-  "class:Shadow Knight:harm-touch": 120,
-  "class:Shadow Knight:leech-touch": 121,
-  "class:Shadow Knight:soul-abrasion": 122,
-  "class:Shaman:cannibalization": 123,
-  "class:Shaman:unbound-cascade": 124,
-  "class:Warrior:area-taunt": 125,
-  "class:Warrior:heroic-leap": 126,
-  "class:Warrior:innate-fighters-tenacity": 127,
-  "class:Warrior:unbound-wrath": 128,
-  "class:Warrior:war-cry": 129,
-  "class:Warrior:warriors-endurance": 130,
-  "class:Wizard:improved-familiar": 131,
-  "class:Wizard:mana-burn": 132,
-  "class:Wizard:quick-evacuation": 133,
-  "class:Wizard:strong-root": 134,
-  "class:Wizard:unbound-destruction": 135,
-  "class:Bard:unbound-versatility": 136,
-  "class:Beastlord:unbound-ferocity": 137,
-  "class:Enchanter:tricksters-misdirection": 138,
-  "class:Monk:unbound-alacrity": 139,
-  "class:Paladin:unbound-life": 140,
-  "class:Rogue:unbound-lethality": 141,
-  "class:Shadow Knight:unbound-drain": 142,
-  "general::full-potential": 143,
-  "archetype::point-blank-fire": 144,
-  "general::widened-perception": 145
-};
+  // src/costGuesses.js
+  var COST_GUESS_TABLE = {
+    "class:Magician:turn-summoned": { "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Alchemy Mastery", "Burst of Power", "Critical Affliction", "Double Riposte", "Healing Boon", "Improved Mend", "Instrument Mastery", "Jam Fest", "Quick Damage", "Quick Evacuation", "Rapid Feign", "Singing Mastery", "Slay Undead", "Soul Abrasion", "Weapon Mastery of the Scout"] } }
+  };
 
-// Pattern-inferred cost estimates for AAs the wiki hasn't documented
-// yet, generated by wiki-sync/guess_costs.py - see that script's
-// docstring for the actual methodology (cross-referenced sibling AAs,
-// never a single AA's own progression alone). DO NOT hand-edit; rerun
-// the generator instead, which recomputes this file from scratch every
-// time rather than merging - a guess that no longer has corroborating
-// evidence (or whose slot got confirmed in data.src.js) simply won't
-// reappear.
-//
-// Keyed exactly like aaIds.js's AA_ID_TABLE (scope:className:key), each
-// entry mapping a rank INDEX (as a string, matching that AA's costs
-// array position) to a guess. Only ever consulted by the app when the
-// real costs[i] is still "?" - keys.js's costGuessFor is the only
-// reader, and logic.js only calls that for a rank whose real cost
-// string is exactly "?". A guess never substitutes for a real cost in
-// spentPoints()/affordability math anywhere - purely a display hint.
-const COST_GUESS_TABLE = {
-  "class:Magician:turn-summoned": { "2": { value: 9, confidence: "high", basedOn: ["Acrobatics", "Alchemy Mastery", "Burst of Power", "Critical Affliction", "Double Riposte", "Healing Boon", "Improved Mend", "Instrument Mastery", "Jam Fest", "Quick Damage", "Quick Evacuation", "Rapid Feign", "Singing Mastery", "Slay Undead", "Soul Abrasion", "Weapon Mastery of the Scout"] } }
-};
+  // src/effectGuesses.js
+  var EFFECT_GUESS_TABLE = {
+    "special::banestrike": { "0": { "2": { value: 6, confidence: "very-low", basedOn: [], manual: true }, "3": { value: 8, confidence: "very-low", basedOn: [], manual: true } } }
+  };
 
-// Pattern-inferred estimates for the numeric values inside AA effect
-// descriptions the wiki hasn't documented yet, generated by
-// wiki-sync/guess_effects.py - see that script's docstring for the
-// actual methodology. DO NOT hand-edit; rerun the generator instead,
-// which recomputes this file from scratch every time rather than
-// merging - a guess that no longer has corroborating evidence (or
-// whose slot got confirmed in data.src.js) simply won't reappear.
-//
-// Keyed exactly like aaIds.js's AA_ID_TABLE (scope:className:key), then
-// by progression index (order the progression appears in the
-// description, as a string) and rank index (also as a string,
-// matching that progression's slot position) to a guess. Only ever
-// consulted by the app when the real slot text is exactly "?" - a
-// guess never substitutes for a real value anywhere descriptions are
-// otherwise read (search, export text) - purely a display hint.
-const EFFECT_GUESS_TABLE = {
-  "special::banestrike": { "0": { "2": { value: 6, confidence: "very-low", basedOn: [], manual: true }, "3": { value: 8, confidence: "very-low", basedOn: [], manual: true } } }
-};
-
-// Stable per-AA keys, derived from name (not array position), used at the
-// state-persistence boundary: localStorage, exported build text, and share
-// links. Runtime code elsewhere still addresses AAs by index into AA_DATA;
-// only saving/loading goes through here, since AA_DATA gets regenerated
-// from eqlwiki periodically and reordering would silently repoint an
-// index-based save at the wrong AA. Name keys survive reordering and
-// degrade gracefully (an unknown key is dropped) instead of resolving wrong.
-//
-// aaIds.js is a separate, smaller append-only numeric id table used only
-// for the compact share/export format, where URL length matters;
-// localStorage keeps using name keys directly.
-//
-// LEGACY_AA_ORDER is a frozen snapshot of AA_DATA's ordering as of
-// 2026-07-09, the last point before AA data was index-addressed. It exists
-// only to translate old index-based saves into name keys on load, must
-// never be regenerated, and must never be deleted even once it feels
-// obsolete — a legacy save that migrates cleanly isn't rewritten to v4
-// form until the user's next actual mutation, so an untouched old save can
-// sit in localStorage indefinitely without this table's help.
-//
-// RENAMED_KEYS covers the other kind of drift: a v4+ (name-keyed) save
-// stores the slug directly, with nothing like aaIds.js's numeric ids to
-// survive a rename - a plain wiki rename (the AA itself unchanged, just
-// its name) leaves an old save's key resolving to nothing, indistinguishable
-// from the AA having been removed outright. Keyed exactly like aaIds.js's
-// AA_ID_TABLE (scope:className:key) to old slug -> new slug, consulted by
-// idxForKey only (keyForIdx always writes the current slug). Add an entry
-// here in the same commit as any future data.src.js rename, and never
-// remove one once added, even once it feels old - same append-only
-// reasoning as aaIds.js.
-const RENAMED_KEYS = {
-  "class:Berserker:tireless-spirit": "tireless-sprint",
-};
-
-const LEGACY_AA_ORDER = {
-  "general": [
-    "Adamant Will", "Alchemy Mastery", "Baking Mastery", "Blacksmithing Mastery",
-    "Brewing Mastery", "Circular Breathing", "Combat Agility", "Combat Fury",
-    "Combat Stability", "Crafting Mastery", "Fear Resistance", "First Aid",
-    "Fletching Mastery", "Foraging", "Gather Party", "Innate Eminence",
-    "Innate Lung Capacity", "Innate Metabolism", "Innate Regeneration",
-    "Innate Spell Resistance", "Jewel Craft Mastery", "Natural Durability",
-    "Origin", "Packrat", "Permanent Illusion", "Pottery Mastery", "Quick Buff",
-    "Steadfast Will", "Stoicism", "Tailoring Mastery"
-  ],
-  "archetype": [
-    "Acrobatics", "Ambidexterity", "Burst of Power", "Companion's Discipline",
-    "Critical Affliction", "Destructive Cascade", "Destructive Fury",
-    "Double Riposte", "Exodus", "Finishing Blow", "Fury of Magic",
-    "Healing Adept", "Healing Boon", "Healing Gift", "Improved Bash",
-    "Innate Camouflage", "Innate Invis to Undead", "Intimidation",
-    "Mass Group Buff", "Master of All", "Mastery of the Past", "Mend Companion",
-    "Mental Clarity", "Mnemonic Retention", "Persistent Casting", "Pet Affinity",
-    "Physical Enhancement", "Quick Damage", "Rampage", "Spell Casting Deftness",
-    "Spell Casting Mastery", "Spell Casting Reinforcement",
-    "Spell Casting Subtlety", "Thief's Intuition"
-  ],
-  "special": ["Banestrike"],
-  "classes": {
-    "Bard": ["Instrument Mastery", "Jam Fest", "Reaching Notes", "Scribble Notes", "Singing Mastery", "Symphonic Aura"],
-    "Beastlord": ["Frenzy of Spirit", "Hobble of Spirits", "Paragon of Spirit", "Playing Possum"],
-    "Berserker": ["Blood Rune", "Innate Power Strike", "Tireless Spirit", "Unbound Fury"],
-    // The only duplicate name in the whole snapshot — recorded with explicit
-    // auto flags (instead of plain strings) so the ordinal below can be
-    // derived from *that*, not from which one happened to be listed first.
-    "Cleric": [{ name: "Divine Aura", auto: true }, { name: "Divine Aura", auto: false }, "Bestow Divine Aura", "Purify Soul", "Turn Undead", "Unbound Boon"],
-    "Druid": ["Enhanced Root", "Quick Evacuation", "Unbound Nature"],
-    "Enchanter": ["Unbound Clarity"],
-    "Magician": ["Companion's Fury", "Conjurer's Efficiency", "Elemental Form", "Turn Summoned", "Unbound Companion"],
-    "Monk": ["Dragon Force", "Improved Mend", "Purify Body", "Rapid Feign"],
-    "Necromancer": ["Dead Mesmerization", "Fear Storm", "Flesh to Bone", "Life Burn", "Unbound Affliction"],
-    "Paladin": ["Act of Valor", "Divine Stun", "Holy Steed", "Lay on Hands", "Slay Undead", "Valiant Steed"],
-    "Ranger": ["Hunter's Attack Power", "Innate Called Shot", "Unbounded Strikethrough", "Weapon Mastery of the Scout"],
-    "Rogue": ["Chaotic Stab", "Escape", "Innate Sneakiness", "Purge Poison", "Shroud of Stealth"],
-    "Shadow Knight": ["Unholy Steed", "Abyssal Steed", "Harm Touch", "Leech Touch", "Soul Abrasion"],
-    "Shaman": ["Cannibalization", "Unbound Cascade"],
-    "Warrior": ["Area Taunt", "Heroic Leap", "Innate Fighters Tenacity", "Unbound Wrath", "War Cry", "Warrior's Endurance"],
-    "Wizard": ["Improved Familiar", "Mana Burn", "Quick Evacuation", "Strong Root", "Unbound Destruction"]
-  }
-};
-
-// ‘/’ are the curly "smart quotes" a wiki CMS's auto-formatting
-// commonly substitutes for a straight apostrophe - must be kept equivalent
-// to wiki-sync/common.py's own slugify by hand (see that file's docstring).
-// Exported for logic.js's sharedWithClass resolution (see aaAt's own
-// comment) - every other internal use here stays private.
-function slugify(name) {
-  return String(name || "")
-    .toLowerCase()
-    .replace(/['‘’]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function normalizeEntry(e) {
-  return typeof e === "string" ? { name: e, auto: false } : e;
-}
-
-// Stable key for position `idx` within `rawEntries` (name strings, or
-// {name, auto} objects where auto-ness needs to be explicit). A name that
-// doesn't repeat just gets its slug. A repeated name is disambiguated by
-// auto-ness, not position: build_minify.py's invariant guarantees exactly
-// one non-auto occurrence per repeated name, so that one gets the bare
-// slug, and any auto occurrence(s) get -auto / -auto-2 / ... among
-// themselves - the same discriminator resolvePrereqTarget's duplicate-name
-// tie-break uses (logic.js).
-function keyForEntryIdx(rawEntries, idx) {
-  const entries = rawEntries.map(normalizeEntry);
-  const entry = entries[idx];
-  if (!entry) return null;
-  const base = slugify(entry.name);
-  const sameName = entries
-    .map((e, i) => ({ auto: e.auto, i }))
-    .filter((e) => slugify(entries[e.i].name) === base);
-  if (sameName.length <= 1) return base;
-  if (!entry.auto) return base;
-  const autoSiblings = sameName.filter((e) => e.auto);
-  const autoPos = autoSiblings.findIndex((e) => e.i === idx);
-  return autoPos === 0 ? `${base}-auto` : `${base}-auto-${autoPos + 1}`;
-}
-
-function idxForEntryKey(rawEntries, key) {
-  for (let i = 0; i < rawEntries.length; i++) {
-    if (keyForEntryIdx(rawEntries, i) === key) return i;
-  }
-  return -1;
-}
-
-// Exported so callers that index it repeatedly (a loop over many idx
-// values) can resolve it once instead of going through aaAt per lookup -
-// logic.js's own point-summing/reconciliation walks do this.
-function currentList(scope, className) {
-  return scope === "class" ? (AA_DATA.classes[className] || []) : (AA_DATA[scope] || []);
-}
-
-function currentEntries(scope, className) {
-  return currentList(scope, className).map((aa) => ({ name: aa.name, auto: !!aa.auto }));
-}
-
-// The actual AA object at idx in today's AA_DATA, or null. Used to validate
-// deserialized rank values against the AA's real max rank instead of trusting
-// whatever number was in a save file.
-//
-// A `sharedWithClass` field (Quick Evacuation's Wizard copy, as of this
-// writing) marks a class-scoped entry as a second, genuinely-the-same
-// listing of an ability a player can only ever invest in once - displayed
-// on its own class's tab like any other, exactly as the game itself shows
-// it, but redirected to the named class's own copy for every rank/owned/
-// purchase read and write (logic.js's sharedCanonical and its callers).
-// Each copy keeps its own independent aaIds.js id and share-code slot,
-// which simply never gets written to for the non-canonical copy.
-function aaAt(scope, className, idx) {
-  return currentList(scope, className)[idx] || null;
-}
-
-function legacyEntries(scope, className) {
-  return scope === "class" ? (LEGACY_AA_ORDER.classes[className] || []) : (LEGACY_AA_ORDER[scope] || []);
-}
-
-// keyForIdx/idxForKey mappings, built lazily per (scope, className). Safe to
-// cache for the page's life because AA_DATA never changes at runtime, and it
-// keeps save/load from rescanning a scope's whole AA list for every entry.
-const entryKeyMapCache = {};
-function entryKeyMaps(scope, className) {
-  const cacheKey = `${scope}:${className || ""}`;
-  let maps = entryKeyMapCache[cacheKey];
-  if (!maps) {
-    const entries = currentEntries(scope, className);
-    const idxToKey = entries.map((_, idx) => keyForEntryIdx(entries, idx));
-    const keyToIdx = new Map();
-    idxToKey.forEach((key, idx) => { if (key != null && !keyToIdx.has(key)) keyToIdx.set(key, idx); });
-    maps = entryKeyMapCache[cacheKey] = { idxToKey, keyToIdx };
-  }
-  return maps;
-}
-
-// idx into today's AA_DATA -> stable name key, for writing new saves.
-function keyForIdx(scope, className, idx) {
-  return entryKeyMaps(scope, className).idxToKey[idx] || null;
-}
-
-// Stable name key -> idx into today's AA_DATA, for reading saves already in
-// key form. -1 if that AA no longer exists under this scope/class.
-function idxForKey(scope, className, key) {
-  const idx = entryKeyMaps(scope, className).keyToIdx.get(key);
-  if (idx !== undefined) return idx;
-  const renamed = RENAMED_KEYS[`${scope}:${className || ""}:${key}`];
-  if (renamed === undefined) return -1;
-  const renamedIdx = entryKeyMaps(scope, className).keyToIdx.get(renamed);
-  return renamedIdx === undefined ? -1 : renamedIdx;
-}
-
-// idx captured against the frozen pre-key ordering -> idx into today's
-// AA_DATA, for migrating old index-based saves. -1 if that AA was renamed
-// or removed since the snapshot was taken. Routed through the same
-// auto-aware key both directions use (not a plain name lookup), so
-// same-named rows (e.g. Cleric's two "Divine Aura" entries) map to their
-// matching occurrence instead of both collapsing onto the first one.
-function currentIdxForLegacyIdx(scope, className, legacyIdx) {
-  const entries = legacyEntries(scope, className);
-  if (legacyIdx < 0 || legacyIdx >= entries.length) return -1;
-  const key = keyForEntryIdx(entries, legacyIdx);
-  if (!key) return -1;
-  return idxForEntryKey(currentEntries(scope, className), key);
-}
-
-let idToEntryCache = null;
-function idToEntry() {
-  if (!idToEntryCache) {
-    idToEntryCache = {};
-    Object.keys(AA_ID_TABLE).forEach((idKey) => {
-      const id = AA_ID_TABLE[idKey];
-      const sep1 = idKey.indexOf(":");
-      const sep2 = idKey.indexOf(":", sep1 + 1);
-      const scope = idKey.slice(0, sep1);
-      const className = idKey.slice(sep1 + 1, sep2) || null;
-      const key = idKey.slice(sep2 + 1);
-      idToEntryCache[id] = { scope, className, key };
-    });
-  }
-  return idToEntryCache;
-}
-
-// (scope, className, name key) -> the stable small integer id for it, or
-// null if this AA isn't in AA_ID_TABLE (shouldn't happen for anything
-// currently in AA_DATA — see build_minify.py's check — but a defensively
-// missing id degrades to null the same way an unresolved name key does).
-function idForKey(scope, className, key) {
-  const idKey = `${scope}:${className || ""}:${key}`;
-  return Object.prototype.hasOwnProperty.call(AA_ID_TABLE, idKey) ? AA_ID_TABLE[idKey] : null;
-}
-
-// Reverse of idForKey: a stable id -> { scope, className, key }, or null for
-// an id the table doesn't recognize (an AA removed since that id was
-// assigned — the id itself is never reused, so this is unambiguous).
-function entryForId(id) {
-  return idToEntry()[id] || null;
-}
-
-// (scope, className, aaIdx, rankIdx) -> a pattern-inferred cost estimate
-// for that one rank, or null. aaIdx picks the AA (via keyForIdx); rankIdx
-// is the position within that AA's own costs array - a different axis, not
-// identity. Callers are expected to only ask this when costs[rankIdx] is
-// already "?" (see logic.js's costGuess); this function doesn't check that
-// itself.
-function costGuessFor(scope, className, aaIdx, rankIdx) {
-  const key = keyForIdx(scope, className, aaIdx);
-  if (!key) return null;
-  const idKey = `${scope}:${className || ""}:${key}`;
-  const entry = COST_GUESS_TABLE[idKey];
-  return entry ? (entry[rankIdx] || null) : null;
-}
-
-// Same shape as costGuessFor, one axis deeper: progIdx picks WHICH
-// progression within the AA's description (order of appearance - a
-// description can hold more than one, see effectGuesses.js's own header),
-// rankIdx the slot position within THAT progression. Callers are expected
-// to only ask this when the real slot text is already known to be "?"
-// (see logic.js's effectGuess), same contract as costGuessFor.
-function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
-  const key = keyForIdx(scope, className, aaIdx);
-  if (!key) return null;
-  const idKey = `${scope}:${className || ""}:${key}`;
-  const entry = EFFECT_GUESS_TABLE[idKey];
-  if (!entry) return null;
-  const prog = entry[progIdx];
-  return prog ? (prog[rankIdx] || null) : null;
-}
-
-// Curated, user-facing changelog — features and dataset changes worth telling
-// players about. Internal refactors/architecture/bug-fixes-that-were-never-
-// visible don't belong here; git log is the record for those. Newest first;
-// add a new entry at the top whenever a user-relevant change ships.
-const USER_CHANGELOG = [
-  {
-    version: "2.1.2",
-    date: "2026-10-02",
-    items: [
-      "Quick Evacuation (Druid and Wizard) is now tracked as a single shared ability. Training it under either class adds to the same progress instead of two separate pools, matching how it actually works in game."
-    ]
-  },
-  {
-    version: "2.1.1",
-    date: "2026-10-01",
-    items: [
-      "Share links and exports now keep your owned rank correctly when it's higher than your planned rank, or far from it. Links made before this update still open as before.",
-      "Unmarking an AA that comes with free ranks no longer leaves it hidden from the Unowned Only filter.",
-      "Move To now lands in the right spot when moving a step into a waypoint section.",
-      "A pick on a class you've swapped away from now shows a notice if its prerequisite stops being met, and a share link with an AA the calculator doesn't recognize now tells you instead of dropping it silently."
-    ]
-  },
-  {
-    version: "2.1.0",
-    date: "2026-09-28",
-    items: [
-      "Browse All AAs now has an Unowned Only filter, and every card shows your exact owned rank at a glance - handy once you've got a lot of AAs already trained. Auto-granted AAs are left out of the filter, since you never need to mark those owned.",
-      "A share link or import with a corrupted value (like a garbled character level) is now rejected safely instead of freezing the calculator."
-    ]
-  },
-  {
-    version: "2.0.9",
-    date: "2026-09-27",
-    items: [
-      "Undo now restores the right rank after you lower an AA that comes with free ranks.",
-      "A damaged or incomplete share code now shows an error instead of loading as an empty build.",
-      "If a shared link loads but can't be saved to Builds (for example when browser storage is full), you now get a warning instead of being told it was saved. Picking an import file that can't be read now shows a message too."
-    ]
-  },
-  {
-    version: "2.0.8",
-    date: "2026-09-23",
-    items: [
-      "Three new AAs from the latest patch are now in the calculator: Full Potential (storage capacity), Point Blank Fire (a 0-point ranged combat AA for Berserker, Monk, Ranger, and Rogue), and Widened Perception (+1 loadout slot)."
-    ]
-  },
-  {
-    version: "2.0.7",
-    date: "2026-09-16",
-    items: [
-      "Master of All is now a single rank costing 10 points, instead of four ranks at 5 points each. If you'd trained past rank 1 on an older build, it'll show the refund automatically.",
-      "Data correction from a fresh wiki scrape: Turn Summoned's second rank is confirmed at 6 points (400/800 damage)."
-    ]
-  },
-  {
-    version: "2.0.6",
-    date: "2026-09-13",
-    items: [
-      "Spell Casting Subtlety, Reaching Notes, and Symphonic Aura are now simple toggles in-game rather than needing a purchased rank to turn on and off. They show fewer total ranks to match - if you'd trained deep into one of these on an older build, it may display differently now, though the points you already spent still count the same.",
-      "Data corrections from a fresh wiki scrape: Thief's Intuition's last two ranks are confirmed at 9 and 15 points (plus a final-rank passive trap-sensing bonus), and Wizard's Quick Evacuation is confirmed at 10/25/50%."
-    ]
-  },
-  {
-    version: "2.0.5",
-    date: "2026-09-11",
-    items: [
-      "Fixed a rare bug where changing your character level or class selection could get silently discarded if something else on the page happened to redraw at that exact moment, leaving the old value showing instead of what you'd just entered.",
-      "Data corrections from a fresh wiki scrape: First Aid's last two ranks are confirmed at 6 and 9 points, Reaching Notes now shows its real cost pattern (every other rank is free, the same formula Symphonic Aura uses), and Unbound Boon's rank 2 exceptional-heal chance is confirmed at 4%."
-    ]
-  },
-  {
-    version: "2.0.4",
-    date: "2026-08-29",
-    items: [
-      "An AA whose ranks each do something different now shows one line per rank, with the rank you're on highlighted, instead of running them together in one paragraph. Conjurer's Efficiency is the first one written this way.",
-      "Data corrections from a fresh wiki scrape: Conjurer's Efficiency's costs are all confirmed now at 3/5/6/6/6, replacing estimates, and Thief's Intuition's second rank is confirmed at 6 points for 3 seconds."
-    ]
-  },
-  {
-    version: "2.0.3",
-    date: "2026-08-29",
-    items: [
-      "Valiant Steed and Abyssal Steed have been removed from the game, so they're gone from the tool too. If your plan included either one, its points are refunded and free to spend elsewhere.",
-      "Data corrections from a fresh wiki scrape: the crafting Masteries (Alchemy, Baking, Blacksmithing, Brewing, Fletching, Pottery and Tailoring) now show their real 10/25/50% values instead of estimates, and so do Stoicism, Burst of Power's last rank, and Druid's Quick Evacuation costs."
-    ]
-  },
-  {
-    version: "2.0.2",
-    date: "2026-08-29",
-    items: [
-      "Share links and exported build codes are much shorter again. A big build's link drops by about 40%, and a small one by more than half. Any link or export you already have keeps working."
-    ]
-  },
-  {
-    version: "2.0.1",
-    date: "2026-08-28",
-    items: [
-      "Fixed: on an AA your class combo can't train but you'd already put points into, the CLASS badge and the warning sign drew on top of each other. They sit in separate corners now.",
-      "Fixed: hiding an AA from Browse while a search was active left the tab counts showing their old numbers until something else refreshed the page."
-    ]
-  },
-  {
-    version: "2.0.0",
-    date: "2026-08-21",
-    items: [
-      "Archetype AAs are now restricted to the classes that can actually train them in-game, instead of showing every one to every combo. A class combo that doesn't qualify shows a CLASS badge in the tree and a note in Browse; a rank you already trained before a class swap made it ineligible stays exactly as it was, just flagged, the same way an out-of-reach prerequisite already works. The eligible-class list is a first pass and may need the odd correction — let us know if something looks off."
-    ]
-  },
-  {
-    version: "1.9.4",
-    date: "2026-08-20",
-    items: [
-      "Progression now shows every AA you've picked, not just the ones for your current 3 classes. A pick for a class you've swapped out stays right where it was, flagged with a small warning icon, instead of only living in the Other Classes tab. Progression's running total now always matches your Points Planned total at the top of the page."
-    ]
-  },
-  {
-    version: "1.9.3",
-    date: "2026-08-17",
-    items: [
-      "The topbar's headline number now shows owned / spent instead of just spent, so you can see at a glance how much of your plan you've actually trained in-game against its total cost."
-    ]
-  },
-  {
-    version: "1.9.2",
-    date: "2026-08-15",
-    items: [
-      "Share links and exported build codes are noticeably shorter now. Any link or export you already have keeps working exactly the same."
-    ]
-  },
-  {
-    version: "1.9.1",
-    date: "2026-08-14",
-    items: [
-      "Build Summary now also shows picks for a class you've swapped away from, below a divider, so you don't have to switch to the Other Classes tab to see them."
-    ]
-  },
-  {
-    version: "1.9.0",
-    date: "2026-08-14",
-    items: [
-      "New: owned progress is now tracked separately for each build by default, instead of one shared pool across everything. A \"Manage tracking…\" link on the Progression tab lets you link two builds to share the same live progress, merge in progress from another build without touching it, or split one back off onto its own copy, whenever you want. Clear Owned now only clears the current build's own tracking, not every build's.",
-      "Importing a build that includes owned progress no longer asks to overwrite yours. It always keeps its own separate progress, with a quick toast to let you know.",
-      "Your existing builds keep sharing progress exactly like they always did, until you choose to change that."
-    ]
-  },
-  {
-    version: "1.8.2",
-    date: "2026-07-28",
-    items: [
-      "Fixed: the Progression tab's \"owned / to go\" split could quietly drop an owned rank's estimated cost, and in rare cases even show a negative number to go. Both figures now always add up to match the topbar's own total.",
-      "Data corrections from a fresh wiki scrape: several new AAs were added (including a handful of new \"Unbound\" abilities), Leech Touch's effect changed from an activated drain to a passive Harm Touch upgrade, and Steadfast Will's rank-7 tier now also covers Monk."
-    ]
-  },
-  {
-    version: "1.8.1",
-    date: "2026-07-28",
-    items: [
-      "New: a \"Move To\" button on each Progression row opens a quick-jump menu — top or bottom of the list, top or bottom of any waypoint, or a specific position — for reordering a long build without dragging it row by row. If a step's own cost would push it past the waypoint you're aiming for, it lands as close as it can instead of overshooting, and grays out if it truly can't fit."
-    ]
-  },
-  {
-    version: "1.8.0",
-    date: "2026-07-25",
-    items: [
-      "New: swapping a class no longer wipes its picks. They move to a new Other Classes tab instead of disappearing, grouped by class with their own subtotal, and still count toward your Points Spent total. Swap the class back in and everything's exactly as you left it. (Points Spent is now a lifetime total across every class you've used — Progression's own running total still only tracks your current 3, so don't be surprised if the two numbers don't match.)",
-      "Reset Build and Clear Owned now cover every class you've used, not just your current 3 — matching how they already worked for your active classes.",
-      "Progression rows now show a small colored badge for which of your 3 classes each one belongs to."
-    ]
-  },
-  {
-    version: "1.7.0",
-    date: "2026-07-25",
-    items: [
-      "New: Hide an AA you don't care about — a Hide/Unhide toggle in the side panel and on each Browse card tucks it out of the tree, Browse All AAs, and search. A \"Show Hidden\" toggle brings hidden AAs back whenever you want. Hiding is purely a display preference: it never affects your build, an AA you've already spent points on always stays visible, and it's not saved to exports or share links."
-    ]
-  },
-  {
-    version: "1.6.5",
-    date: "2026-07-25",
-    items: [
-      "Progression tab: dragging a row near the top or bottom of the list now auto-scrolls it, speeding up the closer you get to the edge — no more pre-scrolling to where you want to drop before you can start."
-    ]
-  },
-  {
-    version: "1.6.4",
-    date: "2026-07-22",
-    items: [
-      "New: class-based rank caps are now enforced. Steadfast Will is the current example — capped at rank 6 unless one of your 3 classes is Warrior, Paladin, Shadow Knight (rank 8), or Ranger (rank 7). Tri-class combines rather than switches, so any one of your 3 classes qualifying is enough.",
-      "A rank that a later class swap puts out of reach is never stripped — it stays exactly as trained, flagged the same way a stale prerequisite is, on the tree, side panel, Summary, and Progression, with the out-of-reach portion of its progress bar dimmed. Swap back to a qualifying class and the warning clears automatically."
-    ]
-  },
-  {
-    version: "1.6.3",
-    date: "2026-07-21",
-    items: [
-      "Fixed: a purchased rank with an estimated cost showed \"0 pt(s)\" in the plain-text export instead of its \"~N\" estimate, even though the tree, side panel, and Progression tab all showed the real guess.",
-      "Fixed: Progression's own running point total used to freeze through any purchased rank with an estimated cost. It now blends estimates into the total the same way the topbar already does, and the plain-text export matches it exactly. Affordability still only ever counts confirmed costs."
-    ]
-  },
-  {
-    version: "1.6.2",
-    date: "2026-07-19",
-    items: [
-      "Removed the \"Total AA Points\" field and the cap it enforced — the topbar now just shows points spent, with no ceiling to set or bump into. Waypoints already cover marking a point total worth planning around.",
-      "When Points Spent includes estimates, the confirmed/estimated breakdown now lives in a tooltip on hover instead of a second number next to it."
-    ]
-  },
-  {
-    version: "1.6.1",
-    date: "2026-07-19",
-    items: [
-      "New: pattern-inferred estimates now cover effect values too, not just costs — a \"?\" like the one in \"Increases your critical hit chance by 1/?/5/10%\" can now show a guess, wherever descriptions appear. Same confidence tiers and tooltips as cost estimates; still just a display hint.",
-      "Data correction from a fresh wiki scrape: Packrat's ranks 2 and 3 weight-reduction values are now confirmed (10% and 15%).",
-      "Hand-picked estimates now fill in the rest of the currently undocumented effect values — Adamant Will, the crafting Mastery AAs, the Innate line, Packrat's remaining ranks, and a few others — marked with their own \"very low\" confidence tier."
-    ]
-  },
-  {
-    version: "1.6.0",
-    date: "2026-07-18",
-    items: [
-      "New: undocumented per-rank costs (shown as \"?\" on the wiki) can now show a pattern-inferred estimate instead, wherever a cost appears — the tree, side panel, Browse All AAs, and Progression. Marked with a ~ and color-coded by confidence, with a tooltip explaining what it's based on. Always a cross-check against similar, fully-documented AAs, never a guess from one AA's numbers alone.",
-      "An estimate is shown for reference only and never affects point totals or affordability — the moment the wiki documents the real cost, that takes over automatically. If you've already purchased a rank like that, the topbar's Points Spent turns blue and blends the estimate in, with the breakdown in its tooltip.",
-      "Data corrections from a fresh wiki scrape: Combat Fury and Combat Stability both had a previously-undocumented rank confirmed, and Packrat gained several confirmed ranks too.",
-      "A handful of costs no comparable AA could cross-check now show a hand-picked estimate instead, marked with its own \"very low\" confidence tier."
-    ]
-  },
-  {
-    version: "1.5.0",
-    date: "2026-07-18",
-    items: [
-      "New: Waypoints on the Progression tab. Mark a point total worth returning to (with an optional name, like \"Level 20\" or \"Turn-in gear\") and it shows up as a labeled divider right where your training order crosses it. Give it a color to make that stretch of steps stand out — color-code your whole plan into stages at a glance. Click a chip or divider to edit it later.",
-      "Waypoints are anchored to a point total rather than a position, so reordering, undo, and Reset Build never break them. They travel with the plan, in named Builds and share links alike."
-    ]
-  },
-  {
-    version: "1.4.1",
-    date: "2026-07-18",
-    items: [
-      "Fixed: the version tag in the bottom-right corner could overlap the last card or row on the Summary and Progression tabs instead of having its own clear space."
-    ]
-  },
-  {
-    version: "1.4.0",
-    date: "2026-07-18",
-    items: [
-      "New: mark AAs as owned on the Progression tab to track what you've actually trained in-game, separate from what you're just planning. Owned steps show a strikethrough, marking is undoable, and the toolbar shows a running total of points owned vs. still to go.",
-      "Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear them too if you want a clean slate. A separate \"Clear Owned\" button clears owned progress on its own, without touching your plan.",
-      "Owned progress is tracked per character, not per plan, so switching between Builds or opening a share link never touches it. It's left out of exported text and share links by default — a checkbox opts in, for moving it to another browser or sharing it. Importing a build with owned data asks first, since it would otherwise overwrite your own."
-    ]
-  },
-  {
-    version: "1.3.0",
-    date: "2026-07-17",
-    items: [
-      "New: Builds — save named snapshots of your build and switch between them from the topbar. Handy for comparing class combos or planning alternate paths side by side.",
-      "Opening a share link or importing text now offers to save your current build first, instead of just warning it'll be replaced. A share link's build is also auto-saved to a reusable \"Imported Build\" slot so it's easy to find again later.",
-      "Progression tab: Undo Last now covers reordering too, not just adding or removing a rank — drag or arrow-move a step by mistake and Undo Last puts it back."
-    ]
-  },
-  {
-    version: "1.2.1",
-    date: "2026-07-16",
-    items: [
-      "Locked AAs in the tree now show whether they're blocked by a missing prerequisite (amber border + REQ badge) or just a level requirement, instead of looking identical either way.",
-      "Browse view now flags a prerequisite you haven't met yet, matching the side panel.",
-      "Progression tab: dragging a step shows an amber indicator if that drop would leave its own prerequisite unmet, and out-of-order steps are now dimmed for visibility, not just marked with ⚠."
-    ]
-  },
-  {
-    version: "1.2.0",
-    date: "2026-07-16",
-    items: [
-      "Progression tab: drag and drop a row to reorder it, in addition to the existing arrows.",
-      "Data corrections from a fresh wiki scrape and in-game confirmation: Fury of Magic, Symphonic Aura (including its unusual per-rank cost/enable pattern), Rapid Feign, Fear Resistance, Holy Steed, and Soul Abrasion."
-    ]
-  },
-  {
-    version: "1.1.0",
-    date: "2026-07-10",
-    items: [
-      "Much shorter share links and export codes — a heavily-built character's link is now roughly a tenth of its old length. Links and codes you already have saved or shared still work.",
-      "If a data update ever removes or reshapes an AA you'd picked, you'll now see a notice on load explaining what changed, instead of a build that's just quietly different than you left it.",
-      "AAs whose prerequisite is no longer met (because of a data update) are now flagged directly in the tree and side panel, not just silently blocked."
-    ]
-  },
-  {
-    version: "1.0.0",
-    date: "2026-07-09",
-    items: [
-      "Next-rank preview: see what the next rank upgrades to before you buy it, in the side panel and as an expandable row in the Progression tab.",
-      "Global search: highlights matches in the tab you're on and shows match-count badges on other tabs that have matches too.",
-      "Progression tab: reorderable purchase history with per-step and running-total cost, add/remove controls, and single-level undo.",
-      "Shareable build links, plus text export/import (paste text, paste a share link, or load a saved .txt file).",
-      "Fixed a prerequisite bug: some prereqs (like Destructive Cascade needing Critical Affliction) now unlock rank-by-rank instead of requiring the target's max rank just to buy rank 1.",
-      "Data corrections from in-game confirmation and a fresh wiki scrape: Unbound Companion, Hunter's Attack Power, Fury of Magic, Soul Abrasion, and others."
-    ]
-  }
-];
-
-// App-wide constants, the mutable state object, and localStorage persistence.
-// Nothing here touches the DOM — that's render.js / dom.js.
-
-// A waypoint's point total is read from untrusted sources too (a pasted
-// share link isn't something we generated), so it still gets an upper
-// bound — generous enough that no real build ever approaches it, tight
-// enough that a bogus value doesn't produce nonsense in the UI.
-const MAX_WAYPOINT_PTS = 100000;
-
-// Bumped whenever the persisted shape changes. v4 introduced name-based keys
-// for ranks/purchaseOrder (see keys.js) — anything below that is index-based
-// against the frozen LEGACY_AA_ORDER snapshot and gets migrated on load.
-const SAVE_FORMAT_VERSION = 4;
-
-const STORAGE_KEY = "eql_aa_builder_v1";
-// Owned status lives in its own key, deliberately separate from the build
-// payload above - it's character-global real-world truth, not part of any
-// one plan, so it must survive switching between builds/slots/share links
-// untouched by any of that (see loadAndApplyOwned/saveOwned below).
-const OWNED_STORAGE_KEY = "eql_aa_owned_v1";
-// Well-known profile id every pre-existing build/session is backfilled to
-// (see migrateLegacyOwnedProfile/loadBuild in builds.js) - not a generated
-// id, just a fixed name for "whatever OWNED_STORAGE_KEY already held".
-// Lets every existing user's builds keep sharing owned progress exactly
-// like before per-build tracking existed, with no migration bookkeeping
-// beyond this one constant.
-const LEGACY_OWNED_PROFILE_ID = "legacy";
-
-// Shared by every place that reads an ownedProfileId field off a possibly-
-// untrusted or pre-migration object (a saved build slot, main.js's boot
-// read of the main payload) - a missing, non-string, or empty value
-// defaults to the shared legacy profile rather than leaving state or a
-// build slot pointing at something invalid.
-function ownedProfileIdOr(rawValue) {
-  return (typeof rawValue === "string" && rawValue) || LEGACY_OWNED_PROFILE_ID;
-}
-
-// Per-build "owned profile" storage - state.ownedProfileId says which one
-// the current session is showing; each saved Build slot has its own
-// ownedProfileId field pointing at one too (builds.js). Two builds
-// pointing at the same profile id read/write the same key here, which is
-// what "linked" owned tracking (see linkOwnedProfile) means concretely.
-function ownedStorageKeyFor(profileId) {
-  return `eql_aa_owned_${profileId}`;
-}
-
-// Short, sufficiently-unique id for a new owned profile or build slot -
-// timestamp plus a random suffix, not cryptographic, just collision-averse
-// enough for this app's scale. Shared by builds.js for its own slot ids.
-function genId() {
-  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-}
-
-// Bumped whenever the banner's content changes enough to be worth
-// re-showing to someone who already dismissed the old wording - a flat
-// "dismissed" flag has no notion of *which* text was dismissed, so a new
-// key is the only way to force a re-acknowledgment.
-const DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v5";
-// Which AAs are hidden from the tree/Browse decluttering views - a personal
-// display preference, not build data, so it lives in its own key rather
-// than the build payload or an exported/shared field: opening someone
-// else's share link (or your own build on another browser) shows every AA,
-// same reasoning OWNED_STORAGE_KEY already established for a different kind
-// of "outside the plan" data. See isHidden/setHidden (logic.js).
-const HIDDEN_STORAGE_KEY = "eql_aa_hidden_v1";
-// Every prior wording's dismiss flag, orphaned in storage forever the
-// moment a rewording bumps DISCLAIMER_DISMISSED_KEY. Removed once on boot
-// (see cleanupStaleStorageKeys). A flat list rather than derived from the
-// version number - if a bump forgets to add an entry here, the cost is a
-// few stray bytes, not a functional bug.
-const STALE_DISCLAIMER_KEYS = [
-  "eql_aa_disclaimer_dismissed",
-  "eql_aa_disclaimer_dismissed_v2",
-  "eql_aa_disclaimer_dismissed_v3",
-  "eql_aa_disclaimer_dismissed_v4",
-];
-
-// Disclaimer-specific today (STALE_DISCLAIMER_KEYS is the only list swept
-// here) - OWNED_STORAGE_KEY/HIDDEN_STORAGE_KEY are both still on their
-// original _v1 suffix, nothing to clean up for them yet. If either ever
-// bumps to _v2 for a format change, extend this the same way: a flat
-// stale-keys list for that key, swept here alongside the disclaimer one.
-function cleanupStaleStorageKeys() {
-  try {
-    STALE_DISCLAIMER_KEYS.forEach((k) => localStorage.removeItem(k));
-  } catch (e) {
-    // storage unavailable - nothing to clean up, nothing to fail on
-  }
-}
-
-const LAST_SEEN_VERSION_KEY = "eql_aa_last_seen_version";
-const CLASS_SLOT_KEYS = ["classSlot0", "classSlot1", "classSlot2"];
-// Canonical display/iteration order for the 6 real AA categories (excludes the
-// Summary/Progression meta-views, which aren't AA categories).
-const AA_CATEGORY_KEYS = ["general", "archetype", ...CLASS_SLOT_KEYS, "special"];
-
-let state = {
-  selectedClasses: [CLASS_LIST[0], CLASS_LIST[1], CLASS_LIST[2]],
-  charLevel: 50,
-  ranks: { general: {}, archetype: {}, special: {}, classes: {} },
-  purchaseOrder: [], // [{ scope: 'general'|'archetype'|'special'|'class', className?: string, idx: number }, ...] in click order
-  // Real-world "I've actually trained this" watermark, same shape as ranks
-  // (idx -> highest owned rank), identity-keyed by scope/className rather
-  // than anything slot-relative, same reasoning as purchaseOrder. Independent
-  // of ranks/purchaseOrder (the plan): owned tracks what's actually true
-  // in-game, so Reset Build keeps it by default and it's persisted under
-  // a profile-specific key (see ownedProfileId below) instead of any
-  // build's payload - see loadAndApplyOwned/saveOwned.
-  owned: { general: {}, archetype: {}, special: {}, classes: {} },
-  // Which owned profile `owned` above is currently loaded from/saved to -
-  // see ownedStorageKeyFor. Defaults to the shared legacy profile so a
-  // fresh session behaves exactly like the old single-global-owned system
-  // until something (a new saved build, an import carrying owned data, or
-  // the Link/Merge/Split controls) diverges it. Part of the same payload
-  // saveLocal() persists, so it survives reloads like selectedClasses does;
-  // each saved Build slot carries its own copy of this field too (builds.js).
-  ownedProfileId: LEGACY_OWNED_PROFILE_ID,
-  // Same shape/identity-keying as owned, but a display preference rather
-  // than real-world truth: which AAs to leave out of the tree/Browse grids.
-  // Persisted under its own key (HIDDEN_STORAGE_KEY), never part of the
-  // build payload/exports/share links - see loadAndApplyHidden/saveHidden.
-  // Never suppresses an AA with rank > 0, no matter what this holds.
-  hiddenAAs: { general: {}, archetype: {}, special: {}, classes: {} },
-  // Whether hidden AAs are shown anyway right now - a session-only view
-  // toggle (not persisted, same as browseSearch/browseFilter), not part of
-  // hiddenAAs itself.
-  showHidden: false,
-  // Named point-total markers ({ pts, label, color }), sorted ascending and
-  // deduped by pts. Unlike owned, these describe the PLAN itself, so they
-  // live inside the build payload/slots/share codes, not a separate key.
-  // Anchored to a point total rather than a list position or step reference
-  // - a position would break under reorder/undo/reset; a point total just
-  // gets re-derived against whatever the current order happens to be.
-  waypoints: [],
-  activeView: "calculator", // 'calculator' | 'browse' | 'summary' | 'progression'
-  activeTab: "general", // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
-  selectedNode: null, // { category, idx }
-  browseSearch: "",
-  browseFilter: "all",
-  browseUnownedOnly: false
-};
-
-// --- ranks/purchaseOrder <-> persisted-shape conversion -------------------
-// Runtime state always addresses AAs by index into AA_DATA (simple, and every
-// other module already works that way). Only these functions know that saved
-// data instead uses name keys (v4+) or, for anything saved before keys.js
-// existed, indexes against the frozen LEGACY_AA_ORDER snapshot.
-
-// Shared by serializeRanks/serializeHidden: walks general/archetype/
-// special plus classes, converting each idx-keyed store entry to a
-// name-keyed one via keyForIdx, dropping an entry that no longer resolves
-// and any class left with nothing kept. toValue maps one stored value to
-// its serialized form - the only thing that actually differs between a
-// rank number (kept as-is) and a hidden flag (always true).
-function mapIdxStoreToKeyed(source, toValue) {
-  const out = { general: {}, archetype: {}, special: {}, classes: {} };
-  ["general", "archetype", "special"].forEach((scope) => {
-    const store = source[scope] || {};
-    Object.keys(store).forEach((idxStr) => {
-      const key = keyForIdx(scope, null, parseInt(idxStr, 10));
-      if (key) out[scope][key] = toValue(store[idxStr]);
-    });
-  });
-  const classes = source.classes || {};
-  Object.keys(classes).forEach((className) => {
-    const store = classes[className] || {};
-    const outStore = {};
-    Object.keys(store).forEach((idxStr) => {
-      const key = keyForIdx("class", className, parseInt(idxStr, 10));
-      if (key) outStore[key] = toValue(store[idxStr]);
-    });
-    if (Object.keys(outStore).length) out.classes[className] = outStore;
-  });
-  return out;
-}
-
-function serializeRanks(ranks) {
-  return mapIdxStoreToKeyed(ranks, (v) => v);
-}
-
-// parseInt implicitly stringifies its argument, which can throw - not just
-// return NaN - for an object like {toString: null}, reachable from a
-// decoded share code. Restricting to number/string avoids that crash.
-function safeParseInt(value) {
-  return (typeof value === "number" || typeof value === "string") ? parseInt(value, 10) : NaN;
-}
-
-// Saved rank values come from localStorage, pasted text, or a URL — none of
-// which are guaranteed to have gone through this app. Coerce to an integer
-// and clamp to the AA's real rank range so a bogus value (huge, negative,
-// non-numeric) can't produce a broken-looking build or a costly loop
-// somewhere downstream that assumes ranks are always small and sane.
-function clampRankValue(scope, className, idx, rawValue) {
-  const aa = aaAt(scope, className, idx);
-  if (!aa) return 0;
-  const n = safeParseInt(rawValue);
-  if (!Number.isFinite(n)) return 0;
-  return Math.max(0, Math.min(aa.ranks, n));
-}
-
-// Shared by deserializeRanks/deserializeHidden: walks general/archetype/
-// special plus classes, resolving each name-keyed store entry back to an
-// idx via resolveIdx, dropping an entry that no longer resolves (calling
-// onDrop for it) and any class left with nothing kept. toValue maps one
-// resolved (scope, className, idx, rawValue) to its deserialized form -
-// the only thing that actually differs between a clamped rank number and
-// a hidden flag (always true, no value to validate).
-function mapKeyedStoreToIdx(saved, resolveIdx, toValue, onDrop) {
-  const out = { general: {}, archetype: {}, special: {}, classes: {} };
-  if (!saved || typeof saved !== "object") return out;
-  ["general", "archetype", "special"].forEach((scope) => {
-    const store = saved[scope] || {};
-    Object.keys(store).forEach((k) => {
-      const idx = resolveIdx(scope, null, k);
-      if (idx >= 0) out[scope][idx] = toValue(scope, null, idx, store[k]);
-      else onDrop();
-    });
-  });
-  const classes = saved.classes || {};
-  Object.keys(classes).forEach((className) => {
-    const store = classes[className] || {};
-    const outStore = {};
-    Object.keys(store).forEach((k) => {
-      const idx = resolveIdx("class", className, k);
-      if (idx >= 0) outStore[idx] = toValue("class", className, idx, store[k]);
-      else onDrop();
-    });
-    if (Object.keys(outStore).length) out.classes[className] = outStore;
-  });
-  return out;
-}
-
-// Returns { ranks, dropped } — `dropped` is how many saved rank entries had a
-// key that no longer resolves to any current AA (renamed/removed since the
-// save was made). Every key here represents at least one spent point
-// (changeRank deletes a store entry the moment it hits 0), so a drop always
-// means real invested points just vanished from the build — worth telling
-// the user about instead of leaving them to notice a lower total on their own.
-// Quick Evacuation's two class-scoped entries (Druid, Wizard) read and
-// write through a single shared slot now (logic.js's sharedCanonical) -
-// Druid's copy is the canonical one. A save made before that redirect
-// existed could have written to either class's own store independently,
-// so a save holding a value under Wizard's needs moving into Druid's
-// before any deserialize function below runs - otherwise Wizard's
-// residual value becomes invisible (sharedCanonical only ever reads
-// Druid's slot) while still being summed by code that walks a class's own
-// raw store directly (spentForClass/sumAcrossAllClasses in logic.js),
-// inflating the total by the orphaned value instead of matching what's
-// shown. If a save somehow holds a value under both (not reachable
-// through normal play before today, since each class's rank was tracked
-// independently) the higher one wins, rather than guessing which is
-// "right".
-// A stored rank is untrusted (localStorage, pasted text, a URL) and isn't
-// guaranteed to have gone through this app - Math.max throws on a value
-// ToPrimitive can't coerce (e.g. a crafted {toString: null}), the same
-// class of hostile input safeParseInt/clampRankValue above already guard
-// against for every ordinary rank. An invalid value reads as 0 here,
-// same fallback clampRankValue itself uses.
-function safeSharedRankValue(value) {
-  const n = safeParseInt(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function migrateSharedQuickEvacuation(ranksLike) {
-  if (!ranksLike || typeof ranksLike !== "object") return;
-  const classes = ranksLike.classes;
-  // classes.Wizard/Druid are untrusted too - the `in` operator throws on a
-  // non-object RHS (e.g. a string), and assigning a property throws on any
-  // primitive in strict mode (every ES module is strict), so both need
-  // isObject's own check before being read or written as a store.
-  if (!isObject(classes) || !isObject(classes.Wizard) || !("quick-evacuation" in classes.Wizard)) return;
-  const fromWizard = safeSharedRankValue(classes.Wizard["quick-evacuation"]);
-  delete classes.Wizard["quick-evacuation"];
-  if (!isObject(classes.Druid)) classes.Druid = {};
-  const fromDruid = safeSharedRankValue(classes.Druid["quick-evacuation"]);
-  classes.Druid["quick-evacuation"] = Math.max(fromDruid, fromWizard);
-}
-
-// Same redirect as migrateSharedQuickEvacuation, for a purchaseOrder array
-// (name-keyed {scope, className, key} entries) instead of a ranks store -
-// every entry pointing at Wizard's copy is repointed at Druid's in place,
-// so reconcilePurchaseOrderCounts (which already runs after every load)
-// trims any resulting count mismatch the normal way instead of the
-// entries just failing to resolve once their held rank moves to Druid.
-function migrateSharedQuickEvacuationPurchaseOrder(purchaseOrder) {
-  if (!Array.isArray(purchaseOrder)) return;
-  purchaseOrder.forEach((e) => {
-    if (e && e.key === "quick-evacuation" && e.scope === "class" && e.className === "Wizard") {
-      e.className = "Druid";
+  // src/keys.js
+  var RENAMED_KEYS = {
+    "class:Berserker:tireless-spirit": "tireless-sprint"
+  };
+  var LEGACY_AA_ORDER = {
+    "general": [
+      "Adamant Will",
+      "Alchemy Mastery",
+      "Baking Mastery",
+      "Blacksmithing Mastery",
+      "Brewing Mastery",
+      "Circular Breathing",
+      "Combat Agility",
+      "Combat Fury",
+      "Combat Stability",
+      "Crafting Mastery",
+      "Fear Resistance",
+      "First Aid",
+      "Fletching Mastery",
+      "Foraging",
+      "Gather Party",
+      "Innate Eminence",
+      "Innate Lung Capacity",
+      "Innate Metabolism",
+      "Innate Regeneration",
+      "Innate Spell Resistance",
+      "Jewel Craft Mastery",
+      "Natural Durability",
+      "Origin",
+      "Packrat",
+      "Permanent Illusion",
+      "Pottery Mastery",
+      "Quick Buff",
+      "Steadfast Will",
+      "Stoicism",
+      "Tailoring Mastery"
+    ],
+    "archetype": [
+      "Acrobatics",
+      "Ambidexterity",
+      "Burst of Power",
+      "Companion's Discipline",
+      "Critical Affliction",
+      "Destructive Cascade",
+      "Destructive Fury",
+      "Double Riposte",
+      "Exodus",
+      "Finishing Blow",
+      "Fury of Magic",
+      "Healing Adept",
+      "Healing Boon",
+      "Healing Gift",
+      "Improved Bash",
+      "Innate Camouflage",
+      "Innate Invis to Undead",
+      "Intimidation",
+      "Mass Group Buff",
+      "Master of All",
+      "Mastery of the Past",
+      "Mend Companion",
+      "Mental Clarity",
+      "Mnemonic Retention",
+      "Persistent Casting",
+      "Pet Affinity",
+      "Physical Enhancement",
+      "Quick Damage",
+      "Rampage",
+      "Spell Casting Deftness",
+      "Spell Casting Mastery",
+      "Spell Casting Reinforcement",
+      "Spell Casting Subtlety",
+      "Thief's Intuition"
+    ],
+    "special": ["Banestrike"],
+    "classes": {
+      "Bard": ["Instrument Mastery", "Jam Fest", "Reaching Notes", "Scribble Notes", "Singing Mastery", "Symphonic Aura"],
+      "Beastlord": ["Frenzy of Spirit", "Hobble of Spirits", "Paragon of Spirit", "Playing Possum"],
+      "Berserker": ["Blood Rune", "Innate Power Strike", "Tireless Spirit", "Unbound Fury"],
+      // The only duplicate name in the whole snapshot — recorded with explicit
+      // auto flags (instead of plain strings) so the ordinal below can be
+      // derived from *that*, not from which one happened to be listed first.
+      "Cleric": [{ name: "Divine Aura", auto: true }, { name: "Divine Aura", auto: false }, "Bestow Divine Aura", "Purify Soul", "Turn Undead", "Unbound Boon"],
+      "Druid": ["Enhanced Root", "Quick Evacuation", "Unbound Nature"],
+      "Enchanter": ["Unbound Clarity"],
+      "Magician": ["Companion's Fury", "Conjurer's Efficiency", "Elemental Form", "Turn Summoned", "Unbound Companion"],
+      "Monk": ["Dragon Force", "Improved Mend", "Purify Body", "Rapid Feign"],
+      "Necromancer": ["Dead Mesmerization", "Fear Storm", "Flesh to Bone", "Life Burn", "Unbound Affliction"],
+      "Paladin": ["Act of Valor", "Divine Stun", "Holy Steed", "Lay on Hands", "Slay Undead", "Valiant Steed"],
+      "Ranger": ["Hunter's Attack Power", "Innate Called Shot", "Unbounded Strikethrough", "Weapon Mastery of the Scout"],
+      "Rogue": ["Chaotic Stab", "Escape", "Innate Sneakiness", "Purge Poison", "Shroud of Stealth"],
+      "Shadow Knight": ["Unholy Steed", "Abyssal Steed", "Harm Touch", "Leech Touch", "Soul Abrasion"],
+      "Shaman": ["Cannibalization", "Unbound Cascade"],
+      "Warrior": ["Area Taunt", "Heroic Leap", "Innate Fighters Tenacity", "Unbound Wrath", "War Cry", "Warrior's Endurance"],
+      "Wizard": ["Improved Familiar", "Mana Burn", "Quick Evacuation", "Strong Root", "Unbound Destruction"]
     }
-  });
-}
-
-// Same redirect as migrateSharedQuickEvacuation, for hidden tracking - a
-// boolean OR instead of a max, since there's no "higher" hidden state to
-// prefer.
-function migrateSharedQuickEvacuationHidden(hiddenLike) {
-  if (!hiddenLike || typeof hiddenLike !== "object") return;
-  const classes = hiddenLike.classes;
-  if (!isObject(classes) || !isObject(classes.Wizard)) return;
-  const fromWizard = classes.Wizard["quick-evacuation"];
-  if (fromWizard === undefined) return;
-  delete classes.Wizard["quick-evacuation"];
-  if (fromWizard) {
-    if (!isObject(classes.Druid)) classes.Druid = {};
-    classes.Druid["quick-evacuation"] = true;
+  };
+  function slugify(name) {
+    return String(name || "").toLowerCase().replace(/['‘’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   }
-}
+  function normalizeEntry(e) {
+    return typeof e === "string" ? { name: e, auto: false } : e;
+  }
+  function keyForEntryIdx(rawEntries, idx) {
+    const entries = rawEntries.map(normalizeEntry);
+    const entry = entries[idx];
+    if (!entry) return null;
+    const base = slugify(entry.name);
+    const sameName = entries.map((e, i) => ({ auto: e.auto, i })).filter((e) => slugify(entries[e.i].name) === base);
+    if (sameName.length <= 1) return base;
+    if (!entry.auto) return base;
+    const autoSiblings = sameName.filter((e) => e.auto);
+    const autoPos = autoSiblings.findIndex((e) => e.i === idx);
+    return autoPos === 0 ? `${base}-auto` : `${base}-auto-${autoPos + 1}`;
+  }
+  function idxForEntryKey(rawEntries, key) {
+    for (let i = 0; i < rawEntries.length; i++) {
+      if (keyForEntryIdx(rawEntries, i) === key) return i;
+    }
+    return -1;
+  }
+  function currentList(scope, className) {
+    return scope === "class" ? AA_DATA.classes[className] || [] : AA_DATA[scope] || [];
+  }
+  function currentEntries(scope, className) {
+    return currentList(scope, className).map((aa) => ({ name: aa.name, auto: !!aa.auto }));
+  }
+  function aaAt(scope, className, idx) {
+    return currentList(scope, className)[idx] || null;
+  }
+  function legacyEntries(scope, className) {
+    return scope === "class" ? LEGACY_AA_ORDER.classes[className] || [] : LEGACY_AA_ORDER[scope] || [];
+  }
+  var entryKeyMapCache = {};
+  function entryKeyMaps(scope, className) {
+    const cacheKey = `${scope}:${className || ""}`;
+    let maps = entryKeyMapCache[cacheKey];
+    if (!maps) {
+      const entries = currentEntries(scope, className);
+      const idxToKey = entries.map((_, idx) => keyForEntryIdx(entries, idx));
+      const keyToIdx = /* @__PURE__ */ new Map();
+      idxToKey.forEach((key, idx) => {
+        if (key != null && !keyToIdx.has(key)) keyToIdx.set(key, idx);
+      });
+      maps = entryKeyMapCache[cacheKey] = { idxToKey, keyToIdx };
+    }
+    return maps;
+  }
+  function keyForIdx(scope, className, idx) {
+    return entryKeyMaps(scope, className).idxToKey[idx] || null;
+  }
+  function idxForKey(scope, className, key) {
+    const idx = entryKeyMaps(scope, className).keyToIdx.get(key);
+    if (idx !== void 0) return idx;
+    const renamed = RENAMED_KEYS[`${scope}:${className || ""}:${key}`];
+    if (renamed === void 0) return -1;
+    const renamedIdx = entryKeyMaps(scope, className).keyToIdx.get(renamed);
+    return renamedIdx === void 0 ? -1 : renamedIdx;
+  }
+  function currentIdxForLegacyIdx(scope, className, legacyIdx) {
+    const entries = legacyEntries(scope, className);
+    if (legacyIdx < 0 || legacyIdx >= entries.length) return -1;
+    const key = keyForEntryIdx(entries, legacyIdx);
+    if (!key) return -1;
+    return idxForEntryKey(currentEntries(scope, className), key);
+  }
+  var idToEntryCache = null;
+  function idToEntry() {
+    if (!idToEntryCache) {
+      idToEntryCache = {};
+      Object.keys(AA_ID_TABLE).forEach((idKey) => {
+        const id = AA_ID_TABLE[idKey];
+        const sep1 = idKey.indexOf(":");
+        const sep2 = idKey.indexOf(":", sep1 + 1);
+        const scope = idKey.slice(0, sep1);
+        const className = idKey.slice(sep1 + 1, sep2) || null;
+        const key = idKey.slice(sep2 + 1);
+        idToEntryCache[id] = { scope, className, key };
+      });
+    }
+    return idToEntryCache;
+  }
+  function idForKey(scope, className, key) {
+    const idKey = `${scope}:${className || ""}:${key}`;
+    return Object.prototype.hasOwnProperty.call(AA_ID_TABLE, idKey) ? AA_ID_TABLE[idKey] : null;
+  }
+  function entryForId(id) {
+    return idToEntry()[id] || null;
+  }
+  function costGuessFor(scope, className, aaIdx, rankIdx) {
+    const key = keyForIdx(scope, className, aaIdx);
+    if (!key) return null;
+    const idKey = `${scope}:${className || ""}:${key}`;
+    const entry = COST_GUESS_TABLE[idKey];
+    return entry ? entry[rankIdx] || null : null;
+  }
+  function effectGuessFor(scope, className, aaIdx, progIdx, rankIdx) {
+    const key = keyForIdx(scope, className, aaIdx);
+    if (!key) return null;
+    const idKey = `${scope}:${className || ""}:${key}`;
+    const entry = EFFECT_GUESS_TABLE[idKey];
+    if (!entry) return null;
+    const prog = entry[progIdx];
+    return prog ? prog[rankIdx] || null : null;
+  }
 
-function deserializeRanks(saved, resolveIdx) {
-  let dropped = 0;
-  const ranks = mapKeyedStoreToIdx(saved, resolveIdx, clampRankValue, () => { dropped++; });
-  return { ranks, dropped };
-}
-
-function serializeHidden(hidden) {
-  return mapIdxStoreToKeyed(hidden, () => true);
-}
-
-// A hidden entry that no longer resolves just has nothing left to hide -
-// unlike a dropped rank, there's no invested points to tell the user
-// about, so onDrop is a no-op here rather than its own counter.
-function deserializeHidden(saved) {
-  return mapKeyedStoreToIdx(saved, (scope, className, k) => idxForKey(scope, className, k), () => true, () => {});
-}
-
-// Mirrors saveOwned/loadAndApplyOwned - called by setHidden (logic.js)
-// whenever state.hiddenAAs changes, and once at boot from main.js. No
-// migration-from-main-payload path to worry about (unlike owned's history):
-// hidden has never lived anywhere but this key.
-function saveHidden() {
-  try {
-    localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify({ v: SAVE_FORMAT_VERSION, hidden: serializeHidden(state.hiddenAAs) }));
-  } catch (e) { /* storage unavailable, ignore */ }
-}
-
-function loadAndApplyHidden() {
-  try {
-    const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
-    if (raw) {
+  // src/state.js
+  var MAX_WAYPOINT_PTS = 1e5;
+  var SAVE_FORMAT_VERSION = 4;
+  var STORAGE_KEY = "eql_aa_builder_v1";
+  var OWNED_STORAGE_KEY = "eql_aa_owned_v1";
+  var LEGACY_OWNED_PROFILE_ID = "legacy";
+  function ownedProfileIdOr(rawValue) {
+    return typeof rawValue === "string" && rawValue || LEGACY_OWNED_PROFILE_ID;
+  }
+  function ownedStorageKeyFor(profileId) {
+    return `eql_aa_owned_${profileId}`;
+  }
+  function genId() {
+    return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  }
+  var DISCLAIMER_DISMISSED_KEY = "eql_aa_disclaimer_dismissed_v5";
+  var HIDDEN_STORAGE_KEY = "eql_aa_hidden_v1";
+  var STALE_DISCLAIMER_KEYS = [
+    "eql_aa_disclaimer_dismissed",
+    "eql_aa_disclaimer_dismissed_v2",
+    "eql_aa_disclaimer_dismissed_v3",
+    "eql_aa_disclaimer_dismissed_v4"
+  ];
+  function cleanupStaleStorageKeys() {
+    try {
+      STALE_DISCLAIMER_KEYS.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {
+    }
+  }
+  var LAST_SEEN_VERSION_KEY = "eql_aa_last_seen_version";
+  var CLASS_SLOT_KEYS = ["classSlot0", "classSlot1", "classSlot2"];
+  var AA_CATEGORY_KEYS = ["general", "archetype", ...CLASS_SLOT_KEYS, "special"];
+  var state = {
+    selectedClasses: [CLASS_LIST[0], CLASS_LIST[1], CLASS_LIST[2]],
+    charLevel: 50,
+    ranks: { general: {}, archetype: {}, special: {}, classes: {} },
+    purchaseOrder: [],
+    // [{ scope: 'general'|'archetype'|'special'|'class', className?: string, idx: number }, ...] in click order
+    // Real-world "I've actually trained this" watermark, same shape as ranks
+    // (idx -> highest owned rank), identity-keyed by scope/className rather
+    // than anything slot-relative, same reasoning as purchaseOrder. Independent
+    // of ranks/purchaseOrder (the plan): owned tracks what's actually true
+    // in-game, so Reset Build keeps it by default and it's persisted under
+    // a profile-specific key (see ownedProfileId below) instead of any
+    // build's payload - see loadAndApplyOwned/saveOwned.
+    owned: { general: {}, archetype: {}, special: {}, classes: {} },
+    // Which owned profile `owned` above is currently loaded from/saved to -
+    // see ownedStorageKeyFor. Defaults to the shared legacy profile so a
+    // fresh session behaves exactly like the old single-global-owned system
+    // until something (a new saved build, an import carrying owned data, or
+    // the Link/Merge/Split controls) diverges it. Part of the same payload
+    // saveLocal() persists, so it survives reloads like selectedClasses does;
+    // each saved Build slot carries its own copy of this field too (builds.js).
+    ownedProfileId: LEGACY_OWNED_PROFILE_ID,
+    // Same shape/identity-keying as owned, but a display preference rather
+    // than real-world truth: which AAs to leave out of the tree/Browse grids.
+    // Persisted under its own key (HIDDEN_STORAGE_KEY), never part of the
+    // build payload/exports/share links - see loadAndApplyHidden/saveHidden.
+    // Never suppresses an AA with rank > 0, no matter what this holds.
+    hiddenAAs: { general: {}, archetype: {}, special: {}, classes: {} },
+    // Whether hidden AAs are shown anyway right now - a session-only view
+    // toggle (not persisted, same as browseSearch/browseFilter), not part of
+    // hiddenAAs itself.
+    showHidden: false,
+    // Named point-total markers ({ pts, label, color }), sorted ascending and
+    // deduped by pts. Unlike owned, these describe the PLAN itself, so they
+    // live inside the build payload/slots/share codes, not a separate key.
+    // Anchored to a point total rather than a list position or step reference
+    // - a position would break under reorder/undo/reset; a point total just
+    // gets re-derived against whatever the current order happens to be.
+    waypoints: [],
+    activeView: "calculator",
+    // 'calculator' | 'browse' | 'summary' | 'progression'
+    activeTab: "general",
+    // 'general' | 'archetype' | 'classSlot0' | 'classSlot1' | 'classSlot2' | 'special'
+    selectedNode: null,
+    // { category, idx }
+    browseSearch: "",
+    browseFilter: "all",
+    browseUnownedOnly: false
+  };
+  function mapIdxStoreToKeyed(source, toValue) {
+    const out = { general: {}, archetype: {}, special: {}, classes: {} };
+    ["general", "archetype", "special"].forEach((scope) => {
+      const store = source[scope] || {};
+      Object.keys(store).forEach((idxStr) => {
+        const key = keyForIdx(scope, null, parseInt(idxStr, 10));
+        if (key) out[scope][key] = toValue(store[idxStr]);
+      });
+    });
+    const classes = source.classes || {};
+    Object.keys(classes).forEach((className) => {
+      const store = classes[className] || {};
+      const outStore = {};
+      Object.keys(store).forEach((idxStr) => {
+        const key = keyForIdx("class", className, parseInt(idxStr, 10));
+        if (key) outStore[key] = toValue(store[idxStr]);
+      });
+      if (Object.keys(outStore).length) out.classes[className] = outStore;
+    });
+    return out;
+  }
+  function serializeRanks(ranks) {
+    return mapIdxStoreToKeyed(ranks, (v) => v);
+  }
+  function safeParseInt(value) {
+    return typeof value === "number" || typeof value === "string" ? parseInt(value, 10) : NaN;
+  }
+  function clampRankValue(scope, className, idx, rawValue) {
+    const aa = aaAt(scope, className, idx);
+    if (!aa) return 0;
+    const n = safeParseInt(rawValue);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(aa.ranks, n));
+  }
+  function mapKeyedStoreToIdx(saved, resolveIdx, toValue, onDrop) {
+    const out = { general: {}, archetype: {}, special: {}, classes: {} };
+    if (!saved || typeof saved !== "object") return out;
+    ["general", "archetype", "special"].forEach((scope) => {
+      const store = saved[scope] || {};
+      Object.keys(store).forEach((k) => {
+        const idx = resolveIdx(scope, null, k);
+        if (idx >= 0) out[scope][idx] = toValue(scope, null, idx, store[k]);
+        else onDrop();
+      });
+    });
+    const classes = saved.classes || {};
+    Object.keys(classes).forEach((className) => {
+      const store = classes[className] || {};
+      const outStore = {};
+      Object.keys(store).forEach((k) => {
+        const idx = resolveIdx("class", className, k);
+        if (idx >= 0) outStore[idx] = toValue("class", className, idx, store[k]);
+        else onDrop();
+      });
+      if (Object.keys(outStore).length) out.classes[className] = outStore;
+    });
+    return out;
+  }
+  function safeSharedRankValue(value) {
+    const n = safeParseInt(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+  function migrateSharedQuickEvacuation(ranksLike) {
+    if (!ranksLike || typeof ranksLike !== "object") return;
+    const classes = ranksLike.classes;
+    if (!isObject(classes) || !isObject(classes.Wizard) || !("quick-evacuation" in classes.Wizard)) return;
+    const fromWizard = safeSharedRankValue(classes.Wizard["quick-evacuation"]);
+    delete classes.Wizard["quick-evacuation"];
+    if (!isObject(classes.Druid)) classes.Druid = {};
+    const fromDruid = safeSharedRankValue(classes.Druid["quick-evacuation"]);
+    classes.Druid["quick-evacuation"] = Math.max(fromDruid, fromWizard);
+  }
+  function migrateSharedQuickEvacuationPurchaseOrder(purchaseOrder) {
+    if (!Array.isArray(purchaseOrder)) return;
+    purchaseOrder.forEach((e) => {
+      if (e && e.key === "quick-evacuation" && e.scope === "class" && e.className === "Wizard") {
+        e.className = "Druid";
+      }
+    });
+  }
+  function migrateSharedQuickEvacuationHidden(hiddenLike) {
+    if (!hiddenLike || typeof hiddenLike !== "object") return;
+    const classes = hiddenLike.classes;
+    if (!isObject(classes) || !isObject(classes.Wizard)) return;
+    const fromWizard = classes.Wizard["quick-evacuation"];
+    if (fromWizard === void 0) return;
+    delete classes.Wizard["quick-evacuation"];
+    if (fromWizard) {
+      if (!isObject(classes.Druid)) classes.Druid = {};
+      classes.Druid["quick-evacuation"] = true;
+    }
+  }
+  function deserializeRanks(saved, resolveIdx) {
+    let dropped = 0;
+    const ranks = mapKeyedStoreToIdx(saved, resolveIdx, clampRankValue, () => {
+      dropped++;
+    });
+    return { ranks, dropped };
+  }
+  function serializeHidden(hidden) {
+    return mapIdxStoreToKeyed(hidden, () => true);
+  }
+  function deserializeHidden(saved) {
+    return mapKeyedStoreToIdx(saved, (scope, className, k) => idxForKey(scope, className, k), () => true, () => {
+    });
+  }
+  function saveHidden() {
+    try {
+      localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify({ v: SAVE_FORMAT_VERSION, hidden: serializeHidden(state.hiddenAAs) }));
+    } catch (e) {
+    }
+  }
+  function loadAndApplyHidden() {
+    try {
+      const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.hidden && typeof parsed.hidden === "object") {
+          migrateSharedQuickEvacuationHidden(parsed.hidden);
+          state.hiddenAAs = deserializeHidden(parsed.hidden);
+          return;
+        }
+      }
+    } catch (e) {
+    }
+    state.hiddenAAs = { general: {}, archetype: {}, special: {}, classes: {} };
+  }
+  function serializePurchaseOrder(purchaseOrder) {
+    return (purchaseOrder || []).map((e) => {
+      const key = keyForIdx(e.scope, e.className || null, e.idx);
+      return key ? { scope: e.scope, className: e.className || null, key } : null;
+    }).filter(Boolean);
+  }
+  var MAX_PURCHASE_ORDER = 2e3;
+  function deserializePurchaseOrder(saved, entryIdOf, resolveIdx) {
+    const list = Array.isArray(saved) ? saved.slice(0, MAX_PURCHASE_ORDER) : [];
+    return list.map((e) => {
+      if (!e || typeof e !== "object" || typeof e.scope !== "string") return null;
+      const id = entryIdOf(e);
+      if (id == null) return null;
+      const idx = resolveIdx(e.scope, e.className || null, id);
+      return idx >= 0 ? { scope: e.scope, className: e.className || null, idx } : null;
+    }).filter(Boolean);
+  }
+  var MAX_WAYPOINTS = 200;
+  var WAYPOINT_COLORS = [
+    { key: "red", hex: "#d94c4c" },
+    { key: "orange", hex: "#d98a3d" },
+    { key: "yellow", hex: "#d9c23d" },
+    { key: "green", hex: "#4c8c52" },
+    { key: "teal", hex: "#3da6a0" },
+    { key: "blue", hex: "#4c7fd9" },
+    { key: "purple", hex: "#9c4cd9" }
+  ];
+  var WAYPOINT_COLOR_KEYS = new Set(WAYPOINT_COLORS.map((c) => c.key));
+  function sanitizeWaypoints(list) {
+    if (!Array.isArray(list)) return [];
+    const byPts = /* @__PURE__ */ new Map();
+    list.forEach((entry) => {
+      let rawPts, rawLabel, rawColor;
+      if (Array.isArray(entry)) [rawPts, rawLabel, rawColor] = entry;
+      else if (entry && typeof entry === "object") {
+        rawPts = entry.pts;
+        rawLabel = entry.label;
+        rawColor = entry.color;
+      } else return;
+      const pts = safeParseInt(rawPts);
+      if (!Number.isFinite(pts) || pts < 0) return;
+      const clamped = Math.min(pts, MAX_WAYPOINT_PTS);
+      const label = typeof rawLabel === "string" && rawLabel.trim() ? rawLabel.trim().slice(0, 60) : null;
+      const color = typeof rawColor === "string" && WAYPOINT_COLOR_KEYS.has(rawColor) ? rawColor : null;
+      byPts.set(clamped, { label, color });
+    });
+    return Array.from(byPts.entries()).map(([pts, { label, color }]) => ({ pts, label, color })).sort((a, b) => a.pts - b.pts).slice(-MAX_WAYPOINTS);
+  }
+  function saveLocal() {
+    try {
+      const payload = {
+        v: SAVE_FORMAT_VERSION,
+        selectedClasses: state.selectedClasses,
+        charLevel: state.charLevel,
+        ranks: serializeRanks(state.ranks),
+        purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
+        waypoints: state.waypoints,
+        ownedProfileId: state.ownedProfileId
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+    }
+  }
+  function saveOwnedProfileTo(profileId, ownedLike) {
+    try {
+      localStorage.setItem(ownedStorageKeyFor(profileId), JSON.stringify({ v: SAVE_FORMAT_VERSION, owned: serializeRanks(ownedLike) }));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function saveOwned() {
+    saveOwnedProfileTo(state.ownedProfileId, state.owned);
+  }
+  function loadOwnedProfileRaw(profileId) {
+    return readJsonFromStorage(ownedStorageKeyFor(profileId), isObject);
+  }
+  function migrateLegacyOwnedProfile() {
+    try {
+      const legacyRaw = localStorage.getItem(OWNED_STORAGE_KEY);
+      if (!legacyRaw) return;
+      const profileKey = ownedStorageKeyFor(LEGACY_OWNED_PROFILE_ID);
+      if (localStorage.getItem(profileKey) != null) return;
+      localStorage.setItem(profileKey, legacyRaw);
+    } catch (e) {
+    }
+  }
+  function listOwnedProfileIds() {
+    const prefix = "eql_aa_owned_";
+    const ids = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith(prefix) || key === OWNED_STORAGE_KEY) continue;
+        const id = key.slice(prefix.length);
+        if (id !== LEGACY_OWNED_PROFILE_ID) ids.push(id);
+      }
+    } catch (e) {
+    }
+    return ids;
+  }
+  function removeOwnedProfile(profileId) {
+    if (profileId === LEGACY_OWNED_PROFILE_ID) return;
+    try {
+      localStorage.removeItem(ownedStorageKeyFor(profileId));
+    } catch (e) {
+    }
+  }
+  function readJsonFromStorage(key, validate) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.hidden && typeof parsed.hidden === "object") {
-        migrateSharedQuickEvacuationHidden(parsed.hidden);
-        state.hiddenAAs = deserializeHidden(parsed.hidden);
-        return;
+      if (validate && !validate(parsed)) return null;
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+  var isObject = (v) => !!v && typeof v === "object";
+  function loadLocal() {
+    return readJsonFromStorage(STORAGE_KEY, isObject);
+  }
+  function applyLoaded(loaded) {
+    if (!loaded) return { droppedRanks: 0 };
+    if (Array.isArray(loaded.selectedClasses) && loaded.selectedClasses.length === 3 && loaded.selectedClasses.every((c) => CLASS_LIST.includes(c)) && new Set(loaded.selectedClasses).size === 3) {
+      state.selectedClasses = loaded.selectedClasses.slice();
+    }
+    const parsedLevel = safeParseInt(loaded.charLevel);
+    if (Number.isFinite(parsedLevel)) {
+      state.charLevel = Math.max(1, Math.min(50, parsedLevel));
+    }
+    const isLegacy = !(typeof loaded.v === "number" && loaded.v >= 4);
+    if (!isLegacy) {
+      migrateSharedQuickEvacuation(loaded.ranks);
+      migrateSharedQuickEvacuationPurchaseOrder(loaded.purchaseOrder);
+    }
+    let droppedRanks = 0;
+    if (loaded.ranks && typeof loaded.ranks === "object") {
+      const result = isLegacy ? deserializeRanks(loaded.ranks, (scope, cls, idxStr) => currentIdxForLegacyIdx(scope, cls, parseInt(idxStr, 10))) : deserializeRanks(loaded.ranks, (scope, cls, key) => idxForKey(scope, cls, key));
+      state.ranks = result.ranks;
+      droppedRanks = result.dropped;
+    }
+    if (Array.isArray(loaded.purchaseOrder)) {
+      state.purchaseOrder = isLegacy ? deserializePurchaseOrder(loaded.purchaseOrder, (e) => typeof e.idx === "number" ? e.idx : null, (scope, cls, legacyIdx) => currentIdxForLegacyIdx(scope, cls, legacyIdx)) : deserializePurchaseOrder(loaded.purchaseOrder, (e) => typeof e.key === "string" ? e.key : null, (scope, cls, key) => idxForKey(scope, cls, key));
+    }
+    state.waypoints = sanitizeWaypoints(loaded.waypoints);
+    return { droppedRanks };
+  }
+  function loadAndApplyOwned(rawMainPayload) {
+    const stored = loadOwnedProfileRaw(state.ownedProfileId);
+    if (stored && stored.owned && typeof stored.owned === "object") {
+      migrateSharedQuickEvacuation(stored.owned);
+      const result = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key));
+      state.owned = result.ranks;
+      return { droppedOwned: result.dropped };
+    }
+    if (rawMainPayload && rawMainPayload.owned && typeof rawMainPayload.owned === "object") {
+      migrateSharedQuickEvacuation(rawMainPayload.owned);
+      const result = deserializeRanks(rawMainPayload.owned, (scope, cls, key) => idxForKey(scope, cls, key));
+      state.owned = result.ranks;
+      saveOwned();
+      return { droppedOwned: result.dropped };
+    }
+    state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+    return { droppedOwned: 0 };
+  }
+  function payloadOwnedHasContent(owned) {
+    if (!owned || typeof owned !== "object") return false;
+    if (Object.keys(owned.general || {}).length || Object.keys(owned.archetype || {}).length || Object.keys(owned.special || {}).length) return true;
+    const classes = owned.classes || {};
+    return Object.keys(classes).some((className) => Object.keys(classes[className] || {}).length > 0);
+  }
+  function adoptImportedOwnedAsNewProfile(ownedField) {
+    const newId = genId();
+    migrateSharedQuickEvacuation(ownedField);
+    const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
+    state.ownedProfileId = newId;
+    state.owned = result.ranks;
+    saveOwned();
+    return { dropped: result.dropped };
+  }
+  function linkOwnedProfile(targetProfileId) {
+    state.ownedProfileId = targetProfileId;
+    loadAndApplyOwned(null);
+  }
+  function splitOwnedProfile() {
+    state.ownedProfileId = genId();
+    saveOwned();
+  }
+  function mergeOwnedProfileInto(sourceProfileId) {
+    const sourceRaw = loadOwnedProfileRaw(sourceProfileId);
+    if (!sourceRaw || !sourceRaw.owned || typeof sourceRaw.owned !== "object") return { merged: 0 };
+    migrateSharedQuickEvacuation(sourceRaw.owned);
+    const source = deserializeRanks(sourceRaw.owned, (scope, cls, key) => idxForKey(scope, cls, key)).ranks;
+    let merged = 0;
+    function mergeStore(target, src) {
+      Object.keys(src).forEach((idxStr) => {
+        const idx = parseInt(idxStr, 10);
+        const current = target[idx] || 0;
+        if (src[idx] > current) {
+          target[idx] = src[idx];
+          merged++;
+        }
+      });
+    }
+    ["general", "archetype", "special"].forEach((scope) => mergeStore(state.owned[scope], source[scope]));
+    Object.keys(source.classes).forEach((className) => {
+      if (!state.owned.classes[className]) state.owned.classes[className] = {};
+      mergeStore(state.owned.classes[className], source.classes[className]);
+    });
+    if (merged) saveOwned();
+    return { merged };
+  }
+
+  // src/dom.js
+  var el = {};
+  function cacheDom() {
+    el.classSelects = [
+      document.getElementById("classSelect0"),
+      document.getElementById("classSelect1"),
+      document.getElementById("classSelect2")
+    ];
+    el.levelInput = document.getElementById("levelInput");
+    el.spentValue = document.getElementById("spentValue");
+    el.browseToggle = document.getElementById("browseToggle");
+    el.exportBtn = document.getElementById("exportBtn");
+    el.importBtn = document.getElementById("importBtn");
+    el.importFile = document.getElementById("importFile");
+    el.importModal = document.getElementById("importModal");
+    el.importText = document.getElementById("importText");
+    el.loadImportFileBtn = document.getElementById("loadImportFileBtn");
+    el.doImportBtn = document.getElementById("doImportBtn");
+    el.closeImportBtn = document.getElementById("closeImportBtn");
+    el.resetBtn = document.getElementById("resetBtn");
+    el.exportModal = document.getElementById("exportModal");
+    el.exportText = document.getElementById("exportText");
+    el.shareLinkInput = document.getElementById("shareLinkInput");
+    el.copyShareLinkBtn = document.getElementById("copyShareLinkBtn");
+    el.copyExportBtn = document.getElementById("copyExportBtn");
+    el.saveExportBtn = document.getElementById("saveExportBtn");
+    el.closeExportBtn = document.getElementById("closeExportBtn");
+    el.tabs = document.getElementById("tabs");
+    el.calculatorView = document.getElementById("calculatorView");
+    el.browseView = document.getElementById("browseView");
+    el.summaryView = document.getElementById("summaryView");
+    el.summaryHeader = document.getElementById("summaryHeader");
+    el.summaryContent = document.getElementById("summaryContent");
+    el.otherClassesView = document.getElementById("otherClassesView");
+    el.otherClassesContent = document.getElementById("otherClassesContent");
+    el.progressionView = document.getElementById("progressionView");
+    el.progressionWrap = document.getElementById("progressionWrap");
+    el.progressionContent = document.getElementById("progressionContent");
+    el.undoLastBtn = document.getElementById("undoLastBtn");
+    el.ownedSummary = document.getElementById("ownedSummary");
+    el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
+    el.manageOwnedTrackingBtn = document.getElementById("manageOwnedTrackingBtn");
+    el.ownedTrackingModal = document.getElementById("ownedTrackingModal");
+    el.ownedTrackingStatus = document.getElementById("ownedTrackingStatus");
+    el.ownedTrackingBuildSelect = document.getElementById("ownedTrackingBuildSelect");
+    el.ownedTrackingLinkBtn = document.getElementById("ownedTrackingLinkBtn");
+    el.ownedTrackingMergeBtn = document.getElementById("ownedTrackingMergeBtn");
+    el.ownedTrackingSplitBtn = document.getElementById("ownedTrackingSplitBtn");
+    el.closeOwnedTrackingBtn = document.getElementById("closeOwnedTrackingBtn");
+    el.addWaypointBtn = document.getElementById("addWaypointBtn");
+    el.waypointChips = document.getElementById("waypointChips");
+    el.waypointModal = document.getElementById("waypointModal");
+    el.waypointModalTitle = document.getElementById("waypointModalTitle");
+    el.waypointPtsInput = document.getElementById("waypointPtsInput");
+    el.waypointLabelInput = document.getElementById("waypointLabelInput");
+    el.waypointColorSwatches = document.getElementById("waypointColorSwatches");
+    el.deleteWaypointBtn = document.getElementById("deleteWaypointBtn");
+    el.cancelWaypointBtn = document.getElementById("cancelWaypointBtn");
+    el.saveWaypointBtn = document.getElementById("saveWaypointBtn");
+    el.treeWrap = document.getElementById("treeWrap");
+    el.sidePanel = document.getElementById("sidePanel");
+    el.globalSearch = document.getElementById("globalSearch");
+    el.clearSearchBtn = document.getElementById("clearSearchBtn");
+    el.showHiddenToggle = document.getElementById("showHiddenToggle");
+    el.browseFilter = document.getElementById("browseFilter");
+    el.browseUnownedToggle = document.getElementById("browseUnownedToggle");
+    el.browseGrid = document.getElementById("browseGrid");
+    el.toast = document.getElementById("toast");
+    el.disclaimerBanner = document.getElementById("disclaimerBanner");
+    el.dismissBannerBtn = document.getElementById("dismissBannerBtn");
+    el.versionTag = document.getElementById("versionTag");
+    el.changelogModal = document.getElementById("changelogModal");
+    el.changelogContent = document.getElementById("changelogContent");
+    el.changelogFade = document.getElementById("changelogFade");
+    el.closeChangelogBtn = document.getElementById("closeChangelogBtn");
+    el.buildsBtn = document.getElementById("buildsBtn");
+    el.buildsModal = document.getElementById("buildsModal");
+    el.buildSaveName = document.getElementById("buildSaveName");
+    el.buildSaveBtn = document.getElementById("buildSaveBtn");
+    el.buildsList = document.getElementById("buildsList");
+    el.closeBuildsBtn = document.getElementById("closeBuildsBtn");
+    el.resetModal = document.getElementById("resetModal");
+    el.resetClearOwnedCheckbox = document.getElementById("resetClearOwnedCheckbox");
+    el.confirmResetBtn = document.getElementById("confirmResetBtn");
+    el.cancelResetBtn = document.getElementById("cancelResetBtn");
+  }
+
+  // src/changelogData.js
+  var USER_CHANGELOG = [
+    {
+      version: "2.1.2",
+      date: "2026-10-02",
+      items: [
+        "Quick Evacuation (Druid and Wizard) is now tracked as a single shared ability. Training it under either class adds to the same progress instead of two separate pools, matching how it actually works in game."
+      ]
+    },
+    {
+      version: "2.1.1",
+      date: "2026-10-01",
+      items: [
+        "Share links and exports now keep your owned rank correctly when it's higher than your planned rank, or far from it. Links made before this update still open as before.",
+        "Unmarking an AA that comes with free ranks no longer leaves it hidden from the Unowned Only filter.",
+        "Move To now lands in the right spot when moving a step into a waypoint section.",
+        "A pick on a class you've swapped away from now shows a notice if its prerequisite stops being met, and a share link with an AA the calculator doesn't recognize now tells you instead of dropping it silently."
+      ]
+    },
+    {
+      version: "2.1.0",
+      date: "2026-09-28",
+      items: [
+        "Browse All AAs now has an Unowned Only filter, and every card shows your exact owned rank at a glance - handy once you've got a lot of AAs already trained. Auto-granted AAs are left out of the filter, since you never need to mark those owned.",
+        "A share link or import with a corrupted value (like a garbled character level) is now rejected safely instead of freezing the calculator."
+      ]
+    },
+    {
+      version: "2.0.9",
+      date: "2026-09-27",
+      items: [
+        "Undo now restores the right rank after you lower an AA that comes with free ranks.",
+        "A damaged or incomplete share code now shows an error instead of loading as an empty build.",
+        "If a shared link loads but can't be saved to Builds (for example when browser storage is full), you now get a warning instead of being told it was saved. Picking an import file that can't be read now shows a message too."
+      ]
+    },
+    {
+      version: "2.0.8",
+      date: "2026-09-23",
+      items: [
+        "Three new AAs from the latest patch are now in the calculator: Full Potential (storage capacity), Point Blank Fire (a 0-point ranged combat AA for Berserker, Monk, Ranger, and Rogue), and Widened Perception (+1 loadout slot)."
+      ]
+    },
+    {
+      version: "2.0.7",
+      date: "2026-09-16",
+      items: [
+        "Master of All is now a single rank costing 10 points, instead of four ranks at 5 points each. If you'd trained past rank 1 on an older build, it'll show the refund automatically.",
+        "Data correction from a fresh wiki scrape: Turn Summoned's second rank is confirmed at 6 points (400/800 damage)."
+      ]
+    },
+    {
+      version: "2.0.6",
+      date: "2026-09-13",
+      items: [
+        "Spell Casting Subtlety, Reaching Notes, and Symphonic Aura are now simple toggles in-game rather than needing a purchased rank to turn on and off. They show fewer total ranks to match - if you'd trained deep into one of these on an older build, it may display differently now, though the points you already spent still count the same.",
+        "Data corrections from a fresh wiki scrape: Thief's Intuition's last two ranks are confirmed at 9 and 15 points (plus a final-rank passive trap-sensing bonus), and Wizard's Quick Evacuation is confirmed at 10/25/50%."
+      ]
+    },
+    {
+      version: "2.0.5",
+      date: "2026-09-11",
+      items: [
+        "Fixed a rare bug where changing your character level or class selection could get silently discarded if something else on the page happened to redraw at that exact moment, leaving the old value showing instead of what you'd just entered.",
+        "Data corrections from a fresh wiki scrape: First Aid's last two ranks are confirmed at 6 and 9 points, Reaching Notes now shows its real cost pattern (every other rank is free, the same formula Symphonic Aura uses), and Unbound Boon's rank 2 exceptional-heal chance is confirmed at 4%."
+      ]
+    },
+    {
+      version: "2.0.4",
+      date: "2026-08-29",
+      items: [
+        "An AA whose ranks each do something different now shows one line per rank, with the rank you're on highlighted, instead of running them together in one paragraph. Conjurer's Efficiency is the first one written this way.",
+        "Data corrections from a fresh wiki scrape: Conjurer's Efficiency's costs are all confirmed now at 3/5/6/6/6, replacing estimates, and Thief's Intuition's second rank is confirmed at 6 points for 3 seconds."
+      ]
+    },
+    {
+      version: "2.0.3",
+      date: "2026-08-29",
+      items: [
+        "Valiant Steed and Abyssal Steed have been removed from the game, so they're gone from the tool too. If your plan included either one, its points are refunded and free to spend elsewhere.",
+        "Data corrections from a fresh wiki scrape: the crafting Masteries (Alchemy, Baking, Blacksmithing, Brewing, Fletching, Pottery and Tailoring) now show their real 10/25/50% values instead of estimates, and so do Stoicism, Burst of Power's last rank, and Druid's Quick Evacuation costs."
+      ]
+    },
+    {
+      version: "2.0.2",
+      date: "2026-08-29",
+      items: [
+        "Share links and exported build codes are much shorter again. A big build's link drops by about 40%, and a small one by more than half. Any link or export you already have keeps working."
+      ]
+    },
+    {
+      version: "2.0.1",
+      date: "2026-08-28",
+      items: [
+        "Fixed: on an AA your class combo can't train but you'd already put points into, the CLASS badge and the warning sign drew on top of each other. They sit in separate corners now.",
+        "Fixed: hiding an AA from Browse while a search was active left the tab counts showing their old numbers until something else refreshed the page."
+      ]
+    },
+    {
+      version: "2.0.0",
+      date: "2026-08-21",
+      items: [
+        "Archetype AAs are now restricted to the classes that can actually train them in-game, instead of showing every one to every combo. A class combo that doesn't qualify shows a CLASS badge in the tree and a note in Browse; a rank you already trained before a class swap made it ineligible stays exactly as it was, just flagged, the same way an out-of-reach prerequisite already works. The eligible-class list is a first pass and may need the odd correction \u2014 let us know if something looks off."
+      ]
+    },
+    {
+      version: "1.9.4",
+      date: "2026-08-20",
+      items: [
+        "Progression now shows every AA you've picked, not just the ones for your current 3 classes. A pick for a class you've swapped out stays right where it was, flagged with a small warning icon, instead of only living in the Other Classes tab. Progression's running total now always matches your Points Planned total at the top of the page."
+      ]
+    },
+    {
+      version: "1.9.3",
+      date: "2026-08-17",
+      items: [
+        "The topbar's headline number now shows owned / spent instead of just spent, so you can see at a glance how much of your plan you've actually trained in-game against its total cost."
+      ]
+    },
+    {
+      version: "1.9.2",
+      date: "2026-08-15",
+      items: [
+        "Share links and exported build codes are noticeably shorter now. Any link or export you already have keeps working exactly the same."
+      ]
+    },
+    {
+      version: "1.9.1",
+      date: "2026-08-14",
+      items: [
+        "Build Summary now also shows picks for a class you've swapped away from, below a divider, so you don't have to switch to the Other Classes tab to see them."
+      ]
+    },
+    {
+      version: "1.9.0",
+      date: "2026-08-14",
+      items: [
+        `New: owned progress is now tracked separately for each build by default, instead of one shared pool across everything. A "Manage tracking\u2026" link on the Progression tab lets you link two builds to share the same live progress, merge in progress from another build without touching it, or split one back off onto its own copy, whenever you want. Clear Owned now only clears the current build's own tracking, not every build's.`,
+        "Importing a build that includes owned progress no longer asks to overwrite yours. It always keeps its own separate progress, with a quick toast to let you know.",
+        "Your existing builds keep sharing progress exactly like they always did, until you choose to change that."
+      ]
+    },
+    {
+      version: "1.8.2",
+      date: "2026-07-28",
+      items: [
+        `Fixed: the Progression tab's "owned / to go" split could quietly drop an owned rank's estimated cost, and in rare cases even show a negative number to go. Both figures now always add up to match the topbar's own total.`,
+        `Data corrections from a fresh wiki scrape: several new AAs were added (including a handful of new "Unbound" abilities), Leech Touch's effect changed from an activated drain to a passive Harm Touch upgrade, and Steadfast Will's rank-7 tier now also covers Monk.`
+      ]
+    },
+    {
+      version: "1.8.1",
+      date: "2026-07-28",
+      items: [
+        `New: a "Move To" button on each Progression row opens a quick-jump menu \u2014 top or bottom of the list, top or bottom of any waypoint, or a specific position \u2014 for reordering a long build without dragging it row by row. If a step's own cost would push it past the waypoint you're aiming for, it lands as close as it can instead of overshooting, and grays out if it truly can't fit.`
+      ]
+    },
+    {
+      version: "1.8.0",
+      date: "2026-07-25",
+      items: [
+        "New: swapping a class no longer wipes its picks. They move to a new Other Classes tab instead of disappearing, grouped by class with their own subtotal, and still count toward your Points Spent total. Swap the class back in and everything's exactly as you left it. (Points Spent is now a lifetime total across every class you've used \u2014 Progression's own running total still only tracks your current 3, so don't be surprised if the two numbers don't match.)",
+        "Reset Build and Clear Owned now cover every class you've used, not just your current 3 \u2014 matching how they already worked for your active classes.",
+        "Progression rows now show a small colored badge for which of your 3 classes each one belongs to."
+      ]
+    },
+    {
+      version: "1.7.0",
+      date: "2026-07-25",
+      items: [
+        `New: Hide an AA you don't care about \u2014 a Hide/Unhide toggle in the side panel and on each Browse card tucks it out of the tree, Browse All AAs, and search. A "Show Hidden" toggle brings hidden AAs back whenever you want. Hiding is purely a display preference: it never affects your build, an AA you've already spent points on always stays visible, and it's not saved to exports or share links.`
+      ]
+    },
+    {
+      version: "1.6.5",
+      date: "2026-07-25",
+      items: [
+        "Progression tab: dragging a row near the top or bottom of the list now auto-scrolls it, speeding up the closer you get to the edge \u2014 no more pre-scrolling to where you want to drop before you can start."
+      ]
+    },
+    {
+      version: "1.6.4",
+      date: "2026-07-22",
+      items: [
+        "New: class-based rank caps are now enforced. Steadfast Will is the current example \u2014 capped at rank 6 unless one of your 3 classes is Warrior, Paladin, Shadow Knight (rank 8), or Ranger (rank 7). Tri-class combines rather than switches, so any one of your 3 classes qualifying is enough.",
+        "A rank that a later class swap puts out of reach is never stripped \u2014 it stays exactly as trained, flagged the same way a stale prerequisite is, on the tree, side panel, Summary, and Progression, with the out-of-reach portion of its progress bar dimmed. Swap back to a qualifying class and the warning clears automatically."
+      ]
+    },
+    {
+      version: "1.6.3",
+      date: "2026-07-21",
+      items: [
+        'Fixed: a purchased rank with an estimated cost showed "0 pt(s)" in the plain-text export instead of its "~N" estimate, even though the tree, side panel, and Progression tab all showed the real guess.',
+        "Fixed: Progression's own running point total used to freeze through any purchased rank with an estimated cost. It now blends estimates into the total the same way the topbar already does, and the plain-text export matches it exactly. Affordability still only ever counts confirmed costs."
+      ]
+    },
+    {
+      version: "1.6.2",
+      date: "2026-07-19",
+      items: [
+        'Removed the "Total AA Points" field and the cap it enforced \u2014 the topbar now just shows points spent, with no ceiling to set or bump into. Waypoints already cover marking a point total worth planning around.',
+        "When Points Spent includes estimates, the confirmed/estimated breakdown now lives in a tooltip on hover instead of a second number next to it."
+      ]
+    },
+    {
+      version: "1.6.1",
+      date: "2026-07-19",
+      items: [
+        'New: pattern-inferred estimates now cover effect values too, not just costs \u2014 a "?" like the one in "Increases your critical hit chance by 1/?/5/10%" can now show a guess, wherever descriptions appear. Same confidence tiers and tooltips as cost estimates; still just a display hint.',
+        "Data correction from a fresh wiki scrape: Packrat's ranks 2 and 3 weight-reduction values are now confirmed (10% and 15%).",
+        `Hand-picked estimates now fill in the rest of the currently undocumented effect values \u2014 Adamant Will, the crafting Mastery AAs, the Innate line, Packrat's remaining ranks, and a few others \u2014 marked with their own "very low" confidence tier.`
+      ]
+    },
+    {
+      version: "1.6.0",
+      date: "2026-07-18",
+      items: [
+        `New: undocumented per-rank costs (shown as "?" on the wiki) can now show a pattern-inferred estimate instead, wherever a cost appears \u2014 the tree, side panel, Browse All AAs, and Progression. Marked with a ~ and color-coded by confidence, with a tooltip explaining what it's based on. Always a cross-check against similar, fully-documented AAs, never a guess from one AA's numbers alone.`,
+        "An estimate is shown for reference only and never affects point totals or affordability \u2014 the moment the wiki documents the real cost, that takes over automatically. If you've already purchased a rank like that, the topbar's Points Spent turns blue and blends the estimate in, with the breakdown in its tooltip.",
+        "Data corrections from a fresh wiki scrape: Combat Fury and Combat Stability both had a previously-undocumented rank confirmed, and Packrat gained several confirmed ranks too.",
+        'A handful of costs no comparable AA could cross-check now show a hand-picked estimate instead, marked with its own "very low" confidence tier.'
+      ]
+    },
+    {
+      version: "1.5.0",
+      date: "2026-07-18",
+      items: [
+        'New: Waypoints on the Progression tab. Mark a point total worth returning to (with an optional name, like "Level 20" or "Turn-in gear") and it shows up as a labeled divider right where your training order crosses it. Give it a color to make that stretch of steps stand out \u2014 color-code your whole plan into stages at a glance. Click a chip or divider to edit it later.',
+        "Waypoints are anchored to a point total rather than a position, so reordering, undo, and Reset Build never break them. They travel with the plan, in named Builds and share links alike."
+      ]
+    },
+    {
+      version: "1.4.1",
+      date: "2026-07-18",
+      items: [
+        "Fixed: the version tag in the bottom-right corner could overlap the last card or row on the Summary and Progression tabs instead of having its own clear space."
+      ]
+    },
+    {
+      version: "1.4.0",
+      date: "2026-07-18",
+      items: [
+        "New: mark AAs as owned on the Progression tab to track what you've actually trained in-game, separate from what you're just planning. Owned steps show a strikethrough, marking is undoable, and the toolbar shows a running total of points owned vs. still to go.",
+        'Reset Build now keeps your owned AAs by default instead of wiping everything, with a checkbox to clear them too if you want a clean slate. A separate "Clear Owned" button clears owned progress on its own, without touching your plan.',
+        "Owned progress is tracked per character, not per plan, so switching between Builds or opening a share link never touches it. It's left out of exported text and share links by default \u2014 a checkbox opts in, for moving it to another browser or sharing it. Importing a build with owned data asks first, since it would otherwise overwrite your own."
+      ]
+    },
+    {
+      version: "1.3.0",
+      date: "2026-07-17",
+      items: [
+        "New: Builds \u2014 save named snapshots of your build and switch between them from the topbar. Handy for comparing class combos or planning alternate paths side by side.",
+        `Opening a share link or importing text now offers to save your current build first, instead of just warning it'll be replaced. A share link's build is also auto-saved to a reusable "Imported Build" slot so it's easy to find again later.`,
+        "Progression tab: Undo Last now covers reordering too, not just adding or removing a rank \u2014 drag or arrow-move a step by mistake and Undo Last puts it back."
+      ]
+    },
+    {
+      version: "1.2.1",
+      date: "2026-07-16",
+      items: [
+        "Locked AAs in the tree now show whether they're blocked by a missing prerequisite (amber border + REQ badge) or just a level requirement, instead of looking identical either way.",
+        "Browse view now flags a prerequisite you haven't met yet, matching the side panel.",
+        "Progression tab: dragging a step shows an amber indicator if that drop would leave its own prerequisite unmet, and out-of-order steps are now dimmed for visibility, not just marked with \u26A0."
+      ]
+    },
+    {
+      version: "1.2.0",
+      date: "2026-07-16",
+      items: [
+        "Progression tab: drag and drop a row to reorder it, in addition to the existing arrows.",
+        "Data corrections from a fresh wiki scrape and in-game confirmation: Fury of Magic, Symphonic Aura (including its unusual per-rank cost/enable pattern), Rapid Feign, Fear Resistance, Holy Steed, and Soul Abrasion."
+      ]
+    },
+    {
+      version: "1.1.0",
+      date: "2026-07-10",
+      items: [
+        "Much shorter share links and export codes \u2014 a heavily-built character's link is now roughly a tenth of its old length. Links and codes you already have saved or shared still work.",
+        "If a data update ever removes or reshapes an AA you'd picked, you'll now see a notice on load explaining what changed, instead of a build that's just quietly different than you left it.",
+        "AAs whose prerequisite is no longer met (because of a data update) are now flagged directly in the tree and side panel, not just silently blocked."
+      ]
+    },
+    {
+      version: "1.0.0",
+      date: "2026-07-09",
+      items: [
+        "Next-rank preview: see what the next rank upgrades to before you buy it, in the side panel and as an expandable row in the Progression tab.",
+        "Global search: highlights matches in the tab you're on and shows match-count badges on other tabs that have matches too.",
+        "Progression tab: reorderable purchase history with per-step and running-total cost, add/remove controls, and single-level undo.",
+        "Shareable build links, plus text export/import (paste text, paste a share link, or load a saved .txt file).",
+        "Fixed a prerequisite bug: some prereqs (like Destructive Cascade needing Critical Affliction) now unlock rank-by-rank instead of requiring the target's max rank just to buy rank 1.",
+        "Data corrections from in-game confirmation and a fresh wiki scrape: Unbound Companion, Hunter's Attack Power, Fury of Magic, Soul Abrasion, and others."
+      ]
+    }
+  ];
+
+  // src/logic.js
+  function costNum(c) {
+    const n = parseInt(c, 10);
+    return isNaN(n) ? 0 : n;
+  }
+  function escapeHtml(str) {
+    return String(str == null ? "" : str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+  }
+  function iconLetter(name) {
+    return (name || "?").trim().charAt(0).toUpperCase();
+  }
+  function eraBadge(aa) {
+    if (aa.era === "kunark") return { letter: "K", cssClass: "era-kunark", label: "Kunark" };
+    if (aa.era === "velious") return { letter: "V", cssClass: "era-velious", label: "Velious" };
+    return null;
+  }
+  function guessTitle(guess) {
+    if (guess.manual) return `Estimated (very low confidence) \u2014 hand-picked pending wiki confirmation, not derived from other AAs. Not confirmed on the wiki.`;
+    if (guess.interpolated) return `Estimated (${guess.confidence} confidence) \u2014 no comparable AA found, interpolated between this AA's own known ranks. Not confirmed on the wiki.`;
+    return `Estimated (${guess.confidence} confidence) from ${guess.basedOn.join(", ")} \u2014 not confirmed on the wiki.`;
+  }
+  function highlightRankValue(text, rank, guessLookup) {
+    const lines = splitPerRankLines(text);
+    if (lines) {
+      let progIdx = -1;
+      return lines.map(({ rank: lineRank, text: lineText }) => {
+        const out = markProgressions(escapeHtml(lineText), 0, guessLookup, progIdx);
+        progIdx = out.progIdx;
+        const current = rank && lineRank === rank ? " is-current-rank" : "";
+        return `<span class="rank-line${current}">${out.html}</span>`;
+      }).join("");
+    }
+    const escaped = escapeHtml(text);
+    if (!guessLookup && (!rank || rank < 1)) return escaped;
+    return markProgressions(escaped, rank, guessLookup, -1).html;
+  }
+  var PER_RANK_HEAD = /^Rank (\d+):\s/;
+  var PER_RANK_SPLIT = /(?=Rank \d+:\s)/;
+  function splitPerRankLines(text) {
+    const str = String(text == null ? "" : text);
+    if (!PER_RANK_HEAD.test(str)) return null;
+    const parts = str.split(PER_RANK_SPLIT).filter((p) => p.trim());
+    if (parts.length < 2) return null;
+    return parts.map((p) => ({ rank: parseInt(p.match(PER_RANK_HEAD)[1], 10), text: p.trim() }));
+  }
+  function markProgressions(escaped, rank, guessLookup, startIdx) {
+    let progIdx = startIdx;
+    const html = escaped.replace(/(?:\d+(?:\.\d+)?%?|\?)(?:\/(?:\d+(?:\.\d+)?%?|\?)){1,}/g, (match) => {
+      progIdx++;
+      const parts = match.split("/");
+      const highlightIdx = rank && rank >= 1 ? rank - 1 : -1;
+      return parts.map((part, i) => {
+        if (part === "?") {
+          const guess = guessLookup ? guessLookup(progIdx, i) : null;
+          if (!guess) return part;
+          const cls = `is-estimate tier-${guess.confidence}${i === highlightIdx ? " rank-highlight" : ""}`;
+          return `<span class="${cls}" title="${escapeHtml(guessTitle(guess))}">~${guess.value}</span>`;
+        }
+        return i === highlightIdx ? `<span class="rank-highlight">${part}</span>` : part;
+      }).join("/");
+    });
+    return { html, progIdx };
+  }
+  function applyPerRankTotal(text, rank) {
+    if (!rank || rank < 2) return text;
+    return text.replace(
+      /(\d+(?:\.\d+)?)(%)?\s*(points?|seconds?)?\s*(chance)?\s*\(?per rank\)?/gi,
+      (match, numStr, pct, unit, chanceWord) => {
+        const num = parseFloat(numStr);
+        const total = num * rank;
+        const fmt = (n) => Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+        let unitLabel = "";
+        if (pct) unitLabel = "%";
+        else if (unit) {
+          const singular = unit.replace(/s$/i, "");
+          unitLabel = " " + (total === 1 ? singular : singular + "s");
+        }
+        const chancePart = chanceWord ? " chance" : "";
+        return `${fmt(total)}${unitLabel}${chancePart} (${fmt(num)}${pct ? "%" : ""} per rank)`;
+      }
+    );
+  }
+  function aaMatchesQuery(aa, query) {
+    if (!query) return false;
+    const q = query.trim().toLowerCase();
+    if (!q) return false;
+    return aa.name.toLowerCase().includes(q) || aa.description.toLowerCase().includes(q);
+  }
+  function countMatches(catKey, query) {
+    if (!query || !query.trim()) return 0;
+    return getList(catKey).filter((aa, idx) => {
+      if (!aaMatchesQuery(aa, query)) return false;
+      return !isSuppressed(catKey, idx);
+    }).length;
+  }
+  function classSlotIndex(catKey) {
+    const i = CLASS_SLOT_KEYS.indexOf(catKey);
+    return i;
+  }
+  function labelFor(catKey) {
+    if (catKey === "general") return "General AA";
+    if (catKey === "archetype") return "Archetype AA";
+    if (catKey === "special") return "Special AA";
+    const slot = classSlotIndex(catKey);
+    if (slot >= 0) return state.selectedClasses[slot] + " AA";
+    return catKey;
+  }
+  function shortCategoryLabel(catKey) {
+    if (catKey === "general") return "General";
+    if (catKey === "archetype") return "Archetype";
+    if (catKey === "special") return "Special";
+    const slot = classSlotIndex(catKey);
+    if (slot >= 0) return state.selectedClasses[slot];
+    return catKey;
+  }
+  function getList(catKey) {
+    const slot = classSlotIndex(catKey);
+    if (slot >= 0) return AA_DATA.classes[state.selectedClasses[slot]] || [];
+    return AA_DATA[catKey] || [];
+  }
+  function effectiveRank(catKey, idx) {
+    const { scope, className } = categoryToScopeClassName(catKey);
+    return effectiveRankScoped(scope, className, idx);
+  }
+  function effectiveRankScoped(scope, className, idx) {
+    const aa = aaAt(scope, className, idx);
+    const classActive = scope !== "class" || state.selectedClasses.includes(className);
+    if (aa && aa.auto) {
+      const levelReq = parseInt(aa.levelReq, 10) || 1;
+      return classActive && isClassEligible(aa) && state.charLevel >= levelReq ? aa.ranks : 0;
+    }
+    const canonical = sharedCanonical(scope, className, idx);
+    const store = canonical.scope === "class" ? state.ranks.classes[canonical.className] || {} : state.ranks[canonical.scope] || {};
+    const purchased = store[canonical.idx] || 0;
+    if (aa && aa.autoRanks) {
+      const levelReq = parseInt(aa.levelReq, 10) || 1;
+      const freeRanks = classActive && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+      return Math.max(freeRanks, purchased);
+    }
+    return purchased;
+  }
+  function autoRanksOffset(aa) {
+    return aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
+  }
+  function autoRanksOffsetScoped(scope, className, idx) {
+    return autoRanksOffset(aaAt(scope, className, idx));
+  }
+  function getRanksStoreScoped(scope, className) {
+    if (scope === "class") {
+      if (!state.ranks.classes[className]) state.ranks.classes[className] = {};
+      return state.ranks.classes[className];
+    }
+    return state.ranks[scope];
+  }
+  function sharedCanonical(scope, className, idx) {
+    const aa = aaAt(scope, className, idx);
+    if (!aa || !aa.sharedWithClass) return { scope, className, idx };
+    const canonicalIdx = idxForKey("class", aa.sharedWithClass, slugify(aa.name));
+    return canonicalIdx >= 0 ? { scope: "class", className: aa.sharedWithClass, idx: canonicalIdx } : { scope, className, idx };
+  }
+  function getOwnedStore(scope, className) {
+    if (scope === "class") {
+      if (!state.owned.classes[className]) state.owned.classes[className] = {};
+      return state.owned.classes[className];
+    }
+    return state.owned[scope];
+  }
+  function ownedRank(scope, className, idx) {
+    const canonical = sharedCanonical(scope, className, idx);
+    const store = canonical.scope === "class" ? state.owned.classes[canonical.className] : state.owned[canonical.scope];
+    return store && store[canonical.idx] || 0;
+  }
+  function setOwnedRank(scope, className, idx, rank) {
+    const canonical = sharedCanonical(scope, className, idx);
+    const store = getOwnedStore(canonical.scope, canonical.className);
+    const from = store[canonical.idx] || 0;
+    if (rank <= 0) delete store[canonical.idx];
+    else store[canonical.idx] = rank;
+    lastMutation = { type: "own", scope: canonical.scope, className: canonical.className, idx: canonical.idx, from, to: rank };
+    saveOwned();
+  }
+  function getHiddenStore(scope, className) {
+    if (scope === "class") {
+      if (!state.hiddenAAs.classes[className]) state.hiddenAAs.classes[className] = {};
+      return state.hiddenAAs.classes[className];
+    }
+    return state.hiddenAAs[scope];
+  }
+  function isHiddenScoped(scope, className, idx) {
+    const canonical = sharedCanonical(scope, className, idx);
+    return !!getHiddenStore(canonical.scope, canonical.className)[canonical.idx];
+  }
+  function isHidden(catKey, idx) {
+    const { scope, className } = categoryToScopeClassName(catKey);
+    return isHiddenScoped(scope, className, idx);
+  }
+  function setHiddenScoped(scope, className, idx, hidden) {
+    const canonical = sharedCanonical(scope, className, idx);
+    const store = getHiddenStore(canonical.scope, canonical.className);
+    if (hidden) store[canonical.idx] = true;
+    else delete store[canonical.idx];
+    saveHidden();
+  }
+  function setHidden(catKey, idx, hidden) {
+    const { scope, className } = categoryToScopeClassName(catKey);
+    setHiddenScoped(scope, className, idx, hidden);
+  }
+  function isSuppressedScoped(scope, className, idx) {
+    if (!isHiddenScoped(scope, className, idx)) return false;
+    if (state.showHidden) return false;
+    return effectiveRankScoped(scope, className, idx) === 0;
+  }
+  function isSuppressed(catKey, idx) {
+    const { scope, className } = categoryToScopeClassName(catKey);
+    return isSuppressedScoped(scope, className, idx);
+  }
+  function hasAnyHidden() {
+    const h = state.hiddenAAs;
+    if (Object.keys(h.general).length || Object.keys(h.archetype).length || Object.keys(h.special).length) return true;
+    return Object.keys(h.classes).some((className) => Object.keys(h.classes[className]).length > 0);
+  }
+  function hasAnyOwned() {
+    const o = state.owned;
+    if (Object.keys(o.general).length || Object.keys(o.archetype).length || Object.keys(o.special).length) return true;
+    return Object.keys(o.classes).some((className) => Object.keys(o.classes[className]).length > 0);
+  }
+  function clearAllOwned() {
+    state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+    lastMutation = null;
+    saveOwned();
+  }
+  function addOrUpdateWaypoint(pts, label, color) {
+    const n = parseInt(pts, 10);
+    if (!Number.isFinite(n) || n < 0) return false;
+    const merged = state.waypoints.filter((w) => w.pts !== n);
+    merged.push({ pts: n, label, color });
+    state.waypoints = sanitizeWaypoints(merged);
+    saveLocal();
+    return true;
+  }
+  function removeWaypoint(pts) {
+    state.waypoints = state.waypoints.filter((w) => w.pts !== pts);
+    saveLocal();
+  }
+  function categoryToScopeClassName(category) {
+    const slot = classSlotIndex(category);
+    return slot >= 0 ? { scope: "class", className: state.selectedClasses[slot] } : { scope: category, className: null };
+  }
+  function costGuess(catKey, idx, rankIdx) {
+    const { scope, className } = categoryToScopeClassName(catKey);
+    return costGuessFor(scope, className, idx, rankIdx);
+  }
+  function costGuessScoped(scope, className, idx, rankIdx) {
+    return costGuessFor(scope, className, idx, rankIdx);
+  }
+  function effectGuess(catKey, idx, progIdx, rankIdx) {
+    const { scope, className } = categoryToScopeClassName(catKey);
+    return effectGuessFor(scope, className, idx, progIdx, rankIdx);
+  }
+  function effectGuessScoped(scope, className, idx, progIdx, rankIdx) {
+    return effectGuessFor(scope, className, idx, progIdx, rankIdx);
+  }
+  function entryKey(scope, className, idx) {
+    return `${scope}|${className || ""}|${idx}`;
+  }
+  function sharedGroupClasses(scope, className, idx) {
+    if (scope !== "class") return [className];
+    const aa = aaAt(scope, className, idx);
+    if (!aa) return [className];
+    if (aa.sharedWithClass) return [className, aa.sharedWithClass];
+    const siblings = CLASS_LIST.filter((c) => {
+      if (c === className) return false;
+      const otherIdx = idxForKey("class", c, slugify(aa.name));
+      const otherAA = otherIdx >= 0 ? aaAt("class", c, otherIdx) : null;
+      return otherAA && otherAA.sharedWithClass === className;
+    });
+    return siblings.length ? [className, ...siblings] : [className];
+  }
+  function activeEntryTarget(entry) {
+    if (entry.scope !== "class") return { category: entry.scope, idx: entry.idx, classes: null };
+    const classes = sharedGroupClasses(entry.scope, entry.className, entry.idx);
+    const aa = aaAt(entry.scope, entry.className, entry.idx);
+    for (const c of classes) {
+      const slot = state.selectedClasses.indexOf(c);
+      if (slot < 0) continue;
+      const idx = c === entry.className ? entry.idx : idxForKey("class", c, slugify(aa.name));
+      if (idx >= 0) return { category: CLASS_SLOT_KEYS[slot], idx, classes };
+    }
+    return { category: null, idx: entry.idx, classes };
+  }
+  function pushPurchase(scope, className, idx) {
+    state.purchaseOrder.push({ scope, className, idx });
+  }
+  function popLastPurchase(scope, className, idx) {
+    for (let i = state.purchaseOrder.length - 1; i >= 0; i--) {
+      const e = state.purchaseOrder[i];
+      if (e.scope === scope && e.idx === idx && (e.className || null) === (className || null)) {
+        const [entry] = state.purchaseOrder.splice(i, 1);
+        return { entry, position: i };
       }
     }
-  } catch (e) { /* storage unavailable or corrupt, ignore */ }
-  state.hiddenAAs = { general: {}, archetype: {}, special: {}, classes: {} };
-}
+    return null;
+  }
+  function performReset(clearOwnedToo) {
+    function trimmedRanks(ranksStore, ownedStore, list) {
+      const kept = {};
+      Object.keys(ranksStore).forEach((idxStr) => {
+        const idx = parseInt(idxStr, 10);
+        const aa = list[idx];
+        if (!aa) return;
+        const planned = ranksStore[idx] || 0;
+        const owned = clearOwnedToo ? 0 : Math.min(ownedStore[idx] || 0, planned);
+        if (owned > autoRanksOffset(aa)) kept[idx] = owned;
+      });
+      return kept;
+    }
+    const newRanks = { general: {}, archetype: {}, special: {}, classes: {} };
+    ["general", "archetype", "special"].forEach((scope) => {
+      newRanks[scope] = trimmedRanks(state.ranks[scope] || {}, state.owned[scope] || {}, AA_DATA[scope] || []);
+    });
+    Object.keys(state.ranks.classes || {}).forEach((className) => {
+      const kept = trimmedRanks(
+        state.ranks.classes[className] || {},
+        (state.owned.classes || {})[className] || {},
+        AA_DATA.classes[className] || []
+      );
+      if (Object.keys(kept).length) newRanks.classes[className] = kept;
+    });
+    const remaining = {};
+    ["general", "archetype", "special"].forEach((scope) => {
+      const list = AA_DATA[scope] || [];
+      Object.keys(newRanks[scope]).forEach((idxStr) => {
+        const idx = parseInt(idxStr, 10);
+        remaining[entryKey(scope, null, idxStr)] = newRanks[scope][idxStr] - autoRanksOffset(list[idx]);
+      });
+    });
+    Object.keys(newRanks.classes).forEach((className) => {
+      const list = AA_DATA.classes[className] || [];
+      Object.keys(newRanks.classes[className]).forEach((idxStr) => {
+        const idx = parseInt(idxStr, 10);
+        remaining[entryKey("class", className, idxStr)] = newRanks.classes[className][idxStr] - autoRanksOffset(list[idx]);
+      });
+    });
+    const newPurchaseOrder = [];
+    state.purchaseOrder.forEach((e) => {
+      const k = entryKey(e.scope, e.className, e.idx);
+      if (remaining[k] > 0) {
+        newPurchaseOrder.push(e);
+        remaining[k]--;
+      }
+    });
+    state.ranks = newRanks;
+    state.purchaseOrder = newPurchaseOrder;
+    if (clearOwnedToo) state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
+    state.selectedNode = null;
+    lastMutation = null;
+    reconcilePurchaseOrderCounts();
+    saveLocal();
+    saveOwned();
+  }
+  function sumRealCost(list, store) {
+    let total = 0;
+    list.forEach((aa, idx) => {
+      if (aa.auto) return;
+      const r = store[idx] || 0;
+      for (let i = 0; i < r; i++) total += costNum(aa.costs[i]);
+    });
+    return total;
+  }
+  function sumAcrossAllClasses(root, summer) {
+    let total = summer("general", null, AA_DATA.general, root.general) + summer("archetype", null, AA_DATA.archetype, root.archetype) + summer("special", null, AA_DATA.special, root.special);
+    Object.keys(root.classes).forEach((className) => {
+      total += summer("class", className, AA_DATA.classes[className] || [], root.classes[className]);
+    });
+    return total;
+  }
+  function spentPoints() {
+    return sumAcrossAllClasses(state.ranks, (scope, className, list, store) => sumRealCost(list, store));
+  }
+  function spentForClass(className) {
+    return sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className] || {});
+  }
+  function spentOnInactiveClasses() {
+    return Object.keys(state.ranks.classes).filter((className) => !state.selectedClasses.includes(className)).reduce((sum, className) => sum + spentForClass(className), 0);
+  }
+  function ownedPoints() {
+    return sumAcrossAllClasses(state.owned, (scope, className, list, store) => sumRealCost(list, store));
+  }
+  function sumEstimatedExtra(scope, className, list, store) {
+    let extra = 0;
+    list.forEach((aa, idx) => {
+      if (aa.auto) return;
+      const r = store[idx] || 0;
+      for (let i = 0; i < r; i++) {
+        if (aa.costs[i] !== "?") continue;
+        const guess = costGuessScoped(scope, className, idx, i);
+        if (guess) extra += guess.value;
+      }
+    });
+    return extra;
+  }
+  function estimatedExtraPoints() {
+    return sumAcrossAllClasses(state.ranks, sumEstimatedExtra);
+  }
+  function estimatedExtraOwnedPoints() {
+    return sumAcrossAllClasses(state.owned, sumEstimatedExtra);
+  }
+  function parsePrereqText(text) {
+    if (!text) return null;
+    const m = text.match(/^Requires\s+(.+?)\s+(?:rank|(?:at\s+)?level)\s+(\d+(?:\/\d+)*)\s*$/i);
+    if (!m) return null;
+    const ranks = m[2].split("/").map((n) => parseInt(n, 10));
+    return ranks.length > 1 ? { name: m[1].trim(), synced: true, ranks } : { name: m[1].trim(), synced: false, rank: ranks[0] };
+  }
+  var prereqTargetCache = /* @__PURE__ */ new Map();
+  function resolvePrereqTargetScoped(text, scope, className) {
+    const cacheKey = `${scope}|${className || ""}|${text}`;
+    if (prereqTargetCache.has(cacheKey)) return prereqTargetCache.get(cacheKey);
+    const result = computeResolvePrereqTargetScoped(text, scope, className);
+    prereqTargetCache.set(cacheKey, result);
+    return result;
+  }
+  function computeResolvePrereqTargetScoped(text, scope, className) {
+    const parsed = parsePrereqText(text);
+    if (!parsed) return null;
+    const candidates = [[scope, className], ["general", null], ["archetype", null], ["special", null]];
+    const seen = /* @__PURE__ */ new Set();
+    const order = candidates.filter(([s, c]) => {
+      const k = `${s}|${c || ""}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    for (const [s, c] of order) {
+      const list = s === "class" ? AA_DATA.classes[c] || [] : AA_DATA[s] || [];
+      let foundIdx = -1;
+      list.forEach((aa, i) => {
+        if (aa.name.toLowerCase() !== parsed.name.toLowerCase()) return;
+        if (foundIdx < 0) {
+          foundIdx = i;
+          return;
+        }
+        if (list[foundIdx].auto && !aa.auto) foundIdx = i;
+      });
+      if (foundIdx >= 0) {
+        return {
+          scope: s,
+          className: c,
+          idx: foundIdx,
+          // Required target rank for the source AA to hold `sourceRank`. Fixed
+          // prereqs ignore sourceRank; synced ones look up the matching entry
+          // (clamped to the list, so a too-high/low sourceRank still resolves).
+          forRank(sourceRank) {
+            if (!parsed.synced) return parsed.rank;
+            const i = Math.min(Math.max(sourceRank, 1), parsed.ranks.length) - 1;
+            return parsed.ranks[i];
+          }
+        };
+      }
+    }
+    return null;
+  }
+  function resolvePrereqTarget(text, sourceCategory) {
+    const { scope, className } = categoryToScopeClassName(sourceCategory);
+    const resolved = resolvePrereqTargetScoped(text, scope, className);
+    if (!resolved) return null;
+    const category = resolved.scope === "class" ? CLASS_SLOT_KEYS[state.selectedClasses.indexOf(resolved.className)] : resolved.scope;
+    return { category, idx: resolved.idx, forRank: resolved.forRank };
+  }
+  function tryResolvePrereq(text, sourceCategory) {
+    const parsed = parsePrereqText(text);
+    if (!parsed) return { ok: false, malformed: true };
+    const resolved = resolvePrereqTarget(text, sourceCategory);
+    if (!resolved) return { ok: false, malformed: false, name: parsed.name };
+    return { ok: true, resolved };
+  }
+  function unresolvedPrereqMessage(text, attempt) {
+    return attempt.malformed ? `Prerequisite text "${text}" isn't in a recognized format \u2014 this needs fixing in the data, not the wiki.` : `Requires "${attempt.name}", which no longer resolves to an existing ability.`;
+  }
+  function classRankCapFor(aa) {
+    if (!aa.classRankCap) return aa.ranks;
+    const { default: def, byClass } = aa.classRankCap;
+    let cap = def;
+    state.selectedClasses.forEach((c) => {
+      if (byClass[c] !== void 0 && byClass[c] > cap) cap = byClass[c];
+    });
+    return cap;
+  }
+  function isClassEligible(aa) {
+    return !aa.eligibleClasses || state.selectedClasses.some((c) => aa.eligibleClasses.includes(c));
+  }
+  function effectiveDisplayRank(aa, rank) {
+    return aa.classRankCap ? Math.min(rank, classRankCapFor(aa)) : rank;
+  }
+  function structuralLockReason(catKey, idx) {
+    const aa = getList(catKey)[idx];
+    if (!aa) return null;
+    if (!isClassEligible(aa)) {
+      return { kind: "classEligibility", text: `Requires one of: ${aa.eligibleClasses.join(", ")}.` };
+    }
+    const levelReq = parseInt(aa.levelReq, 10) || 1;
+    if (state.charLevel < levelReq) return { kind: "level", text: `Requires character level ${levelReq}.` };
+    if (aa.classRankCap) {
+      const cap = classRankCapFor(aa);
+      const nextRank = effectiveRank(catKey, idx) + 1;
+      if (nextRank > cap) return { kind: "classCap", text: `Capped at rank ${cap} for your currently selected classes.` };
+    }
+    if (aa.prereq) {
+      const attempt = tryResolvePrereq(aa.prereq, catKey);
+      if (!attempt.ok) return { kind: "prereq", text: unresolvedPrereqMessage(aa.prereq, attempt) };
+      const resolved = attempt.resolved;
+      const sourceRank = effectiveRank(catKey, idx) + 1;
+      const requiredRank = resolved.forRank(sourceRank);
+      const targetRank = effectiveRank(resolved.category, resolved.idx);
+      if (targetRank < requiredRank) {
+        const targetAA = getList(resolved.category)[resolved.idx];
+        return { kind: "prereq", text: `Requires ${targetAA ? targetAA.name : "prerequisite"} rank ${requiredRank}.` };
+      }
+    }
+    return null;
+  }
+  function heldRankInvalidReason(catKey, idx) {
+    const { scope, className } = categoryToScopeClassName(catKey);
+    return heldRankInvalidReasonScoped(scope, className, idx);
+  }
+  function heldRankInvalidReasonScoped(scope, className, idx) {
+    const aa = aaAt(scope, className, idx);
+    if (!aa || aa.auto) return null;
+    const store = scope === "class" ? state.ranks.classes[className] || {} : state.ranks[scope] || {};
+    const purchased = store[idx] || 0;
+    if (purchased <= 0) return null;
+    if (!isClassEligible(aa)) {
+      return `requires one of: ${aa.eligibleClasses.join(", ")}, none of which are currently selected.`;
+    }
+    if (aa.classRankCap) {
+      const cap = classRankCapFor(aa);
+      if (purchased > cap) return `exceeds the rank ${cap} cap for your currently selected classes.`;
+    }
+    if (!aa.prereq) return null;
+    const parsed = parsePrereqText(aa.prereq);
+    if (!parsed) return unresolvedPrereqMessage(aa.prereq, { malformed: true });
+    const resolved = resolvePrereqTargetScoped(aa.prereq, scope, className);
+    if (!resolved) return unresolvedPrereqMessage(aa.prereq, { malformed: false, name: parsed.name });
+    const targetRank = effectiveRankScoped(resolved.scope, resolved.className, resolved.idx);
+    for (let r = 1; r <= purchased; r++) {
+      const required = resolved.forRank(r);
+      if (targetRank < required) {
+        const targetAA = aaAt(resolved.scope, resolved.className, resolved.idx);
+        return `Rank ${r} requires ${targetAA ? targetAA.name : "a prerequisite"} rank ${required}, which you no longer have.`;
+      }
+    }
+    return null;
+  }
+  function findInvalidatedPicks() {
+    const results = [];
+    ["general", "archetype", "special"].forEach((scope) => {
+      (AA_DATA[scope] || []).forEach((aa, idx) => {
+        const reason = heldRankInvalidReasonScoped(scope, null, idx);
+        if (reason) results.push({ scope, className: null, idx, name: aa.name, reason });
+      });
+    });
+    Object.keys(state.ranks.classes).forEach((className) => {
+      (AA_DATA.classes[className] || []).forEach((aa, idx) => {
+        const reason = heldRankInvalidReasonScoped("class", className, idx);
+        if (reason) results.push({ scope: "class", className, idx, name: aa.name, reason });
+      });
+    });
+    return results;
+  }
+  function reconcilePurchaseOrderCounts() {
+    function countFor(scope, className, idx) {
+      let n = 0;
+      for (const e of state.purchaseOrder) {
+        if (e.scope === scope && (e.className || null) === (className || null) && e.idx === idx) n++;
+      }
+      return n;
+    }
+    function expectedFor(aa, held) {
+      return Math.max(0, held - autoRanksOffset(aa));
+    }
+    function key(scope, className, idx) {
+      return `${scope}|${className || ""}|${idx}`;
+    }
+    const targets = [];
+    const targetKeys = /* @__PURE__ */ new Set();
+    ["general", "archetype", "special"].forEach((scope) => {
+      const list = AA_DATA[scope] || [];
+      Object.keys(state.ranks[scope] || {}).forEach((idxStr) => {
+        const idx = parseInt(idxStr, 10);
+        const aa = list[idx];
+        if (aa && !aa.auto) {
+          targets.push({ scope, className: null, idx, aa, held: state.ranks[scope][idxStr] });
+          targetKeys.add(key(scope, null, idx));
+        }
+      });
+    });
+    Object.keys(state.ranks.classes || {}).forEach((className) => {
+      const list = AA_DATA.classes[className] || [];
+      Object.keys(state.ranks.classes[className] || {}).forEach((idxStr) => {
+        const idx = parseInt(idxStr, 10);
+        const aa = list[idx];
+        if (aa && !aa.auto) {
+          targets.push({ scope: "class", className, idx, aa, held: state.ranks.classes[className][idxStr] });
+          targetKeys.add(key("class", className, idx));
+        }
+      });
+    });
+    let repaired = 0;
+    const orphanKeys = /* @__PURE__ */ new Set();
+    state.purchaseOrder.forEach((e) => {
+      const k = key(e.scope, e.className || null, e.idx);
+      if (!targetKeys.has(k)) orphanKeys.add(k);
+    });
+    if (orphanKeys.size) {
+      state.purchaseOrder = state.purchaseOrder.filter((e) => targetKeys.has(key(e.scope, e.className || null, e.idx)));
+      repaired += orphanKeys.size;
+    }
+    targets.forEach(({ scope, className, idx, aa, held }) => {
+      const expected = expectedFor(aa, held);
+      const actual = countFor(scope, className, idx);
+      if (expected === actual) return;
+      repaired++;
+      if (actual > expected) {
+        let toRemove = actual - expected;
+        for (let i = state.purchaseOrder.length - 1; i >= 0 && toRemove > 0; i--) {
+          const e = state.purchaseOrder[i];
+          if (e.scope === scope && (e.className || null) === (className || null) && e.idx === idx) {
+            state.purchaseOrder.splice(i, 1);
+            toRemove--;
+          }
+        }
+      } else {
+        for (let i = 0; i < expected - actual; i++) {
+          state.purchaseOrder.push({ scope, className, idx });
+        }
+      }
+    });
+    return repaired;
+  }
+  function loadIssuesSuffix(result, repaired) {
+    const parts = [];
+    if (result.droppedRanks) {
+      const n = result.droppedRanks;
+      parts.push(`${n} pick${n === 1 ? "" : "s"} no longer exist${n === 1 ? "s" : ""} in the current data and ${n === 1 ? "was" : "were"} skipped`);
+    }
+    if (repaired) {
+      parts.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was out of sync and ${repaired === 1 ? "was" : "were"} repaired`);
+    }
+    return parts.length ? ` (${parts.join("; ")})` : "";
+  }
+  function getBlockReason(catKey, idx) {
+    const structural = structuralLockReason(catKey, idx);
+    return structural ? structural.text : null;
+  }
+  function checkPrereqDependents(list, scope, className, targetScope, targetClassName, idx, newRank) {
+    for (let i = 0; i < list.length; i++) {
+      const aa = list[i];
+      if (!aa.prereq) continue;
+      const aaRank = effectiveRankScoped(scope, className, i);
+      if (aaRank <= 0) continue;
+      const r = resolvePrereqTargetScoped(aa.prereq, scope, className);
+      if (r && r.scope === targetScope && r.className === targetClassName && r.idx === idx && newRank < r.forRank(aaRank)) return true;
+    }
+    return false;
+  }
+  function isDependedOn(category, idx, currentRank) {
+    const newRank = currentRank - 1;
+    const { scope: targetScope, className: targetClassName } = categoryToScopeClassName(category);
+    for (const catKey of AA_CATEGORY_KEYS) {
+      const { scope, className } = categoryToScopeClassName(catKey);
+      if (checkPrereqDependents(getList(catKey), scope, className, targetScope, targetClassName, idx, newRank)) return true;
+    }
+    for (const className of Object.keys(state.ranks.classes)) {
+      if (state.selectedClasses.includes(className)) continue;
+      if (checkPrereqDependents(AA_DATA.classes[className] || [], "class", className, targetScope, targetClassName, idx, newRank)) return true;
+    }
+    return false;
+  }
+  var lastMutation = null;
+  function clearLastMutation() {
+    lastMutation = null;
+  }
+  function canUndo() {
+    return !!lastMutation;
+  }
+  function moveEntry(fromIdx, toIdx) {
+    const [entry] = state.purchaseOrder.splice(fromIdx, 1);
+    state.purchaseOrder.splice(toIdx, 0, entry);
+    lastMutation = { type: "reorder", from: fromIdx, to: toIdx };
+    saveLocal();
+  }
+  function autoFloor(aa) {
+    if (!aa.autoRanks) return 0;
+    const levelReq = parseInt(aa.levelReq, 10) || 1;
+    return state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
+  }
+  function changeRank(category, idx, delta) {
+    const { scope, className } = categoryToScopeClassName(category);
+    const aa = getList(category)[idx];
+    const canonical = sharedCanonical(scope, className, idx);
+    const store = getRanksStoreScoped(canonical.scope, canonical.className);
+    const floor = autoFloor(aa);
+    const cur = aa.autoRanks ? effectiveRank(category, idx) : store[canonical.idx] || 0;
+    const next = cur + delta;
+    if (next < floor || next > aa.ranks) return false;
+    if (next <= floor) delete store[canonical.idx];
+    else store[canonical.idx] = next;
+    if (delta > 0) {
+      pushPurchase(canonical.scope, canonical.className, canonical.idx);
+      lastMutation = { type: "add", entry: { scope: canonical.scope, className: canonical.className, idx: canonical.idx } };
+    } else {
+      const popped = popLastPurchase(canonical.scope, canonical.className, canonical.idx);
+      lastMutation = popped ? { type: "remove", entry: popped.entry, position: popped.position } : null;
+    }
+    saveLocal();
+    return true;
+  }
+  function undoLastMutation() {
+    const m = lastMutation;
+    if (!m) return { changed: false, message: "Nothing to undo." };
+    lastMutation = null;
+    if (m.type === "add") {
+      const { category: category2, idx: idx2 } = activeEntryTarget(m.entry);
+      if (!category2) return { changed: false, message: "Can't undo \u2014 that class isn't currently selected." };
+      const rank = effectiveRank(category2, idx2);
+      if (rank <= 0) return { changed: false, message: "Nothing to undo." };
+      if (isDependedOn(category2, idx2, rank)) {
+        return { changed: false, message: "Can't undo \u2014 another AA now depends on this rank." };
+      }
+      return { changed: changeRank(category2, idx2, -1), message: null };
+    }
+    if (m.type === "reorder") {
+      if (m.from < 0 || m.from >= state.purchaseOrder.length || m.to < 0 || m.to >= state.purchaseOrder.length) {
+        return { changed: false, message: "Can't undo \u2014 the list has changed too much." };
+      }
+      moveEntry(m.to, m.from);
+      return { changed: true, message: null };
+    }
+    if (m.type === "own") {
+      setOwnedRank(m.scope, m.className, m.idx, m.from);
+      return { changed: true, message: null };
+    }
+    const { category, idx } = activeEntryTarget(m.entry);
+    if (!category) return { changed: false, message: "Can't undo \u2014 that class isn't currently selected." };
+    const aa = getList(category)[idx];
+    if (!aa) return { changed: false, message: "Can't undo \u2014 that AA is no longer available." };
+    const store = getRanksStoreScoped(m.entry.scope, m.entry.className);
+    const cur = aa.autoRanks ? effectiveRank(category, idx) : store[m.entry.idx] || 0;
+    if (cur >= aa.ranks) return { changed: false, message: "Can't undo \u2014 already at max rank." };
+    store[m.entry.idx] = cur + 1;
+    const pos = Math.min(m.position, state.purchaseOrder.length);
+    state.purchaseOrder.splice(pos, 0, m.entry);
+    saveLocal();
+    return { changed: true, message: null };
+  }
+  function attemptIncrement(category, idx) {
+    const aa = getList(category)[idx];
+    if (aa.auto) return { changed: false, message: `${aa.name} is automatically granted \u2014 no points needed.` };
+    const rank = effectiveRank(category, idx);
+    if (rank >= aa.ranks) return { changed: false, message: null };
+    const reason = getBlockReason(category, idx);
+    if (reason) return { changed: false, message: reason };
+    return { changed: changeRank(category, idx, 1), message: null };
+  }
+  function attemptDecrement(category, idx) {
+    const aa = getList(category)[idx];
+    if (aa.auto) return { changed: false, message: `${aa.name} is automatically granted and can't be removed.` };
+    const rank = effectiveRank(category, idx);
+    if (rank <= 0) return { changed: false, message: null };
+    if (aa.autoRanks && rank <= autoFloor(aa)) {
+      const plural = aa.autoRanks === 1 ? "rank is" : "ranks are";
+      return { changed: false, message: `${aa.name}'s first ${aa.autoRanks} ${plural} automatically granted and can't be removed.` };
+    }
+    if (isDependedOn(category, idx, rank)) {
+      return { changed: false, message: "Can't lower this \u2014 another AA depends on the current rank." };
+    }
+    return { changed: changeRank(category, idx, -1), message: null };
+  }
+  function countPicked() {
+    let n = 0;
+    AA_CATEGORY_KEYS.forEach((catKey) => {
+      getList(catKey).forEach((aa, idx) => {
+        if (effectiveRank(catKey, idx) > 0) n++;
+      });
+    });
+    return n;
+  }
+  function countOtherClassesPicked() {
+    let n = 0;
+    Object.keys(state.ranks.classes).forEach((className) => {
+      if (state.selectedClasses.includes(className)) return;
+      const list = AA_DATA.classes[className] || [];
+      list.forEach((aa, idx) => {
+        if (effectiveRankScoped("class", className, idx) > 0) n++;
+      });
+    });
+    return n;
+  }
+  function otherClassesWithPicks() {
+    return Object.keys(state.ranks.classes).filter((className) => !state.selectedClasses.includes(className)).filter((className) => {
+      const list = AA_DATA.classes[className] || [];
+      return list.some((aa, idx) => effectiveRankScoped("class", className, idx) > 0);
+    }).sort();
+  }
+  function computeProgressionSteps(order = state.purchaseOrder) {
+    const totalCounts = {};
+    order.forEach((entry) => {
+      const key = entryKey(entry.scope, entry.className, entry.idx);
+      totalCounts[key] = (totalCounts[key] || 0) + 1;
+    });
+    const counts = {};
+    let cumulative = 0;
+    let blendedCumulative = 0;
+    return order.map((entry, i) => {
+      const key = entryKey(entry.scope, entry.className, entry.idx);
+      const { category, idx: categoryIdx, classes: groupClasses } = activeEntryTarget(entry);
+      const active = category !== null;
+      const aa = aaAt(entry.scope, entry.className, entry.idx);
+      const purchaseCount = (counts[key] || 0) + 1;
+      const autoOffset = autoRanksOffset(aa);
+      const stepRank = purchaseCount + autoOffset;
+      let prereqWarn = false;
+      if (aa && aa.prereq) {
+        const resolved = resolvePrereqTargetScoped(aa.prereq, entry.scope, entry.className);
+        if (!resolved) {
+          prereqWarn = true;
+        } else {
+          const targetAA = aaAt(resolved.scope, resolved.className, resolved.idx);
+          const targetAutoFloor = targetAA && targetAA.auto ? targetAA.ranks : targetAA && targetAA.autoRanks ? Math.min(targetAA.autoRanks, targetAA.ranks) : 0;
+          const targetKey = entryKey(resolved.scope, resolved.className, resolved.idx);
+          const targetHeld = (counts[targetKey] || 0) + targetAutoFloor;
+          if (targetHeld < resolved.forRank(stepRank)) prereqWarn = true;
+        }
+      }
+      const classCapWarn = aa && aa.classRankCap && stepRank > classRankCapFor(aa);
+      const classEligibilityWarn = !!(aa && aa.eligibleClasses && !isClassEligible(aa));
+      counts[key] = purchaseCount;
+      const isLast = purchaseCount === totalCounts[key];
+      const stepCost = aa ? costNum(aa.costs[stepRank - 1]) : 0;
+      cumulative += stepCost;
+      let blendedStepCost = stepCost;
+      if (aa && aa.costs[stepRank - 1] === "?") {
+        const guess = costGuessScoped(entry.scope, entry.className, entry.idx, stepRank - 1);
+        if (guess) blendedStepCost = guess.value;
+      }
+      blendedCumulative += blendedStepCost;
+      const label = entry.scope === "class" ? `${groupClasses.join("/")} AA` : labelFor(entry.scope);
+      const classesLabel = entry.scope === "class" ? groupClasses.join(" or ") : "";
+      const name = aa ? aa.name : "(unknown AA)";
+      const owned = stepRank <= ownedRank(entry.scope, entry.className, entry.idx);
+      return {
+        index: i,
+        aa,
+        idx: entry.idx,
+        categoryIdx,
+        scope: entry.scope,
+        className: entry.className,
+        category,
+        active,
+        stepRank,
+        stepCost,
+        cumulative,
+        blendedCumulative,
+        prereqWarn,
+        classCapWarn,
+        classEligibilityWarn,
+        label,
+        classesLabel,
+        name,
+        isLast,
+        owned
+      };
+    });
+  }
+  function computeProgressionTimeline(steps) {
+    const wps = state.waypoints;
+    const timeline = [];
+    let wi = 0;
+    let lastCumulative = 0;
+    steps.forEach((s) => {
+      while (wi < wps.length && wps[wi].pts < s.cumulative) {
+        timeline.push({ type: "divider", pts: wps[wi].pts, label: wps[wi].label, color: wps[wi].color, unreached: false });
+        wi++;
+      }
+      const owner = wi < wps.length ? wps[wi] : null;
+      timeline.push({ type: "step", ...s, segmentColor: owner ? owner.color : null });
+      lastCumulative = s.cumulative;
+    });
+    while (wi < wps.length) {
+      timeline.push({ type: "divider", pts: wps[wi].pts, label: wps[wi].label, color: wps[wi].color, unreached: wps[wi].pts > lastCumulative });
+      wi++;
+    }
+    return timeline;
+  }
 
-function serializePurchaseOrder(purchaseOrder) {
-  return (purchaseOrder || []).map((e) => {
-    const key = keyForIdx(e.scope, e.className || null, e.idx);
-    return key ? { scope: e.scope, className: e.className || null, key } : null;
-  }).filter(Boolean);
-}
-
-// The entire AA roster - every class, general/archetype/special, everything
-// maxed - is a few hundred entries at most (well under 500 as of this
-// writing). Generous headroom above that, but a hard ceiling: without one,
-// a crafted purchaseOrder array costs reconcilePurchaseOrderCounts (logic.js)
-// far worse than linear time to reconcile against the real, small rank
-// counts in `r` - a multi-second tab freeze from a share link short enough
-// to paste in chat, not a large download. Applied to the raw untrusted
-// input before any per-entry work, so a malicious array can't cost more
-// than this many entries' worth of processing no matter how large it claims
-// to be.
-const MAX_PURCHASE_ORDER = 2000;
-
-// Unlike deserializeRanks, a dropped purchaseOrder entry isn't its own
-// user-facing signal — reconcilePurchaseOrderCounts (logic.js) checks
-// purchaseOrder's entry count against each AA's actual held rank directly
-// after load and repairs any mismatch, which catches this and every other
-// way the two could end up disagreeing, not just this one cause (including
-// the truncation below, on the rare/hostile input that needs it).
-function deserializePurchaseOrder(saved, entryIdOf, resolveIdx) {
-  const list = Array.isArray(saved) ? saved.slice(0, MAX_PURCHASE_ORDER) : [];
-  return list.map((e) => {
-    if (!e || typeof e !== "object" || typeof e.scope !== "string") return null;
-    const id = entryIdOf(e);
-    if (id == null) return null;
-    const idx = resolveIdx(e.scope, e.className || null, id);
-    return idx >= 0 ? { scope: e.scope, className: e.className || null, idx } : null;
-  }).filter(Boolean);
-}
-
-// Generous enough that no real user approaches it, tight enough that a
-// hostile pasted code/link can't inject an unbounded array (same spirit as
-// MAX_WAYPOINT_PTS above).
-const MAX_WAYPOINTS = 200;
-
-// Curated palette rather than a free color picker - a handful of
-// distinguishable, pre-tuned-for-the-dark-theme options is enough to color
-// code a build's steps, and keeps every colored segment/swatch/divider
-// dot readable without needing per-color contrast checking against
-// arbitrary user-chosen hex values. key is what's actually stored on a
-// waypoint and round-tripped through save/export; hex is only for the
-// swatch-picker UI (render.js) - the segment/divider tints themselves are
-// plain CSS classes keyed off it (styles.src.css). Append-only: share codes
-// store a color's position in this list, not its key.
-const WAYPOINT_COLORS = [
-  { key: "red", hex: "#d94c4c" },
-  { key: "orange", hex: "#d98a3d" },
-  { key: "yellow", hex: "#d9c23d" },
-  { key: "green", hex: "#4c8c52" },
-  { key: "teal", hex: "#3da6a0" },
-  { key: "blue", hex: "#4c7fd9" },
-  { key: "purple", hex: "#9c4cd9" }
-];
-const WAYPOINT_COLOR_KEYS = new Set(WAYPOINT_COLORS.map((c) => c.key));
-
-// Waypoints don't reference any AA identity, so there's no name-key
-// resolution here - just validating/clamping untrusted input (localStorage,
-// a pasted build code, or a share link) into the { pts, label, color }
-// shape state.waypoints uses. Accepts either that shape or the compact
-// [pts, label, color] triple exportImport.js's `w` field uses. Duplicate
-// pts values collapse to the last one seen; an unrecognized color (stale,
-// or a palette entry an older client doesn't know) degrades to no color.
-function sanitizeWaypoints(list) {
-  if (!Array.isArray(list)) return [];
-  const byPts = new Map();
-  list.forEach((entry) => {
-    let rawPts, rawLabel, rawColor;
-    if (Array.isArray(entry)) [rawPts, rawLabel, rawColor] = entry;
-    else if (entry && typeof entry === "object") { rawPts = entry.pts; rawLabel = entry.label; rawColor = entry.color; }
-    else return;
-    const pts = safeParseInt(rawPts);
-    if (!Number.isFinite(pts) || pts < 0) return;
-    const clamped = Math.min(pts, MAX_WAYPOINT_PTS);
-    const label = typeof rawLabel === "string" && rawLabel.trim() ? rawLabel.trim().slice(0, 60) : null;
-    const color = typeof rawColor === "string" && WAYPOINT_COLOR_KEYS.has(rawColor) ? rawColor : null;
-    byPts.set(clamped, { label, color });
-  });
-  // Sorted ascending first so a truncation below keeps the highest-`pts`
-  // entries (typically the most meaningful, late-progression markers)
-  // rather than whichever happened to sort first.
-  return Array.from(byPts.entries())
-    .map(([pts, { label, color }]) => ({ pts, label, color }))
-    .sort((a, b) => a.pts - b.pts)
-    .slice(-MAX_WAYPOINTS);
-}
-
-// Still swallows its own write failure silently, unlike saveBuildAs's
-// named-save path (builds.js) - deliberately out of scope there, not an
-// oversight: this is the always-on autosave, called from nearly every
-// state-changing action in the app, with no discrete "did this specific
-// action succeed" moment a toast could attach to the way Save As has one.
-// Surfacing every failed autosave would mean a toast on almost every
-// click while storage is full/unavailable. Broader persistence-failure
-// visibility (this, saveOwned below, and the owned-tracking Link/Merge/
-// Split primitives further down) remains an open, separate piece of work.
-function saveLocal() {
-  try {
-    const payload = {
+  // src/builds.js
+  var BUILDS_INDEX_KEY = "eql_aa_builds_index_v1";
+  var BUILD_KEY_PREFIX = "eql_aa_build_";
+  var IMPORTED_BUILD_NAME = "Imported Build";
+  var ACTIVE_BUILD_KEY = "eql_aa_active_build_id";
+  var cachedIndex = null;
+  function dropCachedIndex() {
+    cachedIndex = null;
+  }
+  function loadIndex() {
+    if (cachedIndex !== null) return cachedIndex;
+    try {
+      const raw = localStorage.getItem(BUILDS_INDEX_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      cachedIndex = Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      cachedIndex = [];
+    }
+    return cachedIndex;
+  }
+  function saveIndex(index) {
+    cachedIndex = index;
+    try {
+      localStorage.setItem(BUILDS_INDEX_KEY, JSON.stringify(index));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function listBuilds() {
+    return loadIndex().slice().sort((a, b) => b.updatedAt - a.updatedAt);
+  }
+  function getActiveBuildId() {
+    try {
+      return localStorage.getItem(ACTIVE_BUILD_KEY) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function setActiveBuildId(id) {
+    try {
+      if (id) localStorage.setItem(ACTIVE_BUILD_KEY, id);
+      else localStorage.removeItem(ACTIVE_BUILD_KEY);
+    } catch (e) {
+    }
+  }
+  function clearActiveBuild() {
+    setActiveBuildId(null);
+  }
+  function migrateStaleBuildSlots() {
+    loadIndex().forEach(({ id }) => {
+      const key = BUILD_KEY_PREFIX + id;
+      const parsed = readJsonFromStorage(key, isObject);
+      if (!parsed) return;
+      let changed = false;
+      if ("totalPoints" in parsed) {
+        delete parsed.totalPoints;
+        changed = true;
+      }
+      const validOwnedProfileId = ownedProfileIdOr(parsed.ownedProfileId);
+      if (validOwnedProfileId !== parsed.ownedProfileId) {
+        parsed.ownedProfileId = validOwnedProfileId;
+        changed = true;
+      }
+      if (!changed) return;
+      try {
+        localStorage.setItem(key, JSON.stringify(parsed));
+      } catch (e) {
+      }
+    });
+  }
+  function readBuildRaw(id) {
+    return readJsonFromStorage(BUILD_KEY_PREFIX + id, isObject);
+  }
+  function ownedProfileIdOfBuild(id) {
+    const raw = readBuildRaw(id);
+    return ownedProfileIdOr(raw && raw.ownedProfileId);
+  }
+  function cleanupOrphanedOwnedProfiles() {
+    const referenced = /* @__PURE__ */ new Set([state.ownedProfileId]);
+    loadIndex().forEach(({ id }) => referenced.add(ownedProfileIdOfBuild(id)));
+    listOwnedProfileIds().forEach((profileId) => {
+      if (!referenced.has(profileId)) removeOwnedProfile(profileId);
+    });
+  }
+  function buildPayload() {
+    return {
       v: SAVE_FORMAT_VERSION,
       selectedClasses: state.selectedClasses,
       charLevel: state.charLevel,
       ranks: serializeRanks(state.ranks),
       purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
-      waypoints: state.waypoints,
-      ownedProfileId: state.ownedProfileId
+      waypoints: state.waypoints
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  } catch (e) { /* storage unavailable, ignore */ }
-}
-
-// Writes arbitrary owned-shaped data under a specific profile id, without
-// touching state.ownedProfileId itself - the primitive a brand-new saved
-// build's seeded copy (builds.js) needs, distinct from saveOwned's "persist
-// whatever the current session is showing" job below. Returns whether the
-// write actually landed - builds.js's saveBuildAs checks this for a
-// brand-new slot's seeded profile, since silently swallowing the failure
-// there would leave the new slot pointing at a profile with no data behind
-// it while still reporting a successful save.
-function saveOwnedProfileTo(profileId, ownedLike) {
-  try {
-    localStorage.setItem(ownedStorageKeyFor(profileId), JSON.stringify({ v: SAVE_FORMAT_VERSION, owned: serializeRanks(ownedLike) }));
-    return true;
-  } catch (e) {
-    return false;
   }
-}
-
-// Persists the current session's owned data to whichever profile
-// state.ownedProfileId currently points at - called by
-// setOwnedRank/performReset in logic.js whenever owned itself changes,
-// and by the Link/Merge/Split primitives below after they change what's
-// showing.
-function saveOwned() {
-  saveOwnedProfileTo(state.ownedProfileId, state.owned);
-}
-
-function loadOwnedProfileRaw(profileId) {
-  return readJsonFromStorage(ownedStorageKeyFor(profileId), isObject);
-}
-
-// Ensures the legacy global owned key's content is reachable under the
-// well-known "legacy" profile id every pre-existing build/session
-// implicitly used before per-build tracking existed. Copies once, on
-// first encounter, and never overwrites an existing copy again - a
-// profile that's since diverged via real Link/Merge/Split use must not be
-// reset back to the original snapshot on a later boot. Safe to call every
-// boot; a no-op once the copy exists. Called from main.js's init(),
-// before loadAndApplyOwned runs.
-function migrateLegacyOwnedProfile() {
-  try {
-    const legacyRaw = localStorage.getItem(OWNED_STORAGE_KEY);
-    if (!legacyRaw) return;
-    const profileKey = ownedStorageKeyFor(LEGACY_OWNED_PROFILE_ID);
-    if (localStorage.getItem(profileKey) != null) return;
-    localStorage.setItem(profileKey, legacyRaw);
-  } catch (e) { /* storage unavailable, ignore */ }
-}
-
-// Every eql_aa_owned_<profileId> key currently in storage, except the
-// permanent legacy profile - callers (builds.js's orphan sweep) use this
-// to compute which profiles exist before checking which are still
-// referenced. Excludes OWNED_STORAGE_KEY itself too, in case its own
-// "_v1" suffix were ever mistaken for a profile id under the same prefix.
-function listOwnedProfileIds() {
-  const prefix = "eql_aa_owned_";
-  const ids = [];
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key || !key.startsWith(prefix) || key === OWNED_STORAGE_KEY) continue;
-      const id = key.slice(prefix.length);
-      if (id !== LEGACY_OWNED_PROFILE_ID) ids.push(id);
+  function deepEqual(a, b) {
+    if (a === b) return true;
+    if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+    if (Array.isArray(a) || Array.isArray(b)) {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+      return a.every((v, i) => deepEqual(v, b[i]));
     }
-  } catch (e) { /* storage unavailable, ignore */ }
-  return ids;
-}
-
-// Removes a single owned profile's storage - refuses to touch the
-// permanent legacy profile no matter what a caller passes, since
-// preserving it is the one invariant this exists to never violate.
-function removeOwnedProfile(profileId) {
-  if (profileId === LEGACY_OWNED_PROFILE_ID) return;
-  try {
-    localStorage.removeItem(ownedStorageKeyFor(profileId));
-  } catch (e) { /* storage unavailable, ignore */ }
-}
-
-// Shared "read JSON from localStorage, default on failure" shape used
-// throughout this file and builds.js - a missing key, invalid JSON, or a
-// disabled/unavailable localStorage (private browsing, quota) all
-// collapse to the same null rather than throwing. validate, when given,
-// additionally rejects a value that parsed fine but isn't the shape the
-// caller actually needs (typically "is this an object at all") - passing
-// it consistently is what keeps a hand-copied version of this check from
-// drifting into being present in some callers and not others.
-function readJsonFromStorage(key, validate) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (validate && !validate(parsed)) return null;
-    return parsed;
-  } catch (e) { return null; }
-}
-
-const isObject = (v) => !!v && typeof v === "object";
-
-function loadLocal() {
-  return readJsonFromStorage(STORAGE_KEY, isObject);
-}
-
-// Returns { droppedRanks } — how many saved rank entries had a key that no
-// longer resolves to a current AA. Callers use this to tell the user
-// something vanished, instead of a build that's just quietly smaller than
-// they left it.
-function applyLoaded(loaded) {
-  if (!loaded) return { droppedRanks: 0 };
-  if (
-    Array.isArray(loaded.selectedClasses) &&
-    loaded.selectedClasses.length === 3 &&
-    loaded.selectedClasses.every((c) => CLASS_LIST.includes(c)) &&
-    new Set(loaded.selectedClasses).size === 3
-  ) {
-    state.selectedClasses = loaded.selectedClasses.slice();
+    return Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
   }
-  const parsedLevel = safeParseInt(loaded.charLevel);
-  if (Number.isFinite(parsedLevel)) {
-    state.charLevel = Math.max(1, Math.min(50, parsedLevel));
+  function isEmptyComposite(v) {
+    if (Array.isArray(v)) return v.length === 0;
+    return typeof v === "object" && v !== null && Object.keys(v).length === 0;
   }
-  // v4+ saves store name keys, resolved straight against today's AA_DATA.
-  // Anything older stored raw indexes against the ordering AA_DATA happened
-  // to have at save time — resolved instead through the frozen snapshot, so
-  // reordering/regenerating the wiki data doesn't quietly reattach old points
-  // to the wrong ability. Either way, an AA that no longer resolves is
-  // dropped rather than guessed at.
-  const isLegacy = !(typeof loaded.v === "number" && loaded.v >= 4);
-  // The pre-v4 index-based path is left unmigrated here - old enough, and
-  // narrow enough a window, that a save still on it having Quick
-  // Evacuation trained under Wizard specifically isn't worth the extra
-  // legacy-index bookkeeping this would otherwise need.
-  if (!isLegacy) {
-    migrateSharedQuickEvacuation(loaded.ranks);
-    migrateSharedQuickEvacuationPurchaseOrder(loaded.purchaseOrder);
-  }
-  let droppedRanks = 0;
-  if (loaded.ranks && typeof loaded.ranks === "object") {
-    const result = isLegacy
-      ? deserializeRanks(loaded.ranks, (scope, cls, idxStr) => currentIdxForLegacyIdx(scope, cls, parseInt(idxStr, 10)))
-      : deserializeRanks(loaded.ranks, (scope, cls, key) => idxForKey(scope, cls, key));
-    state.ranks = result.ranks;
-    droppedRanks = result.dropped;
-  }
-  if (Array.isArray(loaded.purchaseOrder)) {
-    state.purchaseOrder = isLegacy
-      ? deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.idx === "number" ? e.idx : null), (scope, cls, legacyIdx) => currentIdxForLegacyIdx(scope, cls, legacyIdx))
-      : deserializePurchaseOrder(loaded.purchaseOrder, (e) => (typeof e.key === "string" ? e.key : null), (scope, cls, key) => idxForKey(scope, cls, key));
-  }
-  // owned is deliberately NOT handled here - it lives outside the build
-  // payload entirely (see OWNED_STORAGE_KEY/loadAndApplyOwned) and must
-  // survive loading any build/slot/share link untouched. If `loaded` has
-  // an owned field anyway (an old payload, or a share code that once
-  // carried it), it's just ignored here as an unrecognized extra field.
-  //
-  // Unlike ranks/purchaseOrder (left as-is if the field is simply missing),
-  // waypoints always get reset here, present or not - they ARE part of
-  // "the build" being loaded. An older save with no waypoints field at all
-  // still needs its waypoints cleared here, not silently carried over from
-  // whatever build was previously in memory.
-  state.waypoints = sanitizeWaypoints(loaded.waypoints);
-  return { droppedRanks };
-}
-
-// Loads state.owned from whichever profile state.ownedProfileId currently
-// points at - the caller (main.js at boot, builds.js's loadBuild) is
-// responsible for setting that first, since which profile applies depends
-// on context (the current session's own saved value, or the build slot
-// being loaded). rawMainPayload is the raw object loadLocal() returned,
-// needed for exactly one purpose: a one-time migration for saves made
-// while owned tracking briefly lived inside the main build payload
-// instead of its own key, well before per-build profiles existed. Pass
-// null when there's no such payload to fall back to (every caller besides
-// boot). Returns { droppedOwned } in the same spirit as applyLoaded's
-// droppedRanks, so callers can fold it into their own load-time notice.
-function loadAndApplyOwned(rawMainPayload) {
-  const stored = loadOwnedProfileRaw(state.ownedProfileId);
-  if (stored && stored.owned && typeof stored.owned === "object") {
-    migrateSharedQuickEvacuation(stored.owned);
-    const result = deserializeRanks(stored.owned, (scope, cls, key) => idxForKey(scope, cls, key));
-    state.owned = result.ranks;
-    return { droppedOwned: result.dropped };
-  }
-  if (rawMainPayload && rawMainPayload.owned && typeof rawMainPayload.owned === "object") {
-    // owned only ever existed in the main payload under SAVE_FORMAT_VERSION
-    // 4 (it shipped well after v4 became name-keyed) - no legacy index-based
-    // form to handle here, unlike ranks/purchaseOrder above.
-    migrateSharedQuickEvacuation(rawMainPayload.owned);
-    const result = deserializeRanks(rawMainPayload.owned, (scope, cls, key) => idxForKey(scope, cls, key));
-    state.owned = result.ranks;
-    saveOwned();
-    return { droppedOwned: result.dropped };
-  }
-  state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
-  return { droppedOwned: 0 };
-}
-
-// Whether a name-keyed owned payload (the shape loadLocal/decodeBuildCode
-// hand around, before deserializeRanks turns it into idx-keyed state.owned)
-// actually has anything in it - used by exportImport.js to decide whether an
-// imported build is even carrying owned data worth creating a profile for,
-// without needing to deserialize it first just to find out it's empty.
-function payloadOwnedHasContent(owned) {
-  if (!owned || typeof owned !== "object") return false;
-  if (Object.keys(owned.general || {}).length || Object.keys(owned.archetype || {}).length || Object.keys(owned.special || {}).length) return true;
-  const classes = owned.classes || {};
-  return Object.keys(classes).some((className) => Object.keys(classes[className] || {}).length > 0);
-}
-
-// An import (share link or pasted text) that carries its own owned data
-// always gets a brand-new profile seeded from it, rather than touching
-// whatever the current session was already tracking - silent, no
-// confirmation, since nothing existing is ever at risk of being
-// overwritten this way. exportImport.js's maybeImportOwned is the only
-// caller.
-function adoptImportedOwnedAsNewProfile(ownedField) {
-  const newId = genId();
-  migrateSharedQuickEvacuation(ownedField);
-  const result = deserializeRanks(ownedField, (scope, cls, key) => idxForKey(scope, cls, key));
-  state.ownedProfileId = newId;
-  state.owned = result.ranks;
-  saveOwned();
-  return { dropped: result.dropped };
-}
-
-// --- Ongoing owned-tracking controls: Link / Merge / Split -----------------
-// The three primitives behind the Progression tab's "Manage owned
-// tracking…" control (render.js). Each one only touches state.owned/
-// state.ownedProfileId - keeping the active saved build slot's own stored
-// ownedProfileId field in sync (if the current session is a saved slot
-// right now) is builds.js's job, not this file's.
-
-// Repoints the current session at an existing profile (someone else's
-// build, or your own) - from then on the two read/write the same storage
-// key, so marking something owned in either shows up in both immediately.
-function linkOwnedProfile(targetProfileId) {
-  state.ownedProfileId = targetProfileId;
-  loadAndApplyOwned(null);
-}
-
-// Inverse of Link: starts a fresh, independent profile seeded with a copy
-// of whatever's currently showing. Whatever the session used to share
-// with is completely unaffected - this only ever writes to the new key.
-function splitOwnedProfile() {
-  state.ownedProfileId = genId();
-  saveOwned();
-}
-
-// One-directional, non-destructive union: anything owned in sourceProfileId
-// ends up owned in the current profile too, taking the higher rank on any
-// entry both sides have (mirrors how "owned" itself means "owned up to
-// rank N"). Nothing already marked owned can become unmarked, and
-// sourceProfileId's own data is only ever read here, never modified.
-function mergeOwnedProfileInto(sourceProfileId) {
-  const sourceRaw = loadOwnedProfileRaw(sourceProfileId);
-  if (!sourceRaw || !sourceRaw.owned || typeof sourceRaw.owned !== "object") return { merged: 0 };
-  // Same reasoning as every other deserializeRanks call site - a source
-  // profile saved before sharedCanonical existed could hold Quick
-  // Evacuation's owned rank under Wizard's own store, which would
-  // otherwise merge in as a separate entry alongside Druid's canonical one
-  // instead of raising it, inflating ownedPoints() without the current
-  // profile's own display ever reflecting the higher value.
-  migrateSharedQuickEvacuation(sourceRaw.owned);
-  const source = deserializeRanks(sourceRaw.owned, (scope, cls, key) => idxForKey(scope, cls, key)).ranks;
-  let merged = 0;
-  function mergeStore(target, src) {
-    Object.keys(src).forEach((idxStr) => {
-      const idx = parseInt(idxStr, 10);
-      const current = target[idx] || 0;
-      if (src[idx] > current) { target[idx] = src[idx]; merged++; }
+  function deepEqualIgnoringExtraKeys(stored, current) {
+    if (typeof stored !== "object" || stored === null) return false;
+    return Object.keys(current).every((k) => {
+      if (k === "v") return true;
+      if (stored[k] === void 0 && isEmptyComposite(current[k])) return true;
+      return deepEqual(stored[k], current[k]);
     });
   }
-  ["general", "archetype", "special"].forEach((scope) => mergeStore(state.owned[scope], source[scope]));
-  Object.keys(source.classes).forEach((className) => {
-    if (!state.owned.classes[className]) state.owned.classes[className] = {};
-    mergeStore(state.owned.classes[className], source.classes[className]);
-  });
-  if (merged) saveOwned();
-  return { merged };
-}
-
-// Business logic: everything that reads or derives from `state` and AA_DATA,
-// plus the mutation functions for spending/refunding points. No HTML/DOM here.
-// Depends on state.js and (for costGuess/effectGuess) keys.js — never on
-// render.js — so the dependency graph stays one-directional (render depends
-// on logic, not the other way around).
-
-function costNum(c) {
-  const n = parseInt(c, 10);
-  return isNaN(n) ? 0 : n;
-}
-
-function escapeHtml(str) {
-  // '&apos;' not '&#39;' — highlightRankValue re-parses this output for
-  // slash-separated progressions, and '&#39;' embeds a digit pair ("39")
-  // that could be misread as a phantom rank slot next to an apostrophe.
-  return String(str == null ? "" : str)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
-}
-
-function iconLetter(name) {
-  return (name || "?").trim().charAt(0).toUpperCase();
-}
-
-// Maps an AA's optional `era` field to its badge letter/color/label - the
-// one place that mapping lives, so render.js's icon-corner (Tree) and
-// inline (Browse/Summary/Other Classes) badge sites can't drift apart on
-// it. Absent/unrecognized era (every launch AA today) renders nothing.
-function eraBadge(aa) {
-  if (aa.era === "kunark") return { letter: "K", cssClass: "era-kunark", label: "Kunark" };
-  if (aa.era === "velious") return { letter: "V", cssClass: "era-velious", label: "Velious" };
-  return null;
-}
-
-// Builds the tooltip text for a guess object ({value, confidence, basedOn,
-// interpolated, manual}). Shared by formatGuessDisplay (render.js, costs)
-// and highlightRankValue (below, effect values) so both read the same.
-function guessTitle(guess) {
-  if (guess.manual) return `Estimated (very low confidence) — hand-picked pending wiki confirmation, not derived from other AAs. Not confirmed on the wiki.`;
-  if (guess.interpolated) return `Estimated (${guess.confidence} confidence) — no comparable AA found, interpolated between this AA's own known ranks. Not confirmed on the wiki.`;
-  return `Estimated (${guess.confidence} confidence) from ${guess.basedOn.join(", ")} — not confirmed on the wiki.`;
-}
-
-// Highlights the value matching the current rank inside slash-separated
-// progressions, e.g. "20/40/60%" at rank 2 -> "20/<mark>40</mark>/60%".
-// If guessLookup is given, also substitutes a pattern-inferred estimate
-// for any "?" slot — independent of rank, so it still runs when rank is
-// falsy/0 (Browse's rank-agnostic view). guessLookup(progIdx, rankIdx) ->
-// guess or null; progIdx counts progressions in order of appearance (a
-// description can hold more than one — see effectGuesses.js).
-function highlightRankValue(text, rank, guessLookup) {
-  const lines = splitPerRankLines(text);
-  if (lines) {
-    // Each line already belongs to one rank, so slot position carries no
-    // rank meaning inside it - pass rank 0 so nothing gets bolded by
-    // position, and mark the whole matching line instead. progIdx keeps
-    // running across lines, since effectGuesses.js indexes progressions
-    // over the description as a whole.
-    let progIdx = -1;
-    return lines.map(({ rank: lineRank, text: lineText }) => {
-      const out = markProgressions(escapeHtml(lineText), 0, guessLookup, progIdx);
-      progIdx = out.progIdx;
-      const current = rank && lineRank === rank ? " is-current-rank" : "";
-      return `<span class="rank-line${current}">${out.html}</span>`;
-    }).join("");
+  function activeBuildMatchesCurrent() {
+    const id = getActiveBuildId();
+    if (!id) return false;
+    const stored = readBuildRaw(id);
+    if (!stored) return false;
+    return deepEqualIgnoringExtraKeys(stored, buildPayload());
   }
-  const escaped = escapeHtml(text);
-  if (!guessLookup && (!rank || rank < 1)) return escaped;
-  return markProgressions(escaped, rank, guessLookup, -1).html;
-}
-
-// Splits a description written as consecutive "Rank N: ..." clauses into one
-// entry per rank, or returns null for the ordinary single-clause kind. The
-// colon is what separates a per-rank clause from prose like "Rank 2 requires
-// level 30", which many descriptions carry and which must stay inline.
-const PER_RANK_HEAD = /^Rank (\d+):\s/;
-const PER_RANK_SPLIT = /(?=Rank \d+:\s)/;
-
-function splitPerRankLines(text) {
-  const str = String(text == null ? "" : text);
-  if (!PER_RANK_HEAD.test(str)) return null;
-  const parts = str.split(PER_RANK_SPLIT).filter((p) => p.trim());
-  if (parts.length < 2) return null;
-  return parts.map((p) => ({ rank: parseInt(p.match(PER_RANK_HEAD)[1], 10), text: p.trim() }));
-}
-
-// Marks up slash-separated progressions in already-escaped text. startIdx is
-// the last progression index used so far, so a caller walking several
-// fragments can keep one continuous count.
-function markProgressions(escaped, rank, guessLookup, startIdx) {
-  let progIdx = startIdx;
-  const html = escaped.replace(/(?:\d+(?:\.\d+)?%?|\?)(?:\/(?:\d+(?:\.\d+)?%?|\?)){1,}/g, (match) => {
-    progIdx++;
-    const parts = match.split("/");
-    const highlightIdx = rank && rank >= 1 ? rank - 1 : -1;
-    return parts.map((part, i) => {
-      if (part === "?") {
-        const guess = guessLookup ? guessLookup(progIdx, i) : null;
-        if (!guess) return part;
-        const cls = `is-estimate tier-${guess.confidence}${i === highlightIdx ? " rank-highlight" : ""}`;
-        return `<span class="${cls}" title="${escapeHtml(guessTitle(guess))}">~${guess.value}</span>`;
-      }
-      return i === highlightIdx ? `<span class="rank-highlight">${part}</span>` : part;
-    }).join("/");
-  });
-  return { html, progIdx };
-}
-
-// For descriptions phrased as a flat "N per rank" (e.g. "4 points per rank"),
-// shows the total at the current rank with the per-rank amount noted alongside,
-// e.g. "24 points (4 per rank)" at rank 6. Left untouched at rank <= 1, where
-// total and per-rank are the same number.
-function applyPerRankTotal(text, rank) {
-  if (!rank || rank < 2) return text;
-  return text.replace(/(\d+(?:\.\d+)?)(%)?\s*(points?|seconds?)?\s*(chance)?\s*\(?per rank\)?/gi,
-    (match, numStr, pct, unit, chanceWord) => {
-      const num = parseFloat(numStr);
-      const total = num * rank;
-      const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""));
-      let unitLabel = "";
-      if (pct) unitLabel = "%";
-      else if (unit) {
-        const singular = unit.replace(/s$/i, "");
-        unitLabel = " " + (total === 1 ? singular : singular + "s");
-      }
-      const chancePart = chanceWord ? " chance" : "";
-      return `${fmt(total)}${unitLabel}${chancePart} (${fmt(num)}${pct ? "%" : ""} per rank)`;
-    });
-}
-
-// Shared by the tree view, tab match badges, and Browse All — one search box,
-// same matching rule everywhere it's used.
-function aaMatchesQuery(aa, query) {
-  if (!query) return false;
-  const q = query.trim().toLowerCase();
-  if (!q) return false;
-  return aa.name.toLowerCase().includes(q) || aa.description.toLowerCase().includes(q);
-}
-
-// Count of AAs in a category matching the current search, for tab badges.
-// Shares isSuppressed with the tree and Browse, or a hidden match would
-// inflate a badge while the tab itself shows nothing for it.
-function countMatches(catKey, query) {
-  if (!query || !query.trim()) return 0;
-  return getList(catKey).filter((aa, idx) => {
-    if (!aaMatchesQuery(aa, query)) return false;
-    return !isSuppressed(catKey, idx);
-  }).length;
-}
-
-function classSlotIndex(catKey) {
-  const i = CLASS_SLOT_KEYS.indexOf(catKey);
-  return i;
-}
-
-function labelFor(catKey) {
-  if (catKey === "general") return "General AA";
-  if (catKey === "archetype") return "Archetype AA";
-  if (catKey === "special") return "Special AA";
-  const slot = classSlotIndex(catKey);
-  if (slot >= 0) return state.selectedClasses[slot] + " AA";
-  return catKey;
-}
-
-// Short form used for tab labels and Summary section headers (no " AA" suffix).
-function shortCategoryLabel(catKey) {
-  if (catKey === "general") return "General";
-  if (catKey === "archetype") return "Archetype";
-  if (catKey === "special") return "Special";
-  const slot = classSlotIndex(catKey);
-  if (slot >= 0) return state.selectedClasses[slot];
-  return catKey;
-}
-
-function getList(catKey) {
-  const slot = classSlotIndex(catKey);
-  if (slot >= 0) return AA_DATA.classes[state.selectedClasses[slot]] || [];
-  return AA_DATA[catKey] || [];
-}
-
-// Auto-granted AAs (0-cost on the wiki) are trained automatically as the
-// character levels — the wiki documents one unlock level, not per-rank
-// breakpoints, so these sit at max rank once unlocked rather than
-// trickling in.
-//
-// `autoRanks: N` is rarer: only the first N ranks are free (e.g. Symphonic
-// Aura's rank 1 is free, rank 2+ cost points). effectiveRank returns the
-// greater of the free baseline and whatever's been purchased, so the free
-// ranks never need their own purchaseOrder entry.
-function effectiveRank(catKey, idx) {
-  const { scope, className } = categoryToScopeClassName(catKey);
-  return effectiveRankScoped(scope, className, idx);
-}
-
-// Same lookup as effectiveRank, by (scope, className) directly rather than
-// a slot-relative catKey - for the Other Classes tab, where an inactive
-// class has no catKey at all (classSlotIndex returns -1 for it). Same
-// split as costGuess/costGuessScoped.
-function effectiveRankScoped(scope, className, idx) {
-  const aa = aaAt(scope, className, idx);
-  // An auto-granted AA's free portion only applies while its class is
-  // active — it's a level-gated freebie, not a standing investment like a
-  // manually-trained rank (which persists while inactive; see Other
-  // Classes). Without this gate, a scoped call for an inactive class would
-  // report the AA as "picked" despite never being granted.
-  const classActive = scope !== "class" || state.selectedClasses.includes(className);
-  if (aa && aa.auto) {
-    const levelReq = parseInt(aa.levelReq, 10) || 1;
-    // An archetype/general auto-grant with eligibleClasses (e.g. Point Blank
-    // Fire) must still respect it - unlike a class-scoped auto AA, nothing
-    // else gates who this free rank goes to.
-    return classActive && isClassEligible(aa) && state.charLevel >= levelReq ? aa.ranks : 0;
-  }
-  const canonical = sharedCanonical(scope, className, idx);
-  const store = canonical.scope === "class" ? (state.ranks.classes[canonical.className] || {}) : (state.ranks[canonical.scope] || {});
-  const purchased = store[canonical.idx] || 0;
-  if (aa && aa.autoRanks) {
-    const levelReq = parseInt(aa.levelReq, 10) || 1;
-    const freeRanks = classActive && state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
-    return Math.max(freeRanks, purchased);
-  }
-  return purchased;
-}
-
-// The static, level-independent count of an autoRanks AA's free ranks -
-// unlike autoFloor below, this ignores state.charLevel. Used to reconcile
-// purchaseOrder counts against a held rank (how many ranks never went
-// through purchaseOrder), which can diverge from "what's currently
-// buyable" if charLevel changes after the free ranks were granted.
-function autoRanksOffset(aa) {
-  return aa && aa.autoRanks ? Math.min(aa.autoRanks, aa.ranks) : 0;
-}
-
-// autoRanksOffset by (scope, className, idx) directly, for callers that only
-// have the AA's identity (e.g. the Progression toggle, off data attributes),
-// not the AA object itself.
-function autoRanksOffsetScoped(scope, className, idx) {
-  return autoRanksOffset(aaAt(scope, className, idx));
-}
-
-function getRanksStoreScoped(scope, className) {
-  if (scope === "class") {
-    if (!state.ranks.classes[className]) state.ranks.classes[className] = {};
-    return state.ranks.classes[className];
-  }
-  return state.ranks[scope];
-}
-
-// A `sharedWithClass`-tagged AA (Quick Evacuation's Wizard copy, as of this
-// writing - see keys.js's aaAt comment) displays as a completely normal row
-// on its own class's tab, matching the game, but its rank/owned/purchase
-// state all lives under the named class's own copy of the same AA instead
-// of its own - this resolves (scope, className, idx) to wherever it
-// actually reads/writes. Every other AA maps to itself.
-//
-// spentForClass/spentOnInactiveClasses (the Other Classes per-class
-// subtotals) deliberately aren't routed through this: they walk a class's
-// raw store directly rather than per-idx, so a shared AA's cost always
-// attributes to its canonical class alone. The one visible quirk is a pair
-// split across exactly one active, one inactive class: the Other Classes
-// tab can list the inactive one as holding points the player can actually
-// still edit live, from the other, active copy. Narrow enough (one AA pair
-// in the whole dataset) that threading a redirect through every per-class
-// sum isn't worth it for a single-pair special case.
-function sharedCanonical(scope, className, idx) {
-  const aa = aaAt(scope, className, idx);
-  if (!aa || !aa.sharedWithClass) return { scope, className, idx };
-  const canonicalIdx = idxForKey("class", aa.sharedWithClass, slugify(aa.name));
-  return canonicalIdx >= 0 ? { scope: "class", className: aa.sharedWithClass, idx: canonicalIdx } : { scope, className, idx };
-}
-
-// Unlike getRanksStore, keyed by scope/className directly rather than a
-// slot-relative catKey — owned status is about the AA's real identity, not
-// which slot a class currently occupies (same reasoning purchaseOrder
-// entries use; a slot key stops meaning the same class once slots are
-// rearranged).
-//
-// For writing only - creates state.owned.classes[className] if it doesn't
-// exist yet, so a caller about to assign into the returned store doesn't
-// have to check first. ownedRank (below) is a read and deliberately doesn't
-// go through this, so merely looking up a class the player has never
-// touched can't leave a persistent-state mutation behind as a side effect
-// of what render code treats as a pure query.
-function getOwnedStore(scope, className) {
-  if (scope === "class") {
-    if (!state.owned.classes[className]) state.owned.classes[className] = {};
-    return state.owned.classes[className];
-  }
-  return state.owned[scope];
-}
-
-function ownedRank(scope, className, idx) {
-  const canonical = sharedCanonical(scope, className, idx);
-  const store = canonical.scope === "class" ? state.owned.classes[canonical.className] : state.owned[canonical.scope];
-  return (store && store[canonical.idx]) || 0;
-}
-
-// Pure state mutation, same spirit as changeRank/moveEntry: sets the owned
-// watermark for one AA and records enough to undo it. Unlike changeRank,
-// doesn't clamp against the AA's rank count — the caller (Progression's
-// toggle) is responsible for passing a sane value.
-function setOwnedRank(scope, className, idx, rank) {
-  const canonical = sharedCanonical(scope, className, idx);
-  const store = getOwnedStore(canonical.scope, canonical.className);
-  const from = store[canonical.idx] || 0;
-  if (rank <= 0) delete store[canonical.idx]; else store[canonical.idx] = rank;
-  lastMutation = { type: "own", scope: canonical.scope, className: canonical.className, idx: canonical.idx, from, to: rank };
-  // Owned persists to its own storage key (state.js), not the build
-  // payload saveLocal writes — nothing here touches ranks/purchaseOrder.
-  saveOwned();
-}
-
-// Same scope/className identity-keying as getOwnedStore, for the same
-// reason - hiding is about the AA's real identity, not which of the 3 slots
-// a class currently occupies.
-function getHiddenStore(scope, className) {
-  if (scope === "class") {
-    if (!state.hiddenAAs.classes[className]) state.hiddenAAs.classes[className] = {};
-    return state.hiddenAAs.classes[className];
-  }
-  return state.hiddenAAs[scope];
-}
-
-// Scope/className form, for callers (Browse) that need to check an AA
-// outside the 3 active class slots, where categoryToScopeClassName would
-// return null - same split as costGuess/costGuessScoped.
-function isHiddenScoped(scope, className, idx) {
-  const canonical = sharedCanonical(scope, className, idx);
-  return !!getHiddenStore(canonical.scope, canonical.className)[canonical.idx];
-}
-
-function isHidden(catKey, idx) {
-  const { scope, className } = categoryToScopeClassName(catKey);
-  return isHiddenScoped(scope, className, idx);
-}
-
-function setHiddenScoped(scope, className, idx, hidden) {
-  const canonical = sharedCanonical(scope, className, idx);
-  const store = getHiddenStore(canonical.scope, canonical.className);
-  if (hidden) store[canonical.idx] = true; else delete store[canonical.idx];
-  // Display preference, not build state - its own storage key (state.js),
-  // never lastMutation/saveLocal, so hiding something is never part of
-  // Undo Last and never marks the build itself as changed.
-  saveHidden();
-}
-
-function setHidden(catKey, idx, hidden) {
-  const { scope, className } = categoryToScopeClassName(catKey);
-  setHiddenScoped(scope, className, idx, hidden);
-}
-
-// Whether an AA should be left out of the tree, Browse, and the tab match
-// badges entirely. Hiding declutters what to look at; it never suppresses
-// real build state, so an AA you've actually spent points on always stays
-// visible. Show Hidden is the one override switch - including for search,
-// so a hidden AA is unfindable rather than merely absent from browsing.
-function isSuppressedScoped(scope, className, idx) {
-  if (!isHiddenScoped(scope, className, idx)) return false;
-  if (state.showHidden) return false;
-  return effectiveRankScoped(scope, className, idx) === 0;
-}
-
-function isSuppressed(catKey, idx) {
-  const { scope, className } = categoryToScopeClassName(catKey);
-  return isSuppressedScoped(scope, className, idx);
-}
-
-// Whether state.hiddenAAs holds anything at all, across every scope/class —
-// hides the "Show Hidden" toggle entirely when there's nothing to reveal.
-function hasAnyHidden() {
-  const h = state.hiddenAAs;
-  if (Object.keys(h.general).length || Object.keys(h.archetype).length || Object.keys(h.special).length) return true;
-  return Object.keys(h.classes).some((className) => Object.keys(h.classes[className]).length > 0);
-}
-
-// Whether state.owned holds anything at all, across every scope/class —
-// not scoped to the current 3 slots, but scoped to whichever owned
-// profile is currently active (state.ownedProfileId), same as state.owned
-// itself always is now. Disables the standalone "Clear Owned" control when
-// there's nothing to do.
-function hasAnyOwned() {
-  const o = state.owned;
-  if (Object.keys(o.general).length || Object.keys(o.archetype).length || Object.keys(o.special).length) return true;
-  return Object.keys(o.classes).some((className) => Object.keys(o.classes[className]).length > 0);
-}
-
-// Wipes the current owned profile entirely — the standalone counterpart to
-// performReset's clearOwnedToo option, for clearing real-world progress
-// without touching the plan. If this build is currently sharing its
-// profile with another (see the Manage Owned Tracking control), that one
-// is cleared too, since they're the same underlying data. Not undoable
-// (the single-level undo only records one AA's watermark at a time); the
-// confirm before calling this is the safety net.
-function clearAllOwned() {
-  state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
-  lastMutation = null;
-  saveOwned();
-}
-
-// Sets (or replaces, if one exists at this exact total) a named point-total
-// marker. Plan annotation, not a plan mutation — deliberately doesn't touch
-// lastMutation, so it never clobbers (or is clobbered by) a pending Undo
-// Last. Returns false without changing anything if pts isn't a valid
-// non-negative number.
-function addOrUpdateWaypoint(pts, label, color) {
-  const n = parseInt(pts, 10);
-  if (!Number.isFinite(n) || n < 0) return false;
-  // sanitizeWaypoints does the actual clamping/label-cleaning/color-
-  // validating/sorting/dedup (last entry for a given pts wins), so re-run
-  // the merged array through it rather than duplicating that logic here.
-  const merged = state.waypoints.filter((w) => w.pts !== n);
-  merged.push({ pts: n, label, color });
-  state.waypoints = sanitizeWaypoints(merged);
-  saveLocal();
-  return true;
-}
-
-function removeWaypoint(pts) {
-  state.waypoints = state.waypoints.filter((w) => w.pts !== pts);
-  saveLocal();
-}
-
-function categoryToScopeClassName(category) {
-  const slot = classSlotIndex(category);
-  return slot >= 0 ? { scope: "class", className: state.selectedClasses[slot] } : { scope: category, className: null };
-}
-
-// A pattern-inferred cost estimate for rank rankIdx of the AA at
-// (catKey, idx), or null. Only meaningful when the AA's real
-// costs[rankIdx] is "?" — callers check that themselves. Purely a display
-// hint: nothing here or upstream ever substitutes a guess into
-// costNum()/spentPoints().
-function costGuess(catKey, idx, rankIdx) {
-  const { scope, className } = categoryToScopeClassName(catKey);
-  return costGuessFor(scope, className, idx, rankIdx);
-}
-
-// Same lookup as costGuess, but by (scope, className) directly rather than
-// one of the 3 active class slots — for callers like Browse that show every
-// class regardless of whether it's currently selected, where categoryToScopeClassName
-// would return null for a class sitting outside the active 3.
-function costGuessScoped(scope, className, idx, rankIdx) {
-  return costGuessFor(scope, className, idx, rankIdx);
-}
-
-// Same shape as costGuess/costGuessScoped, one axis deeper for progIdx (a
-// description can hold more than one independent progression - see
-// effectGuesses.js's own header). Only ever meaningful to call when the
-// real slot at that position is "?", same contract as costGuess.
-function effectGuess(catKey, idx, progIdx, rankIdx) {
-  const { scope, className } = categoryToScopeClassName(catKey);
-  return effectGuessFor(scope, className, idx, progIdx, rankIdx);
-}
-
-function effectGuessScoped(scope, className, idx, progIdx, rankIdx) {
-  return effectGuessFor(scope, className, idx, progIdx, rankIdx);
-}
-
-function entryKey(scope, className, idx) {
-  return `${scope}|${className || ""}|${idx}`;
-}
-
-// Every class whose own copy of this AA shares one investment with it (see
-// keys.js's aaAt comment on sharedWithClass) - just [className] for an
-// ordinary AA. The canonical copy (Druid, for Quick Evacuation) has no
-// sharedWithClass field of its own, so finding ITS siblings means checking
-// every other class for a copy that points back at it by name; a
-// non-canonical copy (Wizard's) just names its one canonical class
-// directly.
-function sharedGroupClasses(scope, className, idx) {
-  if (scope !== "class") return [className];
-  const aa = aaAt(scope, className, idx);
-  if (!aa) return [className];
-  if (aa.sharedWithClass) return [className, aa.sharedWithClass];
-  const siblings = CLASS_LIST.filter((c) => {
-    if (c === className) return false;
-    const otherIdx = idxForKey("class", c, slugify(aa.name));
-    const otherAA = otherIdx >= 0 ? aaAt("class", c, otherIdx) : null;
-    return otherAA && otherAA.sharedWithClass === className;
-  });
-  return siblings.length ? [className, ...siblings] : [className];
-}
-
-// Which currently-active class (if any) can actually be used to operate on
-// `entry` - its own class if that's active, or (for a sharedWithClass pair)
-// whichever linked class is, since the two always represent the same real
-// investment regardless of which tab was used to buy it (changeRank always
-// records the canonical identity in purchaseOrder/lastMutation, even for a
-// purchase made from the OTHER class's tab). Returns that class's OWN idx
-// for this AA too, which can differ from entry.idx - each class's own
-// array has different neighbors - so category and idx must always be used
-// together, never entry.idx against a different class's category. category
-// is null (idx left unchanged) if no class in the group is active.
-function activeEntryTarget(entry) {
-  if (entry.scope !== "class") return { category: entry.scope, idx: entry.idx, classes: null };
-  const classes = sharedGroupClasses(entry.scope, entry.className, entry.idx);
-  const aa = aaAt(entry.scope, entry.className, entry.idx);
-  for (const c of classes) {
-    const slot = state.selectedClasses.indexOf(c);
-    if (slot < 0) continue;
-    const idx = c === entry.className ? entry.idx : idxForKey("class", c, slugify(aa.name));
-    if (idx >= 0) return { category: CLASS_SLOT_KEYS[slot], idx, classes };
-  }
-  return { category: null, idx: entry.idx, classes };
-}
-
-function pushPurchase(scope, className, idx) {
-  state.purchaseOrder.push({ scope, className, idx });
-}
-
-// Returns the removed entry and the array position it was removed from (needed to
-// restore it to the same spot later), or null if no matching entry was found.
-function popLastPurchase(scope, className, idx) {
-  for (let i = state.purchaseOrder.length - 1; i >= 0; i--) {
-    const e = state.purchaseOrder[i];
-    if (e.scope === scope && e.idx === idx && (e.className || null) === (className || null)) {
-      const [entry] = state.purchaseOrder.splice(i, 1);
-      return { entry, position: i };
-    }
-  }
-  return null;
-}
-
-// Reset Build, but selective: wipes every planned pick down to its owned
-// watermark instead of to zero, unless clearOwnedToo also wipes owned.
-// Auto-granted AAs need no handling here — they never get a
-// ranks/purchaseOrder entry in the first place.
-function performReset(clearOwnedToo) {
-  // Trims each planned rank down to min(owned, planned), never up. Owned
-  // can legitimately exceed the plan (e.g. refund below an already-trained
-  // rank), so capping against owned rather than the AA's max rank stops
-  // Reset from re-inflating a plan the user deliberately lowered. An AA
-  // with no ranks entry (owned but not planned) is never visited, so
-  // Reset never adds a pick that wasn't already part of the plan.
-  //
-  // A kept rank at or below the AA's free autoRanks floor is dropped
-  // entirely rather than stored at that value, matching changeRank's own
-  // convention that a ranks-store entry only exists for ranks purchased
-  // beyond the free floor — reconcilePurchaseOrderCounts assumes the same.
-  function trimmedRanks(ranksStore, ownedStore, list) {
-    const kept = {};
-    Object.keys(ranksStore).forEach((idxStr) => {
-      const idx = parseInt(idxStr, 10);
-      const aa = list[idx];
-      if (!aa) return;
-      const planned = ranksStore[idx] || 0;
-      const owned = clearOwnedToo ? 0 : Math.min(ownedStore[idx] || 0, planned);
-      if (owned > autoRanksOffset(aa)) kept[idx] = owned;
-    });
-    return kept;
-  }
-
-  const newRanks = { general: {}, archetype: {}, special: {}, classes: {} };
-  ["general", "archetype", "special"].forEach((scope) => {
-    newRanks[scope] = trimmedRanks(state.ranks[scope] || {}, state.owned[scope] || {}, AA_DATA[scope] || []);
-  });
-  Object.keys(state.ranks.classes || {}).forEach((className) => {
-    const kept = trimmedRanks(
-      state.ranks.classes[className] || {},
-      (state.owned.classes || {})[className] || {},
-      AA_DATA.classes[className] || []
-    );
-    if (Object.keys(kept).length) newRanks.classes[className] = kept;
-  });
-
-  // Rebuild purchaseOrder to match: keep only the first N entries per AA
-  // (N = the kept rank minus its free autoRanks floor, same accounting
-  // reconcilePurchaseOrderCounts uses), in original relative order — so the
-  // owned portion's purchase history survives intact instead of being
-  // wiped and re-synthesized in arbitrary order.
-  const remaining = {};
-  ["general", "archetype", "special"].forEach((scope) => {
-    const list = AA_DATA[scope] || [];
-    Object.keys(newRanks[scope]).forEach((idxStr) => {
-      const idx = parseInt(idxStr, 10);
-      remaining[entryKey(scope, null, idxStr)] = newRanks[scope][idxStr] - autoRanksOffset(list[idx]);
-    });
-  });
-  Object.keys(newRanks.classes).forEach((className) => {
-    const list = AA_DATA.classes[className] || [];
-    Object.keys(newRanks.classes[className]).forEach((idxStr) => {
-      const idx = parseInt(idxStr, 10);
-      remaining[entryKey("class", className, idxStr)] = newRanks.classes[className][idxStr] - autoRanksOffset(list[idx]);
-    });
-  });
-  const newPurchaseOrder = [];
-  state.purchaseOrder.forEach((e) => {
-    const k = entryKey(e.scope, e.className, e.idx);
-    if (remaining[k] > 0) {
-      newPurchaseOrder.push(e);
-      remaining[k]--;
-    }
-  });
-
-  state.ranks = newRanks;
-  state.purchaseOrder = newPurchaseOrder;
-  if (clearOwnedToo) state.owned = { general: {}, archetype: {}, special: {}, classes: {} };
-  state.selectedNode = null;
-  lastMutation = null;
-  // Belt-and-suspenders: the trimming above should already leave
-  // ranks/purchaseOrder in sync, but this is cheap enough to just always run.
-  reconcilePurchaseOrderCounts();
-  saveLocal();
-  // Only clearOwnedToo actually mutates state.owned - saveOwned runs
-  // unconditionally anyway, rather than adding a branch that could drift.
-  saveOwned();
-}
-
-// Shared by spentPoints/spentForClass: walks one (list, store) pair -
-// general/archetype/special, or one class's ranks, active or not - summing
-// every non-auto AA's real cost up to its held rank.
-function sumRealCost(list, store) {
-  let total = 0;
-  list.forEach((aa, idx) => {
-    if (aa.auto) return; // automatically granted, doesn't draw from the point pool
-    const r = store[idx] || 0;
-    for (let i = 0; i < r; i++) total += costNum(aa.costs[i]);
-  });
-  return total;
-}
-
-// Shared by spentPoints/ownedPoints/estimatedExtraPoints/
-// estimatedExtraOwnedPoints: walks general/archetype/special plus every
-// class ever picked - not just the 3 active slots, since a class swap
-// leaves an inactive class's ranks in place (Object.keys(root.classes)
-// rather than AA_CATEGORY_KEYS/getList, which only see active slots) -
-// summing with `summer(scope, className, list, store)` for each.
-function sumAcrossAllClasses(root, summer) {
-  let total = summer("general", null, AA_DATA.general, root.general)
-    + summer("archetype", null, AA_DATA.archetype, root.archetype)
-    + summer("special", null, AA_DATA.special, root.special);
-  Object.keys(root.classes).forEach((className) => {
-    total += summer("class", className, AA_DATA.classes[className] || [], root.classes[className]);
-  });
-  return total;
-}
-
-// A genuine lifetime total: every point ever spent, across every class
-// you've ever picked. Progression's running total counts the same set
-// (computeProgressionSteps' stepCost isn't active-gated), so the two
-// numbers are provably identical, not just usually close.
-function spentPoints() {
-  return sumAcrossAllClasses(state.ranks, (scope, className, list, store) => sumRealCost(list, store));
-}
-
-// Real points spent on one specific class alone, active or not — the
-// Other Classes tab's per-class subtotal. Sums the one class directly
-// with sumRealCost rather than deriving it from spentPoints().
-function spentForClass(className) {
-  return sumRealCost(AA_DATA.classes[className] || [], state.ranks.classes[className] || {});
-}
-
-// Sum of spentForClass across every class NOT currently active — the
-// slice of spentPoints()'s lifetime total that lives "elsewhere" right
-// now. Surfaced in the topbar tooltip so it's legible which classes a
-// blended total actually spans, not just a bare number.
-function spentOnInactiveClasses() {
-  return Object.keys(state.ranks.classes)
-    .filter((className) => !state.selectedClasses.includes(className))
-    .reduce((sum, className) => sum + spentForClass(className), 0);
-}
-
-// Lifetime total of points marked owned, across every class ever picked —
-// mirrors spentPoints()'s own lifetime scope. Progression's "owned / to
-// go" split is spentPoints() minus this; both sides need the same scope
-// or an AA owned on a swapped-away class would inflate "still to go"
-// despite already being trained.
-function ownedPoints() {
-  return sumAcrossAllClasses(state.owned, (scope, className, list, store) => sumRealCost(list, store));
-}
-
-// Shared by estimatedExtraPoints, same reasoning as sumRealCost above:
-// scope/className identify the AA (needed for costGuessScoped's lookup),
-// list/store are what's actually being walked.
-function sumEstimatedExtra(scope, className, list, store) {
-  let extra = 0;
-  list.forEach((aa, idx) => {
-    if (aa.auto) return;
-    const r = store[idx] || 0;
-    for (let i = 0; i < r; i++) {
-      if (aa.costs[i] !== "?") continue;
-      const guess = costGuessScoped(scope, className, idx, i);
-      if (guess) extra += guess.value;
-    }
-  });
-  return extra;
-}
-
-// How much higher spentPoints() would probably be if every purchased rank
-// with an unconfirmed cost ("?") cost what its pattern-inferred guess
-// says, instead of the 0 costNum() gives it. Purely informational — never
-// added into spentPoints(), never used for an afford check, never
-// persisted; the topbar shows it as a separate "~N incl. estimates" note.
-// Same lifetime-total scope as spentPoints() (every class ever picked).
-function estimatedExtraPoints() {
-  return sumAcrossAllClasses(state.ranks, sumEstimatedExtra);
-}
-
-// Same idea as estimatedExtraPoints, scoped to owned ranks instead of
-// planned ones - how much higher ownedPoints() would probably be if every
-// owned rank with an unconfirmed cost cost what its guess says. Lets
-// renderProgression's "owned / to go" split blend the same way the topbar
-// headline and Progression's own running total already do, instead of
-// silently dropping every estimated rank from both sides.
-function estimatedExtraOwnedPoints() {
-  return sumAcrossAllClasses(state.owned, sumEstimatedExtra);
-}
-
-// Plain "Requires X rank N" gates the whole ability behind a fixed target rank.
-// "Requires X rank 1/2/3" (matching the wiki's own phrasing for rank-synced
-// prereqs, e.g. Destructive Cascade needing the matching Critical Affliction
-// rank) instead requires source rank K to be gated on target rank K.
-function parsePrereqText(text) {
-  if (!text) return null;
-  const m = text.match(/^Requires\s+(.+?)\s+(?:rank|(?:at\s+)?level)\s+(\d+(?:\/\d+)*)\s*$/i);
-  if (!m) return null;
-  const ranks = m[2].split("/").map((n) => parseInt(n, 10));
-  return ranks.length > 1
-    ? { name: m[1].trim(), synced: true, ranks }
-    : { name: m[1].trim(), synced: false, rank: ranks[0] };
-}
-
-// resolvePrereqTargetScoped's result depends only on (text, scope,
-// className) plus AA_DATA, which never changes at runtime - never on
-// state.selectedClasses or anything else mutable. It's called for every
-// prereq-bearing AA on every render (tree, Progression, dependency checks),
-// re-running the same by-name scan each time - cached here since the key
-// space is tiny (one entry per distinct prereq string x scope/className).
-const prereqTargetCache = new Map();
-
-// Same resolution as resolvePrereqTarget, but by (scope, className)
-// directly rather than a catKey - lets a caller resolve a prereq for a
-// class that isn't necessarily one of the 3 active slots (isDependedOn
-// needs this to check a dependency held by a swapped-out class). Returns
-// { scope, className, idx, forRank } - scope/className identity, not a
-// catKey, since an inactive class has none.
-function resolvePrereqTargetScoped(text, scope, className) {
-  const cacheKey = `${scope}|${className || ""}|${text}`;
-  if (prereqTargetCache.has(cacheKey)) return prereqTargetCache.get(cacheKey);
-  const result = computeResolvePrereqTargetScoped(text, scope, className);
-  prereqTargetCache.set(cacheKey, result);
-  return result;
-}
-
-function computeResolvePrereqTargetScoped(text, scope, className) {
-  const parsed = parsePrereqText(text);
-  if (!parsed) return null;
-  // Only the source's own class/category plus the shared trees — a class
-  // AA's prereq should never resolve against a different class, active or
-  // not. Widening this would make resolution depend on which classes
-  // happen to be selected, not just the AA.
-  const candidates = [[scope, className], ["general", null], ["archetype", null], ["special", null]];
-  const seen = new Set();
-  const order = candidates.filter(([s, c]) => {
-    const k = `${s}|${c || ""}`;
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  });
-  for (const [s, c] of order) {
-    const list = s === "class" ? (AA_DATA.classes[c] || []) : (AA_DATA[s] || []);
-    let foundIdx = -1;
-    list.forEach((aa, i) => {
-      if (aa.name.toLowerCase() !== parsed.name.toLowerCase()) return;
-      if (foundIdx < 0) { foundIdx = i; return; }
-      // Duplicate name in this category (e.g. Cleric's two "Divine Aura"
-      // rows) — prefer whichever costs points over an auto-granted one,
-      // since gating behind a free ability isn't a meaningful prereq.
-      // Otherwise keep the first match, so resolution doesn't quietly flip
-      // if the data gets reordered by a resync.
-      if (list[foundIdx].auto && !aa.auto) foundIdx = i;
-    });
-    if (foundIdx >= 0) {
-      return {
-        scope: s, className: c, idx: foundIdx,
-        // Required target rank for the source AA to hold `sourceRank`. Fixed
-        // prereqs ignore sourceRank; synced ones look up the matching entry
-        // (clamped to the list, so a too-high/low sourceRank still resolves).
-        forRank(sourceRank) {
-          if (!parsed.synced) return parsed.rank;
-          const i = Math.min(Math.max(sourceRank, 1), parsed.ranks.length) - 1;
-          return parsed.ranks[i];
-        }
-      };
-    }
-  }
-  return null;
-}
-
-// catKey-based convenience wrapper around resolvePrereqTargetScoped, for
-// the (more common) case where the source is known to be one of the 3
-// active slots. Translates the scoped result back into a catKey for the
-// existing catKey-addressed callers - always resolvable here, since a
-// class-scoped result can only ever be the source's own (active) class,
-// never a different one (see resolvePrereqTargetScoped's own comment).
-function resolvePrereqTarget(text, sourceCategory) {
-  const { scope, className } = categoryToScopeClassName(sourceCategory);
-  const resolved = resolvePrereqTargetScoped(text, scope, className);
-  if (!resolved) return null;
-  const category = resolved.scope === "class"
-    ? CLASS_SLOT_KEYS[state.selectedClasses.indexOf(resolved.className)]
-    : resolved.scope;
-  return { category, idx: resolved.idx, forRank: resolved.forRank };
-}
-
-// Resolves a prereq, distinguishing *why* it failed: malformed text (a bug
-// in our own data.src.js, since we write every prereq string ourselves)
-// vs. text that parses fine but names a target that no longer exists
-// (renamed/removed by a resync). Both must block, but callers want
-// different wording — one says "fix the data", the other "the data changed."
-function tryResolvePrereq(text, sourceCategory) {
-  const parsed = parsePrereqText(text);
-  if (!parsed) return { ok: false, malformed: true };
-  const resolved = resolvePrereqTarget(text, sourceCategory);
-  if (!resolved) return { ok: false, malformed: false, name: parsed.name };
-  return { ok: true, resolved };
-}
-
-function unresolvedPrereqMessage(text, attempt) {
-  return attempt.malformed
-    ? `Prerequisite text "${text}" isn't in a recognized format — this needs fixing in the data, not the wiki.`
-    : `Requires "${attempt.name}", which no longer resolves to an existing ability.`;
-}
-
-// Some AAs (Steadfast Will is the one live example) cap their max reachable
-// rank based on which of the 3 selected classes you have, rather than a
-// flat per-AA maximum — data.src.js's classRankCap: { default, byClass:
-// { Name: cap, ... } }. Tri-class COMBINES rather than switches, so ANY of
-// the 3 selected classes granting a higher cap applies. Absent
-// classRankCap, an AA's only cap is its own aa.ranks, as always.
-//
-// Evaluates against state.selectedClasses — correct for Steadfast Will (a
-// general AA, always in-context) but not meaningful for a hypothetical
-// class-specific classRankCap AA shown in the Other Classes tab, which
-// would evaluate against the wrong classes. Not a live bug today; flagged
-// for whoever adds the first one.
-function classRankCapFor(aa) {
-  if (!aa.classRankCap) return aa.ranks;
-  const { default: def, byClass } = aa.classRankCap;
-  let cap = def;
-  state.selectedClasses.forEach((c) => {
-    if (byClass[c] !== undefined && byClass[c] > cap) cap = byClass[c];
-  });
-  return cap;
-}
-
-// Whether ANY of the 3 currently selected classes can take this AA -
-// data.src.js's eligibleClasses: ["ClassName", ...] on archetype AAs.
-// Tri-class combines rather than switches, same "ANY of the 3" union
-// semantic as classRankCapFor. Absent eligibleClasses, every class can
-// take it - same "absent field = unrestricted" convention classRankCap
-// already uses.
-function isClassEligible(aa) {
-  return !aa.eligibleClasses || state.selectedClasses.some((c) => aa.eligibleClasses.includes(c));
-}
-
-// The rank whose description slot should read as "your current effect" —
-// usually the held rank, but a class-capped AA held beyond today's cap
-// (Steadfast Will at rank 8 with no qualifying class) only actually grants
-// the capped rank's effect in-game. The held rank itself stays untouched
-// (still shown as "8/8"); only which slot gets highlighted changes.
-function effectiveDisplayRank(aa, rank) {
-  return aa.classRankCap ? Math.min(rank, classRankCapFor(aa)) : rank;
-}
-
-// Returns { kind: "classEligibility" | "level" | "classCap" | "prereq", text } rather than a bare
-// string so callers that render (not just report) a lock reason can tell each gate apart - each
-// needs different treatment in the tree, since "wrong classes entirely" needs a whole combo
-// swap, "level too low" is self-evidently solved by playing, "capped for your classes" needs a
-// specific class swap, and "needs another AA" requires the user to notice and go buy something
-// specific elsewhere. classEligibility is checked first, ahead of level - a level-gated AA you
-// also don't qualify for by class would misleadingly read as "just wait" if level won.
-function structuralLockReason(catKey, idx) {
-  const aa = getList(catKey)[idx];
-  if (!aa) return null;
-  if (!isClassEligible(aa)) {
-    return { kind: "classEligibility", text: `Requires one of: ${aa.eligibleClasses.join(", ")}.` };
-  }
-  const levelReq = parseInt(aa.levelReq, 10) || 1;
-  if (state.charLevel < levelReq) return { kind: "level", text: `Requires character level ${levelReq}.` };
-  if (aa.classRankCap) {
-    const cap = classRankCapFor(aa);
-    const nextRank = effectiveRank(catKey, idx) + 1;
-    if (nextRank > cap) return { kind: "classCap", text: `Capped at rank ${cap} for your currently selected classes.` };
-  }
-  if (aa.prereq) {
-    const attempt = tryResolvePrereq(aa.prereq, catKey);
-    if (!attempt.ok) return { kind: "prereq", text: unresolvedPrereqMessage(aa.prereq, attempt) };
-    const resolved = attempt.resolved;
-    const sourceRank = effectiveRank(catKey, idx) + 1; // the rank about to be purchased
-    const requiredRank = resolved.forRank(sourceRank);
-    const targetRank = effectiveRank(resolved.category, resolved.idx);
-    if (targetRank < requiredRank) {
-      const targetAA = getList(resolved.category)[resolved.idx];
-      return { kind: "prereq", text: `Requires ${targetAA ? targetAA.name : "prerequisite"} rank ${requiredRank}.` };
-    }
-  }
-  return null;
-}
-
-// Whether a rank the user already holds still satisfies its class
-// eligibility, prerequisite, or class-rank-cap under today's AA_DATA +
-// current class selection. Unlike structuralLockReason (checks whether the
-// NEXT rank is purchasable), this checks every rank already held, catching
-// drift from a changed prereq target or class selection. Purely a function
-// of current state + data, so it clears itself once the gap closes — never
-// strips the held rank itself.
-function heldRankInvalidReason(catKey, idx) {
-  const { scope, className } = categoryToScopeClassName(catKey);
-  return heldRankInvalidReasonScoped(scope, className, idx);
-}
-
-// Same check, by (scope, className) directly rather than a catKey - an
-// inactive class has no catKey at all, same reasoning as
-// effectiveRankScoped/resolvePrereqTargetScoped. Lets findInvalidatedPicks
-// check a held rank in a class that isn't one of the 3 active slots,
-// instead of silently skipping it.
-function heldRankInvalidReasonScoped(scope, className, idx) {
-  const aa = aaAt(scope, className, idx);
-  if (!aa || aa.auto) return null;
-  const store = scope === "class" ? (state.ranks.classes[className] || {}) : (state.ranks[scope] || {});
-  const purchased = store[idx] || 0;
-  if (purchased <= 0) return null;
-  if (!isClassEligible(aa)) {
-    return `requires one of: ${aa.eligibleClasses.join(", ")}, none of which are currently selected.`;
-  }
-  if (aa.classRankCap) {
-    // Assumes classRankCap never coexists with autoRanks — true of every
-    // AA today. `purchased` excludes an autoRanks AA's free floor, so this
-    // would undercount if that combination ever showed up; flagged for
-    // whoever adds the first one.
-    const cap = classRankCapFor(aa);
-    if (purchased > cap) return `exceeds the rank ${cap} cap for your currently selected classes.`;
-  }
-  if (!aa.prereq) return null;
-  const parsed = parsePrereqText(aa.prereq);
-  if (!parsed) return unresolvedPrereqMessage(aa.prereq, { malformed: true });
-  const resolved = resolvePrereqTargetScoped(aa.prereq, scope, className);
-  if (!resolved) return unresolvedPrereqMessage(aa.prereq, { malformed: false, name: parsed.name });
-  const targetRank = effectiveRankScoped(resolved.scope, resolved.className, resolved.idx);
-  for (let r = 1; r <= purchased; r++) {
-    const required = resolved.forRank(r);
-    if (targetRank < required) {
-      const targetAA = aaAt(resolved.scope, resolved.className, resolved.idx);
-      return `Rank ${r} requires ${targetAA ? targetAA.name : "a prerequisite"} rank ${required}, which you no longer have.`;
-    }
-  }
-  return null;
-}
-
-// Every currently-held pick that fails heldRankInvalidReasonScoped, across
-// general/archetype/special plus every class ever picked — not just the 3
-// active slots, same reasoning as sumAcrossAllClasses — for a one-time
-// notice on load. A pick in a swapped-out class stays flagged (per the
-// README) even though nothing renders its own invalidReason line while
-// inactive, so this is the only place that notice can come from.
-function findInvalidatedPicks() {
-  const results = [];
-  ["general", "archetype", "special"].forEach((scope) => {
-    (AA_DATA[scope] || []).forEach((aa, idx) => {
-      const reason = heldRankInvalidReasonScoped(scope, null, idx);
-      if (reason) results.push({ scope, className: null, idx, name: aa.name, reason });
-    });
-  });
-  Object.keys(state.ranks.classes).forEach((className) => {
-    (AA_DATA.classes[className] || []).forEach((aa, idx) => {
-      const reason = heldRankInvalidReasonScoped("class", className, idx);
-      if (reason) results.push({ scope: "class", className, idx, name: aa.name, reason });
-    });
-  });
-  return results;
-}
-
-// For every AA the user holds a rank in, purchaseOrder should contain
-// exactly (held rank - any free autoRanks floor) entries for it, and none
-// for an AA that isn't held at all. computeProgressionSteps walks
-// purchaseOrder directly without consulting effectiveRank, so a mismatch
-// renders wrong either way: too few/many entries show the wrong rank
-// number, and an orphan entry renders as a fabricated step with its cost
-// added to the running total. Reachable from a crafted ?build= link, same
-// threat model clampRankValue exists for.
-//
-// Repairs by adding/removing entries until each count matches (at the
-// end, so earlier purchases keep their order) and dropping orphans.
-// state.ranks itself is never touched — only a step's displayed rank and
-// position can change.
-function reconcilePurchaseOrderCounts() {
-  function countFor(scope, className, idx) {
-    let n = 0;
-    for (const e of state.purchaseOrder) {
-      if (e.scope === scope && (e.className || null) === (className || null) && e.idx === idx) n++;
-    }
-    return n;
-  }
-  function expectedFor(aa, held) {
-    return Math.max(0, held - autoRanksOffset(aa));
-  }
-  function key(scope, className, idx) {
-    return `${scope}|${className || ""}|${idx}`;
-  }
-
-  // aa.auto entries are excluded from targets: nothing ever legitimately
-  // writes a purchaseOrder entry for one, so they fall into the "not
-  // held" case below rather than getting a count to satisfy.
-  const targets = [];
-  const targetKeys = new Set();
-  ["general", "archetype", "special"].forEach((scope) => {
-    const list = AA_DATA[scope] || [];
-    Object.keys(state.ranks[scope] || {}).forEach((idxStr) => {
-      const idx = parseInt(idxStr, 10);
-      const aa = list[idx];
-      if (aa && !aa.auto) {
-        targets.push({ scope, className: null, idx, aa, held: state.ranks[scope][idxStr] });
-        targetKeys.add(key(scope, null, idx));
-      }
-    });
-  });
-  Object.keys(state.ranks.classes || {}).forEach((className) => {
-    const list = AA_DATA.classes[className] || [];
-    Object.keys(state.ranks.classes[className] || {}).forEach((idxStr) => {
-      const idx = parseInt(idxStr, 10);
-      const aa = list[idx];
-      if (aa && !aa.auto) {
-        targets.push({ scope: "class", className, idx, aa, held: state.ranks.classes[className][idxStr] });
-        targetKeys.add(key("class", className, idx));
-      }
-    });
-  });
-
-  let repaired = 0;
-
-  const orphanKeys = new Set();
-  state.purchaseOrder.forEach((e) => {
-    const k = key(e.scope, e.className || null, e.idx);
-    if (!targetKeys.has(k)) orphanKeys.add(k);
-  });
-  if (orphanKeys.size) {
-    state.purchaseOrder = state.purchaseOrder.filter((e) => targetKeys.has(key(e.scope, e.className || null, e.idx)));
-    repaired += orphanKeys.size;
-  }
-
-  targets.forEach(({ scope, className, idx, aa, held }) => {
-    const expected = expectedFor(aa, held);
-    const actual = countFor(scope, className, idx);
-    if (expected === actual) return;
-    repaired++;
-    if (actual > expected) {
-      let toRemove = actual - expected;
-      for (let i = state.purchaseOrder.length - 1; i >= 0 && toRemove > 0; i--) {
-        const e = state.purchaseOrder[i];
-        if (e.scope === scope && (e.className || null) === (className || null) && e.idx === idx) {
-          state.purchaseOrder.splice(i, 1);
-          toRemove--;
-        }
-      }
+  function saveBuildAs(name, id = null, mirrorCurrentProfile = false) {
+    const targetId = id || genId();
+    const payload = buildPayload();
+    const keepProfile = mirrorCurrentProfile || id && ownedProfileIdOfBuild(id) === state.ownedProfileId;
+    if (keepProfile) {
+      payload.ownedProfileId = state.ownedProfileId;
     } else {
-      for (let i = 0; i < expected - actual; i++) {
-        state.purchaseOrder.push({ scope, className, idx });
-      }
+      payload.ownedProfileId = genId();
+      if (!saveOwnedProfileTo(payload.ownedProfileId, state.owned)) return null;
     }
-  });
-  return repaired;
-}
-
-// Builds a " (...)" suffix summarizing anything applyLoaded dropped and/or
-// reconcilePurchaseOrderCounts repaired — "" if neither applies. Shared
-// wording for the single-action load paths (share link, text import,
-// loading a build slot); main.js's startup path assembles its own
-// multi-item notice instead. Lives here (not exportImport.js) so builds.js
-// can use it too without the two importing each other.
-function loadIssuesSuffix(result, repaired) {
-  const parts = [];
-  if (result.droppedRanks) {
-    const n = result.droppedRanks;
-    parts.push(`${n} pick${n === 1 ? "" : "s"} no longer exist${n === 1 ? "s" : ""} in the current data and ${n === 1 ? "was" : "were"} skipped`);
-  }
-  if (repaired) {
-    parts.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was out of sync and ${repaired === 1 ? "was" : "were"} repaired`);
-  }
-  return parts.length ? ` (${parts.join("; ")})` : "";
-}
-
-// Full reason a rank can't be purchased right now (prereqs, level gates,
-// structural locks). No points-remaining check here - there's no total
-// point pool to run out of; the app tracks and displays spent points only.
-function getBlockReason(catKey, idx) {
-  const structural = structuralLockReason(catKey, idx);
-  return structural ? structural.text : null;
-}
-
-// Whether some other AA's held rank would become invalid if the AA at
-// (category, idx) dropped from currentRank to currentRank - 1. Checks
-// every currently-active category (general/archetype/special, the 3 class
-// slots) plus every OTHER class ever picked - a swapped-out class's held
-// pick can still depend on something, same lifetime scope
-// spentPoints()/ownedPoints() already use, so refunding a general AA's
-// rank can't silently invalidate a dependent sitting in the Other Classes
-// tab without warning.
-function checkPrereqDependents(list, scope, className, targetScope, targetClassName, idx, newRank) {
-  for (let i = 0; i < list.length; i++) {
-    const aa = list[i];
-    if (!aa.prereq) continue;
-    const aaRank = effectiveRankScoped(scope, className, i);
-    if (aaRank <= 0) continue;
-    const r = resolvePrereqTargetScoped(aa.prereq, scope, className);
-    if (r && r.scope === targetScope && r.className === targetClassName && r.idx === idx && newRank < r.forRank(aaRank)) return true;
-  }
-  return false;
-}
-
-function isDependedOn(category, idx, currentRank) {
-  const newRank = currentRank - 1;
-  const { scope: targetScope, className: targetClassName } = categoryToScopeClassName(category);
-
-  // Active categories: walks every AA in each list (not just held ones),
-  // so an auto-granted AA's prereq is still caught even though auto AAs
-  // never get a state.ranks entry to key off.
-  for (const catKey of AA_CATEGORY_KEYS) {
-    const { scope, className } = categoryToScopeClassName(catKey);
-    if (checkPrereqDependents(getList(catKey), scope, className, targetScope, targetClassName, idx, newRank)) return true;
-  }
-  // Every other class ever picked, not just the 3 active slots. Only a
-  // class with a manually-purchased rank can matter here - an inactive
-  // class's auto AAs never actually grant anything (effectiveRankScoped's
-  // own classActive gate), so state.ranks.classes' own keys are already a
-  // complete list of classes worth checking.
-  for (const className of Object.keys(state.ranks.classes)) {
-    if (state.selectedClasses.includes(className)) continue;
-    if (checkPrereqDependents(AA_DATA.classes[className] || [], "class", className, targetScope, targetClassName, idx, newRank)) return true;
-  }
-  return false;
-}
-
-// Single-level undo: remembers only the most recent changeRank, moveEntry,
-// or setOwnedRank call, in enough detail to reverse it exactly. Overwritten
-// by every subsequent call, including the reversal itself, so undoing
-// twice toggles between the two most recent states rather than walking
-// back further. Explicitly cleared by anything that mutates
-// ranks/purchaseOrder/owned without going through one of the three.
-let lastMutation = null;
-
-function clearLastMutation() {
-  lastMutation = null;
-}
-
-function canUndo() {
-  return !!lastMutation;
-}
-
-// Pure state mutation, same spirit as changeRank: moves the entry at
-// fromIdx to array position toIdx (both real positions, already resolved —
-// render.js's callers translate drag/arrow intent into these first).
-// Reversing it is just calling it again with the positions swapped, which
-// is how undoLastMutation's "reorder" case restores the original order.
-function moveEntry(fromIdx, toIdx) {
-  const [entry] = state.purchaseOrder.splice(fromIdx, 1);
-  state.purchaseOrder.splice(toIdx, 0, entry);
-  lastMutation = { type: "reorder", from: fromIdx, to: toIdx };
-  saveLocal();
-}
-
-// The level-gated floor for an autoRanks AA: the free ranks once the
-// character reaches the level that grants them, 0 below that. Shared by
-// changeRank (what a refund can't go below) and attemptDecrement (the
-// UI-facing gate in front of it), so the two can't drift apart.
-function autoFloor(aa) {
-  if (!aa.autoRanks) return 0;
-  const levelReq = parseInt(aa.levelReq, 10) || 1;
-  return state.charLevel >= levelReq ? Math.min(aa.autoRanks, aa.ranks) : 0;
-}
-
-// Pure state mutation — no rendering, no user feedback. Returns whether a change
-// actually happened, so callers (the UI layer) decide what to do about it.
-function changeRank(category, idx, delta) {
-  const { scope, className } = categoryToScopeClassName(category);
-  const aa = getList(category)[idx];
-  // A sharedWithClass AA (see keys.js's aaAt comment) reads/writes its
-  // canonical copy's own slot regardless of which class's tab triggered
-  // this - both copies always report and change the same rank.
-  const canonical = sharedCanonical(scope, className, idx);
-  const store = getRanksStoreScoped(canonical.scope, canonical.className);
-  // For an autoRanks AA, the free ranks are a floor you can never buy below (they're
-  // not "purchased" at all) — step from the current effective rank, not the raw stored
-  // one. See autoFloor for why the floor itself is level-gated.
-  const floor = autoFloor(aa);
-  const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[canonical.idx] || 0);
-  const next = cur + delta;
-  if (next < floor || next > aa.ranks) return false;
-  // At or below the floor, nothing counts as an actual purchase (floor===0
-  // already worked this way at next===0). Without this, refunding an
-  // autoRanks AA back to its floor left a phantom store entry forever.
-  if (next <= floor) delete store[canonical.idx]; else store[canonical.idx] = next;
-  if (delta > 0) {
-    pushPurchase(canonical.scope, canonical.className, canonical.idx);
-    // Stored as {scope, className, idx}, not the raw category (slot key) -
-    // a slot key means "whatever class occupies this slot now", which
-    // stops meaning the class that was here at purchase time once slots
-    // get swapped. resolveEntryCategory re-resolves via className instead.
-    lastMutation = { type: "add", entry: { scope: canonical.scope, className: canonical.className, idx: canonical.idx } };
-  } else {
-    const popped = popLastPurchase(canonical.scope, canonical.className, canonical.idx);
-    lastMutation = popped ? { type: "remove", entry: popped.entry, position: popped.position } : null;
-  }
-  saveLocal();
-  return true;
-}
-
-// Reverses whatever changeRank, moveEntry, or setOwnedRank last did. Consumes
-// the record either way, so pressing this twice in a row toggles between the
-// last two states rather than walking back further - see the lastMutation
-// comment.
-function undoLastMutation() {
-  const m = lastMutation;
-  if (!m) return { changed: false, message: "Nothing to undo." };
-  lastMutation = null;
-
-  if (m.type === "add") {
-    const { category, idx } = activeEntryTarget(m.entry);
-    if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
-    const rank = effectiveRank(category, idx);
-    if (rank <= 0) return { changed: false, message: "Nothing to undo." };
-    if (isDependedOn(category, idx, rank)) {
-      return { changed: false, message: "Can't undo — another AA now depends on this rank." };
-    }
-    return { changed: changeRank(category, idx, -1), message: null };
-  }
-
-  if (m.type === "reorder") {
-    // The array may have changed shape since (an add/remove would have overwritten
-    // this record via changeRank, but check anyway rather than trust it blindly).
-    if (m.from < 0 || m.from >= state.purchaseOrder.length || m.to < 0 || m.to >= state.purchaseOrder.length) {
-      return { changed: false, message: "Can't undo — the list has changed too much." };
-    }
-    moveEntry(m.to, m.from);
-    return { changed: true, message: null };
-  }
-
-  if (m.type === "own") {
-    // Unlike ranks, owned isn't slot-relative (see getOwnedStore) - no class-
-    // selection check needed, this always resolves regardless of what's
-    // currently in the 3 slots.
-    setOwnedRank(m.scope, m.className, m.idx, m.from);
-    return { changed: true, message: null };
-  }
-
-  // m.type === "remove": restore the entry to its original array position and
-  // bump that AA's rank back up by one.
-  const { category, idx } = activeEntryTarget(m.entry);
-  if (!category) return { changed: false, message: "Can't undo — that class isn't currently selected." };
-  // getList/effectiveRank go through whichever class is actually active
-  // (idx translated to match its own array - see activeEntryTarget), but
-  // the store itself is always m.entry's own canonical identity, exactly
-  // like changeRank's own writes - a sharedWithClass AA's real value only
-  // ever lives under its canonical copy, regardless of which class's tab
-  // is currently being used to reach it.
-  const aa = getList(category)[idx];
-  if (!aa) return { changed: false, message: "Can't undo — that AA is no longer available." };
-  const store = getRanksStoreScoped(m.entry.scope, m.entry.className);
-  // Same autoRanks special-case changeRank itself applies: a decrement that
-  // lands at or below the free floor deletes the store entry, so the raw
-  // store value alone under-reads an autoRanks AA's true current rank.
-  const cur = aa.autoRanks ? effectiveRank(category, idx) : (store[m.entry.idx] || 0);
-  if (cur >= aa.ranks) return { changed: false, message: "Can't undo — already at max rank." };
-  store[m.entry.idx] = cur + 1;
-  const pos = Math.min(m.position, state.purchaseOrder.length);
-  state.purchaseOrder.splice(pos, 0, m.entry);
-  saveLocal();
-  return { changed: true, message: null };
-}
-
-// attemptIncrement/attemptDecrement report the outcome instead of triggering a
-// render or toast themselves, so this module has no dependency on the render layer —
-// dependencies only flow one way: render.js depends on logic.js, never the reverse.
-function attemptIncrement(category, idx) {
-  const aa = getList(category)[idx];
-  if (aa.auto) return { changed: false, message: `${aa.name} is automatically granted — no points needed.` };
-  const rank = effectiveRank(category, idx);
-  if (rank >= aa.ranks) return { changed: false, message: null };
-  const reason = getBlockReason(category, idx);
-  if (reason) return { changed: false, message: reason };
-  return { changed: changeRank(category, idx, 1), message: null };
-}
-
-function attemptDecrement(category, idx) {
-  const aa = getList(category)[idx];
-  if (aa.auto) return { changed: false, message: `${aa.name} is automatically granted and can't be removed.` };
-  const rank = effectiveRank(category, idx);
-  if (rank <= 0) return { changed: false, message: null };
-  if (aa.autoRanks && rank <= autoFloor(aa)) {
-    const plural = aa.autoRanks === 1 ? "rank is" : "ranks are";
-    return { changed: false, message: `${aa.name}'s first ${aa.autoRanks} ${plural} automatically granted and can't be removed.` };
-  }
-  if (isDependedOn(category, idx, rank)) {
-    return { changed: false, message: "Can't lower this — another AA depends on the current rank." };
-  }
-  return { changed: changeRank(category, idx, -1), message: null };
-}
-
-function countPicked() {
-  let n = 0;
-  AA_CATEGORY_KEYS.forEach((catKey) => {
-    getList(catKey).forEach((aa, idx) => { if (effectiveRank(catKey, idx) > 0) n++; });
-  });
-  return n;
-}
-
-// Same shape as countPicked, for the Other Classes tab's own badge - only
-// classes NOT one of the 3 active slots, since countPicked/Summary already
-// cover those.
-function countOtherClassesPicked() {
-  let n = 0;
-  Object.keys(state.ranks.classes).forEach((className) => {
-    if (state.selectedClasses.includes(className)) return;
-    const list = AA_DATA.classes[className] || [];
-    list.forEach((aa, idx) => { if (effectiveRankScoped("class", className, idx) > 0) n++; });
-  });
-  return n;
-}
-
-// Every className outside the 3 active slots that currently has at least
-// one picked (rank > 0) AA - the Other Classes tab's own section list,
-// sorted for a stable render order (Object.keys' own order otherwise just
-// reflects insertion history, which is meaningless here).
-function otherClassesWithPicks() {
-  return Object.keys(state.ranks.classes)
-    .filter((className) => !state.selectedClasses.includes(className))
-    .filter((className) => {
-      const list = AA_DATA.classes[className] || [];
-      return list.some((aa, idx) => effectiveRankScoped("class", className, idx) > 0);
-    })
-    .sort();
-}
-
-// Shared by the Progression tab and the export text, so both always agree on
-// step ranks, per-step cost, and the running cumulative total. Takes an
-// explicit order (defaulting to the real state.purchaseOrder) so a caller can
-// also ask "what would this look like" for a hypothetical arrangement -
-// e.g. the drag-and-drop prereq indicator - without touching real state.
-function computeProgressionSteps(order = state.purchaseOrder) {
-  // Total occurrences of each AA, so a step can tell whether it's the topmost
-  // (and therefore the only one that can be removed without leaving a rank gap).
-  const totalCounts = {};
-  order.forEach((entry) => {
-    const key = entryKey(entry.scope, entry.className, entry.idx);
-    totalCounts[key] = (totalCounts[key] || 0) + 1;
-  });
-
-  const counts = {};
-  let cumulative = 0;
-  let blendedCumulative = 0;
-  return order.map((entry, i) => {
-    const key = entryKey(entry.scope, entry.className, entry.idx);
-    // category/categoryIdx are a pair - whichever class in a sharedWithClass
-    // group is actually active right now, and THAT class's own idx for this
-    // AA (which can differ from entry.idx, the canonical identity every
-    // purchaseOrder entry carries regardless of which tab bought it). Never
-    // mix entry.idx with category, or categoryIdx with entry.scope/className.
-    const { category, idx: categoryIdx, classes: groupClasses } = activeEntryTarget(entry);
-    const active = category !== null;
-    const aa = aaAt(entry.scope, entry.className, entry.idx);
-    // purchaseCount tracks how many times THIS purchase has been made (for isLast/
-    // reordering bookkeeping); stepRank is the true effective rank it represents,
-    // offset by any free autoRanks that never went through purchaseOrder at all.
-    const purchaseCount = (counts[key] || 0) + 1;
-    const autoOffset = autoRanksOffset(aa);
-    const stepRank = purchaseCount + autoOffset;
-
-    // Resolved by scope+className directly rather than through category,
-    // so a prereq check works the same whether this step's class is one of
-    // the 3 active slots or not - the plan's own internal consistency
-    // doesn't depend on which classes happen to be selected right now.
-    let prereqWarn = false;
-    if (aa && aa.prereq) {
-      const resolved = resolvePrereqTargetScoped(aa.prereq, entry.scope, entry.className);
-      if (!resolved) {
-        prereqWarn = true; // malformed or unresolvable - same "unmet" signal as elsewhere
-      } else {
-        const targetAA = aaAt(resolved.scope, resolved.className, resolved.idx);
-        // A fully-auto target never goes through purchaseOrder, and an
-        // autoRanks target's free floor doesn't either — counts[targetKey]
-        // alone would under-count it, unlike effectiveRank elsewhere
-        // (which folds the free floor in). Mirrors the source step's own
-        // autoOffset rather than reusing effectiveRank directly, since
-        // effectiveRank reports the CURRENT total rank, not how much had
-        // been trained at this point in the sequence.
-        const targetAutoFloor = targetAA && targetAA.auto ? targetAA.ranks
-          : targetAA && targetAA.autoRanks ? Math.min(targetAA.autoRanks, targetAA.ranks)
-          : 0;
-        const targetKey = entryKey(resolved.scope, resolved.className, resolved.idx);
-        const targetHeld = (counts[targetKey] || 0) + targetAutoFloor;
-        if (targetHeld < resolved.forRank(stepRank)) prereqWarn = true;
-      }
-    }
-
-    // Unlike prereqWarn, this never depends on click order — a step's own
-    // stepRank against today's cap is all that matters, so reordering can
-    // never introduce or clear it. Deliberately separate from prereqWarn:
-    // the two conditions are unrelated (a step can be class-capped without
-    // a prereq at all).
-    const classCapWarn = aa && aa.classRankCap && stepRank > classRankCapFor(aa);
-    // Same reasoning as classCapWarn - binary per AA, not rank-dependent
-    // (every rank of an ineligible archetype AA warns the same, not just
-    // ranks past some threshold), and computed directly rather than
-    // through structuralLockReason since Progression reads real purchase
-    // history, not "can I buy the next rank."
-    const classEligibilityWarn = !!(aa && aa.eligibleClasses && !isClassEligible(aa));
-
-    counts[key] = purchaseCount;
-    const isLast = purchaseCount === totalCounts[key];
-
-    const stepCost = aa ? costNum(aa.costs[stepRank - 1]) : 0;
-    cumulative += stepCost;
-
-    // Running blend of the same kind estimatedExtraPoints() computes as
-    // one final topbar figure, computed incrementally here so a per-row
-    // running total doesn't stay frozen through a step whose own pill
-    // shows a nonzero estimate. Same guarantee as every guess: never read
-    // by spentPoints()/getBlockReason/any affordability check — purely
-    // what .cost-total displays. Scoped by (scope, className) rather than
-    // category so a guess still resolves for a step whose class isn't one
-    // of the 3 active slots.
-    let blendedStepCost = stepCost;
-    if (aa && aa.costs[stepRank - 1] === "?") {
-      const guess = costGuessScoped(entry.scope, entry.className, entry.idx, stepRank - 1);
-      if (guess) blendedStepCost = guess.value;
-    }
-    blendedCumulative += blendedStepCost;
-
-    // Every class in a sharedWithClass group, not just entry.className
-    // (the canonical one purchaseOrder always records) - "Druid/Wizard AA"
-    // for Quick Evacuation, same as an ordinary AA's own single class name
-    // everywhere else.
-    const label = entry.scope === "class" ? `${groupClasses.join("/")} AA` : labelFor(entry.scope);
-    // Same classes, worded for a "swap X back in" sentence rather than a
-    // compact badge - render.js's inactive-row warning and its disabled
-    // add/remove/expand button titles.
-    const classesLabel = entry.scope === "class" ? groupClasses.join(" or ") : "";
-    const name = aa ? aa.name : "(unknown AA)";
-    // Real-world progress, independent of active/prereqWarn - you can own a
-    // rank for a class that isn't in one of the 3 slots right now, same as
-    // the rank itself can be held that way.
-    const owned = stepRank <= ownedRank(entry.scope, entry.className, entry.idx);
-
-    return {
-      index: i, aa, idx: entry.idx, categoryIdx, scope: entry.scope, className: entry.className,
-      category, active, stepRank, stepCost, cumulative, blendedCumulative, prereqWarn, classCapWarn, classEligibilityWarn, label, classesLabel, name, isLast, owned
-    };
-  });
-}
-
-// Interleaves computeProgressionSteps' output with divider markers for
-// each waypoint, in cumulative order: { type: "step", ...s, segmentColor }
-// or { type: "divider", pts, label, color, unreached }. A divider for
-// waypoint W goes right after the last step whose cumulative is <= W.pts
-// (inclusive boundary). state.waypoints is already sorted ascending, so
-// this is a single merge pass.
-//
-// segmentColor is the color of the smallest not-yet-flushed waypoint that
-// still contains the step — null past every threshold or if that waypoint
-// has no color. Lets every colored segment show at once, not just one
-// selected zone.
-//
-// A waypoint whose pts is never reached gets flushed after the last step
-// with unreached:true. That same tail flush also catches a waypoint whose
-// pts exactly equals the final step's cumulative (nothing after it to
-// trigger the in-loop flush) — compared against lastCumulative so an exact
-// hit still reads as reached, not unreached.
-//
-// Cumulative treats an undocumented "?" cost as 0, so a boundary can land
-// slightly off when unknowns are involved — same disclosure as everywhere
-// else costs are shown.
-function computeProgressionTimeline(steps) {
-  const wps = state.waypoints;
-  const timeline = [];
-  let wi = 0;
-  let lastCumulative = 0;
-  steps.forEach((s) => {
-    while (wi < wps.length && wps[wi].pts < s.cumulative) {
-      timeline.push({ type: "divider", pts: wps[wi].pts, label: wps[wi].label, color: wps[wi].color, unreached: false });
-      wi++;
-    }
-    const owner = wi < wps.length ? wps[wi] : null;
-    timeline.push({ type: "step", ...s, segmentColor: owner ? owner.color : null });
-    lastCumulative = s.cumulative;
-  });
-  while (wi < wps.length) {
-    timeline.push({ type: "divider", pts: wps[wi].pts, label: wps[wi].label, color: wps[wi].color, unreached: wps[wi].pts > lastCumulative });
-    wi++;
-  }
-  return timeline;
-}
-
-// Named build slots: save/load/rename/delete snapshots of the current build
-// in localStorage, independent of state.js's always-autosaving STORAGE_KEY
-// (which keeps holding whatever you're currently editing). Loading a slot
-// just overwrites the current working state, which then autosaves as normal.
-
-const BUILDS_INDEX_KEY = "eql_aa_builds_index_v1";
-const BUILD_KEY_PREFIX = "eql_aa_build_";
-// The reuse key for an auto-imported share link is this name, not a fixed id
-// - see findImportedSlot for why an id can't serve that role once renames
-// enter the picture.
-const IMPORTED_BUILD_NAME = "Imported Build";
-// Which saved slot (if any) the current working state was last loaded from or
-// saved as — purely for UI orientation (highlighting it in the list, showing
-// its name near the Builds button). Not part of any build's own payload, and
-// never trusted for anything beyond display: loading/saving always resolves
-// by id against the index, not the other way around.
-const ACTIVE_BUILD_KEY = "eql_aa_active_build_id";
-
-// In-memory cache of the parsed index, avoiding a localStorage.getItem +
-// JSON.parse on every read (listBuilds() alone runs on every renderTopbar,
-// i.e. every renderAll). null means "not loaded yet"; every mutation goes
-// through saveIndex, which keeps this in lockstep with what's persisted -
-// but only for writes made from THIS tab. Another tab saving/renaming/
-// deleting a build writes BUILDS_INDEX_KEY directly, which this cache has
-// no way to see on its own - events.js listens for the "storage" event
-// (which only ever fires in OTHER tabs, never the one that made the write)
-// and calls dropCachedIndex so the next loadIndex() here re-reads from
-// localStorage instead of writing back a now-stale copy that would clobber
-// whatever the other tab just added.
-let cachedIndex = null;
-
-function dropCachedIndex() {
-  cachedIndex = null;
-}
-
-function loadIndex() {
-  if (cachedIndex !== null) return cachedIndex;
-  try {
-    const raw = localStorage.getItem(BUILDS_INDEX_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    cachedIndex = Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    cachedIndex = [];
-  }
-  return cachedIndex;
-}
-
-// Returns whether the write actually landed. cachedIndex is updated either
-// way (see the comment below) so the UI stays in sync with what this
-// session sees, but a caller reporting overall success to the user must
-// still check this - localStorage.setItem here is its own independent
-// write, not guaranteed to succeed just because an earlier write (e.g. the
-// slot data itself, in saveBuildAs) did. Two writes of a few KB each can
-// straddle a quota boundary either way; there's no ordering that makes one
-// of them a reliable proxy for the other.
-function saveIndex(index) {
-  // Load-bearing, not defensive: saveBuildAs/renameBuild both mutate the
-  // array loadIndex() just returned (the cached one, by reference) before
-  // calling this, so for them the cache already reflects the change with or
-  // without this line. deleteBuild is the one caller that builds a genuinely
-  // NEW array (loadIndex().filter(...)), so this is the only thing that
-  // repoints the cache for that path - drop it and a deleted build keeps
-  // showing in the Builds modal until the next full page load, even though
-  // localStorage is already correct (test_builds_index_cache.py pins this).
-  cachedIndex = index;
-  try {
-    localStorage.setItem(BUILDS_INDEX_KEY, JSON.stringify(index));
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-// Most-recently-updated first — the one you're most likely to want is at the top.
-function listBuilds() {
-  return loadIndex().slice().sort((a, b) => b.updatedAt - a.updatedAt);
-}
-
-function getActiveBuildId() {
-  try {
-    return localStorage.getItem(ACTIVE_BUILD_KEY) || null;
-  } catch (e) {
-    return null;
-  }
-}
-
-function setActiveBuildId(id) {
-  try {
-    if (id) localStorage.setItem(ACTIVE_BUILD_KEY, id);
-    else localStorage.removeItem(ACTIVE_BUILD_KEY);
-  } catch (e) { /* ignore */ }
-}
-
-// Called whenever the current working state gets replaced by something other
-// than loadBuild — an import, a share link, Reset Build — so a subsequent
-// save can't mistake unrelated content for an update to whatever slot used
-// to be active.
-function clearActiveBuild() {
-  setActiveBuildId(null);
-}
-
-// Sweeps every saved slot's stored JSON for two independent, self-healing
-// fixups: strips the dead `totalPoints` field (gone once the point cap was
-// removed), and backfills a missing `ownedProfileId` to the shared legacy
-// profile (see LEGACY_OWNED_PROFILE_ID) - a slot saved before per-build
-// owned tracking existed always meant "the one global pool", so this keeps
-// it behaving exactly that way until something (Save As, or the Link/
-// Merge/Split controls) deliberately diverges it. Deliberately re-checked
-// on every boot rather than gated behind a "have we migrated" flag, so a
-// slot that only reaches this browser later (restored from a backup,
-// synced from another device) still gets caught.
-function migrateStaleBuildSlots() {
-  loadIndex().forEach(({ id }) => {
-    const key = BUILD_KEY_PREFIX + id;
-    const parsed = readJsonFromStorage(key, isObject);
-    if (!parsed) return;
-    let changed = false;
-    if ("totalPoints" in parsed) { delete parsed.totalPoints; changed = true; }
-    const validOwnedProfileId = ownedProfileIdOr(parsed.ownedProfileId);
-    if (validOwnedProfileId !== parsed.ownedProfileId) {
-      parsed.ownedProfileId = validOwnedProfileId;
-      changed = true;
-    }
-    if (!changed) return;
     try {
-      localStorage.setItem(key, JSON.stringify(parsed));
+      localStorage.setItem(BUILD_KEY_PREFIX + targetId, JSON.stringify(payload));
     } catch (e) {
-      // storage unavailable/full - leave the stale data in place, same
-      // "nothing changed" outcome as any other failed write here
+      return null;
     }
-  });
-}
-
-function readBuildRaw(id) {
-  return readJsonFromStorage(BUILD_KEY_PREFIX + id, isObject);
-}
-
-// A saved slot's own owned-tracking pointer, defaulting to the shared
-// legacy profile for a slot that somehow still lacks the field (shouldn't
-// happen once migrateStaleBuildSlots has run, but cheap to be defensive).
-function ownedProfileIdOfBuild(id) {
-  const raw = readBuildRaw(id);
-  return ownedProfileIdOr(raw && raw.ownedProfileId);
-}
-
-// Owned profiles are minted freely - every brand-new Save As, every Split,
-// every owned-carrying import mints its own (state.js) - but nothing ever
-// un-mints one when the build(s) pointing at it are deleted or re-linked
-// elsewhere. Sweeps any profile with no build slot's own ownedProfileId
-// pointing at it AND that isn't the live session's own state.ownedProfileId
-// either - a build still pointing at it, even one that isn't currently
-// loaded, means it's still reachable and must be left alone.
-// removeOwnedProfile (state.js) refuses to touch the legacy profile on its
-// own, so there's no need to special-case it here too. Called from
-// main.js alongside migrateStaleBuildSlots/cleanupStaleStorageKeys, once
-// per boot - cheap at the scale of profiles one browser actually
-// accumulates.
-function cleanupOrphanedOwnedProfiles() {
-  const referenced = new Set([state.ownedProfileId]);
-  loadIndex().forEach(({ id }) => referenced.add(ownedProfileIdOfBuild(id)));
-  listOwnedProfileIds().forEach((profileId) => {
-    if (!referenced.has(profileId)) removeOwnedProfile(profileId);
-  });
-}
-
-// Deliberately just the plan - selectedClasses/charLevel/ranks/
-// purchaseOrder/waypoints. A slot's ownedProfileId is assigned by
-// saveBuildAs below, and leaving it out here lets
-// deepEqualIgnoringExtraKeys ignore it when deciding whether a slot is
-// already backed up.
-function buildPayload() {
-  return {
-    v: SAVE_FORMAT_VERSION,
-    selectedClasses: state.selectedClasses,
-    charLevel: state.charLevel,
-    ranks: serializeRanks(state.ranks),
-    purchaseOrder: serializePurchaseOrder(state.purchaseOrder),
-    waypoints: state.waypoints
-  };
-}
-
-// Object-key order doesn't matter here; array order still does, since it's
-// meaningful for purchaseOrder/waypoints/selectedClasses.
-function deepEqual(a, b) {
-  if (a === b) return true;
-  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
-  if (Array.isArray(a) || Array.isArray(b)) {
-    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
-    return a.every((v, i) => deepEqual(v, b[i]));
+    const index = loadIndex();
+    const existing = index.find((b) => b.id === targetId);
+    const updatedAt = Date.now();
+    if (existing) {
+      existing.name = name;
+      existing.updatedAt = updatedAt;
+    } else {
+      index.push({ id: targetId, name, updatedAt });
+    }
+    if (!saveIndex(index)) return null;
+    setActiveBuildId(targetId);
+    if (state.ownedProfileId !== payload.ownedProfileId) {
+      state.ownedProfileId = payload.ownedProfileId;
+      saveLocal();
+    }
+    return targetId;
   }
-  return Object.keys(a).length === Object.keys(b).length
-    && Object.keys(a).every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
-}
-
-function isEmptyComposite(v) {
-  if (Array.isArray(v)) return v.length === 0;
-  return typeof v === "object" && v !== null && Object.keys(v).length === 0;
-}
-
-// Whether every field current buildPayload() defines matches a stored
-// slot - checking only `current`'s own keys, tolerant of key-set
-// mismatches in both directions: a key stored has but current doesn't is a
-// retired field (e.g. totalPoints) and is simply ignored; a key current
-// has but stored doesn't is one that didn't exist yet when the slot was
-// saved (e.g. waypoints, added in 1.5.0) and only counts as a match if
-// today's value for it is an empty array/object - anything else is a real
-// difference. Either way, a key one side lacks entirely is an artifact of
-// the payload's shape changing over time, not a real change to the plan.
-function deepEqualIgnoringExtraKeys(stored, current) {
-  if (typeof stored !== "object" || stored === null) return false;
-  return Object.keys(current).every((k) => {
-    // v is the save-format version, not part of the plan - a version bump
-    // alone shouldn't make every pre-existing save look unsaved.
-    if (k === "v") return true;
-    if (stored[k] === undefined && isEmptyComposite(current[k])) return true;
-    return deepEqual(stored[k], current[k]);
-  });
-}
-
-// Whether the current working state matches what's stored under the active
-// slot - not just "there is an active slot", since changes since the last
-// save/load would leave the two diverged. Lets a caller about to replace
-// the build (Load, a share link, a text import - every caller of
-// confirmReplaceCurrentBuild) skip warning about losing something already
-// backed up, without threading a "dirty" flag through every mutation path.
-//
-// Structural, not a string/JSON comparison - immune to buildPayload's
-// shape changing over time (a field added or removed) or the stored JSON's
-// keys simply serializing in a different order.
-function activeBuildMatchesCurrent() {
-  const id = getActiveBuildId();
-  if (!id) return false;
-  const stored = readBuildRaw(id);
-  if (!stored) return false;
-  return deepEqualIgnoringExtraKeys(stored, buildPayload());
-}
-
-// Snapshots the current build into a named slot — a new one, or an existing
-// one if id is given (the caller's "overwrite this slot" path). Returns the
-// slot's id, or null if localStorage rejected any of this function's writes
-// (full/unavailable) - the seeded owned-profile write for a brand-new slot,
-// the slot data itself, or the index. A caller must not treat a non-null
-// id as "fully saved" unless this function itself already confirmed every
-// write it made along the way; reporting success on the strength of the
-// slot write alone (the previous behavior) let a later write's own failure
-// go unnoticed, leaving a slot that looks saved this session but is gone
-// after reload.
-//
-// The saved slot becomes the active one, and the session moves onto the
-// slot's owned profile, so marks made after saving land in the slot just
-// saved. A slot that already shares the session's profile (re-saving the
-// loaded build) keeps it, links included. Any other slot, new or
-// overwritten, gets a fresh profile seeded with what the session shows.
-// mirrorCurrentProfile (saveImportedBuild) skips the fork.
-function saveBuildAs(name, id = null, mirrorCurrentProfile = false) {
-  const targetId = id || genId();
-  const payload = buildPayload();
-  const keepProfile = mirrorCurrentProfile || (id && ownedProfileIdOfBuild(id) === state.ownedProfileId);
-  if (keepProfile) {
-    payload.ownedProfileId = state.ownedProfileId;
-  } else {
-    payload.ownedProfileId = genId();
-    if (!saveOwnedProfileTo(payload.ownedProfileId, state.owned)) return null;
+  function saveWithNameCheck(name) {
+    const existing = listBuilds().find((b) => b.name === name);
+    if (existing && !confirm(`A build named "${name}" already exists. Overwrite it?`)) return false;
+    return saveBuildAs(name, existing ? existing.id : null);
   }
-  try {
-    localStorage.setItem(BUILD_KEY_PREFIX + targetId, JSON.stringify(payload));
-  } catch (e) {
-    return null;
+  function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, trustMatch = true } = {}) {
+    const isBackedUp = trustMatch && activeBuildMatchesCurrent();
+    if (spentPoints() <= 0 && !extraRisk || isBackedUp) return true;
+    const wantsSave = confirm(`Your current build isn't saved. Save it as a named build before ${verb}ing ${target}?`);
+    if (wantsSave) {
+      const name = prompt("Name this build:", "");
+      if (!name || !name.trim()) return false;
+      const result = saveWithNameCheck(name.trim());
+      if (result === false) return false;
+      if (result === null) {
+        alert("Couldn't save \u2014 local storage may be full or unavailable. Nothing was changed.");
+        return false;
+      }
+      return true;
+    }
+    return confirm(`${verb.charAt(0).toUpperCase()}${verb.slice(1)} ${target}? This will replace your current build and can't be undone.`);
   }
-  const index = loadIndex();
-  const existing = index.find((b) => b.id === targetId);
-  const updatedAt = Date.now();
-  if (existing) {
-    existing.name = name;
-    existing.updatedAt = updatedAt;
-  } else {
-    index.push({ id: targetId, name, updatedAt });
+  function findImportedSlot() {
+    return loadIndex().find((b) => b.name === IMPORTED_BUILD_NAME) || null;
   }
-  if (!saveIndex(index)) return null;
-  setActiveBuildId(targetId);
-  if (state.ownedProfileId !== payload.ownedProfileId) {
-    state.ownedProfileId = payload.ownedProfileId;
+  function isActiveBuildTheImportedSlot() {
+    const slot = findImportedSlot();
+    return !!slot && slot.id === getActiveBuildId();
+  }
+  function saveImportedBuild() {
+    const existing = findImportedSlot();
+    return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null, true);
+  }
+  function loadBuild(id) {
+    let parsed;
+    try {
+      const raw = localStorage.getItem(BUILD_KEY_PREFIX + id);
+      if (!raw) return null;
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+    const result = applyLoaded(parsed);
+    state.selectedNode = null;
+    clearLastMutation();
+    const repaired = reconcilePurchaseOrderCounts();
+    state.ownedProfileId = ownedProfileIdOr(parsed.ownedProfileId);
+    loadAndApplyOwned(null);
+    setActiveBuildId(id);
+    saveLocal();
+    return { droppedRanks: result.droppedRanks, repaired };
+  }
+  function renameBuild(id, name) {
+    const index = loadIndex();
+    const entry = index.find((b) => b.id === id);
+    if (!entry) return "missing";
+    if (index.some((b) => b.id !== id && b.name === name)) return "collision";
+    entry.name = name;
+    return saveIndex(index) ? "ok" : "failed";
+  }
+  function deleteBuild(id) {
+    const persisted = saveIndex(loadIndex().filter((b) => b.id !== id));
+    if (persisted) {
+      try {
+        localStorage.removeItem(BUILD_KEY_PREFIX + id);
+      } catch (e) {
+      }
+      if (getActiveBuildId() === id) setActiveBuildId(null);
+    }
+    return persisted;
+  }
+  function persistActiveBuildOwnedProfile() {
+    const id = getActiveBuildId();
+    if (!id) return;
+    const parsed = readBuildRaw(id);
+    if (!parsed) return;
+    parsed.ownedProfileId = state.ownedProfileId;
+    try {
+      localStorage.setItem(BUILD_KEY_PREFIX + id, JSON.stringify(parsed));
+    } catch (e) {
+    }
+  }
+  function buildsSharingCurrentOwnedProfile() {
+    const activeId = getActiveBuildId();
+    return listBuilds().filter((b) => b.id !== activeId && ownedProfileIdOfBuild(b.id) === state.ownedProfileId);
+  }
+  function linkOwnedToBuild(targetBuildId) {
+    clearLastMutation();
+    linkOwnedProfile(ownedProfileIdOfBuild(targetBuildId));
+    persistActiveBuildOwnedProfile();
     saveLocal();
   }
-  return targetId;
-}
+  function mergeOwnedFromBuild(sourceBuildId) {
+    clearLastMutation();
+    return mergeOwnedProfileInto(ownedProfileIdOfBuild(sourceBuildId));
+  }
+  function splitOwnedFromCurrent() {
+    clearLastMutation();
+    splitOwnedProfile();
+    persistActiveBuildOwnedProfile();
+    saveLocal();
+  }
 
-// Saves under `name`, confirming first if it would silently duplicate an
-// existing slot's name. Both interactive-save entry points (handleBuildSave
-// in render.js, and confirmReplaceCurrentBuild's save-first offer below)
-// go through here. Returns the slot's id, false if the user declined the
-// overwrite, or null on a storage failure - a decline isn't an error worth
-// a "couldn't save" toast, so callers need to tell the two apart.
-function saveWithNameCheck(name) {
-  const existing = listBuilds().find((b) => b.name === name);
-  if (existing && !confirm(`A build named "${name}" already exists. Overwrite it?`)) return false;
-  return saveBuildAs(name, existing ? existing.id : null);
-}
-
-// Gate in front of anything about to fully replace the current working
-// state (a share link, a text import, loading a different slot). Proceeds
-// silently if there's nothing at risk or the build already matches a saved
-// slot; otherwise offers to save it under a name first, falling back to a
-// plain replace-confirmation if that's declined.
-//
-// extraRisk covers a risk source that doesn't fit "spentPoints() > 0"
-// (applySharedBuildFromUrl's droppedRanks check). trustMatch lets a caller
-// say the active-slot match itself isn't trustworthy - opening a share
-// link while the active slot is the reused "Imported Build" one is about
-// to overwrite that very slot, so its match shouldn't count as backed up.
-function confirmReplaceCurrentBuild(verb, target, { extraRisk = false, trustMatch = true } = {}) {
-  const isBackedUp = trustMatch && activeBuildMatchesCurrent();
-  if ((spentPoints() <= 0 && !extraRisk) || isBackedUp) return true;
-  const wantsSave = confirm(`Your current build isn't saved. Save it as a named build before ${verb}ing ${target}?`);
-  if (wantsSave) {
-    const name = prompt("Name this build:", "");
-    if (!name || !name.trim()) return false;
-    const result = saveWithNameCheck(name.trim());
-    // false (declined the overwrite) backs out the same as declining to
-    // name it - nothing was saved, so proceeding would replace a build the
-    // user never agreed to lose. null (storage full) must also not
-    // proceed, even though the user did everything right.
-    if (result === false) return false;
-    if (result === null) {
-      alert('Couldn\'t save — local storage may be full or unavailable. Nothing was changed.');
-      return false;
+  // src/render.js
+  function computePointTotals() {
+    return {
+      spent: spentPoints(),
+      spentExtra: estimatedExtraPoints(),
+      ownedReal: ownedPoints(),
+      ownedExtra: estimatedExtraOwnedPoints()
+    };
+  }
+  function renderAll() {
+    const totals = computePointTotals();
+    renderTopbar(totals);
+    renderTabs();
+    updateShowHiddenToggle();
+    el.calculatorView.classList.add("hidden");
+    el.browseView.classList.add("hidden");
+    el.summaryView.classList.add("hidden");
+    el.progressionView.classList.add("hidden");
+    el.otherClassesView.classList.add("hidden");
+    if (state.activeView === "browse") {
+      el.browseView.classList.remove("hidden");
+      renderBrowse();
+    } else if (state.activeView === "summary") {
+      el.summaryView.classList.remove("hidden");
+      renderSummary(totals);
+    } else if (state.activeView === "progression") {
+      el.progressionView.classList.remove("hidden");
+      renderProgression(totals);
+    } else if (state.activeView === "otherClasses") {
+      el.otherClassesView.classList.remove("hidden");
+      renderOtherClasses();
+    } else {
+      el.calculatorView.classList.remove("hidden");
+      renderTree(state.activeTab);
+      renderSidePanel();
     }
-    return true;
   }
-  return confirm(`${verb.charAt(0).toUpperCase()}${verb.slice(1)} ${target}? This will replace your current build and can't be undone.`);
-}
-
-// The slot saveImportedBuild would target next - whichever entry is
-// currently named "Imported Build", regardless of id. Looked up by name,
-// not id: a rename only changes an entry's name, so the id it already has
-// stays attached to it - looking up by a fixed id would keep finding the
-// old (now-renamed) entry and allocate a fresh slot on every future import
-// instead of reusing the current one.
-//
-// isActiveBuildTheImportedSlot and saveImportedBuild share this lookup so
-// they can't drift apart on what counts as "the" imported slot. Naming
-// your own build "Imported Build" opts it into being the reuse target - a
-// known tradeoff, not a bug.
-function findImportedSlot() {
-  return loadIndex().find((b) => b.name === IMPORTED_BUILD_NAME) || null;
-}
-
-// True only while the active slot is the one the next saveImportedBuild()
-// call would overwrite. Once renamed away from the default name,
-// findImportedSlot() no longer finds it, so there's nothing left to
-// distrust in confirmReplaceCurrentBuild's trustMatch check.
-function isActiveBuildTheImportedSlot() {
-  const slot = findImportedSlot();
-  return !!slot && slot.id === getActiveBuildId();
-}
-
-// A share link is often opened passively (a link in chat) rather than a
-// deliberate "load a build" action - easy to lose track of once it's not
-// the active working state anymore. Auto-saves it under one reused slot
-// (see findImportedSlot) so it stays one click away in the Builds list
-// without piling up a fresh entry per link opened.
-//
-// Mirrors state.ownedProfileId exactly rather than forking an independent
-// copy the way a deliberate Save As does - this slot IS the current
-// session, not a separate named build alongside it, so it needs to keep
-// showing whatever the session shows (including anything marked owned
-// after this auto-save), not a snapshot frozen at import time.
-function saveImportedBuild() {
-  const existing = findImportedSlot();
-  return saveBuildAs(IMPORTED_BUILD_NAME, existing ? existing.id : null, true);
-}
-
-// Replaces the current working state with a saved slot's contents — same
-// mechanism as loadLocal/applyLoaded on boot, or a text import. Returns
-// { droppedRanks, repaired } (see loadIssuesSuffix in logic.js) so the UI can
-// surface the same kind of notice an on-load drop already gets, or null if
-// the slot doesn't exist / storage failed, in which case nothing changed.
-function loadBuild(id) {
-  let parsed;
-  try {
-    const raw = localStorage.getItem(BUILD_KEY_PREFIX + id);
-    if (!raw) return null;
-    parsed = JSON.parse(raw);
-  } catch (e) {
-    return null;
+  function updateShowHiddenToggle() {
+    const any = hasAnyHidden();
+    if (!any && state.showHidden) state.showHidden = false;
+    el.showHiddenToggle.classList.toggle("hidden", !any);
+    el.showHiddenToggle.classList.toggle("active", state.showHidden);
+    el.showHiddenToggle.textContent = state.showHidden ? "Hide Hidden" : "Show Hidden";
   }
-  const result = applyLoaded(parsed);
-  state.selectedNode = null;
-  clearLastMutation();
-  const repaired = reconcilePurchaseOrderCounts();
-  // Switches owned tracking to this slot's own profile - the one
-  // genuinely visible behavior change for existing multi-build users:
-  // two builds only show the same owned progress now if explicitly
-  // linked (see linkOwnedToBuild below), not implicitly just by both
-  // being builds.
-  state.ownedProfileId = ownedProfileIdOr(parsed.ownedProfileId);
-  loadAndApplyOwned(null);
-  setActiveBuildId(id);
-  saveLocal();
-  return { droppedRanks: result.droppedRanks, repaired };
-}
-
-// "collision" on a name clash with a *different* slot, "missing" if the id
-// doesn't resolve, "failed" if the rename itself didn't persist (storage
-// full/unavailable - the in-memory list still shows the new name until
-// reload, same lockstep-cache caveat as everywhere else here), "ok"
-// otherwise. Callers need every one of these distinguished rather than
-// collapsed into a boolean, since each means a different message to the user.
-function renameBuild(id, name) {
-  const index = loadIndex();
-  const entry = index.find((b) => b.id === id);
-  if (!entry) return "missing";
-  if (index.some((b) => b.id !== id && b.name === name)) return "collision";
-  entry.name = name;
-  return saveIndex(index) ? "ok" : "failed";
-}
-
-// Returns whether the index write persisted - the in-memory list (and thus
-// the Builds modal) drops the entry either way, but a caller should still
-// tell the user if that removal didn't survive a reload.
-//
-// The slot's own data is only removed once the index write has actually
-// succeeded - deleting it unconditionally would leave the index still
-// listing an id (on reload, once its own failed write reverts) whose
-// backing data is already gone, a dangling reference worse than just
-// leaving both sides alone. Skipping the removal on failure keeps the two
-// consistent either way: reload later and either both are gone (write
-// succeeded) or both are still there (write failed, safe to retry).
-function deleteBuild(id) {
-  const persisted = saveIndex(loadIndex().filter((b) => b.id !== id));
-  if (persisted) {
-    try {
-      localStorage.removeItem(BUILD_KEY_PREFIX + id);
-    } catch (e) { /* ignore */ }
-    if (getActiveBuildId() === id) setActiveBuildId(null);
+  function setValueUnlessFocused(input, value) {
+    if (document.activeElement !== input) input.value = value;
   }
-  return persisted;
-}
-
-// --- Owned-tracking management (Link / Merge / Split) ----------------------
-// Build-aware wrappers around state.js's profile primitives: those only
-// touch state.owned/state.ownedProfileId, so anything here that changes
-// which profile is live also needs to keep the active saved slot (if the
-// current session is one right now) in sync, or reloading that slot later
-// would show something different from what's showing today.
-
-function persistActiveBuildOwnedProfile() {
-  const id = getActiveBuildId();
-  if (!id) return;
-  const parsed = readBuildRaw(id);
-  if (!parsed) return;
-  parsed.ownedProfileId = state.ownedProfileId;
-  try {
-    localStorage.setItem(BUILD_KEY_PREFIX + id, JSON.stringify(parsed));
-  } catch (e) { /* storage unavailable, ignore */ }
-}
-
-// Other saved builds (never the one currently active/loaded) that
-// currently share the live session's owned profile - drives the "Manage
-// owned tracking…" status line in render.js.
-function buildsSharingCurrentOwnedProfile() {
-  const activeId = getActiveBuildId();
-  return listBuilds().filter((b) => b.id !== activeId && ownedProfileIdOfBuild(b.id) === state.ownedProfileId);
-}
-
-// "Just use one or the other" - repoints the live session (and its active
-// saved slot, if any) at targetBuildId's own profile. From then on the two
-// read/write the same data until Split pulls them apart again.
-function linkOwnedToBuild(targetBuildId) {
-  clearLastMutation();
-  linkOwnedProfile(ownedProfileIdOfBuild(targetBuildId));
-  persistActiveBuildOwnedProfile();
-  saveLocal();
-}
-
-// "Combine progress from save slots" - one-time, one-directional union
-// into the live session's own profile. sourceBuildId's own data is never
-// modified.
-function mergeOwnedFromBuild(sourceBuildId) {
-  clearLastMutation();
-  return mergeOwnedProfileInto(ownedProfileIdOfBuild(sourceBuildId));
-}
-
-// Inverse of Link - the live session (and its active saved slot, if any)
-// gets its own fresh, independent profile, seeded with a copy of whatever
-// it's showing right now. Whatever it used to share with is unaffected.
-function splitOwnedFromCurrent() {
-  clearLastMutation();
-  splitOwnedProfile();
-  persistActiveBuildOwnedProfile();
-  saveLocal();
-}
-
-// Cached DOM element references, populated once on init.
-
-const el = {};
-
-function cacheDom() {
-  el.classSelects = [
-    document.getElementById("classSelect0"),
-    document.getElementById("classSelect1"),
-    document.getElementById("classSelect2")
-  ];
-  el.levelInput = document.getElementById("levelInput");
-  el.spentValue = document.getElementById("spentValue");
-  el.browseToggle = document.getElementById("browseToggle");
-  el.exportBtn = document.getElementById("exportBtn");
-  el.importBtn = document.getElementById("importBtn");
-  el.importFile = document.getElementById("importFile");
-  el.importModal = document.getElementById("importModal");
-  el.importText = document.getElementById("importText");
-  el.loadImportFileBtn = document.getElementById("loadImportFileBtn");
-  el.doImportBtn = document.getElementById("doImportBtn");
-  el.closeImportBtn = document.getElementById("closeImportBtn");
-  el.resetBtn = document.getElementById("resetBtn");
-  el.exportModal = document.getElementById("exportModal");
-  el.exportText = document.getElementById("exportText");
-  el.shareLinkInput = document.getElementById("shareLinkInput");
-  el.copyShareLinkBtn = document.getElementById("copyShareLinkBtn");
-  el.copyExportBtn = document.getElementById("copyExportBtn");
-  el.saveExportBtn = document.getElementById("saveExportBtn");
-  el.closeExportBtn = document.getElementById("closeExportBtn");
-  el.tabs = document.getElementById("tabs");
-  el.calculatorView = document.getElementById("calculatorView");
-  el.browseView = document.getElementById("browseView");
-  el.summaryView = document.getElementById("summaryView");
-  el.summaryHeader = document.getElementById("summaryHeader");
-  el.summaryContent = document.getElementById("summaryContent");
-  el.otherClassesView = document.getElementById("otherClassesView");
-  el.otherClassesContent = document.getElementById("otherClassesContent");
-  el.progressionView = document.getElementById("progressionView");
-  el.progressionWrap = document.getElementById("progressionWrap");
-  el.progressionContent = document.getElementById("progressionContent");
-  el.undoLastBtn = document.getElementById("undoLastBtn");
-  el.ownedSummary = document.getElementById("ownedSummary");
-  el.clearOwnedBtn = document.getElementById("clearOwnedBtn");
-  el.manageOwnedTrackingBtn = document.getElementById("manageOwnedTrackingBtn");
-  el.ownedTrackingModal = document.getElementById("ownedTrackingModal");
-  el.ownedTrackingStatus = document.getElementById("ownedTrackingStatus");
-  el.ownedTrackingBuildSelect = document.getElementById("ownedTrackingBuildSelect");
-  el.ownedTrackingLinkBtn = document.getElementById("ownedTrackingLinkBtn");
-  el.ownedTrackingMergeBtn = document.getElementById("ownedTrackingMergeBtn");
-  el.ownedTrackingSplitBtn = document.getElementById("ownedTrackingSplitBtn");
-  el.closeOwnedTrackingBtn = document.getElementById("closeOwnedTrackingBtn");
-  el.addWaypointBtn = document.getElementById("addWaypointBtn");
-  el.waypointChips = document.getElementById("waypointChips");
-  el.waypointModal = document.getElementById("waypointModal");
-  el.waypointModalTitle = document.getElementById("waypointModalTitle");
-  el.waypointPtsInput = document.getElementById("waypointPtsInput");
-  el.waypointLabelInput = document.getElementById("waypointLabelInput");
-  el.waypointColorSwatches = document.getElementById("waypointColorSwatches");
-  el.deleteWaypointBtn = document.getElementById("deleteWaypointBtn");
-  el.cancelWaypointBtn = document.getElementById("cancelWaypointBtn");
-  el.saveWaypointBtn = document.getElementById("saveWaypointBtn");
-  el.treeWrap = document.getElementById("treeWrap");
-  el.sidePanel = document.getElementById("sidePanel");
-  el.globalSearch = document.getElementById("globalSearch");
-  el.clearSearchBtn = document.getElementById("clearSearchBtn");
-  el.showHiddenToggle = document.getElementById("showHiddenToggle");
-  el.browseFilter = document.getElementById("browseFilter");
-  el.browseUnownedToggle = document.getElementById("browseUnownedToggle");
-  el.browseGrid = document.getElementById("browseGrid");
-  el.toast = document.getElementById("toast");
-  el.disclaimerBanner = document.getElementById("disclaimerBanner");
-  el.dismissBannerBtn = document.getElementById("dismissBannerBtn");
-  el.versionTag = document.getElementById("versionTag");
-  el.changelogModal = document.getElementById("changelogModal");
-  el.changelogContent = document.getElementById("changelogContent");
-  el.changelogFade = document.getElementById("changelogFade");
-  el.closeChangelogBtn = document.getElementById("closeChangelogBtn");
-  el.buildsBtn = document.getElementById("buildsBtn");
-  el.buildsModal = document.getElementById("buildsModal");
-  el.buildSaveName = document.getElementById("buildSaveName");
-  el.buildSaveBtn = document.getElementById("buildSaveBtn");
-  el.buildsList = document.getElementById("buildsList");
-  el.closeBuildsBtn = document.getElementById("closeBuildsBtn");
-  el.resetModal = document.getElementById("resetModal");
-  el.resetClearOwnedCheckbox = document.getElementById("resetClearOwnedCheckbox");
-  el.confirmResetBtn = document.getElementById("confirmResetBtn");
-  el.cancelResetBtn = document.getElementById("cancelResetBtn");
-}
-
-// All DOM rendering. Reads from `state` and the logic layer, writes to `el.*`.
-
-// Shared by renderTopbar/renderSummary/renderProgression, each of which
-// needs some subset of these same 4 lifetime totals (all four walk the
-// whole roster via sumAcrossAllClasses). renderTopbar runs unconditionally
-// on every renderAll, alongside exactly one of renderSummary/
-// renderProgression (activeView is mutually exclusive) - computed once
-// here and passed down instead of each independently re-walking the
-// roster a second time.
-function computePointTotals() {
-  return {
-    spent: spentPoints(),
-    spentExtra: estimatedExtraPoints(),
-    ownedReal: ownedPoints(),
-    ownedExtra: estimatedExtraOwnedPoints()
-  };
-}
-
-function renderAll() {
-  const totals = computePointTotals();
-  renderTopbar(totals);
-  renderTabs();
-  updateShowHiddenToggle();
-  el.calculatorView.classList.add("hidden");
-  el.browseView.classList.add("hidden");
-  el.summaryView.classList.add("hidden");
-  el.progressionView.classList.add("hidden");
-  el.otherClassesView.classList.add("hidden");
-  if (state.activeView === "browse") {
-    el.browseView.classList.remove("hidden");
-    renderBrowse();
-  } else if (state.activeView === "summary") {
-    el.summaryView.classList.remove("hidden");
-    renderSummary(totals);
-  } else if (state.activeView === "progression") {
-    el.progressionView.classList.remove("hidden");
-    renderProgression(totals);
-  } else if (state.activeView === "otherClasses") {
-    el.otherClassesView.classList.remove("hidden");
-    renderOtherClasses();
-  } else {
-    el.calculatorView.classList.remove("hidden");
-    renderTree(state.activeTab);
-    renderSidePanel();
+  function renderTopbar(totals) {
+    populateClassSelects();
+    setValueUnlessFocused(el.levelInput, state.charLevel);
+    const { spent, spentExtra, ownedReal, ownedExtra } = totals || computePointTotals();
+    function blendedSpan(real, extra) {
+      return extra > 0 ? `<span class="is-estimate">~${real + extra}</span>` : `${real}`;
+    }
+    el.spentValue.innerHTML = `${blendedSpan(ownedReal, ownedExtra)} / ${blendedSpan(spent, spentExtra)}`;
+    const inactive = spentOnInactiveClasses();
+    const titleParts = [];
+    if (ownedExtra > 0) titleParts.push(`Owned: ${ownedReal} confirmed + ${ownedExtra} estimated.`);
+    if (spentExtra > 0) titleParts.push(`Planned: ${spent} confirmed + ${spentExtra} estimated.`);
+    if (inactive > 0) titleParts.push(`${inactive} pt${inactive === 1 ? "" : "s"} from classes not currently selected (see the Other Classes tab).`);
+    if (titleParts.length) el.spentValue.title = titleParts.join(" ");
+    else el.spentValue.removeAttribute("title");
+    el.browseToggle.classList.toggle("active", state.activeView === "browse");
+    const activeId = getActiveBuildId();
+    const activeBuild = activeId ? listBuilds().find((b) => b.id === activeId) : null;
+    el.buildsBtn.textContent = activeBuild ? `Builds: ${activeBuild.name} \u25BE` : "Builds \u25BE";
   }
-}
-
-// Shared by every tab (the search bar itself is shared too) - visible only
-// once there's actually something hidden to reveal, same spirit as the
-// standalone "Clear Owned" button disabling itself when there's nothing for
-// it to do.
-function updateShowHiddenToggle() {
-  const any = hasAnyHidden();
-  // Unhiding the last hidden AA while this is on would otherwise leave
-  // showHidden stuck true forever - invisible (nothing left to reveal) but
-  // still "on" in memory, so hiding something new later would silently
-  // start already-revealed instead of the normal default-off state.
-  if (!any && state.showHidden) state.showHidden = false;
-  el.showHiddenToggle.classList.toggle("hidden", !any);
-  el.showHiddenToggle.classList.toggle("active", state.showHidden);
-  el.showHiddenToggle.textContent = state.showHidden ? "Hide Hidden" : "Show Hidden";
-}
-
-// Skips the write when input currently has focus, so a render landing
-// mid-edit (an unrelated tab switch/class swap elsewhere, or just a slow
-// render racing a keystroke) never discards what the user's actively
-// typing or selecting. Trade-off, not a pure win: if the underlying state
-// changes from elsewhere while the element still has focus (a build load
-// while a class <select> is open, say), the display can sit stale until
-// something re-renders after the user moves on - there's no dedicated
-// re-sync tied to blur, only whatever the next render happens to be. The
-// alternative (clobbering their in-progress input) is worse.
-function setValueUnlessFocused(input, value) {
-  if (document.activeElement !== input) input.value = value;
-}
-
-function renderTopbar(totals) {
-  populateClassSelects();
-  setValueUnlessFocused(el.levelInput, state.charLevel);
-  // Owned/planned, not planned alone. Owned tracking is always on
-  // (per-build profiles, always included in exports), and "how much of the
-  // plan is actually trained" is more useful up top than the plan's raw
-  // size alone, which is the second number here. "Planned" rather than "spent" - "spent" reads as already-done the
-  // same way "owned" does, when this side really means "what the whole plan
-  // calls for, trained or not." Same blended-estimate treatment as
-  // Progression's own owned/to-go summary (renderProgression) - each side
-  // colors independently since a guess can land on either (or both, or
-  // neither) of owned/planned. #spentValue/spentPoints() kept their names
-  // despite the label reading "Planned" now - renaming would touch a lot of
-  // call sites and tests for a purely cosmetic gain.
-  const { spent, spentExtra, ownedReal, ownedExtra } = totals || computePointTotals();
-  function blendedSpan(real, extra) {
-    return extra > 0 ? `<span class="is-estimate">~${real + extra}</span>` : `${real}`;
-  }
-  el.spentValue.innerHTML = `${blendedSpan(ownedReal, ownedExtra)} / ${blendedSpan(spent, spentExtra)}`;
-  // spentPoints() is a lifetime total (see its own comment in logic.js),
-  // same scope Progression's own running total now uses too - the two
-  // never diverge. When some of it comes from a class that isn't currently
-  // selected, that's surfaced here since it's not obvious from the number
-  // alone which classes it spans.
-  const inactive = spentOnInactiveClasses();
-  const titleParts = [];
-  if (ownedExtra > 0) titleParts.push(`Owned: ${ownedReal} confirmed + ${ownedExtra} estimated.`);
-  if (spentExtra > 0) titleParts.push(`Planned: ${spent} confirmed + ${spentExtra} estimated.`);
-  if (inactive > 0) titleParts.push(`${inactive} pt${inactive === 1 ? "" : "s"} from classes not currently selected (see the Other Classes tab).`);
-  if (titleParts.length) el.spentValue.title = titleParts.join(" ");
-  else el.spentValue.removeAttribute("title");
-  el.browseToggle.classList.toggle("active", state.activeView === "browse");
-  const activeId = getActiveBuildId();
-  const activeBuild = activeId ? listBuilds().find((b) => b.id === activeId) : null;
-  el.buildsBtn.textContent = activeBuild ? `Builds: ${activeBuild.name} ▾` : "Builds ▾";
-}
-
-function populateClassSelects() {
-  const html = CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
-  el.classSelects.forEach((sel, i) => {
-    if (sel.innerHTML !== html) sel.innerHTML = html;
-    setValueUnlessFocused(sel, state.selectedClasses[i]);
-  });
-}
-
-const VIEW_TAB_KEYS = ["summary", "progression", "otherClasses"];
-
-function renderTabs() {
-  const tabDefs = [
-    ...AA_CATEGORY_KEYS.map((key) => ({ key, label: shortCategoryLabel(key) })),
-    { key: "otherClasses", label: "Other Classes" },
-    { key: "summary", label: "Summary" },
-    { key: "progression", label: "Progression" }
-  ];
-  const query = state.browseSearch;
-  el.tabs.innerHTML = tabDefs.map((t) => {
-    const isView = VIEW_TAB_KEYS.includes(t.key);
-    const count = t.key === "summary" ? countPicked()
-      : t.key === "progression" ? state.purchaseOrder.length
-      : t.key === "otherClasses" ? countOtherClassesPicked()
-      : getList(t.key).length;
-    const isActive = isView ? state.activeView === t.key : (state.activeView === "calculator" && state.activeTab === t.key);
-    const matchCount = isView ? 0 : countMatches(t.key, query);
-    const badge = matchCount > 0 ? `<span class="search-badge" title="${matchCount} match${matchCount === 1 ? "" : "es"} for &quot;${escapeHtml(query.trim())}&quot;">${matchCount}</span>` : "";
-    return `<button data-tab="${t.key}" class="${isActive ? "active" : ""}${isView ? " summary-tab" : ""}">${escapeHtml(t.label)}<span class="count">(${count})</span>${badge}</button>`;
-  }).join("");
-  Array.from(el.tabs.querySelectorAll("button")).forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const key = btn.getAttribute("data-tab");
-      if (VIEW_TAB_KEYS.includes(key)) {
-        state.activeView = key;
-      } else {
-        state.activeView = "calculator";
-        state.activeTab = key;
-        state.selectedNode = null;
-      }
-      renderAll();
+  function populateClassSelects() {
+    const html = CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+    el.classSelects.forEach((sel, i) => {
+      if (sel.innerHTML !== html) sel.innerHTML = html;
+      setValueUnlessFocused(sel, state.selectedClasses[i]);
     });
-  });
-}
-
-// Shared by every place that shows a per-rank cost - the tree, side panel,
-// Browse, and Progression - so they all resolve "is this rank's real cost
-// known, or is this a pattern-inferred estimate" the same way instead of
-// each reimplementing it. Display-only: nothing here feeds
-// costNum()/spentPoints(), which keep treating "?" as 0 regardless.
-function formatGuessDisplay(rawCost, guess) {
-  if (rawCost !== "?") return { text: escapeHtml(rawCost), isGuess: false };
-  if (!guess) return { text: "?", isGuess: false };
-  return { text: `~${guess.value}`, isGuess: true, confidence: guess.confidence, basedOn: guess.basedOn, interpolated: !!guess.interpolated, manual: !!guess.manual, title: guessTitle(guess) };
-}
-
-// catKey-based lookup - one of the 3 currently-active class slots (or
-// general/archetype/special). Used by the tree, side panel, and Progression
-// (whose steps are always for an active or formerly-active selection).
-// Exported for exportImport.js's plain-text export, so a guessed step cost
-// reads the same "~N" way there as it does in the Progression tab itself.
-function costDisplay(catKey, idx, rankIdx, rawCost) {
-  return formatGuessDisplay(rawCost, rawCost === "?" ? costGuess(catKey, idx, rankIdx) : null);
-}
-
-// (scope, className)-based lookup, bypassing the active-slot requirement -
-// for Browse and any Progression row whose class isn't one of the 3
-// currently selected, which shows every class's AAs regardless.
-function costDisplayScoped(scope, className, idx, rankIdx, rawCost) {
-  return formatGuessDisplay(rawCost, rawCost === "?" ? costGuessScoped(scope, className, idx, rankIdx) : null);
-}
-
-// Builds the (progIdx, rankIdx) => guess|null closure highlightRankValue
-// expects, bound to one AA - so every .desc call site just passes
-// effectLookup(catKey, idx) instead of repeating the same arrow function.
-// catKey-based (one of the 3 active slots), mirrors costDisplay.
-function effectLookup(catKey, idx) {
-  return (progIdx, rankIdx) => effectGuess(catKey, idx, progIdx, rankIdx);
-}
-
-// (scope, className)-based, mirrors costDisplayScoped - for Browse and any
-// inactive-class Progression step, same reasoning as costGuessScoped.
-function effectLookupScoped(scope, className, idx) {
-  return (progIdx, rankIdx) => effectGuessScoped(scope, className, idx, progIdx, rankIdx);
-}
-
-// The "what does the next rank get you" preview, shared by the side panel
-// and Progression's expanded row - identical markup either way, so a tweak
-// to one can't silently miss the other. `rank` is the currently-held rank;
-// the box previews rank + 1.
-function nextRankBoxHtml(catKey, idx, aa, rank, extraClass = "") {
-  const nextRank = rank + 1;
-  const disp = costDisplay(catKey, idx, rank, aa.costs[rank]);
-  const chip = disp.isGuess
-    ? ` <span class="confidence-chip tier-${disp.confidence}" title="${escapeHtml(disp.title)}">${disp.confidence}</span>`
-    : "";
-  return `<div class="next-rank-box${extraClass}${disp.isGuess ? " is-estimate" : ""}">
+  }
+  var VIEW_TAB_KEYS = ["summary", "progression", "otherClasses"];
+  function renderTabs() {
+    const tabDefs = [
+      ...AA_CATEGORY_KEYS.map((key) => ({ key, label: shortCategoryLabel(key) })),
+      { key: "otherClasses", label: "Other Classes" },
+      { key: "summary", label: "Summary" },
+      { key: "progression", label: "Progression" }
+    ];
+    const query = state.browseSearch;
+    el.tabs.innerHTML = tabDefs.map((t) => {
+      const isView = VIEW_TAB_KEYS.includes(t.key);
+      const count = t.key === "summary" ? countPicked() : t.key === "progression" ? state.purchaseOrder.length : t.key === "otherClasses" ? countOtherClassesPicked() : getList(t.key).length;
+      const isActive = isView ? state.activeView === t.key : state.activeView === "calculator" && state.activeTab === t.key;
+      const matchCount = isView ? 0 : countMatches(t.key, query);
+      const badge = matchCount > 0 ? `<span class="search-badge" title="${matchCount} match${matchCount === 1 ? "" : "es"} for &quot;${escapeHtml(query.trim())}&quot;">${matchCount}</span>` : "";
+      return `<button data-tab="${t.key}" class="${isActive ? "active" : ""}${isView ? " summary-tab" : ""}">${escapeHtml(t.label)}<span class="count">(${count})</span>${badge}</button>`;
+    }).join("");
+    Array.from(el.tabs.querySelectorAll("button")).forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const key = btn.getAttribute("data-tab");
+        if (VIEW_TAB_KEYS.includes(key)) {
+          state.activeView = key;
+        } else {
+          state.activeView = "calculator";
+          state.activeTab = key;
+          state.selectedNode = null;
+        }
+        renderAll();
+      });
+    });
+  }
+  function formatGuessDisplay(rawCost, guess) {
+    if (rawCost !== "?") return { text: escapeHtml(rawCost), isGuess: false };
+    if (!guess) return { text: "?", isGuess: false };
+    return { text: `~${guess.value}`, isGuess: true, confidence: guess.confidence, basedOn: guess.basedOn, interpolated: !!guess.interpolated, manual: !!guess.manual, title: guessTitle(guess) };
+  }
+  function costDisplay(catKey, idx, rankIdx, rawCost) {
+    return formatGuessDisplay(rawCost, rawCost === "?" ? costGuess(catKey, idx, rankIdx) : null);
+  }
+  function costDisplayScoped(scope, className, idx, rankIdx, rawCost) {
+    return formatGuessDisplay(rawCost, rawCost === "?" ? costGuessScoped(scope, className, idx, rankIdx) : null);
+  }
+  function effectLookup(catKey, idx) {
+    return (progIdx, rankIdx) => effectGuess(catKey, idx, progIdx, rankIdx);
+  }
+  function effectLookupScoped(scope, className, idx) {
+    return (progIdx, rankIdx) => effectGuessScoped(scope, className, idx, progIdx, rankIdx);
+  }
+  function nextRankBoxHtml(catKey, idx, aa, rank, extraClass = "") {
+    const nextRank = rank + 1;
+    const disp = costDisplay(catKey, idx, rank, aa.costs[rank]);
+    const chip = disp.isGuess ? ` <span class="confidence-chip tier-${disp.confidence}" title="${escapeHtml(disp.title)}">${disp.confidence}</span>` : "";
+    return `<div class="next-rank-box${extraClass}${disp.isGuess ? " is-estimate" : ""}">
         <div class="next-rank-title">Next Rank (${nextRank}/${aa.ranks}) &middot; costs <b class="${disp.isGuess ? "is-estimate" : ""}" title="${disp.isGuess ? escapeHtml(disp.title) : ""}">${disp.text}</b> pt(s)${chip}</div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, nextRank), nextRank, effectLookup(catKey, idx))}</div>
       </div>`;
-}
-
-// Shared by the Tree node's icon corner and the Browse/Summary/Other
-// Classes card name line - one markup source so all 4 sites agree on the
-// badge's shape. Empty string (not null) so every call site can inline it
-// directly into a template literal, same as the existing aa.auto ternaries.
-function eraBadgeHtml(aa) {
-  const badge = eraBadge(aa);
-  if (!badge) return "";
-  return `<span class="era-badge ${badge.cssClass}" title="${badge.label} content">${badge.letter}</span>`;
-}
-
-function renderTree(catKey) {
-  const list = getList(catKey);
-
-  if (!list.length) {
-    el.treeWrap.innerHTML = '<div class="empty" style="margin-top:60px;">No AAs documented for this category yet.</div>';
-    return;
   }
-
-  // Selecting a node fully rebuilds this grid, which would otherwise drop keyboard
-  // focus back to nowhere — remember whether focus was in the tree so it can be
-  // restored to the newly-rendered matching node below.
-  const hadFocusInTree = el.treeWrap.contains(document.activeElement);
-
-  const grid = document.createElement("div");
-  grid.className = "tree-grid";
-
-  const query = state.browseSearch;
-  const searching = !!query.trim();
-
-  list.forEach((aa, idx) => {
-    const rank = effectiveRank(catKey, idx);
-    // Runs before the search-match classing below on purpose - see
-    // isSuppressed (logic.js) for the rule itself.
-    const hidden = isHidden(catKey, idx);
-    if (isSuppressed(catKey, idx)) return;
-    const autoIneligible = aa.auto && !isClassEligible(aa);
-    const autoBelowLevel = aa.auto && !autoIneligible && rank < aa.ranks;
-    const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
-    const locked = !!lockReason || autoBelowLevel || autoIneligible;
-    const invalidReason = rank > 0 ? heldRankInvalidReason(catKey, idx) : null;
-    // A held rank beyond the current class-cap (Steadfast Will owned at
-    // rank 8, then swapped away from a qualifying class) still counts
-    // fully toward the bar's fill - only the segment strictly beyond the
-    // cap gets the dimmed treatment, showing it's out of reach, not lost.
-    const classCap = aa.classRankCap ? classRankCapFor(aa) : aa.ranks;
-    const capExceeded = rank > classCap;
-
-    const node = document.createElement("div");
-    node.className = "node";
-    node.tabIndex = 0;
-    node.setAttribute("role", "button");
-    node.setAttribute("aria-label", `${aa.name}, rank ${rank} of ${aa.ranks}`);
-    node.dataset.idx = String(idx);
-    if (aa.auto && !autoBelowLevel && !autoIneligible) node.classList.add("auto");
-    else if (!aa.auto && rank >= aa.ranks) node.classList.add("maxed");
-    if (locked) node.classList.add("locked");
-    if (lockReason && lockReason.kind === "prereq") node.classList.add("locked-prereq");
-    if ((lockReason && lockReason.kind === "classEligibility") || autoIneligible) node.classList.add("locked-classlock");
-    if (invalidReason) node.classList.add("invalidated");
-    if (hidden) node.classList.add("hidden-aa");
-    if (searching) node.classList.add(aaMatchesQuery(aa, query) ? "search-match" : "search-dim");
-    if (invalidReason) node.title = invalidReason;
-    else if (autoIneligible) node.title = `Requires one of: ${aa.eligibleClasses.join(", ")}.`;
-    else if (autoBelowLevel) node.title = `Automatically granted at level ${aa.levelReq} — no points needed.`;
-    else if (lockReason) node.title = lockReason.text;
-    else if (aa.auto) node.title = "Automatically granted — no AA points needed.";
-    if (state.selectedNode && state.selectedNode.category === catKey && state.selectedNode.idx === idx) {
-      node.classList.add("selected");
+  function eraBadgeHtml(aa) {
+    const badge = eraBadge(aa);
+    if (!badge) return "";
+    return `<span class="era-badge ${badge.cssClass}" title="${badge.label} content">${badge.letter}</span>`;
+  }
+  function renderTree(catKey) {
+    const list = getList(catKey);
+    if (!list.length) {
+      el.treeWrap.innerHTML = '<div class="empty" style="margin-top:60px;">No AAs documented for this category yet.</div>';
+      return;
     }
-
-    node.innerHTML = `
+    const hadFocusInTree = el.treeWrap.contains(document.activeElement);
+    const grid = document.createElement("div");
+    grid.className = "tree-grid";
+    const query = state.browseSearch;
+    const searching = !!query.trim();
+    list.forEach((aa, idx) => {
+      const rank = effectiveRank(catKey, idx);
+      const hidden = isHidden(catKey, idx);
+      if (isSuppressed(catKey, idx)) return;
+      const autoIneligible = aa.auto && !isClassEligible(aa);
+      const autoBelowLevel = aa.auto && !autoIneligible && rank < aa.ranks;
+      const lockReason = !aa.auto && rank < aa.ranks ? structuralLockReason(catKey, idx) : null;
+      const locked = !!lockReason || autoBelowLevel || autoIneligible;
+      const invalidReason = rank > 0 ? heldRankInvalidReason(catKey, idx) : null;
+      const classCap = aa.classRankCap ? classRankCapFor(aa) : aa.ranks;
+      const capExceeded = rank > classCap;
+      const node = document.createElement("div");
+      node.className = "node";
+      node.tabIndex = 0;
+      node.setAttribute("role", "button");
+      node.setAttribute("aria-label", `${aa.name}, rank ${rank} of ${aa.ranks}`);
+      node.dataset.idx = String(idx);
+      if (aa.auto && !autoBelowLevel && !autoIneligible) node.classList.add("auto");
+      else if (!aa.auto && rank >= aa.ranks) node.classList.add("maxed");
+      if (locked) node.classList.add("locked");
+      if (lockReason && lockReason.kind === "prereq") node.classList.add("locked-prereq");
+      if (lockReason && lockReason.kind === "classEligibility" || autoIneligible) node.classList.add("locked-classlock");
+      if (invalidReason) node.classList.add("invalidated");
+      if (hidden) node.classList.add("hidden-aa");
+      if (searching) node.classList.add(aaMatchesQuery(aa, query) ? "search-match" : "search-dim");
+      if (invalidReason) node.title = invalidReason;
+      else if (autoIneligible) node.title = `Requires one of: ${aa.eligibleClasses.join(", ")}.`;
+      else if (autoBelowLevel) node.title = `Automatically granted at level ${aa.levelReq} \u2014 no points needed.`;
+      else if (lockReason) node.title = lockReason.text;
+      else if (aa.auto) node.title = "Automatically granted \u2014 no AA points needed.";
+      if (state.selectedNode && state.selectedNode.category === catKey && state.selectedNode.idx === idx) {
+        node.classList.add("selected");
+      }
+      node.innerHTML = `
       <div class="icon">${escapeHtml(iconLetter(aa.name))}${eraBadgeHtml(aa)}</div>
       <div class="name">${escapeHtml(aa.name)}</div>
-      <div class="rankbar"><div class="fill" style="width:${(Math.min(rank, classCap) / aa.ranks) * 100}%"></div>${capExceeded ? `<div class="fill-capped" style="width:${((rank - classCap) / aa.ranks) * 100}%"></div>` : ""}</div>
+      <div class="rankbar"><div class="fill" style="width:${Math.min(rank, classCap) / aa.ranks * 100}%"></div>${capExceeded ? `<div class="fill-capped" style="width:${(rank - classCap) / aa.ranks * 100}%"></div>` : ""}</div>
       <div class="ranktext">${rank} / ${aa.ranks}</div>
     `;
-    if (aa.auto && autoIneligible) {
-      const tag = document.createElement("div");
-      tag.className = "costtag classlock-tag";
-      tag.textContent = "CLASS";
-      node.appendChild(tag);
-    } else if (aa.auto && !autoBelowLevel) {
-      const tag = document.createElement("div");
-      tag.className = "costtag auto-tag";
-      tag.textContent = "AUTO";
-      node.appendChild(tag);
-    } else if (aa.auto && autoBelowLevel) {
-      const tag = document.createElement("div");
-      tag.className = "costtag";
-      tag.textContent = `Lv.${aa.levelReq}`;
-      node.appendChild(tag);
-    } else if (rank < aa.ranks) {
-      const tag = document.createElement("div");
-      const disp = costDisplay(catKey, idx, rank, aa.costs[rank]);
-      tag.className = disp.isGuess ? `costtag is-estimate tier-${disp.confidence}` : "costtag";
-      tag.textContent = disp.text;
-      if (disp.isGuess) tag.title = disp.title;
-      node.appendChild(tag);
+      if (aa.auto && autoIneligible) {
+        const tag = document.createElement("div");
+        tag.className = "costtag classlock-tag";
+        tag.textContent = "CLASS";
+        node.appendChild(tag);
+      } else if (aa.auto && !autoBelowLevel) {
+        const tag = document.createElement("div");
+        tag.className = "costtag auto-tag";
+        tag.textContent = "AUTO";
+        node.appendChild(tag);
+      } else if (aa.auto && autoBelowLevel) {
+        const tag = document.createElement("div");
+        tag.className = "costtag";
+        tag.textContent = `Lv.${aa.levelReq}`;
+        node.appendChild(tag);
+      } else if (rank < aa.ranks) {
+        const tag = document.createElement("div");
+        const disp = costDisplay(catKey, idx, rank, aa.costs[rank]);
+        tag.className = disp.isGuess ? `costtag is-estimate tier-${disp.confidence}` : "costtag";
+        tag.textContent = disp.text;
+        if (disp.isGuess) tag.title = disp.title;
+        node.appendChild(tag);
+      }
+      if (lockReason && lockReason.kind === "prereq") {
+        const req = document.createElement("div");
+        req.className = "costtag prereq-tag";
+        req.textContent = "REQ";
+        node.appendChild(req);
+      }
+      if (lockReason && lockReason.kind === "classEligibility") {
+        const cls = document.createElement("div");
+        cls.className = "costtag classlock-tag";
+        cls.textContent = "CLASS";
+        node.appendChild(cls);
+      }
+      if (invalidReason) {
+        const warn = document.createElement("div");
+        warn.className = "costtag invalid-tag";
+        warn.textContent = "\u26A0";
+        node.appendChild(warn);
+      }
+      if (hidden) {
+        const tag = document.createElement("div");
+        tag.className = "costtag hidden-tag";
+        tag.textContent = "HIDDEN";
+        tag.title = "Hidden - showing anyway because you've spent points on it, or Show Hidden is on.";
+        node.appendChild(tag);
+      }
+      grid.appendChild(node);
+    });
+    el.treeWrap.innerHTML = "";
+    el.treeWrap.appendChild(grid);
+    if (hadFocusInTree && state.selectedNode && state.selectedNode.category === catKey) {
+      const focusTarget = grid.querySelector(`[data-idx="${state.selectedNode.idx}"]`);
+      if (focusTarget) focusTarget.focus();
     }
-    if (lockReason && lockReason.kind === "prereq") {
-      const req = document.createElement("div");
-      req.className = "costtag prereq-tag";
-      req.textContent = "REQ";
-      node.appendChild(req);
+  }
+  function renderSidePanel() {
+    const sel = state.selectedNode;
+    if (!sel) {
+      el.sidePanel.innerHTML = '<div class="empty">Select an AA node to see its details and spend points.</div>';
+      return;
     }
-    if (lockReason && lockReason.kind === "classEligibility") {
-      const cls = document.createElement("div");
-      cls.className = "costtag classlock-tag";
-      cls.textContent = "CLASS";
-      node.appendChild(cls);
+    const list = getList(sel.category);
+    const aa = list[sel.idx];
+    if (!aa) {
+      state.selectedNode = null;
+      el.sidePanel.innerHTML = '<div class="empty">Select an AA node to see its details.</div>';
+      return;
     }
+    const rank = effectiveRank(sel.category, sel.idx);
+    const resolved = aa.prereq ? resolvePrereqTarget(aa.prereq, sel.category) : null;
+    const atMax = rank >= aa.ranks;
+    const blockReason = atMax ? null : getBlockReason(sel.category, sel.idx);
+    const nextCost = rank < aa.ranks ? costNum(aa.costs[rank]) : null;
+    const dependedOn = rank > 0 && isDependedOn(sel.category, sel.idx, rank);
+    const invalidReason = rank > 0 ? heldRankInvalidReason(sel.category, sel.idx) : null;
+    const hidden = isHidden(sel.category, sel.idx);
+    let html = `<div class="sidepanel-header"><h2>${escapeHtml(aa.name)}</h2><button id="hideToggleBtn" class="hide-toggle-btn${hidden ? " active" : ""}" title="${hidden ? "Unhide this AA" : "Hide this AA from the tree and Browse"}">${hidden ? "Unhide" : "Hide"}</button></div>`;
+    html += `<div class="meta">${escapeHtml(labelFor(sel.category))} &middot; Level ${escapeHtml(aa.levelReq)}+</div>`;
+    html += `<div class="desc">${highlightRankValue(aa.description, effectiveDisplayRank(aa, rank), effectLookup(sel.category, sel.idx))}</div>`;
     if (invalidReason) {
-      const warn = document.createElement("div");
-      warn.className = "costtag invalid-tag";
-      warn.textContent = "⚠";
-      node.appendChild(warn);
+      html += `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>`;
     }
-    if (hidden) {
-      const tag = document.createElement("div");
-      tag.className = "costtag hidden-tag";
-      tag.textContent = "HIDDEN";
-      tag.title = "Hidden - showing anyway because you've spent points on it, or Show Hidden is on.";
-      node.appendChild(tag);
+    if (aa.prereq) {
+      html += `<div class="req-line ${resolved ? "" : "warn"}"><b>Requires:</b> ${escapeHtml(aa.prereq)}</div>`;
     }
-    grid.appendChild(node);
-  });
-
-  el.treeWrap.innerHTML = "";
-  el.treeWrap.appendChild(grid);
-
-  if (hadFocusInTree && state.selectedNode && state.selectedNode.category === catKey) {
-    const focusTarget = grid.querySelector(`[data-idx="${state.selectedNode.idx}"]`);
-    if (focusTarget) focusTarget.focus();
-  }
-}
-
-function renderSidePanel() {
-  const sel = state.selectedNode;
-  if (!sel) {
-    el.sidePanel.innerHTML = '<div class="empty">Select an AA node to see its details and spend points.</div>';
-    return;
-  }
-  const list = getList(sel.category);
-  const aa = list[sel.idx];
-  if (!aa) { state.selectedNode = null; el.sidePanel.innerHTML = '<div class="empty">Select an AA node to see its details.</div>'; return; }
-  const rank = effectiveRank(sel.category, sel.idx);
-  const resolved = aa.prereq ? resolvePrereqTarget(aa.prereq, sel.category) : null;
-  const atMax = rank >= aa.ranks;
-  const blockReason = atMax ? null : getBlockReason(sel.category, sel.idx);
-  const nextCost = rank < aa.ranks ? costNum(aa.costs[rank]) : null;
-  const dependedOn = rank > 0 && isDependedOn(sel.category, sel.idx, rank);
-  const invalidReason = rank > 0 ? heldRankInvalidReason(sel.category, sel.idx) : null;
-  const hidden = isHidden(sel.category, sel.idx);
-
-  let html = `<div class="sidepanel-header"><h2>${escapeHtml(aa.name)}</h2><button id="hideToggleBtn" class="hide-toggle-btn${hidden ? " active" : ""}" title="${hidden ? "Unhide this AA" : "Hide this AA from the tree and Browse"}">${hidden ? "Unhide" : "Hide"}</button></div>`;
-  html += `<div class="meta">${escapeHtml(labelFor(sel.category))} &middot; Level ${escapeHtml(aa.levelReq)}+</div>`;
-  html += `<div class="desc">${highlightRankValue(aa.description, effectiveDisplayRank(aa, rank), effectLookup(sel.category, sel.idx))}</div>`;
-  if (invalidReason) {
-    html += `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>`;
-  }
-  if (aa.prereq) {
-    html += `<div class="req-line ${resolved ? "" : "warn"}"><b>Requires:</b> ${escapeHtml(aa.prereq)}</div>`;
-  }
-  html += `<div class="rank-controls">
+    html += `<div class="rank-controls">
     <button id="decBtn" ${rank <= 0 || aa.auto ? "disabled" : ""} class="${dependedOn ? "blocked" : ""}">&minus;</button>
     <span class="current">${rank} / ${aa.ranks}</span>
     <button id="incBtn" ${atMax || aa.auto ? "disabled" : ""} class="${blockReason ? "blocked" : ""}">+</button>
   </div>`;
-  if (aa.auto) {
-    const levelReq = parseInt(aa.levelReq, 10) || 1;
-    if (!isClassEligible(aa)) {
-      html += `<div class="req-line warn">Requires one of: ${escapeHtml(aa.eligibleClasses.join(", "))}.</div>`;
-    } else if (state.charLevel < levelReq) {
-      html += `<div class="req-line warn">Automatically granted at level ${levelReq} &mdash; not yet active at level ${state.charLevel}.</div>`;
+    if (aa.auto) {
+      const levelReq = parseInt(aa.levelReq, 10) || 1;
+      if (!isClassEligible(aa)) {
+        html += `<div class="req-line warn">Requires one of: ${escapeHtml(aa.eligibleClasses.join(", "))}.</div>`;
+      } else if (state.charLevel < levelReq) {
+        html += `<div class="req-line warn">Automatically granted at level ${levelReq} &mdash; not yet active at level ${state.charLevel}.</div>`;
+      } else {
+        html += `<div class="req-line">Automatically granted &mdash; no AA points required, always active once unlocked.</div>`;
+        if (aa.ranks > 1) {
+          html += `<div class="req-line" style="color:#63636a;">The wiki doesn't document per-rank level breakpoints for this ability, so it's shown at max rank once level ${levelReq}+ is reached.</div>`;
+        }
+      }
     } else {
-      html += `<div class="req-line">Automatically granted &mdash; no AA points required, always active once unlocked.</div>`;
-      if (aa.ranks > 1) {
-        html += `<div class="req-line" style="color:#63636a;">The wiki doesn't document per-rank level breakpoints for this ability, so it's shown at max rank once level ${levelReq}+ is reached.</div>`;
+      if (blockReason) {
+        html += `<div class="req-line warn">${escapeHtml(blockReason)}</div>`;
+      }
+      if (dependedOn) {
+        html += `<div class="req-line warn">Another AA depends on this rank &mdash; lower it first.</div>`;
+      }
+      if (nextCost !== null) {
+        html += nextRankBoxHtml(sel.category, sel.idx, aa, rank);
+      }
+      html += `<div class="rank-costs">` + aa.costs.map((c, i) => {
+        const disp = costDisplay(sel.category, sel.idx, i, c);
+        const cls = `pip${i < rank ? " spent" : ""}${disp.isGuess ? ` is-estimate tier-${disp.confidence}` : ""}`;
+        const title = disp.isGuess ? ` title="${escapeHtml(disp.title)}"` : "";
+        return `<span class="${cls}"${title}>R${i + 1}: ${disp.text}</span>`;
+      }).join("") + `</div>`;
+      if (aa.costs.some((c) => String(c).trim() === "?")) {
+        const anyGuessed = aa.costs.some((c, i) => c === "?" && costGuess(sel.category, sel.idx, i));
+        html += `<div class="req-line" style="margin-top:10px; color:#63636a;">Some per-rank costs are undocumented on the wiki source ("?") and are treated as 0 pts until known${anyGuessed ? " &mdash; ranks marked with a ~ show a pattern-inferred estimate instead, for reference only" : ""}.</div>`;
       }
     }
-  } else {
-    if (blockReason) {
-      html += `<div class="req-line warn">${escapeHtml(blockReason)}</div>`;
-    }
-    if (dependedOn) {
-      html += `<div class="req-line warn">Another AA depends on this rank &mdash; lower it first.</div>`;
-    }
-    if (nextCost !== null) {
-      html += nextRankBoxHtml(sel.category, sel.idx, aa, rank);
-    }
-    html += `<div class="rank-costs">` + aa.costs.map((c, i) => {
-      const disp = costDisplay(sel.category, sel.idx, i, c);
-      const cls = `pip${i < rank ? " spent" : ""}${disp.isGuess ? ` is-estimate tier-${disp.confidence}` : ""}`;
-      const title = disp.isGuess ? ` title="${escapeHtml(disp.title)}"` : "";
-      return `<span class="${cls}"${title}>R${i + 1}: ${disp.text}</span>`;
-    }).join("") + `</div>`;
-    if (aa.costs.some((c) => String(c).trim() === "?")) {
-      const anyGuessed = aa.costs.some((c, i) => c === "?" && costGuess(sel.category, sel.idx, i));
-      html += `<div class="req-line" style="margin-top:10px; color:#63636a;">Some per-rank costs are undocumented on the wiki source ("?") and are treated as 0 pts until known${anyGuessed ? " &mdash; ranks marked with a ~ show a pattern-inferred estimate instead, for reference only" : ""}.</div>`;
-    }
+    el.sidePanel.innerHTML = html;
+    const incBtn = document.getElementById("incBtn");
+    const decBtn = document.getElementById("decBtn");
+    const hideBtn = document.getElementById("hideToggleBtn");
+    if (incBtn) incBtn.addEventListener("click", () => applyAttempt(attemptIncrement(sel.category, sel.idx)));
+    if (decBtn) decBtn.addEventListener("click", () => applyAttempt(attemptDecrement(sel.category, sel.idx)));
+    if (hideBtn) hideBtn.addEventListener("click", () => {
+      setHidden(sel.category, sel.idx, !hidden);
+      renderAll();
+    });
   }
-
-  el.sidePanel.innerHTML = html;
-  const incBtn = document.getElementById("incBtn");
-  const decBtn = document.getElementById("decBtn");
-  const hideBtn = document.getElementById("hideToggleBtn");
-  if (incBtn) incBtn.addEventListener("click", () => applyAttempt(attemptIncrement(sel.category, sel.idx)));
-  if (decBtn) decBtn.addEventListener("click", () => applyAttempt(attemptDecrement(sel.category, sel.idx)));
-  if (hideBtn) hideBtn.addEventListener("click", () => {
-    setHidden(sel.category, sel.idx, !hidden);
-    renderAll();
-  });
-}
-
-// attemptIncrement/attemptDecrement just report what happened; this decides what
-// the UI does about it (toast + re-render), keeping that decision out of logic.js.
-function applyAttempt(result) {
-  if (result.message) showToast(result.message);
-  if (result.changed) renderAll();
-}
-
-// Browse lists every class regardless of which 3 are currently selected, but
-// structuralLockReason only knows how to answer "is this prereq met" for a
-// category with a real catKey - a class only has one while it's actually in
-// one of the 3 slots. For any other class, catKey is null and the prereq
-// line falls back to plain-text rendering instead.
-function catKeyForBrowseLabel(catLabel) {
-  if (catLabel === "General") return "general";
-  if (catLabel === "Archetype") return "archetype";
-  if (catLabel === "Special") return "special";
-  const slot = state.selectedClasses.indexOf(catLabel);
-  return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
-}
-
-// Cost guesses don't have that same "only while it's in an active slot"
-// limitation - costDisplayScoped looks up by scope/className directly, so
-// every Browse card can show its estimates regardless of class selection.
-function scopeForBrowseLabel(catLabel) {
-  if (catLabel === "General") return { scope: "general", className: null };
-  if (catLabel === "Archetype") return { scope: "archetype", className: null };
-  if (catLabel === "Special") return { scope: "special", className: null };
-  return { scope: "class", className: catLabel };
-}
-
-function renderBrowse() {
-  const q = state.browseSearch.trim().toLowerCase();
-  const filter = state.browseFilter;
-  const items = [];
-
-  function pushList(catLabel, list) {
-    const catKey = catKeyForBrowseLabel(catLabel);
-    list.forEach((aa, idx) => items.push({ cat: catLabel, aa, catKey, idx }));
+  function applyAttempt(result) {
+    if (result.message) showToast(result.message);
+    if (result.changed) renderAll();
   }
-
-  if (filter === "all" || filter === "general") pushList("General", AA_DATA.general);
-  if (filter === "all" || filter === "archetype") pushList("Archetype", AA_DATA.archetype);
-  if (filter === "all" || filter === "special") pushList("Special", AA_DATA.special);
-  if (filter === "all") {
-    CLASS_LIST.forEach((c) => pushList(c, AA_DATA.classes[c] || []));
-  } else if (CLASS_LIST.includes(filter)) {
-    pushList(filter, AA_DATA.classes[filter] || []);
+  function catKeyForBrowseLabel(catLabel) {
+    if (catLabel === "General") return "general";
+    if (catLabel === "Archetype") return "archetype";
+    if (catLabel === "Special") return "special";
+    const slot = state.selectedClasses.indexOf(catLabel);
+    return slot >= 0 ? CLASS_SLOT_KEYS[slot] : null;
   }
-
-  const searched = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
-  // Scoped rather than catKey-gated, since an inactive class can still have
-  // a real nonzero rank here - see isSuppressedScoped (logic.js). owned is
-  // resolved here too, once per item, for both the unowned-only filter below
-  // and the owned/unowned styling every card gets regardless of that filter.
-  const filtered = searched
-    .map((item) => {
+  function scopeForBrowseLabel(catLabel) {
+    if (catLabel === "General") return { scope: "general", className: null };
+    if (catLabel === "Archetype") return { scope: "archetype", className: null };
+    if (catLabel === "Special") return { scope: "special", className: null };
+    return { scope: "class", className: catLabel };
+  }
+  function renderBrowse() {
+    const q = state.browseSearch.trim().toLowerCase();
+    const filter = state.browseFilter;
+    const items = [];
+    function pushList(catLabel, list) {
+      const catKey = catKeyForBrowseLabel(catLabel);
+      list.forEach((aa, idx) => items.push({ cat: catLabel, aa, catKey, idx }));
+    }
+    if (filter === "all" || filter === "general") pushList("General", AA_DATA.general);
+    if (filter === "all" || filter === "archetype") pushList("Archetype", AA_DATA.archetype);
+    if (filter === "all" || filter === "special") pushList("Special", AA_DATA.special);
+    if (filter === "all") {
+      CLASS_LIST.forEach((c) => pushList(c, AA_DATA.classes[c] || []));
+    } else if (CLASS_LIST.includes(filter)) {
+      pushList(filter, AA_DATA.classes[filter] || []);
+    }
+    const searched = q ? items.filter(({ aa }) => aaMatchesQuery(aa, q)) : items;
+    const filtered = searched.map((item) => {
       const { scope, className } = scopeForBrowseLabel(item.cat);
       return { ...item, scope, className, owned: ownedRank(scope, className, item.idx) };
-    })
-    .filter(({ scope, className, idx, owned, aa }) => {
+    }).filter(({ scope, className, idx, owned, aa }) => {
       if (isSuppressedScoped(scope, className, idx)) return false;
-      // Auto-granted AAs never go through owned-tracking at all (they're
-      // never a Progression step to mark owned in the first place), so
-      // ownedRank sits at 0 forever - excluded here too, or Unowned Only
-      // would permanently list every one as still needing action.
-      // autoRanksOffset(aa) rather than a plain 0: owned can legitimately
-      // sit at a partial AA's free-rank floor with nothing purchased.
       if (state.browseUnownedOnly && (owned > autoRanksOffset(aa) || aa.auto)) return false;
       return true;
     });
-
-  el.browseGrid.innerHTML = filtered.length
-    ? filtered.map(({ cat, aa, catKey, idx, scope, className, owned }) => {
-        const hidden = isHiddenScoped(scope, className, idx);
-        // Shared by both info lines below, computed once per card - null
-        // for a class not in one of the 3 active slots (catKeyForBrowseLabel
-        // returns null for those), same guard both checks already need.
-        const lockReason = catKey ? structuralLockReason(catKey, idx) : null;
-        let prereqInfo = "";
-        if (aa.prereq) {
-          // Only "requires an AA you haven't reached yet" should read as a
-          // warning here - a level gate isn't a prerequisite, so it's left
-          // out of this specific check (structuralLockReason still folds
-          // both together, but kind lets this call out the prereq case only).
-          const warn = !!(lockReason && lockReason.kind === "prereq");
-          prereqInfo = ` &middot; <span class="prereq-info${warn ? " warn" : ""}">Requires: ${escapeHtml(aa.prereq)}</span>`;
-        }
-        let eligibleInfo = "";
-        if (aa.eligibleClasses) {
-          // Unlike prereq (present on only a couple of archetype AAs, so
-          // it's fine that the line only appears when relevant), every
-          // archetype AA has eligibleClasses - so this is always-visible
-          // reference text (Browse is "a searchable reference independent
-          // of your current build"), warn-styled only when the current
-          // combo doesn't qualify.
-          const warn = !!(lockReason && lockReason.kind === "classEligibility");
-          eligibleInfo = ` &middot; <span class="eligible-info${warn ? " warn" : ""}">Classes: ${aa.eligibleClasses.map(escapeHtml).join(", ")}</span>`;
-        }
-        const ownedInfo = owned > 0 ? ` &middot; <span class="owned-info">Owned: ${owned}/${aa.ranks}</span>` : "";
-        const costList = aa.costs.map((c, i) => {
-          const disp = costDisplayScoped(scope, className, idx, i, c);
-          return disp.isGuess
-            ? `<span class="is-estimate tier-${disp.confidence}" title="${escapeHtml(disp.title)}">${disp.text}</span>`
-            : disp.text;
-        }).join(" / ");
-        return `
+    el.browseGrid.innerHTML = filtered.length ? filtered.map(({ cat, aa, catKey, idx, scope, className, owned }) => {
+      const hidden = isHiddenScoped(scope, className, idx);
+      const lockReason = catKey ? structuralLockReason(catKey, idx) : null;
+      let prereqInfo = "";
+      if (aa.prereq) {
+        const warn = !!(lockReason && lockReason.kind === "prereq");
+        prereqInfo = ` &middot; <span class="prereq-info${warn ? " warn" : ""}">Requires: ${escapeHtml(aa.prereq)}</span>`;
+      }
+      let eligibleInfo = "";
+      if (aa.eligibleClasses) {
+        const warn = !!(lockReason && lockReason.kind === "classEligibility");
+        eligibleInfo = ` &middot; <span class="eligible-info${warn ? " warn" : ""}">Classes: ${aa.eligibleClasses.map(escapeHtml).join(", ")}</span>`;
+      }
+      const ownedInfo = owned > 0 ? ` &middot; <span class="owned-info">Owned: ${owned}/${aa.ranks}</span>` : "";
+      const costList = aa.costs.map((c, i) => {
+        const disp = costDisplayScoped(scope, className, idx, i, c);
+        return disp.isGuess ? `<span class="is-estimate tier-${disp.confidence}" title="${escapeHtml(disp.title)}">${disp.text}</span>` : disp.text;
+      }).join(" / ");
+      return `
       <div class="browse-card${hidden ? " hidden-aa" : ""}${owned > 0 ? " owned" : ""}">
         <div class="top">
           <span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}${eraBadgeHtml(aa)}</span>
@@ -4130,540 +2719,320 @@ function renderBrowse() {
         <div class="desc">${highlightRankValue(aa.description, null, effectLookupScoped(scope, className, idx))}</div>
         <div class="info">Ranks: ${aa.ranks} &middot; Cost/rank: ${costList} &middot; Level ${escapeHtml(aa.levelReq)}+${prereqInfo}${eligibleInfo}${ownedInfo}</div>
       </div>`;
-      }).join("")
-    : '<div class="empty">No AAs match your search.</div>';
-}
-
-// One-time wiring (called from wireEvents), matching wireProgressionRowEvents'
-// reasoning - renderBrowse tears down and rebuilds every card on every
-// render (a search keystroke, a filter change), so binding here once on
-// the never-recreated grid avoids attaching (and discarding) a fresh
-// listener per card per render.
-function wireBrowseClickDelegation() {
-  el.browseGrid.addEventListener("click", (e) => {
-    const btn = e.target.closest(".hide-toggle-btn");
-    if (!btn) return;
-    const scope = btn.getAttribute("data-scope");
-    const className = btn.getAttribute("data-classname") || null;
-    const idx = parseInt(btn.getAttribute("data-idx"), 10);
-    setHiddenScoped(scope, className, idx, !isHiddenScoped(scope, className, idx));
-    updateShowHiddenToggle();
-    // The tab bar sits outside the view panels, so it stays visible here -
-    // and countMatches excludes hidden AAs, so a search badge goes stale
-    // without this.
-    renderTabs();
-    renderBrowse();
-  });
-}
-
-function renderSummary(totals) {
-  const { spent } = totals || computePointTotals();
-  el.summaryHeader.innerHTML = `<div class="summary-meta">Classes: <b>${state.selectedClasses.map(escapeHtml).join(" / ")}</b> &middot; Character Level <b>${state.charLevel}</b> &middot; Points Planned: <b>${spent}</b></div>`;
-
-  const sections = AA_CATEGORY_KEYS.map((key) => ({ key, label: shortCategoryLabel(key) }));
-
-  let html = "";
-  let anyPicked = false;
-  sections.forEach(({ key, label }) => {
-    const list = getList(key);
-    const picked = list.map((aa, idx) => ({ aa, idx, rank: effectiveRank(key, idx) })).filter((x) => x.rank > 0);
-    if (!picked.length) return;
-    anyPicked = true;
-    html += `<h3 class="summary-section-title">${escapeHtml(label)}</h3>`;
-    html += `<div class="browse-grid">` + picked.map(({ aa, idx, rank }) => {
-      // Same check the tree/side panel already use (a stale prerequisite,
-      // or a held rank beyond a class-rank-cap after a class swap) - Summary
-      // shows the CURRENT overall picture rather than a click-ordered
-      // sequence, so heldRankInvalidReason's semantics (not Progression's
-      // sequence-aware prereqWarn) are the right fit here.
-      const invalidReason = heldRankInvalidReason(key, idx);
-      // Displayed rank counter stays the real held rank (8/8 - that's what
-      // was actually trained); only which slot gets highlighted as the
-      // description's "current" effect drops to the capped one.
-      const displayRank = effectiveDisplayRank(aa, rank);
-      return `
+    }).join("") : '<div class="empty">No AAs match your search.</div>';
+  }
+  function wireBrowseClickDelegation() {
+    el.browseGrid.addEventListener("click", (e) => {
+      const btn = e.target.closest(".hide-toggle-btn");
+      if (!btn) return;
+      const scope = btn.getAttribute("data-scope");
+      const className = btn.getAttribute("data-classname") || null;
+      const idx = parseInt(btn.getAttribute("data-idx"), 10);
+      setHiddenScoped(scope, className, idx, !isHiddenScoped(scope, className, idx));
+      updateShowHiddenToggle();
+      renderTabs();
+      renderBrowse();
+    });
+  }
+  function renderSummary(totals) {
+    const { spent } = totals || computePointTotals();
+    el.summaryHeader.innerHTML = `<div class="summary-meta">Classes: <b>${state.selectedClasses.map(escapeHtml).join(" / ")}</b> &middot; Character Level <b>${state.charLevel}</b> &middot; Points Planned: <b>${spent}</b></div>`;
+    const sections = AA_CATEGORY_KEYS.map((key) => ({ key, label: shortCategoryLabel(key) }));
+    let html = "";
+    let anyPicked = false;
+    sections.forEach(({ key, label }) => {
+      const list = getList(key);
+      const picked = list.map((aa, idx) => ({ aa, idx, rank: effectiveRank(key, idx) })).filter((x) => x.rank > 0);
+      if (!picked.length) return;
+      anyPicked = true;
+      html += `<h3 class="summary-section-title">${escapeHtml(label)}</h3>`;
+      html += `<div class="browse-grid">` + picked.map(({ aa, idx, rank }) => {
+        const invalidReason = heldRankInvalidReason(key, idx);
+        const displayRank = effectiveDisplayRank(aa, rank);
+        return `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}${eraBadgeHtml(aa)}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, displayRank), displayRank, effectLookup(key, idx))}</div>
         ${invalidReason ? `<div class="req-line warn">&#9888; No longer valid: ${escapeHtml(invalidReason)}</div>` : ""}
       </div>`;
-    }).join("") + `</div>`;
-  });
-
-  const otherClassNames = otherClassesWithPicks();
-  if (otherClassNames.length) {
-    anyPicked = true;
-    // A lighter-weight divider than a section-title h3, since what follows
-    // is itself a group of per-class sections, not a single section.
-    html += `<div class="summary-other-classes-divider">Also includes picks for classes you're not currently using (see the Other Classes tab too):</div>`;
-    html += otherClassesSectionsHtml(otherClassNames);
+      }).join("") + `</div>`;
+    });
+    const otherClassNames = otherClassesWithPicks();
+    if (otherClassNames.length) {
+      anyPicked = true;
+      html += `<div class="summary-other-classes-divider">Also includes picks for classes you're not currently using (see the Other Classes tab too):</div>`;
+      html += otherClassesSectionsHtml(otherClassNames);
+    }
+    el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
   }
-
-  el.summaryContent.innerHTML = anyPicked ? html : '<div class="empty">No AAs selected yet &mdash; spend some points in the calculator, then check back here.</div>';
-}
-
-// Shared by renderSummary above (folded into the main page) and
-// renderOtherClasses below (its own dedicated tab) - one heading + spent
-// subtotal + card grid per inactive class. Uses the *Scoped lookups since
-// an inactive class has no catKey at all, and skips the invalidReason line
-// renderSummary's own sections have - that machinery is about an AA the
-// tree can currently show, which an inactive-class pick isn't.
-function otherClassesSectionsHtml(classNames) {
-  return classNames.map((className) => {
-    const list = AA_DATA.classes[className] || [];
-    const picked = list
-      .map((aa, idx) => ({ aa, idx, rank: effectiveRankScoped("class", className, idx) }))
-      .filter((x) => x.rank > 0);
-    const subtotal = spentForClass(className);
-    const cards = picked.map(({ aa, idx, rank }) => {
-      const displayRank = effectiveDisplayRank(aa, rank);
-      return `
+  function otherClassesSectionsHtml(classNames) {
+    return classNames.map((className) => {
+      const list = AA_DATA.classes[className] || [];
+      const picked = list.map((aa, idx) => ({ aa, idx, rank: effectiveRankScoped("class", className, idx) })).filter((x) => x.rank > 0);
+      const subtotal = spentForClass(className);
+      const cards = picked.map(({ aa, idx, rank }) => {
+        const displayRank = effectiveDisplayRank(aa, rank);
+        return `
       <div class="browse-card">
         <div class="top"><span class="name">${escapeHtml(aa.name)}${aa.auto ? ' <span class="auto-badge">(AUTO)</span>' : ""}${eraBadgeHtml(aa)}</span><span class="cat">Rank ${rank}/${aa.ranks}</span></div>
         <div class="desc">${highlightRankValue(applyPerRankTotal(aa.description, displayRank), displayRank, effectLookupScoped("class", className, idx))}</div>
       </div>`;
-    }).join("");
-    return `
+      }).join("");
+      return `
       <h3 class="summary-section-title">${escapeHtml(className)}</h3>
       <div class="other-classes-subtotal">Not one of your current 3 classes &mdash; ${subtotal} point${subtotal === 1 ? "" : "s"} spent here still count${subtotal === 1 ? "s" : ""} toward Points Planned above.</div>
       <div class="browse-grid">${cards}</div>`;
-  }).join("");
-}
-
-// Picks for a class that isn't currently one of your 3 selected slots -
-// left intact by a class swap (see events.js) rather than wiped, so this
-// is where they live instead of the tree/Progression. Also folded into
-// renderSummary above so they're visible without switching tabs; this is
-// still the dedicated place for them, with its own empty state.
-function renderOtherClasses() {
-  const classNames = otherClassesWithPicks();
-
-  if (!classNames.length) {
-    el.otherClassesContent.innerHTML = '<div class="empty">Nothing here yet &mdash; swap a class out after spending points on it, and its picks show up here instead of disappearing.</div>';
-    return;
+    }).join("");
   }
-
-  el.otherClassesContent.innerHTML = otherClassesSectionsHtml(classNames);
-}
-
-// Which progression rows have their next-rank preview open, keyed by AA
-// identity + the rank being previewed so it survives reorders sanely. Purely
-// transient UI state — not persisted, and reset takes care of itself since a
-// removed/changed step just stops matching any key.
-const expandedSteps = new Set();
-function expandKey(s) { return `${s.scope}:${s.className || ""}:${s.idx}:${s.stepRank}`; }
-
-// Which row's Move To popover is open (expandKey-identified, same as
-// expandedSteps above) - a single nullable value, not a Set, since only
-// one row's menu makes sense open at a time. Purely transient UI state.
-let openMoveMenuKey = null;
-
-// Waypoint add/edit modal state - which waypoint (by pts, unique per
-// sanitizeWaypoints' dedup) is being edited, or null when the modal is
-// adding a new one. modalSelectedColor tracks the in-progress swatch pick
-// while the modal is open, applied on Save. Both purely transient UI state,
-// same spirit as expandedSteps - never touches lastMutation, since editing
-// a waypoint is plan annotation, not a plan mutation.
-let editingWaypointPts = null;
-let modalSelectedColor = null;
-
-// Index (into state.purchaseOrder) of the row currently being dragged, or null
-// when no drag is in progress. Module-level since dragstart/dragover/drop fire
-// on different row elements that get torn down and rebuilt on every render.
-//
-// dragSrcIndex alone isn't a safe gate for "is a drag actually in flight": if
-// dragend never fires (detaching the source node mid-drag makes some browsers
-// skip it), it stays non-null after the drag has already ended, so a later,
-// unrelated drag over the list would read as a stale reorder. PROGRESSION_DRAG_TYPE
-// is a custom dataTransfer MIME type set only in this module's dragstart, so
-// dragover/drop gate on e.dataTransfer.types instead of trusting dragSrcIndex.
-const PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
-let dragSrcIndex = null;
-// Native HTML5 drag doesn't auto-scroll an inner scrollable container, so
-// dragging near #progressionWrap's top/bottom edge scrolls it manually,
-// faster the closer to the edge (see updateAutoScroll/autoScrollStep). Must
-// be stopped from every drop handler, not just dragend - dragend can miss a
-// source node already detached by a re-render, and the loop is
-// self-sustaining, so a missed stop would keep scrolling forever.
-const AUTOSCROLL_EDGE_PX = 70;
-const AUTOSCROLL_MAX_SPEED = 18; // px/frame at the very edge
-let autoScrollDir = 0; // -1 up, 0 idle, 1 down
-let autoScrollSpeed = 0;
-let autoScrollRAF = null;
-// Total prereqWarn count in the real, un-dragged order, snapshotted at
-// dragstart - the baseline dragWouldIntroduceWarn diffs hypothetical
-// arrangements against. See that function for why a baseline is needed at all.
-let dragBaselineWarnCount = 0;
-// dragover fires continuously while the cursor sits over the same insertion
-// point, and dragWouldIntroduceWarn's answer only depends on that insertion
-// point (toIndex) for a given drag - cached here so holding still, or
-// moving within the same row-half, doesn't re-run computeProgressionSteps
-// on every event. Reset at dragstart, since a new drag can revisit a
-// toIndex a previous one already cached an answer for.
-let dragWarnCacheToIndex = null;
-let dragWarnCacheResult = false;
-
-// Tracks the one row/box currently showing a drag-over/drag-warn mark, so
-// clearDragOverMarks doesn't need to query every row in the list to find
-// it - every dragover handler below clears before marking at most one
-// element, and dragover fires continuously (many times a second) while
-// the pointer moves, on a list that can run to hundreds of rows.
-let markedDragRow = null;
-
-function markDragOver(rowEl, cls) {
-  rowEl.classList.add(cls);
-  markedDragRow = rowEl;
-}
-
-function clearDragOverMarks() {
-  if (!markedDragRow) return;
-  markedDragRow.classList.remove("drag-over-top", "drag-over-bottom", "drag-warn");
-  markedDragRow = null;
-}
-
-function autoScrollStep() {
-  if (autoScrollDir === 0) { autoScrollRAF = null; return; }
-  const before = el.progressionWrap.scrollTop;
-  el.progressionWrap.scrollTop = before + autoScrollDir * autoScrollSpeed;
-  // Already at the scroll limit in this direction - the write above was a
-  // no-op (the browser clamps it). Idle out instead of burning a 60fps loop
-  // for as long as the cursor sits at an already-maxed edge; the next
-  // dragover that reports edge proximity restarts it.
-  if (el.progressionWrap.scrollTop === before) { autoScrollRAF = null; return; }
-  autoScrollRAF = requestAnimationFrame(autoScrollStep);
-}
-
-// Recomputes scroll direction/speed from the cursor's current position on
-// every dragover (not just once on entering the edge zone), so speed keeps
-// ramping up the closer the cursor gets rather than snapping to one value.
-function updateAutoScroll(e) {
-  const rect = el.progressionWrap.getBoundingClientRect();
-  const distTop = e.clientY - rect.top;
-  const distBottom = rect.bottom - e.clientY;
-  let dir = 0;
-  let speed = 0;
-  if (distTop < AUTOSCROLL_EDGE_PX) {
-    dir = -1;
-    speed = AUTOSCROLL_MAX_SPEED * (1 - Math.max(distTop, 0) / AUTOSCROLL_EDGE_PX);
-  } else if (distBottom < AUTOSCROLL_EDGE_PX) {
-    dir = 1;
-    speed = AUTOSCROLL_MAX_SPEED * (1 - Math.max(distBottom, 0) / AUTOSCROLL_EDGE_PX);
+  function renderOtherClasses() {
+    const classNames = otherClassesWithPicks();
+    if (!classNames.length) {
+      el.otherClassesContent.innerHTML = '<div class="empty">Nothing here yet &mdash; swap a class out after spending points on it, and its picks show up here instead of disappearing.</div>';
+      return;
+    }
+    el.otherClassesContent.innerHTML = otherClassesSectionsHtml(classNames);
   }
-  autoScrollDir = dir;
-  autoScrollSpeed = speed;
-  if (dir !== 0 && autoScrollRAF === null) autoScrollRAF = requestAnimationFrame(autoScrollStep);
-}
-
-function stopAutoScroll() {
-  autoScrollDir = 0;
-  autoScrollSpeed = 0;
-  if (autoScrollRAF !== null) {
-    cancelAnimationFrame(autoScrollRAF);
-    autoScrollRAF = null;
+  var expandedSteps = /* @__PURE__ */ new Set();
+  function expandKey(s) {
+    return `${s.scope}:${s.className || ""}:${s.idx}:${s.stepRank}`;
   }
-}
-
-// Walks back through preceding siblings to the nearest actual
-// .progression-row, skipping over any run of divider rows and/or a
-// next-rank preview box in between - a divider can end up directly after
-// another divider (two waypoints falling in the same gap) or after an
-// expanded preview box (the step right before a waypoint boundary has its
-// preview open), neither of which is itself a valid "owner row". Returns
-// null if there's no row above at all (a divider whose threshold is below
-// the very first step's cumulative).
-function findPrecedingRow(fromEl) {
-  let sib = fromEl.previousElementSibling;
-  while (sib && !sib.classList.contains("progression-row")) sib = sib.previousElementSibling;
-  return sib;
-}
-
-function countPrereqWarns(steps) {
-  return steps.reduce((n, s) => n + (s.prereqWarn ? 1 : 0), 0);
-}
-
-// Whether dropping the dragged step at `toIndex` (an insertion point, same
-// convention as moveProgressionEntryTo) would introduce a prereq warning
-// that doesn't already exist - a look-ahead for the drag indicator,
-// computed against a throwaway copy so it never touches real state.
-//
-// Checks two things: the dragged step's own slot, and whether the
-// hypothetical arrangement's total warn count exceeds the real order's
-// (dragBaselineWarnCount). The count check catches a case the direct check
-// alone would miss - dragging X out from above its dependent Y leaves X's
-// own prereq satisfied wherever it lands, but Y now warns instead. A rare
-// edge case (a same-count swap of *which other* step warns, not involving
-// the dragged step at all) can still slip through both checks; not worth a
-// full diff pass for that.
-function dragWouldIntroduceWarn(toIndex) {
-  if (dragSrcIndex === null) return false;
-  let insertAt = toIndex > dragSrcIndex ? toIndex - 1 : toIndex;
-  if (insertAt === dragSrcIndex) return false; // no-op move, nothing changes
-  if (dragWarnCacheToIndex === toIndex) return dragWarnCacheResult;
-  const hypothetical = state.purchaseOrder.slice();
-  const [entry] = hypothetical.splice(dragSrcIndex, 1);
-  hypothetical.splice(insertAt, 0, entry);
-  const hypoSteps = computeProgressionSteps(hypothetical);
-  const result = hypoSteps[insertAt].prereqWarn || countPrereqWarns(hypoSteps) > dragBaselineWarnCount;
-  dragWarnCacheToIndex = toIndex;
-  dragWarnCacheResult = result;
-  return result;
-}
-
-// Renders the waypoint chip row - one pill per state.waypoints entry
-// (already sorted ascending by pts), with a color dot if one's assigned.
-// Clicking the label opens the edit modal for that waypoint; the &times;
-// removes it directly, without opening anything, for a fast delete. Called
-// from renderProgression, but unconditionally - see its own comment for why
-// this can't wait behind the empty-progression check.
-function renderWaypointChips() {
-  if (!state.waypoints.length) {
-    el.waypointChips.innerHTML = "";
-    return;
+  var openMoveMenuKey = null;
+  var editingWaypointPts = null;
+  var modalSelectedColor = null;
+  var PROGRESSION_DRAG_TYPE = "application/x-aacalc-progression-step";
+  var dragSrcIndex = null;
+  var AUTOSCROLL_EDGE_PX = 70;
+  var AUTOSCROLL_MAX_SPEED = 18;
+  var autoScrollDir = 0;
+  var autoScrollSpeed = 0;
+  var autoScrollRAF = null;
+  var dragBaselineWarnCount = 0;
+  var dragWarnCacheToIndex = null;
+  var dragWarnCacheResult = false;
+  var markedDragRow = null;
+  function markDragOver(rowEl, cls) {
+    rowEl.classList.add(cls);
+    markedDragRow = rowEl;
   }
-  el.waypointChips.innerHTML = state.waypoints.map((w) => {
-    const dot = w.color ? `<span class="color-dot color-${w.color}"></span>` : "";
-    const labelText = w.label ? `${w.pts} pts &middot; ${escapeHtml(w.label)}` : `${w.pts} pts`;
-    return `<span class="waypoint-chip" data-pts="${w.pts}">
+  function clearDragOverMarks() {
+    if (!markedDragRow) return;
+    markedDragRow.classList.remove("drag-over-top", "drag-over-bottom", "drag-warn");
+    markedDragRow = null;
+  }
+  function autoScrollStep() {
+    if (autoScrollDir === 0) {
+      autoScrollRAF = null;
+      return;
+    }
+    const before = el.progressionWrap.scrollTop;
+    el.progressionWrap.scrollTop = before + autoScrollDir * autoScrollSpeed;
+    if (el.progressionWrap.scrollTop === before) {
+      autoScrollRAF = null;
+      return;
+    }
+    autoScrollRAF = requestAnimationFrame(autoScrollStep);
+  }
+  function updateAutoScroll(e) {
+    const rect = el.progressionWrap.getBoundingClientRect();
+    const distTop = e.clientY - rect.top;
+    const distBottom = rect.bottom - e.clientY;
+    let dir = 0;
+    let speed = 0;
+    if (distTop < AUTOSCROLL_EDGE_PX) {
+      dir = -1;
+      speed = AUTOSCROLL_MAX_SPEED * (1 - Math.max(distTop, 0) / AUTOSCROLL_EDGE_PX);
+    } else if (distBottom < AUTOSCROLL_EDGE_PX) {
+      dir = 1;
+      speed = AUTOSCROLL_MAX_SPEED * (1 - Math.max(distBottom, 0) / AUTOSCROLL_EDGE_PX);
+    }
+    autoScrollDir = dir;
+    autoScrollSpeed = speed;
+    if (dir !== 0 && autoScrollRAF === null) autoScrollRAF = requestAnimationFrame(autoScrollStep);
+  }
+  function stopAutoScroll() {
+    autoScrollDir = 0;
+    autoScrollSpeed = 0;
+    if (autoScrollRAF !== null) {
+      cancelAnimationFrame(autoScrollRAF);
+      autoScrollRAF = null;
+    }
+  }
+  function findPrecedingRow(fromEl) {
+    let sib = fromEl.previousElementSibling;
+    while (sib && !sib.classList.contains("progression-row")) sib = sib.previousElementSibling;
+    return sib;
+  }
+  function countPrereqWarns(steps) {
+    return steps.reduce((n, s) => n + (s.prereqWarn ? 1 : 0), 0);
+  }
+  function dragWouldIntroduceWarn(toIndex) {
+    if (dragSrcIndex === null) return false;
+    let insertAt = toIndex > dragSrcIndex ? toIndex - 1 : toIndex;
+    if (insertAt === dragSrcIndex) return false;
+    if (dragWarnCacheToIndex === toIndex) return dragWarnCacheResult;
+    const hypothetical = state.purchaseOrder.slice();
+    const [entry] = hypothetical.splice(dragSrcIndex, 1);
+    hypothetical.splice(insertAt, 0, entry);
+    const hypoSteps = computeProgressionSteps(hypothetical);
+    const result = hypoSteps[insertAt].prereqWarn || countPrereqWarns(hypoSteps) > dragBaselineWarnCount;
+    dragWarnCacheToIndex = toIndex;
+    dragWarnCacheResult = result;
+    return result;
+  }
+  function renderWaypointChips() {
+    if (!state.waypoints.length) {
+      el.waypointChips.innerHTML = "";
+      return;
+    }
+    el.waypointChips.innerHTML = state.waypoints.map((w) => {
+      const dot = w.color ? `<span class="color-dot color-${w.color}"></span>` : "";
+      const labelText = w.label ? `${w.pts} pts &middot; ${escapeHtml(w.label)}` : `${w.pts} pts`;
+      return `<span class="waypoint-chip" data-pts="${w.pts}">
       <span class="chip-label" data-pts="${w.pts}">${dot}${labelText}</span>
       <button class="chip-remove" data-pts="${w.pts}" title="Remove this waypoint" aria-label="Remove waypoint">&times;</button>
     </span>`;
-  }).join("");
-  Array.from(el.waypointChips.querySelectorAll(".chip-label")).forEach((labelEl) => {
-    labelEl.addEventListener("click", () => {
-      openWaypointModal(parseInt(labelEl.getAttribute("data-pts"), 10));
+    }).join("");
+    Array.from(el.waypointChips.querySelectorAll(".chip-label")).forEach((labelEl) => {
+      labelEl.addEventListener("click", () => {
+        openWaypointModal(parseInt(labelEl.getAttribute("data-pts"), 10));
+      });
     });
-  });
-  Array.from(el.waypointChips.querySelectorAll(".chip-remove")).forEach((btn) => {
-    btn.addEventListener("click", () => {
-      removeWaypoint(parseInt(btn.getAttribute("data-pts"), 10));
-      renderProgression();
+    Array.from(el.waypointChips.querySelectorAll(".chip-remove")).forEach((btn) => {
+      btn.addEventListener("click", () => {
+        removeWaypoint(parseInt(btn.getAttribute("data-pts"), 10));
+        renderProgression();
+      });
     });
-  });
-}
-
-// Populates the color swatch picker inside the waypoint modal - a "none"
-// swatch plus one per WAYPOINT_COLORS entry, with modalSelectedColor's match
-// shown active. Re-rendered on every pick so the active state updates
-// without needing to touch the rest of the modal.
-function renderColorSwatches() {
-  const noneSwatch = `<button type="button" class="color-swatch none${modalSelectedColor === null ? " active" : ""}" data-color="" title="No color" aria-label="No color"></button>`;
-  const colorSwatches = WAYPOINT_COLORS.map((c) =>
-    `<button type="button" class="color-swatch color-${c.key}${modalSelectedColor === c.key ? " active" : ""}" data-color="${c.key}" title="${c.key}" aria-label="${c.key}"></button>`
-  ).join("");
-  el.waypointColorSwatches.innerHTML = noneSwatch + colorSwatches;
-  Array.from(el.waypointColorSwatches.querySelectorAll(".color-swatch")).forEach((btn) => {
-    btn.addEventListener("click", () => {
-      modalSelectedColor = btn.getAttribute("data-color") || null;
-      renderColorSwatches();
+  }
+  function renderColorSwatches() {
+    const noneSwatch = `<button type="button" class="color-swatch none${modalSelectedColor === null ? " active" : ""}" data-color="" title="No color" aria-label="No color"></button>`;
+    const colorSwatches = WAYPOINT_COLORS.map(
+      (c) => `<button type="button" class="color-swatch color-${c.key}${modalSelectedColor === c.key ? " active" : ""}" data-color="${c.key}" title="${c.key}" aria-label="${c.key}"></button>`
+    ).join("");
+    el.waypointColorSwatches.innerHTML = noneSwatch + colorSwatches;
+    Array.from(el.waypointColorSwatches.querySelectorAll(".color-swatch")).forEach((btn) => {
+      btn.addEventListener("click", () => {
+        modalSelectedColor = btn.getAttribute("data-color") || null;
+        renderColorSwatches();
+      });
     });
-  });
-}
-
-// Opens the add/edit modal. existingPts identifies which waypoint to edit
-// (by pts, its stable identity), or null to add a new one prefilled with
-// the current spent total.
-function openWaypointModal(existingPts = null) {
-  const existing = existingPts !== null ? state.waypoints.find((w) => w.pts === existingPts) : null;
-  editingWaypointPts = existingPts;
-  modalSelectedColor = existing ? existing.color : null;
-  el.waypointModalTitle.textContent = existing ? "Edit Waypoint" : "Add Waypoint";
-  el.waypointPtsInput.value = String(existing ? existing.pts : spentPoints());
-  el.waypointLabelInput.value = existing && existing.label ? existing.label : "";
-  el.deleteWaypointBtn.classList.toggle("hidden", !existing);
-  renderColorSwatches();
-  el.waypointModal.classList.remove("hidden");
-  el.waypointPtsInput.focus();
-  el.waypointPtsInput.select();
-}
-
-function closeWaypointModal() {
-  el.waypointModal.classList.add("hidden");
-}
-
-function handleSaveWaypoint() {
-  const rawPts = parseInt(el.waypointPtsInput.value.trim(), 10);
-  if (!Number.isFinite(rawPts) || rawPts < 0) {
-    showToast("Enter a point total of 0 or more.");
-    return;
   }
-  // Clamped the same way sanitizeWaypoints itself will - checking the
-  // collision below against the pre-clamp value would miss the case where
-  // an enormous typed total lands on an existing waypoint only *after*
-  // being clamped to MAX_WAYPOINT_PTS.
-  const pts = Math.min(rawPts, MAX_WAYPOINT_PTS);
-  // A different waypoint already sitting at this exact total would
-  // otherwise be silently overwritten - its label and color just vanish
-  // with no trace, the moment this save goes through. Same "ask before
-  // clobbering something that already exists" instinct saveWithNameCheck
-  // applies to a named Build slot collision.
-  const colliding = state.waypoints.find((w) => w.pts === pts && w.pts !== editingWaypointPts);
-  if (colliding) {
-    const desc = colliding.label ? `"${colliding.label}"` : "the unnamed waypoint";
-    if (!confirm(`${desc} is already set at ${pts} pts. Replace it?`)) return;
+  function openWaypointModal(existingPts = null) {
+    const existing = existingPts !== null ? state.waypoints.find((w) => w.pts === existingPts) : null;
+    editingWaypointPts = existingPts;
+    modalSelectedColor = existing ? existing.color : null;
+    el.waypointModalTitle.textContent = existing ? "Edit Waypoint" : "Add Waypoint";
+    el.waypointPtsInput.value = String(existing ? existing.pts : spentPoints());
+    el.waypointLabelInput.value = existing && existing.label ? existing.label : "";
+    el.deleteWaypointBtn.classList.toggle("hidden", !existing);
+    renderColorSwatches();
+    el.waypointModal.classList.remove("hidden");
+    el.waypointPtsInput.focus();
+    el.waypointPtsInput.select();
   }
-  // Editing can change the point total itself - that's a different identity
-  // (waypoints are keyed by pts), so the old entry has to be explicitly
-  // dropped first or both would coexist instead of one replacing the other.
-  if (editingWaypointPts !== null && editingWaypointPts !== pts) {
-    removeWaypoint(editingWaypointPts);
+  function closeWaypointModal() {
+    el.waypointModal.classList.add("hidden");
   }
-  addOrUpdateWaypoint(pts, el.waypointLabelInput.value, modalSelectedColor);
-  closeWaypointModal();
-  renderProgression();
-}
-
-function handleDeleteWaypoint() {
-  if (editingWaypointPts !== null) removeWaypoint(editingWaypointPts);
-  closeWaypointModal();
-  renderProgression();
-}
-
-// Which of the 3 active class slots a step's AA belongs to, as a CSS
-// modifier class for .step-cat - "" (no modifier, plain text) for
-// general/archetype/special, one of 3 fixed slot colors for a class AA
-// that's currently active, or a single neutral pill for a class that isn't
-// (still worth badging - see the .inactive row it sits on - just not worth
-// a 4th+ unique hue for every one of the ~16 possible classes). See the
-// .step-cat-slot*/.step-cat-inactive rules in styles.src.css.
-function classBadgeClass(s) {
-  if (s.scope !== "class") return "";
-  if (!s.active) return " step-cat-inactive";
-  // By s.category (the class actually active right now), not s.className
-  // (the canonical identity, which can be a different, currently-inactive
-  // class for a sharedWithClass AA bought from the other one's tab).
-  return ` step-cat-slot${CLASS_SLOT_KEYS.indexOf(s.category)}`;
-}
-
-// One entry per waypoint (not just the row's current section - moving
-// something INTO a different phase of the plan is the point), for the Move
-// To popover's "[Section] - top/bottom" options. Derived from
-// computeProgressionTimeline's divider/step interleaving rather than
-// re-deriving section boundaries from state.waypoints directly.
-//
-// Waypoints are anchored to cumulative points, not list position, so a
-// step's own cost can push it past the section boundary it's being placed
-// into depending on where it lands. movingStepCost (s.stepCost) accounts
-// for that: for each section, every insertion slot's baseline cumulative
-// is checked against the section's pts range, and "top"/"bottom" resolve
-// to the best-fitting slot rather than the literal boundary - "bottom"
-// degrades to "as late as possible while still fitting" if the section's
-// last slot would overflow into the next one. Slot baselines are
-// monotonically non-decreasing deeper into a section (costs are never
-// negative), so if the top slot doesn't fit, none do - topFits and
-// bottomFits are therefore always equal, doubling as "does this step fit
-// in this section at all".
-function waypointSections(timeline, totalVisible, movingStepCost, movingIndex) {
-  // A step at or after the dragged row's own current position had its
-  // cumulative computed WITH the dragged row's cost already folded in -
-  // removing the row from there (to reinsert it elsewhere) drops every
-  // one of those cumulatives by movingStepCost. A step before the dragged
-  // row's position is untouched by its removal. Without this, "top of
-  // section" for a row dragged from above a section can compute a baseline
-  // that still (wrongly) counts the row's own cost against itself, landing
-  // it exactly on the section's own threshold instead of past it -
-  // computeProgressionTimeline's divider placement is pts < cumulative
-  // (strict), so landing exactly on the threshold renders BEFORE the
-  // divider, not inside the section "top" was supposed to mean.
-  const adjustedCumulative = (step) => step.index >= movingIndex ? step.cumulative - movingStepCost : step.cumulative;
-  const sections = [];
-  for (let i = 0; i < timeline.length; i++) {
-    const entry = timeline[i];
-    if (entry.type !== "divider") continue;
-    const sectionSteps = [];
-    for (let j = i + 1; j < timeline.length && timeline[j].type !== "divider"; j++) {
-      sectionSteps.push(timeline[j]);
+  function handleSaveWaypoint() {
+    const rawPts = parseInt(el.waypointPtsInput.value.trim(), 10);
+    if (!Number.isFinite(rawPts) || rawPts < 0) {
+      showToast("Enter a point total of 0 or more.");
+      return;
     }
-    let baselineBeforeSection = 0;
-    for (let j = i - 1; j >= 0; j--) {
-      if (timeline[j].type === "step") { baselineBeforeSection = adjustedCumulative(timeline[j]); break; }
+    const pts = Math.min(rawPts, MAX_WAYPOINT_PTS);
+    const colliding = state.waypoints.find((w) => w.pts === pts && w.pts !== editingWaypointPts);
+    if (colliding) {
+      const desc = colliding.label ? `"${colliding.label}"` : "the unnamed waypoint";
+      if (!confirm(`${desc} is already set at ${pts} pts. Replace it?`)) return;
     }
-    let highPts = Infinity;
-    for (let j = i + 1; j < timeline.length; j++) {
-      if (timeline[j].type === "divider") { highPts = timeline[j].pts; break; }
+    if (editingWaypointPts !== null && editingWaypointPts !== pts) {
+      removeWaypoint(editingWaypointPts);
     }
-    // slotBaselines[k] = cumulative baseline for inserting at slot k
-    // (before sectionSteps[k]); the last entry is "after the section's
-    // last step" - one baseline per possible insertion point, top to
-    // bottom, monotonically non-decreasing.
-    const slotBaselines = [baselineBeforeSection, ...sectionSteps.map((st) => adjustedCumulative(st))];
-    const upperFits = slotBaselines.map((b) => b + movingStepCost <= highPts);
-    // The earliest slot whose resulting cumulative actually clears THIS
-    // section's own starting threshold - landing exactly on entry.pts still
-    // renders before the divider (computeProgressionTimeline's divider
-    // placement is pts < cumulative, strict), so "top" needs the first slot
-    // that lands past it, not simply the shallowest slot in the section.
-    // Slot baselines only grow deeper into the section, so once one clears
-    // it every later one does too - topSlot is never slotBaselines.length
-    // unless nothing in the section does.
-    let topSlot = slotBaselines.findIndex((b) => b + movingStepCost > entry.pts);
-    if (topSlot < 0) topSlot = slotBaselines.length;
-    const topFits = topSlot < slotBaselines.length && upperFits[topSlot];
-    let bottomSlot = topSlot;
-    for (let k = topSlot; k < upperFits.length; k++) { if (upperFits[k]) bottomSlot = k; else break; }
-
-    // anchored: whether pos is another existing row's current visible
-    // position (insert relative to it - needs the same post-removal shift
-    // moveProgressionEntryTo applies for a drag target) versus a boundary
-    // past every real step, which is already an absolute final position.
-    function slotToVisiblePos(slot) {
-      if (slot < sectionSteps.length) return { pos: sectionSteps[slot].visiblePos, anchored: true };
-      // Past this section's last step - land wherever the next real step
-      // (anywhere later in the timeline) sits, or past the end of the
-      // whole list if nothing follows at all. Starts searching right after
-      // this section's own last member (i + 1 + sectionSteps.length), not
-      // i + 1 - starting at i + 1 lands on sectionSteps[0] itself (the
-      // section's FIRST member, immediately after the divider at i),
-      // putting the result back at the top of this same section instead of
-      // past it.
-      for (let j = i + 1 + sectionSteps.length; j < timeline.length; j++) {
-        if (timeline[j].type === "step") return { pos: timeline[j].visiblePos, anchored: true };
+    addOrUpdateWaypoint(pts, el.waypointLabelInput.value, modalSelectedColor);
+    closeWaypointModal();
+    renderProgression();
+  }
+  function handleDeleteWaypoint() {
+    if (editingWaypointPts !== null) removeWaypoint(editingWaypointPts);
+    closeWaypointModal();
+    renderProgression();
+  }
+  function classBadgeClass(s) {
+    if (s.scope !== "class") return "";
+    if (!s.active) return " step-cat-inactive";
+    return ` step-cat-slot${CLASS_SLOT_KEYS.indexOf(s.category)}`;
+  }
+  function waypointSections(timeline, totalVisible, movingStepCost, movingIndex) {
+    const adjustedCumulative = (step) => step.index >= movingIndex ? step.cumulative - movingStepCost : step.cumulative;
+    const sections = [];
+    for (let i = 0; i < timeline.length; i++) {
+      let slotToVisiblePos = function(slot) {
+        if (slot < sectionSteps.length) return { pos: sectionSteps[slot].visiblePos, anchored: true };
+        for (let j = i + 1 + sectionSteps.length; j < timeline.length; j++) {
+          if (timeline[j].type === "step") return { pos: timeline[j].visiblePos, anchored: true };
+        }
+        return { pos: totalVisible + 1, anchored: false };
+      };
+      const entry = timeline[i];
+      if (entry.type !== "divider") continue;
+      const sectionSteps = [];
+      for (let j = i + 1; j < timeline.length && timeline[j].type !== "divider"; j++) {
+        sectionSteps.push(timeline[j]);
       }
-      return { pos: totalVisible + 1, anchored: false };
+      let baselineBeforeSection = 0;
+      for (let j = i - 1; j >= 0; j--) {
+        if (timeline[j].type === "step") {
+          baselineBeforeSection = adjustedCumulative(timeline[j]);
+          break;
+        }
+      }
+      let highPts = Infinity;
+      for (let j = i + 1; j < timeline.length; j++) {
+        if (timeline[j].type === "divider") {
+          highPts = timeline[j].pts;
+          break;
+        }
+      }
+      const slotBaselines = [baselineBeforeSection, ...sectionSteps.map((st) => adjustedCumulative(st))];
+      const upperFits = slotBaselines.map((b) => b + movingStepCost <= highPts);
+      let topSlot = slotBaselines.findIndex((b) => b + movingStepCost > entry.pts);
+      if (topSlot < 0) topSlot = slotBaselines.length;
+      const topFits = topSlot < slotBaselines.length && upperFits[topSlot];
+      let bottomSlot = topSlot;
+      for (let k = topSlot; k < upperFits.length; k++) {
+        if (upperFits[k]) bottomSlot = k;
+        else break;
+      }
+      const notFitTitle = topFits ? "" : "This step doesn't fit anywhere in this section's points range.";
+      const top = topFits ? slotToVisiblePos(topSlot) : null;
+      const bottom = topFits ? slotToVisiblePos(bottomSlot) : null;
+      sections.push({
+        label: entry.label || `${entry.pts} pts`,
+        topFits,
+        topVisiblePos: top ? top.pos : null,
+        topAnchored: top ? top.anchored : false,
+        bottomFits: topFits,
+        bottomVisiblePos: bottom ? bottom.pos : null,
+        bottomAnchored: bottom ? bottom.anchored : false,
+        notFitTitle
+      });
     }
-
-    const notFitTitle = topFits ? "" : "This step doesn't fit anywhere in this section's points range.";
-    const top = topFits ? slotToVisiblePos(topSlot) : null;
-    const bottom = topFits ? slotToVisiblePos(bottomSlot) : null;
-    sections.push({
-      label: entry.label || `${entry.pts} pts`,
-      topFits,
-      topVisiblePos: top ? top.pos : null,
-      topAnchored: top ? top.anchored : false,
-      bottomFits: topFits,
-      bottomVisiblePos: bottom ? bottom.pos : null,
-      bottomAnchored: bottom ? bottom.anchored : false,
-      notFitTitle
-    });
+    return sections;
   }
-  return sections;
-}
-
-// The Move To popover's content for one row - every option (top/bottom of
-// list, each waypoint section's top/bottom, the position field) is
-// pre-resolved into a concrete targetVisiblePos, so the click handlers
-// wired below need only one generic case rather than a type switch.
-// Section options are computed fresh per row since fit depends on this
-// row's own s.stepCost - see waypointSections.
-//
-// anchored marks a target derived from another existing row's current
-// position (a waypoint section's top/bottom) versus an absolute final
-// position (top/bottom of the whole list, the typed position field) -
-// absoluteIndexForVisiblePosition only needs the post-removal shift for
-// the former.
-function moveMenuHtml(s, timeline, totalVisible) {
-  const sections = waypointSections(timeline, totalVisible, s.stepCost, s.index);
-  const items = [
-    { label: "Top of list", pos: 1, fits: true, anchored: false },
-    { label: "Bottom of list", pos: totalVisible, fits: true, anchored: false }
-  ];
-  sections.forEach((sec) => {
-    items.push({ label: `${sec.label} — top`, pos: sec.topVisiblePos, fits: sec.topFits, title: sec.notFitTitle, anchored: sec.topAnchored });
-    items.push({ label: `${sec.label} — bottom`, pos: sec.bottomVisiblePos, fits: sec.bottomFits, title: sec.notFitTitle, anchored: sec.bottomAnchored });
-  });
-  const itemsHtml = items.map((item) =>
-    `<button type="button" class="move-menu-item" data-from-index="${s.index}" data-target-pos="${item.fits ? item.pos : ""}" data-anchored="${item.anchored ? 1 : 0}" ${item.fits ? "" : "disabled"} title="${escapeHtml(item.title || "")}">${escapeHtml(item.label)}</button>`
-  ).join("");
-  return `<div class="move-menu" data-key="${expandKey(s)}">
+  function moveMenuHtml(s, timeline, totalVisible) {
+    const sections = waypointSections(timeline, totalVisible, s.stepCost, s.index);
+    const items = [
+      { label: "Top of list", pos: 1, fits: true, anchored: false },
+      { label: "Bottom of list", pos: totalVisible, fits: true, anchored: false }
+    ];
+    sections.forEach((sec) => {
+      items.push({ label: `${sec.label} \u2014 top`, pos: sec.topVisiblePos, fits: sec.topFits, title: sec.notFitTitle, anchored: sec.topAnchored });
+      items.push({ label: `${sec.label} \u2014 bottom`, pos: sec.bottomVisiblePos, fits: sec.bottomFits, title: sec.notFitTitle, anchored: sec.bottomAnchored });
+    });
+    const itemsHtml = items.map(
+      (item) => `<button type="button" class="move-menu-item" data-from-index="${s.index}" data-target-pos="${item.fits ? item.pos : ""}" data-anchored="${item.anchored ? 1 : 0}" ${item.fits ? "" : "disabled"} title="${escapeHtml(item.title || "")}">${escapeHtml(item.label)}</button>`
+    ).join("");
+    return `<div class="move-menu" data-key="${expandKey(s)}">
       ${itemsHtml}
       <div class="move-menu-position-row">
         <label class="move-menu-position-label">Position
@@ -4672,103 +3041,52 @@ function moveMenuHtml(s, timeline, totalVisible) {
         <button type="button" class="btn move-menu-go" data-from-index="${s.index}">Go</button>
       </div>
     </div>`;
-}
-
-function renderProgression(totals) {
-  el.undoLastBtn.disabled = !canUndo();
-  // hasAnyOwned checks state.owned globally, not just the current
-  // progression list, so this is set before (and independent of) the
-  // empty-purchaseOrder early return below.
-  el.clearOwnedBtn.disabled = !hasAnyOwned();
-  // Lifetime-scoped (ownedPoints(), not a sum over just the rows rendered
-  // below) to match spentPoints()'s own lifetime scope - an AA owned on a
-  // swapped-away class is still real progress, and togoPts needs both
-  // sides on the same footing or it double-counts that AA as "still to
-  // go". Set ahead of both early returns below, same reasoning as above.
-  // Blends in estimates the same way the topbar headline does (see
-  // estimatedExtraOwnedPoints) - without this, an owned rank with an
-  // unconfirmed cost silently vanished from both "owned" and "to go",
-  // making the two figures fall short of the topbar's own blended total.
-  const { spent, spentExtra, ownedReal, ownedExtra } = totals || computePointTotals();
-  // Owned isn't capped to the current plan (a refund can drop a rank below
-  // its own owned watermark on purpose - owned is real-world truth,
-  // untouched by changeRank), so owned can exceed spent for an AA that's
-  // been refunded below what's already been trained. Clamped to 0 rather
-  // than showing a negative "to go" in that case.
-  const togoReal = Math.max(0, spent - ownedReal);
-  const togoExtra = Math.max(0, spentExtra - ownedExtra);
-  function blendedFigure(real, extra) {
-    return extra > 0
-      ? `<span class="is-estimate" title="${real} confirmed + ${extra} estimated.">~${real + extra}</span>`
-      : `${real}`;
   }
-  el.ownedSummary.innerHTML = `${blendedFigure(ownedReal, ownedExtra)} pt${(ownedReal + ownedExtra) === 1 ? "" : "s"} owned, ${blendedFigure(togoReal, togoExtra)} to go`;
-  // Waypoints can reasonably be set up before any picks exist (an
-  // aspirational "by 50 pts, get X"), so the chip bar renders unconditionally
-  // too, ahead of the empty-progression early return below.
-  renderWaypointChips();
-
-  if (!state.purchaseOrder.length) {
-    el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
-    return;
-  }
-
-  // Every purchaseOrder entry shows up here, active class or not. A pick
-  // for a swapped-away class renders muted and read-only (see the
-  // .inactive row class below); the Other Classes tab groups those same
-  // picks by class, it doesn't hold them exclusively.
-  const steps = computeProgressionSteps();
-  // 1-indexed position. Nothing is filtered out of steps, so this always
-  // equals s.index + 1 - kept as its own field so the row template,
-  // moveMenuHtml, and waypointSections don't each repeat that arithmetic.
-  steps.forEach((s, i) => { s.visiblePos = i + 1; });
-
-  // computeProgressionTimeline tags each step with segmentColor (the color
-  // of the waypoint whose range it falls under) - every colored segment
-  // renders simultaneously, so the whole plan's zones show at a glance.
-  const timeline = computeProgressionTimeline(steps);
-  const htmlParts = timeline.map((entry) => {
-    if (entry.type === "divider") {
-      const dot = entry.color ? `<span class="color-dot color-${entry.color}"></span>` : "";
-      const labelText = entry.label ? `${escapeHtml(entry.label)} &middot; ` : "";
-      return `<div class="progression-divider${entry.unreached ? " unreached" : ""}" data-pts="${entry.pts}" title="Click to edit this waypoint">
+  function renderProgression(totals) {
+    el.undoLastBtn.disabled = !canUndo();
+    el.clearOwnedBtn.disabled = !hasAnyOwned();
+    const { spent, spentExtra, ownedReal, ownedExtra } = totals || computePointTotals();
+    const togoReal = Math.max(0, spent - ownedReal);
+    const togoExtra = Math.max(0, spentExtra - ownedExtra);
+    function blendedFigure(real, extra) {
+      return extra > 0 ? `<span class="is-estimate" title="${real} confirmed + ${extra} estimated.">~${real + extra}</span>` : `${real}`;
+    }
+    el.ownedSummary.innerHTML = `${blendedFigure(ownedReal, ownedExtra)} pt${ownedReal + ownedExtra === 1 ? "" : "s"} owned, ${blendedFigure(togoReal, togoExtra)} to go`;
+    renderWaypointChips();
+    if (!state.purchaseOrder.length) {
+      el.progressionContent.innerHTML = '<div class="empty">No AAs picked yet &mdash; your training order will appear here as you spend points, and you can reorder it afterward to plan ahead.</div>';
+      return;
+    }
+    const steps = computeProgressionSteps();
+    steps.forEach((s, i) => {
+      s.visiblePos = i + 1;
+    });
+    const timeline = computeProgressionTimeline(steps);
+    const htmlParts = timeline.map((entry) => {
+      if (entry.type === "divider") {
+        const dot = entry.color ? `<span class="color-dot color-${entry.color}"></span>` : "";
+        const labelText = entry.label ? `${escapeHtml(entry.label)} &middot; ` : "";
+        return `<div class="progression-divider${entry.unreached ? " unreached" : ""}" data-pts="${entry.pts}" title="Click to edit this waypoint">
         <span class="divider-line"></span>
         ${dot}<span class="divider-label">${labelText}${entry.pts} pts${entry.unreached ? " &middot; not reached yet" : ""}</span>
         <span class="divider-line"></span>
       </div>`;
-    }
-    const s = entry;
-    // Read-only for a class that isn't one of your 3 active slots right
-    // now - matches Other Classes/Browse, which are read-only for the same
-    // reason. Swap the class back in to keep training it.
-    const canExpand = s.active && !!(s.aa && s.stepRank < s.aa.ranks);
-    const key = expandKey(s);
-    const expanded = canExpand && expandedSteps.has(key);
-    const segClass = s.segmentColor ? ` segment-color-${s.segmentColor}` : "";
-    const stepDisp = s.aa ? costDisplayScoped(s.scope, s.className, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
-    // The running total blends in estimates the same way the topbar's own
-    // headline does, once any step up to this point has an unconfirmed
-    // cost with a guess (see computeProgressionSteps' blendedCumulative).
-    // Identical to s.cumulative until the first guessed step.
-    const totalIsEstimate = s.blendedCumulative !== s.cumulative;
-    const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCumulative - s.cumulative} estimated.` : "";
-    // Three independent reasons a step can warn, sharing the same visual
-    // language since all three mean "this step needs attention" to the
-    // user. prereqWarn is sequence-aware; classCapWarn and
-    // classEligibilityWarn aren't (both depend only on today's class
-    // selection, independent of position). Concatenated when more than
-    // one applies.
-    const warnTitles = [];
-    if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
-    if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
-    if (s.classEligibilityWarn) warnTitles.push(`Requires one of: ${s.aa.eligibleClasses.join(", ")}.`);
-    const rowWarn = warnTitles.length > 0;
-    // A separate warning icon, not folded into warnTitles/rowWarn above -
-    // "this class isn't currently selected" isn't a problem with the step
-    // itself the way an unmet prereq or a class cap overshoot is, so it
-    // doesn't get prereq-warn-row's per-child dim, just its own ⚠.
-    const inactiveWarnTitle = s.active ? "" : `Not one of your current 3 classes — swap ${s.classesLabel || ""} back in to keep training this.`;
-    const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${s.active ? "" : " inactive"}${segClass}" draggable="true" data-index="${s.index}">
+      }
+      const s = entry;
+      const canExpand = s.active && !!(s.aa && s.stepRank < s.aa.ranks);
+      const key = expandKey(s);
+      const expanded = canExpand && expandedSteps.has(key);
+      const segClass = s.segmentColor ? ` segment-color-${s.segmentColor}` : "";
+      const stepDisp = s.aa ? costDisplayScoped(s.scope, s.className, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+      const totalIsEstimate = s.blendedCumulative !== s.cumulative;
+      const totalTitle = totalIsEstimate ? `${s.cumulative} confirmed + ${s.blendedCumulative - s.cumulative} estimated.` : "";
+      const warnTitles = [];
+      if (s.prereqWarn) warnTitles.push("Prerequisite not yet trained at this point in the sequence.");
+      if (s.classCapWarn) warnTitles.push(`Exceeds the rank ${classRankCapFor(s.aa)} cap for your currently selected classes.`);
+      if (s.classEligibilityWarn) warnTitles.push(`Requires one of: ${s.aa.eligibleClasses.join(", ")}.`);
+      const rowWarn = warnTitles.length > 0;
+      const inactiveWarnTitle = s.active ? "" : `Not one of your current 3 classes \u2014 swap ${s.classesLabel || ""} back in to keep training this.`;
+      const row = `<div class="progression-row${rowWarn ? " prereq-warn-row" : ""}${s.active ? "" : " inactive"}${segClass}" draggable="true" data-index="${s.index}">
       <span class="drag-handle" title="Drag to reorder" aria-hidden="true">&#8942;&#8942;</span>
       <span class="step-num">${s.visiblePos}</span>
       <span class="step-info">
@@ -4782,7 +3100,7 @@ function renderProgression(totals) {
         <span class="cost-total${totalIsEstimate ? " is-estimate" : ""}"${totalIsEstimate ? ` title="${escapeHtml(totalTitle)}"` : ""}>${totalIsEstimate ? `~${s.blendedCumulative}` : s.cumulative} total</span>
       </span>
       <span class="step-controls" draggable="false">
-        <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned — you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
+        <button class="step-btn step-own${s.owned ? " active" : ""}" data-scope="${escapeHtml(s.scope)}" data-classname="${escapeHtml(s.className || "")}" data-idx="${s.idx}" data-rank="${s.stepRank}" title="${s.owned ? "Mark as not yet owned" : "Mark as owned \u2014 you've actually trained this in-game"}">${s.owned ? "&#10003;" : "&#9675;"}</button>
         <button class="step-btn" data-move="up" data-index="${s.index}" ${s.index === steps[0].index ? "disabled" : ""}>&uarr;</button>
         <button class="step-btn" data-move="down" data-index="${s.index}" ${s.index === steps[steps.length - 1].index ? "disabled" : ""}>&darr;</button>
         <button class="step-btn step-expand${expanded ? " active" : ""}" data-key="${key}" ${canExpand ? "" : "disabled"} title="${!s.active ? `Swap ${escapeHtml(s.classesLabel || "")} back into one of your 3 slots to preview this.` : canExpand ? "Preview next rank" : "Already at max rank"}">${expanded ? "&and;" : "&or;"}</button>
@@ -4794,467 +3112,336 @@ function renderProgression(totals) {
         </span>
       </span>
     </div>`;
-    if (!expanded) return row;
-    // canExpand requires s.active, so s.category is always set here - no
-    // need for costDisplayScoped's fallback the way Browse/Other Classes
-    // need it.
-    return row + nextRankBoxHtml(s.category, s.categoryIdx, s.aa, s.stepRank, " progression-next-rank");
-  });
-
-  el.progressionContent.innerHTML = htmlParts.join("");
-}
-
-// Delegated on the never-recreated #progressionContent rather than per-row/
-// per-button/per-divider - renderProgression tears down and rebuilds every
-// row on every render, so binding here once (same pattern as the tree,
-// events.js) avoids attaching and discarding a fresh listener set per
-// element per render. Called once at boot (events.js), not from
-// renderProgression.
-function wireProgressionRowEvents() {
-  el.progressionContent.addEventListener("click", (e) => {
-    const moveBtn = e.target.closest(".step-btn[data-move]");
-    if (moveBtn) {
-      if (moveBtn.disabled) return;
-      const idx = parseInt(moveBtn.getAttribute("data-index"), 10);
-      const dir = moveBtn.getAttribute("data-move") === "up" ? -1 : 1;
-      moveProgressionEntry(idx, dir);
-      return;
-    }
-    const expandBtn = e.target.closest(".step-expand");
-    if (expandBtn) {
-      if (expandBtn.disabled) return;
-      const key = expandBtn.getAttribute("data-key");
-      if (expandedSteps.has(key)) expandedSteps.delete(key);
-      else expandedSteps.add(key);
-      renderProgression();
-      return;
-    }
-    const moveTriggerBtn = e.target.closest(".step-move");
-    if (moveTriggerBtn) {
-      // Without this, the click bubbles to the document-level outside-click
-      // listener (wireProgressionDropZone) AFTER renderProgression() below
-      // has already replaced this button with a fresh one - e.target is a
-      // detached node with no parent left to walk up from, so .closest()
-      // finds nothing and the listener would treat the very click that
-      // opened the menu as a click outside it, closing it immediately.
-      e.stopPropagation();
-      const key = moveTriggerBtn.getAttribute("data-key");
-      openMoveMenuKey = openMoveMenuKey === key ? null : key;
-      renderProgression();
-      return;
-    }
-    const moveItemBtn = e.target.closest(".move-menu-item");
-    if (moveItemBtn) {
-      if (moveItemBtn.disabled) return;
-      e.stopPropagation();
-      const fromIndex = parseInt(moveItemBtn.getAttribute("data-from-index"), 10);
-      const targetPos = parseInt(moveItemBtn.getAttribute("data-target-pos"), 10);
-      const anchored = moveItemBtn.getAttribute("data-anchored") === "1";
-      openMoveMenuKey = null;
-      moveToVisiblePosition(fromIndex, targetPos, anchored);
-      return;
-    }
-    const moveGoBtn = e.target.closest(".move-menu-go");
-    if (moveGoBtn) {
-      e.stopPropagation();
-      const fromIndex = parseInt(moveGoBtn.getAttribute("data-from-index"), 10);
-      const input = moveGoBtn.parentElement.querySelector(".move-menu-position-input");
-      const raw = parseInt(input.value, 10);
-      // steps.length always equals state.purchaseOrder.length (see
-      // renderProgression's visiblePos comment) - using the latter directly
-      // means this handler needs no per-render steps array captured.
-      const clamped = Math.max(1, Math.min(state.purchaseOrder.length, Number.isFinite(raw) ? raw : 1));
-      openMoveMenuKey = null;
-      moveToVisiblePosition(fromIndex, clamped, false);
-      return;
-    }
-    const addBtn = e.target.closest(".step-add");
-    if (addBtn) {
-      if (addBtn.disabled) return;
-      const category = addBtn.getAttribute("data-category");
-      const idx = parseInt(addBtn.getAttribute("data-idx"), 10);
-      applyAttempt(attemptIncrement(category, idx));
-      return;
-    }
-    const removeBtn = e.target.closest(".step-remove");
-    if (removeBtn) {
-      if (removeBtn.disabled) return;
-      const category = removeBtn.getAttribute("data-category");
-      const idx = parseInt(removeBtn.getAttribute("data-idx"), 10);
-      applyAttempt(attemptDecrement(category, idx));
-      return;
-    }
-    // Toggles the owned watermark at this step: marking an unowned step owns
-    // it and everything below it (you can't have rank 3 without ranks 1-2);
-    // unmarking an owned one drops the watermark to just below it.
-    const ownBtn = e.target.closest(".step-own");
-    if (ownBtn) {
-      const scope = ownBtn.getAttribute("data-scope");
-      const className = ownBtn.getAttribute("data-classname") || null;
-      const idx = parseInt(ownBtn.getAttribute("data-idx"), 10);
-      const rank = parseInt(ownBtn.getAttribute("data-rank"), 10);
-      const nowOwned = ownBtn.classList.contains("active");
-      const newRank = nowOwned ? rank - 1 : rank;
-      // At or below the AA's free autoRanks floor isn't a real purchase -
-      // same convention changeRank and performReset already use. Without
-      // this, unmarking the one purchasable step of an autoRanks AA left
-      // owned sitting at the floor instead of 0, which then read as
-      // "owned" everywhere else (the browse view's Unowned Only filter,
-      // the owned badge) despite nothing actually being purchased.
-      setOwnedRank(scope, className, idx, newRank <= autoRanksOffsetScoped(scope, className, idx) ? 0 : newRank);
-      renderAll();
-      return;
-    }
-    const divider = e.target.closest(".progression-divider");
-    if (divider) openWaypointModal(parseInt(divider.getAttribute("data-pts"), 10));
-  });
-
-  el.progressionContent.addEventListener("dragstart", (e) => {
-    const rowEl = e.target.closest(".progression-row");
-    if (!rowEl) return;
-    dragSrcIndex = parseInt(rowEl.getAttribute("data-index"), 10);
-    dragBaselineWarnCount = countPrereqWarns(computeProgressionSteps());
-    dragWarnCacheToIndex = null;
-    rowEl.classList.add("dragging");
-    e.dataTransfer.effectAllowed = "move";
-    // Firefox won't start the drag at all unless setData is called.
-    e.dataTransfer.setData("text/plain", String(dragSrcIndex));
-    e.dataTransfer.setData(PROGRESSION_DRAG_TYPE, String(dragSrcIndex));
-  });
-  el.progressionContent.addEventListener("dragend", (e) => {
-    const rowEl = e.target.closest(".progression-row");
-    if (!rowEl) return;
-    rowEl.classList.remove("dragging");
-    clearDragOverMarks();
-    dragSrcIndex = null;
-  });
-  el.progressionContent.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
-    const rowEl = e.target.closest(".progression-row");
-    if (rowEl) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      clearDragOverMarks();
-      const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
-      if (overIndex === dragSrcIndex) return; // dropping onto itself is a no-op, nothing to indicate
-      const rect = rowEl.getBoundingClientRect();
-      const before = e.clientY - rect.top < rect.height / 2;
-      const toIndex = before ? overIndex : overIndex + 1;
-      markDragOver(rowEl, before ? "drag-over-top" : "drag-over-bottom");
-      if (dragWouldIntroduceWarn(toIndex)) rowEl.classList.add("drag-warn");
-      return;
-    }
-    // An expanded next-rank preview is a sibling of its row, not a
-    // descendant - hovering/dropping on one is otherwise a dead zone (no row
-    // claims it, and the container-level fallback in wireProgressionDropZone
-    // bails because e.target is the preview box, not the container itself).
-    // Treat it as an extension of the row right above it: dropping anywhere
-    // on the preview inserts after that row.
-    const boxEl = e.target.closest(".progression-next-rank");
-    if (boxEl) {
-      const ownerRow = boxEl.previousElementSibling;
-      if (!ownerRow || !ownerRow.classList.contains("progression-row")) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      clearDragOverMarks();
-      const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
-      if (overIndex === dragSrcIndex) return;
-      markDragOver(ownerRow, "drag-over-bottom");
-      if (dragWouldIntroduceWarn(overIndex + 1)) ownerRow.classList.add("drag-warn");
-      return;
-    }
-    // A waypoint divider is the same kind of dead zone as a next-rank
-    // preview box - same fix: treat it as an extension of the row right
-    // above it. A divider with no row above it at all (its threshold is
-    // below the very first step's cumulative) maps to "insert at the very
-    // start" instead, via the first row's own top-half indicator.
-    const divEl = e.target.closest(".progression-divider");
-    if (divEl) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      clearDragOverMarks();
-      const ownerRow = findPrecedingRow(divEl);
-      if (!ownerRow) {
-        const firstRow = el.progressionContent.querySelector(".progression-row");
-        if (firstRow && parseInt(firstRow.getAttribute("data-index"), 10) !== dragSrcIndex) {
-          markDragOver(firstRow, "drag-over-top");
-          if (dragWouldIntroduceWarn(0)) firstRow.classList.add("drag-warn");
-        }
+      if (!expanded) return row;
+      return row + nextRankBoxHtml(s.category, s.categoryIdx, s.aa, s.stepRank, " progression-next-rank");
+    });
+    el.progressionContent.innerHTML = htmlParts.join("");
+  }
+  function wireProgressionRowEvents() {
+    el.progressionContent.addEventListener("click", (e) => {
+      const moveBtn = e.target.closest(".step-btn[data-move]");
+      if (moveBtn) {
+        if (moveBtn.disabled) return;
+        const idx = parseInt(moveBtn.getAttribute("data-index"), 10);
+        const dir = moveBtn.getAttribute("data-move") === "up" ? -1 : 1;
+        moveProgressionEntry(idx, dir);
         return;
       }
-      const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
-      if (overIndex === dragSrcIndex) return;
-      markDragOver(ownerRow, "drag-over-bottom");
-      if (dragWouldIntroduceWarn(overIndex + 1)) ownerRow.classList.add("drag-warn");
-    }
-  });
-  el.progressionContent.addEventListener("drop", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
-    const rowEl = e.target.closest(".progression-row");
-    if (rowEl) {
-      e.preventDefault();
-      const rect = rowEl.getBoundingClientRect();
-      const before = e.clientY - rect.top < rect.height / 2;
-      const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
-      moveProgressionEntryTo(dragSrcIndex, before ? overIndex : overIndex + 1);
+      const expandBtn = e.target.closest(".step-expand");
+      if (expandBtn) {
+        if (expandBtn.disabled) return;
+        const key = expandBtn.getAttribute("data-key");
+        if (expandedSteps.has(key)) expandedSteps.delete(key);
+        else expandedSteps.add(key);
+        renderProgression();
+        return;
+      }
+      const moveTriggerBtn = e.target.closest(".step-move");
+      if (moveTriggerBtn) {
+        e.stopPropagation();
+        const key = moveTriggerBtn.getAttribute("data-key");
+        openMoveMenuKey = openMoveMenuKey === key ? null : key;
+        renderProgression();
+        return;
+      }
+      const moveItemBtn = e.target.closest(".move-menu-item");
+      if (moveItemBtn) {
+        if (moveItemBtn.disabled) return;
+        e.stopPropagation();
+        const fromIndex = parseInt(moveItemBtn.getAttribute("data-from-index"), 10);
+        const targetPos = parseInt(moveItemBtn.getAttribute("data-target-pos"), 10);
+        const anchored = moveItemBtn.getAttribute("data-anchored") === "1";
+        openMoveMenuKey = null;
+        moveToVisiblePosition(fromIndex, targetPos, anchored);
+        return;
+      }
+      const moveGoBtn = e.target.closest(".move-menu-go");
+      if (moveGoBtn) {
+        e.stopPropagation();
+        const fromIndex = parseInt(moveGoBtn.getAttribute("data-from-index"), 10);
+        const input = moveGoBtn.parentElement.querySelector(".move-menu-position-input");
+        const raw = parseInt(input.value, 10);
+        const clamped = Math.max(1, Math.min(state.purchaseOrder.length, Number.isFinite(raw) ? raw : 1));
+        openMoveMenuKey = null;
+        moveToVisiblePosition(fromIndex, clamped, false);
+        return;
+      }
+      const addBtn = e.target.closest(".step-add");
+      if (addBtn) {
+        if (addBtn.disabled) return;
+        const category = addBtn.getAttribute("data-category");
+        const idx = parseInt(addBtn.getAttribute("data-idx"), 10);
+        applyAttempt(attemptIncrement(category, idx));
+        return;
+      }
+      const removeBtn = e.target.closest(".step-remove");
+      if (removeBtn) {
+        if (removeBtn.disabled) return;
+        const category = removeBtn.getAttribute("data-category");
+        const idx = parseInt(removeBtn.getAttribute("data-idx"), 10);
+        applyAttempt(attemptDecrement(category, idx));
+        return;
+      }
+      const ownBtn = e.target.closest(".step-own");
+      if (ownBtn) {
+        const scope = ownBtn.getAttribute("data-scope");
+        const className = ownBtn.getAttribute("data-classname") || null;
+        const idx = parseInt(ownBtn.getAttribute("data-idx"), 10);
+        const rank = parseInt(ownBtn.getAttribute("data-rank"), 10);
+        const nowOwned = ownBtn.classList.contains("active");
+        const newRank = nowOwned ? rank - 1 : rank;
+        setOwnedRank(scope, className, idx, newRank <= autoRanksOffsetScoped(scope, className, idx) ? 0 : newRank);
+        renderAll();
+        return;
+      }
+      const divider = e.target.closest(".progression-divider");
+      if (divider) openWaypointModal(parseInt(divider.getAttribute("data-pts"), 10));
+    });
+    el.progressionContent.addEventListener("dragstart", (e) => {
+      const rowEl = e.target.closest(".progression-row");
+      if (!rowEl) return;
+      dragSrcIndex = parseInt(rowEl.getAttribute("data-index"), 10);
+      dragBaselineWarnCount = countPrereqWarns(computeProgressionSteps());
+      dragWarnCacheToIndex = null;
+      rowEl.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(dragSrcIndex));
+      e.dataTransfer.setData(PROGRESSION_DRAG_TYPE, String(dragSrcIndex));
+    });
+    el.progressionContent.addEventListener("dragend", (e) => {
+      const rowEl = e.target.closest(".progression-row");
+      if (!rowEl) return;
+      rowEl.classList.remove("dragging");
+      clearDragOverMarks();
       dragSrcIndex = null;
-      stopAutoScroll();
-      return;
-    }
-    const boxEl = e.target.closest(".progression-next-rank");
-    if (boxEl) {
-      const ownerRow = boxEl.previousElementSibling;
-      if (!ownerRow || !ownerRow.classList.contains("progression-row")) return;
-      e.preventDefault();
-      const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
-      moveProgressionEntryTo(dragSrcIndex, overIndex + 1);
-      dragSrcIndex = null;
-      stopAutoScroll();
-      return;
-    }
-    const divEl = e.target.closest(".progression-divider");
-    if (divEl) {
-      e.preventDefault();
-      const ownerRow = findPrecedingRow(divEl);
-      const toIndex = ownerRow ? parseInt(ownerRow.getAttribute("data-index"), 10) + 1 : 0;
-      moveProgressionEntryTo(dragSrcIndex, toIndex);
-      dragSrcIndex = null;
-      stopAutoScroll();
-    }
-  });
-}
-
-// Reverses whatever the single most recent change was — an add gets removed, a
-// remove gets restored to its exact original position in the list, and a
-// reorder (drag or arrow) moves the entry back to where it was before.
-function undoLast() {
-  applyAttempt(undoLastMutation());
-}
-
-// An up/down arrow swaps a row with its literal adjacent purchaseOrder
-// slot - every entry renders now, so there's never an invisible neighbor
-// to skip over.
-function moveProgressionEntry(index, dir) {
-  const target = index + dir;
-  if (target < 0 || target >= state.purchaseOrder.length) return;
-  const a = state.purchaseOrder[index];
-  const b = state.purchaseOrder[target];
-  const sameAA = a.scope === b.scope && a.idx === b.idx && (a.className || null) === (b.className || null);
-  if (sameAA) { showToast("Can't reorder different ranks of the same AA."); return; }
-  moveEntry(index, target);
-  renderProgression();
-}
-
-// Drag-and-drop reorder: pulls the entry at fromIndex out and reinserts it at
-// toIndex (an insertion point; state.purchaseOrder.length means "at the
-// end"). Unlike moveProgressionEntry's adjacent swap, this never needs a
-// same-AA guard, including for dragging one rank of an AA past its own
-// other rank. purchaseOrder entries hold {scope, className, idx}, never a
-// rank number, so two occurrences of the same AA are structurally
-// identical - dragging "rank 2" above "rank 1" just renders as rank 1
-// afterward, no corruption. Revisit this if an entry ever starts carrying
-// its own rank.
-function moveProgressionEntryTo(fromIndex, toIndex) {
-  if (toIndex > fromIndex) toIndex -= 1; // account for the shift left after removal
-  if (fromIndex === toIndex) return;
-  moveEntry(fromIndex, toIndex);
-  renderProgression();
-}
-
-// Move To (the "⋯" popover menu): the shared destination math for every
-// action in it (top/bottom of list, a waypoint section's top/bottom, the
-// position field) - each just computes a different targetVisiblePos
-// (1-indexed, matching s.visiblePos) and hands it here.
-//
-// Returns a POST-removal absolute index, directly usable as moveEntry's
-// toIdx. anchored (moveMenuHtml) says whether targetVisiblePos is another
-// existing row's current position - if so it needs the same post-removal
-// shift moveProgressionEntryTo applies for a drag target, since removing
-// fromIndex from above that row changes its position by one. An absolute
-// final position (top/bottom of the whole list, the typed field) needs no
-// such shift - it already names where the moved row should end up.
-function absoluteIndexForVisiblePosition(targetVisiblePos, fromIndex, anchored) {
-  const raw = targetVisiblePos <= 1 ? 0 : Math.min(targetVisiblePos - 1, state.purchaseOrder.length - 1);
-  return anchored && raw > fromIndex ? raw - 1 : raw;
-}
-
-function moveToVisiblePosition(fromIndex, targetVisiblePos, anchored) {
-  const toIdx = absoluteIndexForVisiblePosition(targetVisiblePos, fromIndex, anchored);
-  if (toIdx === fromIndex) return;
-  moveEntry(fromIndex, toIdx);
-  renderProgression();
-}
-
-// One-time wiring (called from wireEvents) so dropping below the last row still
-// moves the dragged step to the end, instead of doing nothing. Lives here rather
-// than inside renderProgression because these elements persist across renders
-// (only progressionContent's innerHTML is replaced), so binding it there would
-// stack up a fresh listener on every render.
-//
-// Bound to progressionWrap, not progressionContent: progressionContent has
-// no padding/border/overflow of its own, so only the last row's bottom
-// margin collapses through it, and everything below genuinely belongs to
-// the scrollable wrap around it. A middle row's margin does NOT collapse
-// out, so the pointer over an inter-row gap lands on progressionContent
-// instead (see the dedicated listener below), never reaching this handler.
-function lastProgressionRow() {
-  const rows = el.progressionContent.querySelectorAll(".progression-row");
-  return rows.length ? rows[rows.length - 1] : null;
-}
-
-function isBelowLastRow(e) {
-  const last = lastProgressionRow();
-  return !!last && e.clientY >= last.getBoundingClientRect().bottom;
-}
-
-// Closes the Move To popover without moving anything - the Escape-key case
-// (events.js's centralized modal Escape handling calls this alongside its
-// other close* calls) and the no-op branch the outside-click listener
-// below takes when nothing's actually open.
-function closeMoveMenu() {
-  if (openMoveMenuKey === null) return;
-  openMoveMenuKey = null;
-  renderProgression();
-}
-
-function wireProgressionDropZone() {
-  // Closes the Move To popover on a click anywhere outside it - .move-menu
-  // is a DOM descendant of .move-menu-wrap (see moveMenuHtml/the row
-  // template), so a click anywhere on the trigger button or inside the
-  // open menu itself (including the position input) is already "inside"
-  // by plain containment, no separate stopPropagation needed for those.
-  // Only the trigger button's own handler needs stopPropagation (see its
-  // own comment) - it re-renders synchronously, which would otherwise
-  // leave this listener chasing a detached e.target from the same click.
-  document.addEventListener("click", (e) => {
-    if (openMoveMenuKey === null) return;
-    if (e.target.closest(".move-menu-wrap")) return;
-    closeMoveMenu();
-  });
-
-  // Fires on every dragover bubbling through the wrap regardless of which
-  // row/divider/box the row-level handlers above targeted - unlike those,
-  // this one doesn't gate on e.target since edge-proximity is a property of
-  // the wrap as a whole, not of whatever's directly under the cursor.
-  el.progressionWrap.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
-    updateAutoScroll(e);
-  });
-  // dragend fires on the source row and bubbles to document even if the
-  // drag was cancelled (dropped outside a valid target, Esc, etc.), so this
-  // is the one place that reliably stops the loop no matter how the drag
-  // ended - wiring it per-row (like the "dragging" class cleanup) would
-  // miss the cancelled case for rows torn down mid-drag by a re-render.
-  document.addEventListener("dragend", stopAutoScroll);
-
-  el.progressionWrap.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
-    if (!isBelowLastRow(e)) { clearDragOverMarks(); return; }
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    clearDragOverMarks();
-    // Every other valid drop target draws a line; match that here so the
-    // append-to-end zone below the last row isn't the one invisible spot.
-    const last = lastProgressionRow();
-    if (last && parseInt(last.getAttribute("data-index"), 10) !== dragSrcIndex) {
-      markDragOver(last, "drag-over-bottom");
-      if (dragWouldIntroduceWarn(state.purchaseOrder.length)) last.classList.add("drag-warn");
-    }
-  });
-  el.progressionWrap.addEventListener("drop", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
-    if (!isBelowLastRow(e)) return;
-    e.preventDefault();
-    moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
-    dragSrcIndex = null;
-    stopAutoScroll();
-  });
-  // Inter-row gaps land here, not on progressionWrap (see above) - no row
-  // claims them and dropping does nothing, so just keep a stale indicator
-  // from sitting lit over a zone where a drop wouldn't do anything. No
-  // preventDefault: this must stay a non-drop target, not a silent no-op one.
-  el.progressionContent.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
-    clearDragOverMarks();
-  });
-}
-
-function populateStaticControls() {
-  el.browseFilter.innerHTML =
-    `<option value="all">All Categories</option>` +
-    `<option value="general">General</option>` +
-    `<option value="archetype">Archetype</option>` +
-    `<option value="special">Special</option>` +
-    `<optgroup label="Class">` +
-    CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("") +
-    `</optgroup>`;
-  // USER_CHANGELOG[0] is the single source of truth for "current version" —
-  // the corner tag and the unread-dot comparison both read it from here, so
-  // they can't disagree about what the latest version is.
-  if (USER_CHANGELOG[0]) el.versionTag.textContent = `v${USER_CHANGELOG[0].version}`;
-  updateVersionDot();
-}
-
-// Shows a small dot on the version tag when the latest changelog entry is
-// newer than whatever the user last saw. A first-ever visit has nothing to
-// be "behind" — it seeds the stored version silently instead of showing a
-// dot for a changelog the user has no history with.
-function updateVersionDot() {
-  const current = USER_CHANGELOG[0] && USER_CHANGELOG[0].version;
-  if (!current) return;
-  let lastSeen = null;
-  try { lastSeen = localStorage.getItem(LAST_SEEN_VERSION_KEY); } catch (e) { /* storage unavailable */ }
-  if (lastSeen === null) {
-    try { localStorage.setItem(LAST_SEEN_VERSION_KEY, current); } catch (e) { /* storage unavailable */ }
-    el.versionTag.classList.remove("unread");
-    return;
+    });
+    el.progressionContent.addEventListener("dragover", (e) => {
+      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+      const rowEl = e.target.closest(".progression-row");
+      if (rowEl) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        clearDragOverMarks();
+        const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
+        if (overIndex === dragSrcIndex) return;
+        const rect = rowEl.getBoundingClientRect();
+        const before = e.clientY - rect.top < rect.height / 2;
+        const toIndex = before ? overIndex : overIndex + 1;
+        markDragOver(rowEl, before ? "drag-over-top" : "drag-over-bottom");
+        if (dragWouldIntroduceWarn(toIndex)) rowEl.classList.add("drag-warn");
+        return;
+      }
+      const boxEl = e.target.closest(".progression-next-rank");
+      if (boxEl) {
+        const ownerRow = boxEl.previousElementSibling;
+        if (!ownerRow || !ownerRow.classList.contains("progression-row")) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        clearDragOverMarks();
+        const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
+        if (overIndex === dragSrcIndex) return;
+        markDragOver(ownerRow, "drag-over-bottom");
+        if (dragWouldIntroduceWarn(overIndex + 1)) ownerRow.classList.add("drag-warn");
+        return;
+      }
+      const divEl = e.target.closest(".progression-divider");
+      if (divEl) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        clearDragOverMarks();
+        const ownerRow = findPrecedingRow(divEl);
+        if (!ownerRow) {
+          const firstRow = el.progressionContent.querySelector(".progression-row");
+          if (firstRow && parseInt(firstRow.getAttribute("data-index"), 10) !== dragSrcIndex) {
+            markDragOver(firstRow, "drag-over-top");
+            if (dragWouldIntroduceWarn(0)) firstRow.classList.add("drag-warn");
+          }
+          return;
+        }
+        const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
+        if (overIndex === dragSrcIndex) return;
+        markDragOver(ownerRow, "drag-over-bottom");
+        if (dragWouldIntroduceWarn(overIndex + 1)) ownerRow.classList.add("drag-warn");
+      }
+    });
+    el.progressionContent.addEventListener("drop", (e) => {
+      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+      const rowEl = e.target.closest(".progression-row");
+      if (rowEl) {
+        e.preventDefault();
+        const rect = rowEl.getBoundingClientRect();
+        const before = e.clientY - rect.top < rect.height / 2;
+        const overIndex = parseInt(rowEl.getAttribute("data-index"), 10);
+        moveProgressionEntryTo(dragSrcIndex, before ? overIndex : overIndex + 1);
+        dragSrcIndex = null;
+        stopAutoScroll();
+        return;
+      }
+      const boxEl = e.target.closest(".progression-next-rank");
+      if (boxEl) {
+        const ownerRow = boxEl.previousElementSibling;
+        if (!ownerRow || !ownerRow.classList.contains("progression-row")) return;
+        e.preventDefault();
+        const overIndex = parseInt(ownerRow.getAttribute("data-index"), 10);
+        moveProgressionEntryTo(dragSrcIndex, overIndex + 1);
+        dragSrcIndex = null;
+        stopAutoScroll();
+        return;
+      }
+      const divEl = e.target.closest(".progression-divider");
+      if (divEl) {
+        e.preventDefault();
+        const ownerRow = findPrecedingRow(divEl);
+        const toIndex = ownerRow ? parseInt(ownerRow.getAttribute("data-index"), 10) + 1 : 0;
+        moveProgressionEntryTo(dragSrcIndex, toIndex);
+        dragSrcIndex = null;
+        stopAutoScroll();
+      }
+    });
   }
-  el.versionTag.classList.toggle("unread", lastSeen !== current);
-}
-
-function showToast(msg) {
-  el.toast.textContent = msg;
-  el.toast.classList.add("show");
-  clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
-}
-
-// The changelog list routinely needs scrolling to read in full, and this
-// app's thin custom scrollbar can be easy to miss - a bottom fade signals
-// there's more below, and clears once actually scrolled to the end (or if
-// everything already fits with no scrolling needed - the same
-// scrollTop+clientHeight >= scrollHeight check covers both).
-function updateChangelogFade() {
-  const el2 = el.changelogContent;
-  const atBottom = el2.scrollTop + el2.clientHeight >= el2.scrollHeight - 1;
-  el.changelogFade.classList.toggle("hidden", atBottom);
-}
-
-function openChangelogModal() {
-  el.changelogContent.innerHTML = USER_CHANGELOG.map((entry) => `
+  function undoLast() {
+    applyAttempt(undoLastMutation());
+  }
+  function moveProgressionEntry(index, dir) {
+    const target = index + dir;
+    if (target < 0 || target >= state.purchaseOrder.length) return;
+    const a = state.purchaseOrder[index];
+    const b = state.purchaseOrder[target];
+    const sameAA = a.scope === b.scope && a.idx === b.idx && (a.className || null) === (b.className || null);
+    if (sameAA) {
+      showToast("Can't reorder different ranks of the same AA.");
+      return;
+    }
+    moveEntry(index, target);
+    renderProgression();
+  }
+  function moveProgressionEntryTo(fromIndex, toIndex) {
+    if (toIndex > fromIndex) toIndex -= 1;
+    if (fromIndex === toIndex) return;
+    moveEntry(fromIndex, toIndex);
+    renderProgression();
+  }
+  function absoluteIndexForVisiblePosition(targetVisiblePos, fromIndex, anchored) {
+    const raw = targetVisiblePos <= 1 ? 0 : Math.min(targetVisiblePos - 1, state.purchaseOrder.length - 1);
+    return anchored && raw > fromIndex ? raw - 1 : raw;
+  }
+  function moveToVisiblePosition(fromIndex, targetVisiblePos, anchored) {
+    const toIdx = absoluteIndexForVisiblePosition(targetVisiblePos, fromIndex, anchored);
+    if (toIdx === fromIndex) return;
+    moveEntry(fromIndex, toIdx);
+    renderProgression();
+  }
+  function lastProgressionRow() {
+    const rows = el.progressionContent.querySelectorAll(".progression-row");
+    return rows.length ? rows[rows.length - 1] : null;
+  }
+  function isBelowLastRow(e) {
+    const last = lastProgressionRow();
+    return !!last && e.clientY >= last.getBoundingClientRect().bottom;
+  }
+  function closeMoveMenu() {
+    if (openMoveMenuKey === null) return;
+    openMoveMenuKey = null;
+    renderProgression();
+  }
+  function wireProgressionDropZone() {
+    document.addEventListener("click", (e) => {
+      if (openMoveMenuKey === null) return;
+      if (e.target.closest(".move-menu-wrap")) return;
+      closeMoveMenu();
+    });
+    el.progressionWrap.addEventListener("dragover", (e) => {
+      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE)) return;
+      updateAutoScroll(e);
+    });
+    document.addEventListener("dragend", stopAutoScroll);
+    el.progressionWrap.addEventListener("dragover", (e) => {
+      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
+      if (!isBelowLastRow(e)) {
+        clearDragOverMarks();
+        return;
+      }
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      clearDragOverMarks();
+      const last = lastProgressionRow();
+      if (last && parseInt(last.getAttribute("data-index"), 10) !== dragSrcIndex) {
+        markDragOver(last, "drag-over-bottom");
+        if (dragWouldIntroduceWarn(state.purchaseOrder.length)) last.classList.add("drag-warn");
+      }
+    });
+    el.progressionWrap.addEventListener("drop", (e) => {
+      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionWrap) return;
+      if (!isBelowLastRow(e)) return;
+      e.preventDefault();
+      moveProgressionEntryTo(dragSrcIndex, state.purchaseOrder.length);
+      dragSrcIndex = null;
+      stopAutoScroll();
+    });
+    el.progressionContent.addEventListener("dragover", (e) => {
+      if (!e.dataTransfer.types.includes(PROGRESSION_DRAG_TYPE) || e.target !== el.progressionContent) return;
+      clearDragOverMarks();
+    });
+  }
+  function populateStaticControls() {
+    el.browseFilter.innerHTML = `<option value="all">All Categories</option><option value="general">General</option><option value="archetype">Archetype</option><option value="special">Special</option><optgroup label="Class">` + CLASS_LIST.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("") + `</optgroup>`;
+    if (USER_CHANGELOG[0]) el.versionTag.textContent = `v${USER_CHANGELOG[0].version}`;
+    updateVersionDot();
+  }
+  function updateVersionDot() {
+    const current = USER_CHANGELOG[0] && USER_CHANGELOG[0].version;
+    if (!current) return;
+    let lastSeen = null;
+    try {
+      lastSeen = localStorage.getItem(LAST_SEEN_VERSION_KEY);
+    } catch (e) {
+    }
+    if (lastSeen === null) {
+      try {
+        localStorage.setItem(LAST_SEEN_VERSION_KEY, current);
+      } catch (e) {
+      }
+      el.versionTag.classList.remove("unread");
+      return;
+    }
+    el.versionTag.classList.toggle("unread", lastSeen !== current);
+  }
+  function showToast(msg) {
+    el.toast.textContent = msg;
+    el.toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.toast.classList.remove("show"), 2200);
+  }
+  function updateChangelogFade() {
+    const el2 = el.changelogContent;
+    const atBottom = el2.scrollTop + el2.clientHeight >= el2.scrollHeight - 1;
+    el.changelogFade.classList.toggle("hidden", atBottom);
+  }
+  function openChangelogModal() {
+    el.changelogContent.innerHTML = USER_CHANGELOG.map((entry) => `
     <div class="changelog-entry">
       <div class="changelog-version">v${escapeHtml(entry.version)} <span class="changelog-date">${escapeHtml(entry.date)}</span></div>
       <ul>${entry.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
     </div>`).join("") || '<div class="empty">Nothing here yet.</div>';
-  el.changelogModal.classList.remove("hidden");
-  el.changelogContent.scrollTop = 0;
-  updateChangelogFade();
-  el.changelogContent.onscroll = updateChangelogFade;
-  el.versionTag.classList.remove("unread");
-  if (USER_CHANGELOG[0]) {
-    try { localStorage.setItem(LAST_SEEN_VERSION_KEY, USER_CHANGELOG[0].version); } catch (e) { /* storage unavailable */ }
+    el.changelogModal.classList.remove("hidden");
+    el.changelogContent.scrollTop = 0;
+    updateChangelogFade();
+    el.changelogContent.onscroll = updateChangelogFade;
+    el.versionTag.classList.remove("unread");
+    if (USER_CHANGELOG[0]) {
+      try {
+        localStorage.setItem(LAST_SEEN_VERSION_KEY, USER_CHANGELOG[0].version);
+      } catch (e) {
+      }
+    }
   }
-}
-
-function closeChangelogModal() {
-  el.changelogModal.classList.add("hidden");
-}
-
-function renderBuildsList() {
-  const builds = listBuilds();
-  const activeId = getActiveBuildId();
-  el.buildsList.innerHTML = builds.length
-    ? builds.map((b) => `
+  function closeChangelogModal() {
+    el.changelogModal.classList.add("hidden");
+  }
+  function renderBuildsList() {
+    const builds = listBuilds();
+    const activeId = getActiveBuildId();
+    el.buildsList.innerHTML = builds.length ? builds.map((b) => `
       <div class="build-row${b.id === activeId ? " active" : ""}">
         <div class="build-info">
           <span class="build-name">${escapeHtml(b.name)}</span>
@@ -5265,830 +3452,728 @@ function renderBuildsList() {
           <button class="btn" data-action="rename" data-id="${b.id}">Rename</button>
           <button class="btn danger" data-action="delete" data-id="${b.id}">Delete</button>
         </div>
-      </div>`).join("")
-    : '<div class="empty">No saved builds yet — save your current build below to get started.</div>';
+      </div>`).join("") : '<div class="empty">No saved builds yet \u2014 save your current build below to get started.</div>';
+    Array.from(el.buildsList.querySelectorAll("[data-action]")).forEach((btn) => {
+      const id = btn.getAttribute("data-id");
+      const action = btn.getAttribute("data-action");
+      btn.addEventListener("click", () => {
+        if (action === "load") {
+          const build = builds.find((b) => b.id === id);
+          const target = `the build "${build ? build.name : "?"}"`;
+          if (!confirmReplaceCurrentBuild("load", target)) return;
+          const result = loadBuild(id);
+          if (!result) {
+            showToast("Couldn't load that build \u2014 it may have been removed.");
+            return;
+          }
+          closeBuildsModal();
+          renderAll();
+          showToast(`Build loaded${loadIssuesSuffix({ droppedRanks: result.droppedRanks }, result.repaired)}`);
+        } else if (action === "rename") {
+          const build = builds.find((b) => b.id === id);
+          const name = prompt("Rename build:", build ? build.name : "");
+          if (name === null) return;
+          const trimmed = name.trim();
+          if (!trimmed) {
+            showToast("Name can't be empty.");
+            return;
+          }
+          const outcome = renameBuild(id, trimmed);
+          if (outcome === "collision") {
+            showToast(`A build named "${trimmed}" already exists.`);
+            return;
+          }
+          if (outcome === "missing") {
+            showToast("Couldn't rename \u2014 that build may have been removed.");
+            return;
+          }
+          renderBuildsList();
+          renderTopbar();
+          if (outcome === "failed") showToast("Renamed here, but couldn't save it \u2014 local storage may be full or unavailable.");
+        } else if (action === "delete") {
+          const build = builds.find((b) => b.id === id);
+          if (!confirm(`Delete "${build ? build.name : "this build"}"? This can't be undone.`)) return;
+          const persisted = deleteBuild(id);
+          renderBuildsList();
+          renderTopbar();
+          if (!persisted) showToast("Deleted here, but couldn't save it \u2014 local storage may be full or unavailable.");
+        }
+      });
+    });
+  }
+  function openBuildsModal() {
+    el.buildSaveName.value = "";
+    renderBuildsList();
+    el.buildsModal.classList.remove("hidden");
+    el.buildSaveName.focus();
+  }
+  function closeBuildsModal() {
+    el.buildsModal.classList.add("hidden");
+  }
+  function renderOwnedTrackingModal() {
+    const activeId = getActiveBuildId();
+    const sharing = buildsSharingCurrentOwnedProfile();
+    const others = listBuilds().filter((b) => b.id !== activeId);
+    el.ownedTrackingStatus.innerHTML = sharing.length ? `Sharing live owned progress with <span class="shared-with">${sharing.map((b) => escapeHtml(b.name)).join(", ")}</span>.` : "Tracking its own independent owned progress right now.";
+    el.ownedTrackingBuildSelect.innerHTML = others.length ? others.map((b) => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join("") : '<option value="">No other saved builds yet</option>';
+    el.ownedTrackingBuildSelect.disabled = !others.length;
+    el.ownedTrackingLinkBtn.disabled = !others.length;
+    el.ownedTrackingMergeBtn.disabled = !others.length;
+  }
+  function openOwnedTrackingModal() {
+    renderOwnedTrackingModal();
+    el.ownedTrackingModal.classList.remove("hidden");
+  }
+  function closeOwnedTrackingModal() {
+    el.ownedTrackingModal.classList.add("hidden");
+  }
+  function handleOwnedTrackingLink() {
+    const id = el.ownedTrackingBuildSelect.value;
+    if (!id) return;
+    const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
+    linkOwnedToBuild(id);
+    renderOwnedTrackingModal();
+    renderAll();
+    showToast(`Now sharing owned progress with "${name}"`);
+  }
+  function handleOwnedTrackingMerge() {
+    const id = el.ownedTrackingBuildSelect.value;
+    if (!id) return;
+    const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
+    const result = mergeOwnedFromBuild(id);
+    renderOwnedTrackingModal();
+    renderAll();
+    showToast(result.merged ? `Merged in ${result.merged} owned rank${result.merged === 1 ? "" : "s"} from "${name}"` : `Nothing new to merge in from "${name}"`);
+  }
+  function handleOwnedTrackingSplit() {
+    splitOwnedFromCurrent();
+    renderOwnedTrackingModal();
+    renderAll();
+    showToast("Now tracking its own independent owned progress");
+  }
+  function openResetModal() {
+    el.resetClearOwnedCheckbox.checked = false;
+    el.resetModal.classList.remove("hidden");
+  }
+  function closeResetModal() {
+    el.resetModal.classList.add("hidden");
+  }
+  function handleConfirmReset() {
+    const clearOwnedToo = el.resetClearOwnedCheckbox.checked;
+    performReset(clearOwnedToo);
+    clearActiveBuild();
+    closeResetModal();
+    renderAll();
+    showToast(clearOwnedToo ? "Build reset" : "Build reset \u2014 owned progress kept");
+  }
+  function handleBuildSave() {
+    const name = el.buildSaveName.value.trim();
+    if (!name) {
+      showToast("Enter a name for this build.");
+      return;
+    }
+    const id = saveWithNameCheck(name);
+    if (id === false) return;
+    if (!id) {
+      showToast("Couldn't save \u2014 local storage may be full or unavailable.");
+      return;
+    }
+    el.buildSaveName.value = "";
+    renderBuildsList();
+    renderTopbar();
+    showToast(`Saved "${name}"`);
+  }
 
-  Array.from(el.buildsList.querySelectorAll("[data-action]")).forEach((btn) => {
-    const id = btn.getAttribute("data-id");
-    const action = btn.getAttribute("data-action");
-    btn.addEventListener("click", () => {
-      if (action === "load") {
-        const build = builds.find((b) => b.id === id);
-        const target = `the build "${build ? build.name : "?"}"`;
-        if (!confirmReplaceCurrentBuild("load", target)) return;
-        const result = loadBuild(id);
-        if (!result) { showToast("Couldn't load that build — it may have been removed."); return; }
-        closeBuildsModal();
-        renderAll();
-        showToast(`Build loaded${loadIssuesSuffix({ droppedRanks: result.droppedRanks }, result.repaired)}`);
-      } else if (action === "rename") {
-        const build = builds.find((b) => b.id === id);
-        const name = prompt("Rename build:", build ? build.name : "");
-        if (name === null) return;
-        const trimmed = name.trim();
-        if (!trimmed) { showToast("Name can't be empty."); return; }
-        const outcome = renameBuild(id, trimmed);
-        if (outcome === "collision") { showToast(`A build named "${trimmed}" already exists.`); return; }
-        if (outcome === "missing") { showToast("Couldn't rename — that build may have been removed."); return; }
-        renderBuildsList();
-        renderTopbar();
-        if (outcome === "failed") showToast("Renamed here, but couldn't save it — local storage may be full or unavailable.");
-      } else if (action === "delete") {
-        const build = builds.find((b) => b.id === id);
-        if (!confirm(`Delete "${build ? build.name : "this build"}"? This can't be undone.`)) return;
-        const persisted = deleteBuild(id);
-        renderBuildsList();
-        renderTopbar();
-        if (!persisted) showToast("Deleted here, but couldn't save it — local storage may be full or unavailable.");
+  // src/exportImport.js
+  var BUILD_CODE_VERSION = 7;
+  var MAX_ENCODED_CODE_LENGTH = 262144;
+  var MAX_DECOMPRESSED_BYTES = 4 * 1024 * 1024;
+  function pushCompactRank(ids, ranks, scope, className, key, rank) {
+    const id = idForKey(scope, className, key);
+    if (id != null) {
+      ids.push(id);
+      ranks.push(rank);
+    }
+  }
+  function compactRanksFor(ranksLike) {
+    const serialized = serializeRanks(ranksLike);
+    const ids = [];
+    const ranks = [];
+    ["general", "archetype", "special"].forEach((scope) => {
+      const store = serialized[scope] || {};
+      Object.keys(store).forEach((key) => pushCompactRank(ids, ranks, scope, null, key, store[key]));
+    });
+    Object.keys(serialized.classes || {}).forEach((className) => {
+      const store = serialized.classes[className] || {};
+      Object.keys(store).forEach((key) => pushCompactRank(ids, ranks, "class", className, key, store[key]));
+    });
+    return [ids, ranks];
+  }
+  function expandCompactRanks(list, columnar) {
+    const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
+    let dropped = 0;
+    if (!list) return { ranks, dropped };
+    const ids = (columnar ? list[0] : list) || [];
+    const capped = ids.slice(0, MAX_PURCHASE_ORDER);
+    const pairs = columnar ? capped.map((id, i) => [id, list[1][i]]) : capped;
+    pairs.forEach(([id, rank]) => {
+      const entry = entryForId(id);
+      if (!entry) {
+        dropped++;
+        return;
+      }
+      if (!Number.isFinite(rank)) return;
+      if (entry.scope === "class") {
+        ranks.classes[entry.className] = ranks.classes[entry.className] || {};
+        ranks.classes[entry.className][entry.key] = rank;
+      } else {
+        ranks[entry.scope][entry.key] = rank;
       }
     });
-  });
-}
-
-function openBuildsModal() {
-  el.buildSaveName.value = "";
-  renderBuildsList();
-  el.buildsModal.classList.remove("hidden");
-  el.buildSaveName.focus();
-}
-
-function closeBuildsModal() {
-  el.buildsModal.classList.add("hidden");
-}
-
-// Populates the status line ("sharing with X" vs "tracking its own") and
-// the build picker for Link/Merge, and enables/disables Link/Merge based
-// on whether there's anything to link/merge with at all - Split needs
-// neither (it always acts on the current session alone).
-function renderOwnedTrackingModal() {
-  const activeId = getActiveBuildId();
-  const sharing = buildsSharingCurrentOwnedProfile();
-  const others = listBuilds().filter((b) => b.id !== activeId);
-
-  el.ownedTrackingStatus.innerHTML = sharing.length
-    ? `Sharing live owned progress with <span class="shared-with">${sharing.map((b) => escapeHtml(b.name)).join(", ")}</span>.`
-    : "Tracking its own independent owned progress right now.";
-
-  el.ownedTrackingBuildSelect.innerHTML = others.length
-    ? others.map((b) => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join("")
-    : '<option value="">No other saved builds yet</option>';
-  el.ownedTrackingBuildSelect.disabled = !others.length;
-  el.ownedTrackingLinkBtn.disabled = !others.length;
-  el.ownedTrackingMergeBtn.disabled = !others.length;
-}
-
-function openOwnedTrackingModal() {
-  renderOwnedTrackingModal();
-  el.ownedTrackingModal.classList.remove("hidden");
-}
-
-function closeOwnedTrackingModal() {
-  el.ownedTrackingModal.classList.add("hidden");
-}
-
-function handleOwnedTrackingLink() {
-  const id = el.ownedTrackingBuildSelect.value;
-  if (!id) return;
-  const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
-  linkOwnedToBuild(id);
-  renderOwnedTrackingModal();
-  renderAll();
-  showToast(`Now sharing owned progress with "${name}"`);
-}
-
-function handleOwnedTrackingMerge() {
-  const id = el.ownedTrackingBuildSelect.value;
-  if (!id) return;
-  const name = (listBuilds().find((b) => b.id === id) || {}).name || "that build";
-  const result = mergeOwnedFromBuild(id);
-  renderOwnedTrackingModal();
-  renderAll();
-  showToast(result.merged
-    ? `Merged in ${result.merged} owned rank${result.merged === 1 ? "" : "s"} from "${name}"`
-    : `Nothing new to merge in from "${name}"`);
-}
-
-function handleOwnedTrackingSplit() {
-  splitOwnedFromCurrent();
-  renderOwnedTrackingModal();
-  renderAll();
-  showToast("Now tracking its own independent owned progress");
-}
-
-function openResetModal() {
-  el.resetClearOwnedCheckbox.checked = false;
-  el.resetModal.classList.remove("hidden");
-}
-
-function closeResetModal() {
-  el.resetModal.classList.add("hidden");
-}
-
-function handleConfirmReset() {
-  const clearOwnedToo = el.resetClearOwnedCheckbox.checked;
-  performReset(clearOwnedToo);
-  clearActiveBuild();
-  closeResetModal();
-  renderAll();
-  showToast(clearOwnedToo ? "Build reset" : "Build reset — owned progress kept");
-}
-
-// Snapshots the current build under whatever name is in the input — a new
-// slot, or an overwrite (after confirming) if the name matches an existing
-// one. Exported for events.js to wire to both the Save button and an Enter
-// keypress in the name field.
-function handleBuildSave() {
-  const name = el.buildSaveName.value.trim();
-  if (!name) { showToast("Enter a name for this build."); return; }
-  const id = saveWithNameCheck(name);
-  if (id === false) return; // declined the overwrite - not an error, just nothing to report
-  if (!id) { showToast("Couldn't save — local storage may be full or unavailable."); return; }
-  el.buildSaveName.value = "";
-  renderBuildsList();
-  renderTopbar();
-  showToast(`Saved "${name}"`);
-}
-
-// Build export/import: the text format, the share-code encoding, share links, and modal wiring.
-
-// Wire-format version for BUILD_CODE specifically (share links, export
-// text) — independent of state.js's SAVE_FORMAT_VERSION, which governs
-// localStorage only and stays name-keyed (readable, no size pressure
-// there).
-//
-// v5-v7 (v7 current, all written by packV5 - see BUILD_CODE_VERSION
-// below) drop JSON entirely for packed bits, sized per field from each
-// value's real enforced ceiling. JSON spends most of its bytes on
-// structure - commas, brackets, and decimal digits for values that need
-// 4-9 bits - and DEFLATE can only partly recover that. Measured 41-67%
-// smaller than v4 across build sizes, ~43% on a realistic one, with no
-// field dropped or approximated.
-//
-// v2-v4 are JSON and still decode, so every link ever issued keeps
-// working: v2 is a keyed object, v3 a positional array [v,c,l,r,p,o,w],
-// v4 the same array with r/o columnar ([[ids...],[ranks...]] rather than
-// [[id,rank],...]). See expandCompactPayload/expandCompactRanks; the
-// container around them (gzip, deflate-raw, or plain) is sniffed
-// separately in decodeBuildCode.
-//
-// v6 exists solely to widen the owned/planned delta field from 5 to 6
-// signed bits (V5_BITS.rankDelta) - v5's 5 bits could only hold a delta
-// in [-16, 15], one bit short of the true [-31, 31] range, silently
-// corrupting anything outside it. expandBinaryPayload still decodes v5
-// bit-for-bit as it always has (including that gap - a v5 code already
-// carrying a too-wide delta was already wrong before this, not newly so),
-// same "every link ever issued keeps working" guarantee the JSON versions
-// get.
-//
-// v7 appends (id, rank) pairs for AAs that are owned but not planned (a
-// rank refunded to 0 after training it), which v5/v6 dropped. It also
-// widens the waypoint color to 4 bits (v6's 3 held exactly the 7 colors
-// plus "none") and the delta count to 9 bits, the width of an id count.
-const BUILD_CODE_VERSION = 7;
-
-// A real build's own code is tiny - the largest known real-world build
-// (183 picks) is a few hundred characters even uncompressed as v4 JSON.
-// These are generous by 100x+ over any legitimate build, not a tight
-// bound - they exist purely to reject an obviously-hostile input (a share
-// link or pasted/imported text carrying a huge blob, or a small
-// compressed payload crafted to decompress into an enormous one - a
-// "decompression bomb") before spending memory/time on it, not to
-// constrain what a real character's build can hold.
-const MAX_ENCODED_CODE_LENGTH = 262144; // chars, base64/base64url text - checked before any decoding
-const MAX_DECOMPRESSED_BYTES = 4 * 1024 * 1024; // bytes - checked while streaming out of DecompressionStream, never materialized past this
-
-// An AA missing from aaIds.js shouldn't happen for anything currently
-// pickable (build_minify.py's invariant check + assign_aa_ids.py being run
-// together keep them in sync) - degrades to "dropped" rather than guessed
-// at, same as everywhere else this app handles an unresolved key.
-function pushCompactRank(ids, ranks, scope, className, key, rank) {
-  const id = idForKey(scope, className, key);
-  if (id != null) { ids.push(id); ranks.push(rank); }
-}
-
-function compactRanksFor(ranksLike) {
-  const serialized = serializeRanks(ranksLike);
-  const ids = [];
-  const ranks = [];
-  ["general", "archetype", "special"].forEach((scope) => {
-    const store = serialized[scope] || {};
-    Object.keys(store).forEach((key) => pushCompactRank(ids, ranks, scope, null, key, store[key]));
-  });
-  Object.keys(serialized.classes || {}).forEach((className) => {
-    const store = serialized.classes[className] || {};
-    Object.keys(store).forEach((key) => pushCompactRank(ids, ranks, "class", className, key, store[key]));
-  });
-  return [ids, ranks];
-}
-
-// An id that no longer resolves (entryForId returns null - the AA was
-// removed since this link's ranks were assigned their ids) is dropped, same
-// degrade-gracefully philosophy as an unresolved name key elsewhere.
-// Accepts either the current columnar shape (BUILD_CODE_VERSION 4+,
-// [[ids...],[ranks...]]) or the older array-of-pairs shape (v2/v3,
-// [[id,rank],[id,rank],...]) - columnar says which to expect, decided by
-// expandCompactPayload from the code's own version number.
-// Returns { ranks, dropped } rather than just ranks - dropped is an id
-// that no longer resolves (entryForId returns null), mirroring state.js's
-// deserializeRanks so a caller can fold both into the same "N picks no
-// longer exist" notice (loadIssuesSuffix). Without this, an id dropped
-// here vanishes before deserializeRanks ever runs on the result, so its
-// own dropped count stays 0 and the drop goes unreported.
-function expandCompactRanks(list, columnar) {
-  const ranks = { general: {}, archetype: {}, special: {}, classes: {} };
-  let dropped = 0;
-  if (!list) return { ranks, dropped };
-  // Capped before any per-entry work, same as MAX_PURCHASE_ORDER's own use
-  // in state.js's deserializePurchaseOrder - an untrusted array this size
-  // could otherwise cost far more processing than any real roster needs.
-  const ids = (columnar ? list[0] : list) || [];
-  const capped = ids.slice(0, MAX_PURCHASE_ORDER);
-  const pairs = columnar ? capped.map((id, i) => [id, list[1][i]]) : capped;
-  pairs.forEach(([id, rank]) => {
-    const entry = entryForId(id);
-    if (!entry) { dropped++; return; }
-    // A columnar payload with mismatched ids/ranks arrays is corrupt. Drop the
-    // entry like an unresolved id instead of storing an undefined rank that
-    // would later be clamped to 0. Not counted toward `dropped` - it's
-    // malformed data, not a pick that no longer exists.
-    if (!Number.isFinite(rank)) return;
-    if (entry.scope === "class") {
-      ranks.classes[entry.className] = ranks.classes[entry.className] || {};
-      ranks.classes[entry.className][entry.key] = rank;
-    } else {
-      ranks[entry.scope][entry.key] = rank;
+    return { ranks, dropped };
+  }
+  function expandCompactPayload(compact) {
+    const isArray = Array.isArray(compact);
+    const v = isArray ? compact[0] : compact.v;
+    const [c, l, r, p, o, w] = isArray ? compact.slice(1) : [compact.c, compact.l, compact.r, compact.p, compact.o, compact.w];
+    const columnar = v >= 4;
+    const purchaseOrder = (p || []).slice(0, MAX_PURCHASE_ORDER).map((id) => {
+      const entry = entryForId(id);
+      return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
+    }).filter(Boolean);
+    const rankResult = expandCompactRanks(r, columnar);
+    const ownedResult = expandCompactRanks(o, columnar);
+    return {
+      v: SAVE_FORMAT_VERSION,
+      selectedClasses: (c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
+      charLevel: l,
+      // An older share code/link may still carry a `t` (totalPoints) field,
+      // from before the point cap was removed - simply never read into
+      // anything here, same graceful-ignore as any unrecognized field.
+      ranks: rankResult.ranks,
+      purchaseOrder,
+      // Raw [pts, label] pairs, or absent/null on an older link/build
+      // predating this field - either way applyLoaded's sanitizeWaypoints
+      // call handles validating/clamping/defaulting, same as it does for a
+      // verbose payload.
+      waypoints: w || [],
+      // null/absent only if the sender genuinely had nothing owned yet -
+      // expandCompactRanks(null/undefined) degrades to the empty shape
+      // either way. applyLoaded itself still never reads this (owned isn't
+      // part of "the build" it applies); the import layer inspects it
+      // separately via payloadOwnedHasContent before deciding whether to
+      // create a fresh profile for it (see maybeImportOwned).
+      owned: ownedResult.ranks,
+      // Not part of the build shape applyLoaded understands - read separately
+      // by the import/share-link callers and folded into their own
+      // droppedRanks count, since an id unresolved here never reaches
+      // deserializeRanks (state.js) to be counted there.
+      decodeDropped: rankResult.dropped + ownedResult.dropped
+    };
+  }
+  async function decompress(bytes, format) {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format));
+    const reader = stream.getReader();
+    const chunks = [];
+    let total = 0;
+    for (; ; ) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_DECOMPRESSED_BYTES) {
+        await reader.cancel();
+        throw new Error("decompressed payload exceeds the size limit");
+      }
+      chunks.push(value);
     }
-  });
-  return { ranks, dropped };
-}
-
-// Reconstructs the verbose, name-keyed shape applyLoaded already understands
-// (the same shape a SAVE_FORMAT_VERSION 4 localStorage/legacy payload is in
-// - an unrelated version number, see state.js) from a decoded compact
-// BUILD_CODE payload, so applyLoaded itself never needs to know the compact
-// format exists — only this file and keys.js do. Accepts the current
-// positional-array shape (BUILD_CODE_VERSION 3+, [v,c,l,r,p,o,w]) or the
-// older keyed-object shape (v2, {v,c,l,r,p,o?,w?}) - same fields either
-// way, just normalized to plain variables up front so the rest of this
-// function doesn't care which container they arrived in. r/o's own inner
-// shape (columnar vs pair-array) is decided separately, by version.
-function expandCompactPayload(compact) {
-  const isArray = Array.isArray(compact);
-  const v = isArray ? compact[0] : compact.v;
-  const [c, l, r, p, o, w] = isArray
-    ? compact.slice(1)
-    : [compact.c, compact.l, compact.r, compact.p, compact.o, compact.w];
-  const columnar = v >= 4;
-  const purchaseOrder = (p || []).slice(0, MAX_PURCHASE_ORDER).map((id) => {
-    const entry = entryForId(id);
-    return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
-  }).filter(Boolean);
-  const rankResult = expandCompactRanks(r, columnar);
-  const ownedResult = expandCompactRanks(o, columnar);
-  return {
-    v: SAVE_FORMAT_VERSION,
-    selectedClasses: (c || []).map((i) => CLASS_LIST[i]).filter(Boolean),
-    charLevel: l,
-    // An older share code/link may still carry a `t` (totalPoints) field,
-    // from before the point cap was removed - simply never read into
-    // anything here, same graceful-ignore as any unrecognized field.
-    ranks: rankResult.ranks,
-    purchaseOrder,
-    // Raw [pts, label] pairs, or absent/null on an older link/build
-    // predating this field - either way applyLoaded's sanitizeWaypoints
-    // call handles validating/clamping/defaulting, same as it does for a
-    // verbose payload.
-    waypoints: w || [],
-    // null/absent only if the sender genuinely had nothing owned yet -
-    // expandCompactRanks(null/undefined) degrades to the empty shape
-    // either way. applyLoaded itself still never reads this (owned isn't
-    // part of "the build" it applies); the import layer inspects it
-    // separately via payloadOwnedHasContent before deciding whether to
-    // create a fresh profile for it (see maybeImportOwned).
-    owned: ownedResult.ranks,
-    // Not part of the build shape applyLoaded understands - read separately
-    // by the import/share-link callers and folded into their own
-    // droppedRanks count, since an id unresolved here never reaches
-    // deserializeRanks (state.js) to be counted there.
-    decodeDropped: rankResult.dropped + ownedResult.dropped
+    const out = new Uint8Array(total);
+    let offset = 0;
+    chunks.forEach((c) => {
+      out.set(c, offset);
+      offset += c.byteLength;
+    });
+    return out;
+  }
+  var V5_MAGIC = 229;
+  var V5_BITS = {
+    version: 4,
+    idMode: 1,
+    classSlot: 5,
+    level: 6,
+    id: 9,
+    count: 9,
+    rank: 5,
+    rankDelta: 6,
+    poCount: 11,
+    deltaCount: 9,
+    wpCount: 8,
+    pts: 17,
+    color: 4,
+    labelLen: 8
   };
-}
-
-// purchaseOrder is highly repetitive (one entry per rank bought, not per AA —
-// a maxed 6-rank AA repeats the same scope/className/key six times), so
-// compression beats every hand-rolled format short of assigning every AA a
-// stable numeric id, which is a bigger change than this one. CompressionStream
-// is the standard streams-based API for this; no library needed. Needs
-// Firefox 113+ / Safari 16.4+ (mid-2023) - no feature-detection fallback,
-// since that's an old floor for this app's audience; an unsupported browser
-// fails on both encode and decode (share links / export text), not just one.
-//
-// Raw DEFLATE ("deflate-raw"), not gzip - same underlying compression, but
-// without gzip's 10-byte header + 8-byte trailer (magic bytes, mtime, a
-// CRC32, ...) that a code embedded in a URL/text blob has no use for.
-// Same browser floor either way - every engine's initial CompressionStream
-// shipped all three formats together, deflate-raw included. Saves a fixed
-// ~24 base64 characters per code regardless of build size, which is most
-// noticeable proportionally on an already-short link for a small build.
-//
-// Piped through a Blob's stream rather than manually writing to a
-// writer - decodeBuildCode below tries more than one format in sequence
-// on the same rejected input, and a manual writer.write()'s own promise
-// goes unawaited/unhandled the moment the stream rejects, independently
-// of the awaited read side a try/catch actually guards. Piping avoids
-// that split entirely: every failure surfaces as the one promise this
-// function already returns.
-async function compress(bytes, format) {
-  const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream(format));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
-}
-
-// Reads the decompressed stream chunk-by-chunk rather than materializing
-// it in one shot (new Response(stream).arrayBuffer(), the previous
-// approach) specifically so a decompression bomb - a small, legitimately-
-// encoded compressed input engineered to expand far past
-// MAX_DECOMPRESSED_BYTES - gets its stream cancelled the moment the running
-// total crosses that cap, instead of first fully inflating into memory and
-// only then being rejected.
-async function decompress(bytes, format) {
-  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format));
-  const reader = stream.getReader();
-  const chunks = [];
-  let total = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > MAX_DECOMPRESSED_BYTES) {
-      await reader.cancel();
-      throw new Error("decompressed payload exceeds the size limit");
-    }
-    chunks.push(value);
-  }
-  const out = new Uint8Array(total);
-  let offset = 0;
-  chunks.forEach((c) => { out.set(c, offset); offset += c.byteLength; });
-  return out;
-}
-
-// ---- v5 binary wire format -------------------------------------------------
-//
-// A v5 code is packed bits, uncompressed. Everything before it was JSON run
-// through DEFLATE; packed bits are already near-maximum entropy, so
-// compressing them measurably costs bytes rather than saving them. That
-// also gives up the integrity check DEFLATE was providing incidentally (a
-// truncated stream fails to inflate), which is why V5 carries its own CRC.
-//
-// Byte 0 is a magic number no earlier format can start with: every one of
-// them decodes to text beginning "[" (0x5B) or "{" (0x7B). decodeBuildCode
-// checks it before attempting any decompression, so a v5 payload can never
-// be mistaken for deflate-raw input that happens to inflate into garbage.
-const V5_MAGIC = 0xe5;
-
-// Field widths. Each is sized from the real enforced ceiling, not from
-// what today's data happens to contain:
-//   rank      - data.src.js's largest `ranks` is 26 (Ranger's Hunter's
-//               Attack Power), and setOwnedRank (logic.js) doesn't clamp
-//               on write, so 5 bits rather than the 4 a max of 10 implies.
-//   rankDelta - an owned/planned diff pair's delta (planned - owned), two's
-//               complement signed (bitReader.takeSigned). Both sides are
-//               independently bounded to [0, rank's own 5-bit range], so
-//               the delta's true range is [-31, 31] - one bit wider than
-//               `rank` itself, since unlike an absolute rank it can be
-//               negative (owned exceeding planned - a real, supported
-//               refund case, not just a theoretical one) and needs room
-//               for the full magnitude either direction, not half of it.
-//   id        - aaIds.js is append-only and never reuses an id, so the
-//               ceiling grows with every wiki scrape; 9 bits leaves room.
-//   pts       - MAX_WAYPOINT_PTS is 100000.
-//   color     - a WAYPOINT_COLORS position + 1, 0 for none. The position is
-//               what's stored, so that list is append-only.
-//   labelLen  - sanitizeWaypoints caps labels at 60 UTF-16 units, which is
-//               up to 240 UTF-8 bytes.
-const V5_BITS = {
-  version: 4, idMode: 1, classSlot: 5, level: 6, id: 9, count: 9,
-  rank: 5, rankDelta: 6, poCount: 11, deltaCount: 9, wpCount: 8, pts: 17, color: 4, labelLen: 8
-};
-// The v5/v6 widths of the fields v7 widened.
-const V6_BITS = { deltaCount: 8, color: 3 };
-const V5_CLASS_NONE = 31; // CLASS_LIST.indexOf miss; applyLoaded rejects the set anyway
-
-function bitWriter() {
-  const bits = [];
-  return {
-    put(value, width) { bits.push((value >>> 0).toString(2).padStart(width, "0").slice(-width)); },
-    putBits(str) { bits.push(str); },
-    bytes() {
-      let s = bits.join("");
-      s += "0".repeat((8 - (s.length % 8)) % 8);
-      const out = new Uint8Array(s.length / 8);
-      for (let i = 0; i < out.length; i++) out[i] = parseInt(s.slice(i * 8, i * 8 + 8), 2);
-      return out;
-    }
-  };
-}
-
-// Throws on running past the end rather than returning zeros - a truncated
-// code must fail loudly, not decode into a plausible-looking short build.
-function bitReader(bytes, startByte) {
-  let pos = startByte * 8;
-  const total = bytes.length * 8;
-  function bit(i) { return (bytes[i >>> 3] >>> (7 - (i & 7))) & 1; }
-  return {
-    take(width) {
-      if (pos + width > total) throw new Error("build code truncated");
-      let v = 0;
-      for (let i = 0; i < width; i++) v = (v << 1) | bit(pos + i);
-      pos += width;
-      return v >>> 0;
-    },
-    // bitWriter.put stores a negative value's low `width` bits (two's
-    // complement), so a signed field must sign-extend on read the same way,
-    // or a negative value comes back as a large positive one.
-    takeSigned(width) {
-      const raw = this.take(width);
-      const half = 1 << (width - 1);
-      return raw >= half ? raw - (half << 1) : raw;
-    },
-    alignedByteOffset() { return (pos + 7) >>> 3; }
-  };
-}
-
-// CRC-16/CCITT-FALSE. Small, no table, and enough to catch the truncation
-// and single-character mangling that a copy-pasted link actually suffers.
-function crc16(bytes, end) {
-  let crc = 0xffff;
-  for (let i = 0; i < end; i++) {
-    crc ^= bytes[i] << 8;
-    for (let b = 0; b < 8; b++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
-  }
-  return crc & 0xffff;
-}
-
-function bytesToBase64(bytes) {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary);
-}
-
-function base64ToBytes(b64) {
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
-
-// How many bits an index into a list of `n` needs. A 1-entry list still
-// needs 1 bit rather than 0, so the reader and writer agree on a width.
-function indexWidth(n) {
-  return Math.max(1, 32 - Math.clz32(Math.max(1, n - 1)));
-}
-
-// Packs one build. idMode 0 stores the AA ids as a bitmap over 0..highest,
-// 1 stores them as an explicit list; which one wins depends entirely on the
-// build (a handful of high-id class AAs is far cheaper explicitly than as a
-// 130-bit mostly-empty bitmap), so packV5 gets called both ways and the
-// smaller result is what ships. See encodeBuildCode.
-function packV5(idMode) {
-  const [plannedIds, plannedRanks] = compactRanksFor(state.ranks);
-  const [ownedIds, ownedRanks] = compactRanksFor(state.owned);
-  const planned = new Map();
-  plannedIds.forEach((id, i) => planned.set(id, plannedRanks[i]));
-  const owned = new Map();
-  ownedIds.forEach((id, i) => owned.set(id, ownedRanks[i]));
-
-  // Sorted so the bitmap form and the purchaseOrder indices share one
-  // canonical ordering. The order itself carries no information - ranks
-  // travel alongside their id either way.
-  const ids = Array.from(planned.keys()).sort((a, b) => a - b);
-  const slot = new Map();
-  ids.forEach((id, i) => slot.set(id, i));
-
-  const w = bitWriter();
-  w.put(BUILD_CODE_VERSION, V5_BITS.version);
-  w.put(idMode, V5_BITS.idMode);
-  state.selectedClasses.forEach((name) => {
-    const i = CLASS_LIST.indexOf(name);
-    w.put(i < 0 ? V5_CLASS_NONE : i, V5_BITS.classSlot);
-  });
-  w.put(state.charLevel, V5_BITS.level);
-
-  if (idMode === 0) {
-    const hi = ids.length ? ids[ids.length - 1] : 0;
-    w.put(hi, V5_BITS.id);
-    // Always hi + 1 bits, so a zero-AA build writes a single "0" rather than
-    // nothing. Both it and a build holding only id 0 store hi = 0, so an
-    // empty bitmap would be indistinguishable from a set one bit wide.
-    const present = new Array(hi + 1).fill("0");
-    ids.forEach((id) => { present[id] = "1"; });
-    w.putBits(present.join(""));
-  } else {
-    w.put(ids.length, V5_BITS.count);
-    ids.forEach((id) => w.put(id, V5_BITS.id));
-  }
-  ids.forEach((id) => w.put(planned.get(id), V5_BITS.rank));
-
-  // purchaseOrder entries index into this build's own id list, not the
-  // global id space - 6 bits instead of 9 on a typical build, and it's the
-  // single largest field.
-  const po = serializePurchaseOrder(state.purchaseOrder)
-    .map((e) => idForKey(e.scope, e.className, e.key))
-    .filter((id) => id != null && slot.has(id));
-  w.put(po.length, V5_BITS.poCount);
-  const poWidth = indexWidth(ids.length);
-  po.forEach((id) => w.put(slot.get(id), poWidth));
-
-  // owned is near-perfectly redundant with planned in practice (an owned
-  // rank almost always equals its planned rank - 42 of 43 on a real build),
-  // so it rides as one bit per planned AA meaning "owned at the planned
-  // rank", plus explicit (which, by how much) pairs only where the two
-  // disagree. The pair carries its own index because the flags alone can't
-  // say which owned entries differ.
-  const ownedList = ids.filter((id) => owned.has(id));
-  w.putBits(ids.map((id) => (owned.has(id) ? "1" : "0")).join(""));
-  const diffs = [];
-  ownedList.forEach((id, i) => {
-    if (owned.get(id) !== planned.get(id)) diffs.push([i, planned.get(id) - owned.get(id)]);
-  });
-  const diffWidth = indexWidth(ownedList.length);
-  w.put(diffs.length, V5_BITS.deltaCount);
-  diffs.forEach(([i, d]) => { w.put(i, diffWidth); w.put(d, V5_BITS.rankDelta); });
-
-  const ownedOnly = Array.from(owned.keys()).filter((id) => !planned.has(id)).sort((a, b) => a - b);
-  w.put(ownedOnly.length, V5_BITS.count);
-  ownedOnly.forEach((id) => { w.put(id, V5_BITS.id); w.put(owned.get(id), V5_BITS.rank); });
-
-  const labels = [];
-  w.put(state.waypoints.length, V5_BITS.wpCount);
-  state.waypoints.forEach((wp) => {
-    w.put(wp.pts, V5_BITS.pts);
-    const ci = WAYPOINT_COLORS.findIndex((c) => c.key === wp.color);
-    w.put(ci < 0 ? 0 : ci + 1, V5_BITS.color); // 0 = no color
-    const bytes = new TextEncoder().encode(wp.label || "");
-    w.put(bytes.length, V5_BITS.labelLen);
-    labels.push(bytes);
-  });
-
-  // Labels sit after the bit region rather than inside it - they're
-  // variable-length UTF-8, and byte-aligning them keeps the reader simple.
-  const head = w.bytes();
-  const labelLen = labels.reduce((n, b) => n + b.length, 0);
-  const out = new Uint8Array(1 + head.length + labelLen + 2);
-  out[0] = V5_MAGIC;
-  out.set(head, 1);
-  let at = 1 + head.length;
-  labels.forEach((b) => { out.set(b, at); at += b.length; });
-  const crc = crc16(out, at);
-  out[at] = crc >>> 8;
-  out[at + 1] = crc & 0xff;
-  return out;
-}
-
-function expandBinaryPayload(bytes) {
-  if (bytes.length < 4) throw new Error("build code truncated");
-  const end = bytes.length - 2;
-  const want = (bytes[end] << 8) | bytes[end + 1];
-  if (crc16(bytes, end) !== want) throw new Error("build code failed its checksum");
-
-  const r = bitReader(bytes, 1);
-  const v = r.take(V5_BITS.version);
-  if (v < 5 || v > 7) throw new Error(`unsupported binary build code version ${v}`);
-  const widths = v >= 7 ? V5_BITS : { ...V5_BITS, ...V6_BITS };
-  const idMode = r.take(V5_BITS.idMode);
-  const selectedClasses = [];
-  for (let i = 0; i < 3; i++) {
-    const ci = r.take(V5_BITS.classSlot);
-    if (ci !== V5_CLASS_NONE && CLASS_LIST[ci]) selectedClasses.push(CLASS_LIST[ci]);
-  }
-  const charLevel = r.take(V5_BITS.level);
-
-  let ids = [];
-  if (idMode === 0) {
-    const hi = r.take(V5_BITS.id);
-    const width = hi + 1;
+  var V6_BITS = { deltaCount: 8, color: 3 };
+  var V5_CLASS_NONE = 31;
+  function bitWriter() {
     const bits = [];
-    for (let i = 0; i < width; i++) bits.push(r.take(1));
-    bits.forEach((b, i) => { if (b) ids.push(i); });
-  } else {
-    const n = r.take(V5_BITS.count);
-    for (let i = 0; i < n; i++) ids.push(r.take(V5_BITS.id));
+    return {
+      put(value, width) {
+        bits.push((value >>> 0).toString(2).padStart(width, "0").slice(-width));
+      },
+      putBits(str) {
+        bits.push(str);
+      },
+      bytes() {
+        let s = bits.join("");
+        s += "0".repeat((8 - s.length % 8) % 8);
+        const out = new Uint8Array(s.length / 8);
+        for (let i = 0; i < out.length; i++) out[i] = parseInt(s.slice(i * 8, i * 8 + 8), 2);
+        return out;
+      }
+    };
   }
-  const plannedRanks = ids.map(() => r.take(V5_BITS.rank));
-
-  const poCount = r.take(V5_BITS.poCount);
-  const poWidth = indexWidth(ids.length);
-  const poIdx = [];
-  for (let i = 0; i < poCount; i++) poIdx.push(r.take(poWidth));
-
-  const ownedFlags = ids.map(() => r.take(1));
-  const ownedIds = [];
-  const ownedRanks = [];
-  ids.forEach((id, i) => {
-    if (!ownedFlags[i]) return;
-    ownedIds.push(id);
-    ownedRanks.push(plannedRanks[i]); // same-as-planned unless a delta says otherwise
-  });
-  const deltaCount = r.take(widths.deltaCount);
-  const diffWidth = indexWidth(ownedIds.length);
-  // v5 wrote/read this delta as a plain 5-bit unsigned value (V5_BITS.rank) -
-  // decoded exactly that way here regardless of what today's writer does, so
-  // an already-issued v5 code keeps decoding exactly as it always did. v6
-  // widened it to 6 signed bits (V5_BITS.rankDelta) to cover the full delta
-  // range - see BUILD_CODE_VERSION's own comment.
-  for (let k = 0; k < deltaCount; k++) {
-    const i = r.take(diffWidth);
-    const d = v >= 6 ? r.takeSigned(V5_BITS.rankDelta) : r.take(V5_BITS.rank);
-    if (i < ownedRanks.length) ownedRanks[i] -= d;
-  }
-  if (v >= 7) {
-    const ownedOnlyCount = r.take(V5_BITS.count);
-    for (let k = 0; k < ownedOnlyCount; k++) {
-      ownedIds.push(r.take(V5_BITS.id));
-      ownedRanks.push(r.take(V5_BITS.rank));
+  function bitReader(bytes, startByte) {
+    let pos = startByte * 8;
+    const total = bytes.length * 8;
+    function bit(i) {
+      return bytes[i >>> 3] >>> 7 - (i & 7) & 1;
     }
+    return {
+      take(width) {
+        if (pos + width > total) throw new Error("build code truncated");
+        let v = 0;
+        for (let i = 0; i < width; i++) v = v << 1 | bit(pos + i);
+        pos += width;
+        return v >>> 0;
+      },
+      // bitWriter.put stores a negative value's low `width` bits (two's
+      // complement), so a signed field must sign-extend on read the same way,
+      // or a negative value comes back as a large positive one.
+      takeSigned(width) {
+        const raw = this.take(width);
+        const half = 1 << width - 1;
+        return raw >= half ? raw - (half << 1) : raw;
+      },
+      alignedByteOffset() {
+        return pos + 7 >>> 3;
+      }
+    };
   }
-
-  const wpCount = r.take(V5_BITS.wpCount);
-  const wpMeta = [];
-  for (let i = 0; i < wpCount; i++) {
-    wpMeta.push({
-      pts: r.take(V5_BITS.pts),
-      color: r.take(widths.color),
-      len: r.take(V5_BITS.labelLen)
+  function crc16(bytes, end) {
+    let crc = 65535;
+    for (let i = 0; i < end; i++) {
+      crc ^= bytes[i] << 8;
+      for (let b = 0; b < 8; b++) crc = crc & 32768 ? (crc << 1 ^ 4129) & 65535 : crc << 1 & 65535;
+    }
+    return crc & 65535;
+  }
+  function bytesToBase64(bytes) {
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  }
+  function base64ToBytes(b64) {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+  function indexWidth(n) {
+    return Math.max(1, 32 - Math.clz32(Math.max(1, n - 1)));
+  }
+  function packV5(idMode) {
+    const [plannedIds, plannedRanks] = compactRanksFor(state.ranks);
+    const [ownedIds, ownedRanks] = compactRanksFor(state.owned);
+    const planned = /* @__PURE__ */ new Map();
+    plannedIds.forEach((id, i) => planned.set(id, plannedRanks[i]));
+    const owned = /* @__PURE__ */ new Map();
+    ownedIds.forEach((id, i) => owned.set(id, ownedRanks[i]));
+    const ids = Array.from(planned.keys()).sort((a, b) => a - b);
+    const slot = /* @__PURE__ */ new Map();
+    ids.forEach((id, i) => slot.set(id, i));
+    const w = bitWriter();
+    w.put(BUILD_CODE_VERSION, V5_BITS.version);
+    w.put(idMode, V5_BITS.idMode);
+    state.selectedClasses.forEach((name) => {
+      const i = CLASS_LIST.indexOf(name);
+      w.put(i < 0 ? V5_CLASS_NONE : i, V5_BITS.classSlot);
     });
+    w.put(state.charLevel, V5_BITS.level);
+    if (idMode === 0) {
+      const hi = ids.length ? ids[ids.length - 1] : 0;
+      w.put(hi, V5_BITS.id);
+      const present = new Array(hi + 1).fill("0");
+      ids.forEach((id) => {
+        present[id] = "1";
+      });
+      w.putBits(present.join(""));
+    } else {
+      w.put(ids.length, V5_BITS.count);
+      ids.forEach((id) => w.put(id, V5_BITS.id));
+    }
+    ids.forEach((id) => w.put(planned.get(id), V5_BITS.rank));
+    const po = serializePurchaseOrder(state.purchaseOrder).map((e) => idForKey(e.scope, e.className, e.key)).filter((id) => id != null && slot.has(id));
+    w.put(po.length, V5_BITS.poCount);
+    const poWidth = indexWidth(ids.length);
+    po.forEach((id) => w.put(slot.get(id), poWidth));
+    const ownedList = ids.filter((id) => owned.has(id));
+    w.putBits(ids.map((id) => owned.has(id) ? "1" : "0").join(""));
+    const diffs = [];
+    ownedList.forEach((id, i) => {
+      if (owned.get(id) !== planned.get(id)) diffs.push([i, planned.get(id) - owned.get(id)]);
+    });
+    const diffWidth = indexWidth(ownedList.length);
+    w.put(diffs.length, V5_BITS.deltaCount);
+    diffs.forEach(([i, d]) => {
+      w.put(i, diffWidth);
+      w.put(d, V5_BITS.rankDelta);
+    });
+    const ownedOnly = Array.from(owned.keys()).filter((id) => !planned.has(id)).sort((a, b) => a - b);
+    w.put(ownedOnly.length, V5_BITS.count);
+    ownedOnly.forEach((id) => {
+      w.put(id, V5_BITS.id);
+      w.put(owned.get(id), V5_BITS.rank);
+    });
+    const labels = [];
+    w.put(state.waypoints.length, V5_BITS.wpCount);
+    state.waypoints.forEach((wp) => {
+      w.put(wp.pts, V5_BITS.pts);
+      const ci = WAYPOINT_COLORS.findIndex((c) => c.key === wp.color);
+      w.put(ci < 0 ? 0 : ci + 1, V5_BITS.color);
+      const bytes = new TextEncoder().encode(wp.label || "");
+      w.put(bytes.length, V5_BITS.labelLen);
+      labels.push(bytes);
+    });
+    const head = w.bytes();
+    const labelLen = labels.reduce((n, b) => n + b.length, 0);
+    const out = new Uint8Array(1 + head.length + labelLen + 2);
+    out[0] = V5_MAGIC;
+    out.set(head, 1);
+    let at = 1 + head.length;
+    labels.forEach((b) => {
+      out.set(b, at);
+      at += b.length;
+    });
+    const crc = crc16(out, at);
+    out[at] = crc >>> 8;
+    out[at + 1] = crc & 255;
+    return out;
   }
-  let at = r.alignedByteOffset();
-  const waypoints = wpMeta.map((m) => {
-    const slice = bytes.subarray(at, at + m.len);
-    if (at + m.len > end) throw new Error("build code truncated");
-    at += m.len;
-    return [m.pts, m.len ? new TextDecoder().decode(slice) : null,
-      m.color === 0 ? null : (WAYPOINT_COLORS[m.color - 1] || {}).key || null];
-  });
-
-  // Reuses expandCompactRanks' id->AA resolution rather than duplicating it,
-  // by handing it the same columnar shape v4 already produces.
-  const purchaseOrder = poIdx.map((i) => {
-    const entry = entryForId(ids[i]);
-    return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
-  }).filter(Boolean);
-
-  const rankResult = expandCompactRanks([ids, plannedRanks], true);
-  const ownedResult = expandCompactRanks([ownedIds, ownedRanks], true);
-  return {
-    v: SAVE_FORMAT_VERSION,
-    selectedClasses,
-    charLevel,
-    ranks: rankResult.ranks,
-    purchaseOrder,
-    waypoints,
-    owned: ownedResult.ranks,
-    // See expandCompactPayload's own decodeDropped - same reasoning, an
-    // unresolved id here (an AA removed since encoding, or a crafted id
-    // that never existed but still passes the CRC) never reaches
-    // deserializeRanks to be counted.
-    decodeDropped: rankResult.dropped + ownedResult.dropped
-  };
-}
-
-async function encodeBuildCode() {
-  const bitmap = packV5(0);
-  const explicit = packV5(1);
-  return bytesToBase64(bitmap.length <= explicit.length ? bitmap : explicit);
-}
-
-// gzip's fixed 2-byte magic number - the one format this app has ever
-// compressed with that's actually self-identifying. deflate-raw (this
-// app's current format) has no header at all by design, and neither does
-// plain pre-compression JSON, so between those two there's nothing
-// reliable to sniff - see decodeBuildCode's own fallback for how that
-// gets resolved without it.
-const GZIP_MAGIC_0 = 0x1f;
-const GZIP_MAGIC_1 = 0x8b;
-
-// Decodes every format this app has ever encoded with, so a link/export
-// made before this exact format was current keeps working forever -
-// format-sniffed on the bytes themselves rather than gated on
-// BUILD_CODE_VERSION, which governs the JSON shape inside, not the bytes
-// wrapping it. Checks gzip's magic bytes directly instead of just
-// attempting every format in sequence and catching failures - a real,
-// growing cost otherwise, since every format this app has ever moved away
-// from adds one more guaranteed-failing attempt to the common case.
-async function decodeBuildCode(code) {
-  // Checked before base64ToBytes (which calls atob, itself an unbounded
-  // allocation) rather than after - see MAX_ENCODED_CODE_LENGTH's own
-  // comment for why this exists at all.
-  if (code.length > MAX_ENCODED_CODE_LENGTH) throw new Error("build code exceeds the size limit");
-  const bytes = base64ToBytes(code);
-  // v5 is packed bits, not JSON, and isn't compressed - so it has to be
-  // recognized here, ahead of both the decompression attempts and the
-  // unconditional JSON.parse below. Checking the magic byte rather than
-  // trying-and-failing also rules out raw binary that happens to be valid
-  // deflate-raw input and would otherwise inflate into garbage.
-  if (bytes.length && bytes[0] === V5_MAGIC) return expandBinaryPayload(bytes);
-  let jsonBytes;
-  if (bytes.length >= 2 && bytes[0] === GZIP_MAGIC_0 && bytes[1] === GZIP_MAGIC_1) {
-    // An older share code/export, from when this app compressed with gzip
-    // instead of raw deflate.
-    jsonBytes = await decompress(bytes, "gzip");
-  } else {
+  function expandBinaryPayload(bytes) {
+    if (bytes.length < 4) throw new Error("build code truncated");
+    const end = bytes.length - 2;
+    const want = bytes[end] << 8 | bytes[end + 1];
+    if (crc16(bytes, end) !== want) throw new Error("build code failed its checksum");
+    const r = bitReader(bytes, 1);
+    const v = r.take(V5_BITS.version);
+    if (v < 5 || v > 7) throw new Error(`unsupported binary build code version ${v}`);
+    const widths = v >= 7 ? V5_BITS : { ...V5_BITS, ...V6_BITS };
+    const idMode = r.take(V5_BITS.idMode);
+    const selectedClasses = [];
+    for (let i = 0; i < 3; i++) {
+      const ci = r.take(V5_BITS.classSlot);
+      if (ci !== V5_CLASS_NONE && CLASS_LIST[ci]) selectedClasses.push(CLASS_LIST[ci]);
+    }
+    const charLevel = r.take(V5_BITS.level);
+    let ids = [];
+    if (idMode === 0) {
+      const hi = r.take(V5_BITS.id);
+      const width = hi + 1;
+      const bits = [];
+      for (let i = 0; i < width; i++) bits.push(r.take(1));
+      bits.forEach((b, i) => {
+        if (b) ids.push(i);
+      });
+    } else {
+      const n = r.take(V5_BITS.count);
+      for (let i = 0; i < n; i++) ids.push(r.take(V5_BITS.id));
+    }
+    const plannedRanks = ids.map(() => r.take(V5_BITS.rank));
+    const poCount = r.take(V5_BITS.poCount);
+    const poWidth = indexWidth(ids.length);
+    const poIdx = [];
+    for (let i = 0; i < poCount; i++) poIdx.push(r.take(poWidth));
+    const ownedFlags = ids.map(() => r.take(1));
+    const ownedIds = [];
+    const ownedRanks = [];
+    ids.forEach((id, i) => {
+      if (!ownedFlags[i]) return;
+      ownedIds.push(id);
+      ownedRanks.push(plannedRanks[i]);
+    });
+    const deltaCount = r.take(widths.deltaCount);
+    const diffWidth = indexWidth(ownedIds.length);
+    for (let k = 0; k < deltaCount; k++) {
+      const i = r.take(diffWidth);
+      const d = v >= 6 ? r.takeSigned(V5_BITS.rankDelta) : r.take(V5_BITS.rank);
+      if (i < ownedRanks.length) ownedRanks[i] -= d;
+    }
+    if (v >= 7) {
+      const ownedOnlyCount = r.take(V5_BITS.count);
+      for (let k = 0; k < ownedOnlyCount; k++) {
+        ownedIds.push(r.take(V5_BITS.id));
+        ownedRanks.push(r.take(V5_BITS.rank));
+      }
+    }
+    const wpCount = r.take(V5_BITS.wpCount);
+    const wpMeta = [];
+    for (let i = 0; i < wpCount; i++) {
+      wpMeta.push({
+        pts: r.take(V5_BITS.pts),
+        color: r.take(widths.color),
+        len: r.take(V5_BITS.labelLen)
+      });
+    }
+    let at = r.alignedByteOffset();
+    const waypoints = wpMeta.map((m) => {
+      const slice = bytes.subarray(at, at + m.len);
+      if (at + m.len > end) throw new Error("build code truncated");
+      at += m.len;
+      return [
+        m.pts,
+        m.len ? new TextDecoder().decode(slice) : null,
+        m.color === 0 ? null : (WAYPOINT_COLORS[m.color - 1] || {}).key || null
+      ];
+    });
+    const purchaseOrder = poIdx.map((i) => {
+      const entry = entryForId(ids[i]);
+      return entry ? { scope: entry.scope, className: entry.className, key: entry.key } : null;
+    }).filter(Boolean);
+    const rankResult = expandCompactRanks([ids, plannedRanks], true);
+    const ownedResult = expandCompactRanks([ownedIds, ownedRanks], true);
+    return {
+      v: SAVE_FORMAT_VERSION,
+      selectedClasses,
+      charLevel,
+      ranks: rankResult.ranks,
+      purchaseOrder,
+      waypoints,
+      owned: ownedResult.ranks,
+      // See expandCompactPayload's own decodeDropped - same reasoning, an
+      // unresolved id here (an AA removed since encoding, or a crafted id
+      // that never existed but still passes the CRC) never reaches
+      // deserializeRanks to be counted.
+      decodeDropped: rankResult.dropped + ownedResult.dropped
+    };
+  }
+  async function encodeBuildCode() {
+    const bitmap = packV5(0);
+    const explicit = packV5(1);
+    return bytesToBase64(bitmap.length <= explicit.length ? bitmap : explicit);
+  }
+  var GZIP_MAGIC_0 = 31;
+  var GZIP_MAGIC_1 = 139;
+  async function decodeBuildCode(code) {
+    if (code.length > MAX_ENCODED_CODE_LENGTH) throw new Error("build code exceeds the size limit");
+    const bytes = base64ToBytes(code);
+    if (bytes.length && bytes[0] === V5_MAGIC) return expandBinaryPayload(bytes);
+    let jsonBytes;
+    if (bytes.length >= 2 && bytes[0] === GZIP_MAGIC_0 && bytes[1] === GZIP_MAGIC_1) {
+      jsonBytes = await decompress(bytes, "gzip");
+    } else {
+      try {
+        jsonBytes = await decompress(bytes, "deflate-raw");
+      } catch (e) {
+        jsonBytes = bytes;
+      }
+    }
+    const parsed = JSON.parse(new TextDecoder().decode(jsonBytes));
+    const v = Array.isArray(parsed) ? parsed[0] : parsed && parsed.v;
+    if (v >= 2) return expandCompactPayload(parsed);
+    if (!looksLikeBuildPayload(parsed)) throw new Error("decoded payload isn't a recognizable build");
+    return parsed;
+  }
+  function looksLikeBuildPayload(parsed) {
+    return !!parsed && typeof parsed === "object" && !Array.isArray(parsed) && (Array.isArray(parsed.selectedClasses) || parsed.ranks && typeof parsed.ranks === "object" || Array.isArray(parsed.purchaseOrder));
+  }
+  function toBase64Url(b64) {
+    return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function fromBase64Url(b64url) {
+    let b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    return b64;
+  }
+  async function buildShareUrl() {
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.hash = "";
+    url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
+    return url.toString();
+  }
+  async function applySharedBuildFromUrl(localLoadResult) {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get("build");
+    if (!raw) return { applied: false, notice: null };
+    let json = null;
     try {
-      jsonBytes = await decompress(bytes, "deflate-raw");
+      json = await decodeBuildCode(fromBase64Url(raw));
     } catch (e) {
-      // Not gzip (checked above) and not valid deflate-raw either - a code
-      // from before compression existed, plain UTF-8 JSON straight from
-      // base64. Fall back to reading it that way so links/exports from
-      // every era keep working.
-      jsonBytes = bytes;
+      json = null;
+    }
+    let applied = false;
+    let notice = null;
+    if (json) {
+      const extraRisk = !!(localLoadResult && localLoadResult.droppedRanks > 0);
+      const proceed = confirmReplaceCurrentBuild("load", "the shared build from this link", {
+        extraRisk,
+        trustMatch: !isActiveBuildTheImportedSlot()
+      });
+      if (proceed) {
+        const result = applyLoaded(json);
+        state.selectedNode = null;
+        clearLastMutation();
+        clearActiveBuild();
+        const repaired = reconcilePurchaseOrderCounts();
+        const ownedOutcome = maybeImportOwned(json);
+        result.droppedRanks += ownedOutcome.dropped + safeDecodeDropped(json);
+        saveLocal();
+        const savedId = saveImportedBuild();
+        notice = savedId ? `Loaded shared build from link \u2014 saved as "Imported Build" in Builds${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}` : `Loaded shared build from link, but couldn't save it to Builds \u2014 local storage may be full or unavailable${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`;
+        applied = true;
+      }
+    } else {
+      notice = "That share link's build data looks invalid";
+    }
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete("build");
+    window.history.replaceState({}, "", cleanUrl.toString());
+    return { applied, notice };
+  }
+  async function buildExportText() {
+    const spent = spentPoints();
+    const owned = ownedPoints();
+    const lines = [];
+    lines.push("EverQuest Legends - AA Build");
+    lines.push(`Classes: ${state.selectedClasses.join(" / ")}`);
+    lines.push(`Points Owned: ${owned}`);
+    lines.push(`Points Planned: ${spent}`);
+    lines.push(`Exported: ${(/* @__PURE__ */ new Date()).toLocaleString()}`);
+    lines.push("");
+    AA_CATEGORY_KEYS.forEach((catKey) => {
+      const list = getList(catKey);
+      const spentAAs = list.map((aa, idx) => ({ aa, rank: effectiveRank(catKey, idx) })).filter((x) => x.rank > 0);
+      if (!spentAAs.length) return;
+      lines.push(`== ${labelFor(catKey)} ==`);
+      spentAAs.forEach(({ aa, rank }) => lines.push(`  ${aa.name}: rank ${rank}/${aa.ranks}${aa.auto ? " (auto-granted)" : ""}`));
+      lines.push("");
+    });
+    if (state.purchaseOrder.length) {
+      lines.push("== Progression (pick order) ==");
+      computeProgressionTimeline(computeProgressionSteps()).forEach((entry) => {
+        if (entry.type === "divider") {
+          const labelPart = entry.label ? ` \xB7 ${entry.label}` : "";
+          const reachedNote = entry.unreached ? " (not reached yet)" : "";
+          lines.push(`  --- ${entry.pts} pts${labelPart} ---${reachedNote}`);
+          return;
+        }
+        const s = entry;
+        const maxRank = s.aa ? `/${s.aa.ranks}` : "";
+        const suffix = s.active ? "" : " (not one of your current 3 classes)";
+        const ownedSuffix = s.owned ? " [OWNED]" : "";
+        const stepDisp = s.aa ? costDisplayScoped(s.scope, s.className, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
+        const costText = stepDisp.isGuess ? stepDisp.text : s.stepCost;
+        const costUnit = stepDisp.isGuess ? "pt(s)" : `pt${s.stepCost === 1 ? "" : "s"}`;
+        const totalText = s.blendedCumulative !== s.cumulative ? `~${s.blendedCumulative}` : s.cumulative;
+        lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} \u2014 ${costText} ${costUnit}, ${totalText} total${suffix}${ownedSuffix}`);
+      });
+      lines.push("");
+    }
+    lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
+    return lines.join("\n");
+  }
+  async function openExportModal() {
+    el.exportText.value = "Generating\u2026";
+    el.shareLinkInput.value = "";
+    el.exportModal.classList.remove("hidden");
+    await regenerateExportContent();
+  }
+  var exportGeneration = 0;
+  async function regenerateExportContent() {
+    const generation = ++exportGeneration;
+    const [text, url] = await Promise.all([buildExportText(), buildShareUrl()]);
+    if (generation !== exportGeneration) return;
+    el.exportText.value = text;
+    el.shareLinkInput.value = url;
+    el.exportText.focus();
+    el.exportText.select();
+  }
+  function closeExportModal() {
+    el.exportModal.classList.add("hidden");
+  }
+  function copyFrom(inputEl, text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => showToast("Copied to clipboard"),
+        () => fallbackCopyFrom(inputEl, text)
+      );
+    } else {
+      fallbackCopyFrom(inputEl, text);
     }
   }
-  const parsed = JSON.parse(new TextDecoder().decode(jsonBytes));
-  // A compact payload (v2 keyed-object, v3+ positional-array - see
-  // expandCompactPayload) needs expanding back to the name-keyed shape
-  // applyLoaded understands; anything else (a verbose SAVE_FORMAT_VERSION
-  // payload, or an old legacy shape) is already in that shape and passes
-  // through as-is - applyLoaded's own v check handles that case from here.
-  // Range check rather than an explicit per-version list - every compact
-  // version so far (2, 3, 4, ...) has stayed compact-shaped, so there's
-  // been no reason yet to expect that to stop.
-  const v = Array.isArray(parsed) ? parsed[0] : parsed && parsed.v;
-  if (v >= 2) return expandCompactPayload(parsed);
-  // expandCompactPayload always fills every field, but the verbose form has
-  // no version marker, so valid JSON with none of a build's fields (such as
-  // a truncated "{}") is rejected here instead of loading as an empty build.
-  if (!looksLikeBuildPayload(parsed)) throw new Error("decoded payload isn't a recognizable build");
-  return parsed;
-}
-
-function looksLikeBuildPayload(parsed) {
-  return !!parsed && typeof parsed === "object" && !Array.isArray(parsed) && (
-    Array.isArray(parsed.selectedClasses) ||
-    (parsed.ranks && typeof parsed.ranks === "object") ||
-    Array.isArray(parsed.purchaseOrder)
-  );
-}
-
-// Standard base64 (as used in BUILD_CODE) uses +, /, and = padding, which are legal
-// in a URL query value but get percent-encoded and look ugly, and occasionally get
-// mangled by chat apps that "helpfully" reformat long links. Base64url (RFC 4648 §5)
-// swaps those for -, _ and drops padding, so the shared link stays plain alphanumeric.
-function toBase64Url(b64) {
-  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function fromBase64Url(b64url) {
-  let b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
-  while (b64.length % 4) b64 += "=";
-  return b64;
-}
-
-async function buildShareUrl() {
-  const url = new URL(window.location.href);
-  url.search = "";
-  url.hash = "";
-  url.searchParams.set("build", toBase64Url(await encodeBuildCode()));
-  return url.toString();
-}
-
-// Called once on startup. If the URL has a ?build= param, offers to load it — with
-// a confirmation if it would clobber an existing non-empty build — then strips the
-// param from the address bar either way so a refresh doesn't re-prompt. Returns
-// { applied, notice } rather than toasting directly — main.js combines this
-// outcome with other load-time notices into one toast.
-//
-// localLoadResult is applyLoaded(loadLocal())'s result, from immediately
-// before this runs — needed because a build that lost every point to a bad
-// resync would otherwise read as empty, skip the confirm, and get silently
-// overwritten here on the exact load where preserving the original save
-// mattered most.
-async function applySharedBuildFromUrl(localLoadResult) {
-  const params = new URLSearchParams(window.location.search);
-  const raw = params.get("build");
-  if (!raw) return { applied: false, notice: null };
-
-  let json = null;
-  try {
-    json = await decodeBuildCode(fromBase64Url(raw));
-  } catch (e) {
-    json = null;
+  function fallbackCopyFrom(inputEl, text) {
+    inputEl.value = text;
+    inputEl.select();
+    try {
+      document.execCommand("copy");
+      showToast("Copied to clipboard");
+    } catch (e) {
+      showToast("Couldn't copy automatically \u2014 select and copy manually.");
+    }
   }
-
-  let applied = false;
-  let notice = null;
-  if (json) {
-    const extraRisk = !!(localLoadResult && localLoadResult.droppedRanks > 0);
-    // trustMatch: false when the active slot is the reused "imported" one -
-    // proceeding is about to overwrite that exact slot via saveImportedBuild
-    // below, so treating a match against it as "safely backed up" would
-    // trust the very copy this operation is about to destroy. Open link A
-    // with no edits, then link B: without this, the gate sees A "matching"
-    // the imported slot, skips the prompt, and saveImportedBuild silently
-    // overwrites A with B.
-    const proceed = confirmReplaceCurrentBuild("load", "the shared build from this link", {
-      extraRisk,
-      trustMatch: !isActiveBuildTheImportedSlot()
-    });
-    if (proceed) {
+  function copyExportText() {
+    copyFrom(el.exportText, el.exportText.value);
+  }
+  function copyShareLink() {
+    copyFrom(el.shareLinkInput, el.shareLinkInput.value);
+  }
+  function saveExportAsTxt() {
+    const blob = new Blob([el.exportText.value], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `eql-aa-build-${state.selectedClasses.join("_").replace(/\s+/g, "_")}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    showToast("Saved as .txt");
+  }
+  function extractBuildCode(text) {
+    const trimmed = text.trim();
+    const m = trimmed.match(/BUILD_CODE:(\S+)/);
+    if (m) return m[1];
+    const urlMatch = trimmed.match(/[?&]build=([^&\s]+)/);
+    if (urlMatch) return urlMatch[1];
+    const compact = trimmed.replace(/\s+/g, "");
+    if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
+    return null;
+  }
+  function maybeImportOwned(json) {
+    if (!payloadOwnedHasContent(json.owned)) return { imported: false, dropped: 0, hadOwned: false };
+    const result = adoptImportedOwnedAsNewProfile(json.owned);
+    return { imported: true, dropped: result.dropped, hadOwned: true };
+  }
+  function ownedNoticeSuffix(ownedOutcome) {
+    if (!ownedOutcome.hadOwned) return "";
+    return " \u2014 owned progress included (tracked separately from your existing progress)";
+  }
+  function safeDecodeDropped(json) {
+    return typeof json.decodeDropped === "number" && Number.isFinite(json.decodeDropped) ? json.decodeDropped : 0;
+  }
+  async function importBuildFromText(text) {
+    const code = extractBuildCode(text);
+    if (!code) {
+      showToast("No build code found in that text");
+      return false;
+    }
+    let json;
+    try {
+      json = await decodeBuildCode(fromBase64Url(code));
+    } catch (e) {
+      showToast("Failed to read build text");
+      return false;
+    }
+    if (!confirmReplaceCurrentBuild("import", "this build")) return false;
+    try {
       const result = applyLoaded(json);
       state.selectedNode = null;
       clearLastMutation();
@@ -6097,556 +4182,250 @@ async function applySharedBuildFromUrl(localLoadResult) {
       const ownedOutcome = maybeImportOwned(json);
       result.droppedRanks += ownedOutcome.dropped + safeDecodeDropped(json);
       saveLocal();
-      const savedId = saveImportedBuild();
-      notice = savedId
-        ? `Loaded shared build from link — saved as "Imported Build" in Builds${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`
-        : `Loaded shared build from link, but couldn't save it to Builds — local storage may be full or unavailable${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`;
-      applied = true;
+      renderAll();
+      showToast(`Build imported${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`);
+      return true;
+    } catch (e) {
+      showToast("Failed to read build text");
+      return false;
     }
-  } else {
-    notice = "That share link's build data looks invalid";
+  }
+  function openImportModal() {
+    el.importText.value = "";
+    el.importModal.classList.remove("hidden");
+    el.importText.focus();
+  }
+  function closeImportModal() {
+    el.importModal.classList.add("hidden");
+  }
+  async function doImport() {
+    const text = el.importText.value.trim();
+    if (!text) {
+      showToast("Paste build text first");
+      return;
+    }
+    if (await importBuildFromText(text)) closeImportModal();
   }
 
-  const cleanUrl = new URL(window.location.href);
-  cleanUrl.searchParams.delete("build");
-  window.history.replaceState({}, "", cleanUrl.toString());
-  return { applied, notice };
-}
-
-async function buildExportText() {
-  const spent = spentPoints();
-  const owned = ownedPoints();
-  const lines = [];
-  lines.push("EverQuest Legends - AA Build");
-  lines.push(`Classes: ${state.selectedClasses.join(" / ")}`);
-  lines.push(`Points Owned: ${owned}`);
-  lines.push(`Points Planned: ${spent}`);
-  lines.push(`Exported: ${new Date().toLocaleString()}`);
-  lines.push("");
-
-  AA_CATEGORY_KEYS.forEach((catKey) => {
-    const list = getList(catKey);
-    const spentAAs = list.map((aa, idx) => ({ aa, rank: effectiveRank(catKey, idx) })).filter((x) => x.rank > 0);
-    if (!spentAAs.length) return;
-    lines.push(`== ${labelFor(catKey)} ==`);
-    spentAAs.forEach(({ aa, rank }) => lines.push(`  ${aa.name}: rank ${rank}/${aa.ranks}${aa.auto ? " (auto-granted)" : ""}`));
-    lines.push("");
-  });
-
-  if (state.purchaseOrder.length) {
-    lines.push("== Progression (pick order) ==");
-    // Reuses computeProgressionTimeline (logic.js) rather than re-deriving
-    // where a waypoint's boundary falls - the readable listing should show
-    // the same divider placement the Progression tab itself does, not a
-    // second, independently-computed opinion of it. Waypoints ride the
-    // BUILD_CODE either way (unconditionally - see packV5), but
-    // without this a human just reading the text has no way to see them at
-    // all, unlike owned's [OWNED] marker a few lines below.
-    computeProgressionTimeline(computeProgressionSteps()).forEach((entry) => {
-      if (entry.type === "divider") {
-        const labelPart = entry.label ? ` · ${entry.label}` : "";
-        const reachedNote = entry.unreached ? " (not reached yet)" : "";
-        lines.push(`  --- ${entry.pts} pts${labelPart} ---${reachedNote}`);
-        return;
-      }
-      const s = entry;
-      const maxRank = s.aa ? `/${s.aa.ranks}` : "";
-      const suffix = s.active ? "" : " (not one of your current 3 classes)";
-      const ownedSuffix = s.owned ? " [OWNED]" : "";
-      // Mirrors the Progression tab's own row exactly: a guessed step (real
-      // cost still "?") shows its "~N" estimate instead of a flat 0, and the
-      // running total blends the same way s.blendedCumulative does there
-      // (see computeProgressionSteps) instead of freezing through every
-      // guessed step. Scoped by (scope, className) rather than category so
-      // this resolves the same way for a step whose class isn't active.
-      const stepDisp = s.aa ? costDisplayScoped(s.scope, s.className, s.idx, s.stepRank - 1, s.aa.costs[s.stepRank - 1]) : { isGuess: false };
-      const costText = stepDisp.isGuess ? stepDisp.text : s.stepCost;
-      // Same conditional pluralization as the row's own cost-this pill in
-      // render.js - a guessed cost keeps the literal "pt(s)" (matching that
-      // pill), a real one properly pluralizes.
-      const costUnit = stepDisp.isGuess ? "pt(s)" : `pt${s.stepCost === 1 ? "" : "s"}`;
-      const totalText = s.blendedCumulative !== s.cumulative ? `~${s.blendedCumulative}` : s.cumulative;
-      lines.push(`  ${s.index + 1}. ${s.name} rank ${s.stepRank}${maxRank} — ${costText} ${costUnit}, ${totalText} total${suffix}${ownedSuffix}`);
+  // src/events.js
+  function wireEvents() {
+    window.addEventListener("storage", (e) => {
+      if (e.key === BUILDS_INDEX_KEY) dropCachedIndex();
     });
-    lines.push("");
-  }
-
-  lines.push(`BUILD_CODE:${await encodeBuildCode()}`);
-  return lines.join("\n");
-}
-
-async function openExportModal() {
-  el.exportText.value = "Generating…";
-  el.shareLinkInput.value = "";
-  el.exportModal.classList.remove("hidden");
-  await regenerateExportContent();
-}
-
-// Re-populates both the export text and share link. A second call (an
-// impatient re-click of the Export button while the first is still
-// compressing) could resolve out of order - bail if a newer call has
-// already started, so the fields never end up showing a stale result.
-let exportGeneration = 0;
-async function regenerateExportContent() {
-  const generation = ++exportGeneration;
-  const [text, url] = await Promise.all([buildExportText(), buildShareUrl()]);
-  if (generation !== exportGeneration) return;
-  el.exportText.value = text;
-  el.shareLinkInput.value = url;
-  el.exportText.focus();
-  el.exportText.select();
-}
-
-function closeExportModal() {
-  el.exportModal.classList.add("hidden");
-}
-
-function copyFrom(inputEl, text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(
-      () => showToast("Copied to clipboard"),
-      () => fallbackCopyFrom(inputEl, text)
-    );
-  } else {
-    fallbackCopyFrom(inputEl, text);
-  }
-}
-
-function fallbackCopyFrom(inputEl, text) {
-  inputEl.value = text;
-  inputEl.select();
-  try {
-    document.execCommand("copy");
-    showToast("Copied to clipboard");
-  } catch (e) {
-    showToast("Couldn't copy automatically — select and copy manually.");
-  }
-}
-
-function copyExportText() {
-  copyFrom(el.exportText, el.exportText.value);
-}
-
-function copyShareLink() {
-  copyFrom(el.shareLinkInput, el.shareLinkInput.value);
-}
-
-function saveExportAsTxt() {
-  const blob = new Blob([el.exportText.value], { type: "text/plain" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `eql-aa-build-${state.selectedClasses.join("_").replace(/\s+/g, "_")}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(a.href);
-  showToast("Saved as .txt");
-}
-
-// Accepts the full exported text (with a "BUILD_CODE:" line buried in it), a
-// whole pasted share link (?build=... pulled out of it), or just the bare
-// code on its own — standard base64 (export text) or base64url (share
-// links), so pasting any of the things this app itself produces works.
-function extractBuildCode(text) {
-  const trimmed = text.trim();
-  const m = trimmed.match(/BUILD_CODE:(\S+)/);
-  if (m) return m[1];
-  const urlMatch = trimmed.match(/[?&]build=([^&\s]+)/);
-  if (urlMatch) return urlMatch[1];
-  // Maybe they pasted just the bare code, possibly line-wrapped by whatever they copied
-  // it from — strip all embedded whitespace before checking if it looks like base64/base64url.
-  // The length floor only exists to stop a short scrap of prose being taken for a code;
-  // it has to stay under the smallest real one, and v5 packs a minimal build into
-  // roughly 16 characters (a v4 code for the same build was over 40).
-  const compact = trimmed.replace(/\s+/g, "");
-  if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return compact;
-  return null;
-}
-
-// Owned rides every export unconditionally (packV5), but importing
-// one never touches the receiver's own owned tracking directly - an
-// incoming `o` field always lands in its own brand-new profile
-// (adoptImportedOwnedAsNewProfile) instead, silent and unconfirmed, since
-// nothing existing is ever at risk of being overwritten. A no-op if the
-// sender genuinely had nothing owned yet (no `o` field to begin with).
-function maybeImportOwned(json) {
-  if (!payloadOwnedHasContent(json.owned)) return { imported: false, dropped: 0, hadOwned: false };
-  const result = adoptImportedOwnedAsNewProfile(json.owned);
-  return { imported: true, dropped: result.dropped, hadOwned: true };
-}
-
-function ownedNoticeSuffix(ownedOutcome) {
-  if (!ownedOutcome.hadOwned) return "";
-  return " — owned progress included (tracked separately from your existing progress)";
-}
-
-// decodeDropped is only ever a plain integer when this file wrote it itself
-// (expandCompactPayload/expandBinaryPayload). A legacy (v<2) payload passes
-// straight through decodeBuildCode unmodified, so a hand-crafted one can
-// carry any field under that name at all - an object like {toString: null}
-// reaching a bare `+` here throws (ToPrimitive has no string/number
-// conversion to fall back to), the same crash class safeParseInt (state.js)
-// exists to avoid elsewhere. Anything that isn't a finite number is treated
-// as "nothing was dropped" rather than trusted.
-function safeDecodeDropped(json) {
-  return typeof json.decodeDropped === "number" && Number.isFinite(json.decodeDropped) ? json.decodeDropped : 0;
-}
-
-async function importBuildFromText(text) {
-  const code = extractBuildCode(text);
-  if (!code) { showToast("No build code found in that text"); return false; }
-  // Decode before gating: the replace-confirmation chain (possibly several
-  // dialogs deep) is pointless work - and a strange thing to interrogate the
-  // user with - if what they pasted turns out to be unreadable garbage.
-  let json;
-  try {
-    // fromBase64Url is a no-op on plain base64 (only touches -/_ chars and
-    // pads to length%4, which export-text codes already satisfy), so it's
-    // safe to always apply regardless of which format `code` came from.
-    json = await decodeBuildCode(fromBase64Url(code));
-  } catch (e) {
-    showToast("Failed to read build text");
-    return false;
-  }
-  if (!confirmReplaceCurrentBuild("import", "this build")) return false;
-  try {
-    const result = applyLoaded(json);
-    state.selectedNode = null;
-    clearLastMutation();
-    clearActiveBuild();
-    const repaired = reconcilePurchaseOrderCounts();
-    const ownedOutcome = maybeImportOwned(json);
-    result.droppedRanks += ownedOutcome.dropped + safeDecodeDropped(json);
-    saveLocal();
-    renderAll();
-    showToast(`Build imported${loadIssuesSuffix(result, repaired)}${ownedNoticeSuffix(ownedOutcome)}`);
-    return true;
-  } catch (e) {
-    showToast("Failed to read build text");
-    return false;
-  }
-}
-
-function openImportModal() {
-  el.importText.value = "";
-  el.importModal.classList.remove("hidden");
-  el.importText.focus();
-}
-
-function closeImportModal() {
-  el.importModal.classList.add("hidden");
-}
-
-async function doImport() {
-  const text = el.importText.value.trim();
-  if (!text) { showToast("Paste build text first"); return; }
-  if (await importBuildFromText(text)) closeImportModal();
-}
-
-// All addEventListener wiring, run once from main.js after cacheDom().
-
-function wireEvents() {
-  // Another tab's own save/rename/delete writes BUILDS_INDEX_KEY directly;
-  // this only fires here (never in the tab that made the write), so it's
-  // exactly the signal this tab's own cachedIndex needs to know it's stale.
-  // Fixes the case where that other write happened arbitrarily long ago -
-  // without this, this tab's cache would never learn about it no matter
-  // how much later its own next save lands. Doesn't provide true mutual
-  // exclusion: two tabs saving within the same short window, before either
-  // one's event has been delivered, can still race and clobber each
-  // other - this only closes the "permanently stale, event never checked"
-  // gap, not every concurrent-write ordering.
-  window.addEventListener("storage", (e) => {
-    if (e.key === BUILDS_INDEX_KEY) dropCachedIndex();
-  });
-
-  el.classSelects.forEach((sel, i) => {
-    sel.addEventListener("change", () => {
-      const newValue = sel.value;
-      const oldValue = state.selectedClasses[i];
-      if (newValue === oldValue) return;
-      const dupSlot = state.selectedClasses.findIndex((c, j) => j !== i && c === newValue);
-
-      // A genuine replacement (oldValue leaving the 3-class combo) no
-      // longer wipes its picks - they just stop being "active"
-      // (resolveEntryCategory), staying visible in the Other Classes tab
-      // and counted in spentPoints() until swapped back in.
-
-      state.selectedClasses[i] = newValue;
-      if (dupSlot >= 0) {
-        state.selectedClasses[dupSlot] = oldValue;
-        if (state.activeTab === CLASS_SLOT_KEYS[dupSlot]) state.selectedNode = null;
-      }
-      if (state.activeTab === CLASS_SLOT_KEYS[i]) state.selectedNode = null;
+    el.classSelects.forEach((sel, i) => {
+      sel.addEventListener("change", () => {
+        const newValue = sel.value;
+        const oldValue = state.selectedClasses[i];
+        if (newValue === oldValue) return;
+        const dupSlot = state.selectedClasses.findIndex((c, j) => j !== i && c === newValue);
+        state.selectedClasses[i] = newValue;
+        if (dupSlot >= 0) {
+          state.selectedClasses[dupSlot] = oldValue;
+          if (state.activeTab === CLASS_SLOT_KEYS[dupSlot]) state.selectedNode = null;
+        }
+        if (state.activeTab === CLASS_SLOT_KEYS[i]) state.selectedNode = null;
+        saveLocal();
+        renderAll();
+      });
+    });
+    el.levelInput.addEventListener("change", () => {
+      const v = parseInt(el.levelInput.value, 10);
+      state.charLevel = isNaN(v) ? state.charLevel : Math.max(1, Math.min(50, v));
       saveLocal();
       renderAll();
     });
-  });
-
-  el.levelInput.addEventListener("change", () => {
-    const v = parseInt(el.levelInput.value, 10);
-    state.charLevel = isNaN(v) ? state.charLevel : Math.max(1, Math.min(50, v));
-    saveLocal();
-    renderAll();
-  });
-
-  el.browseToggle.addEventListener("click", () => {
-    state.activeView = state.activeView === "browse" ? "calculator" : "browse";
-    renderAll();
-  });
-
-  el.exportBtn.addEventListener("click", openExportModal);
-  el.copyExportBtn.addEventListener("click", copyExportText);
-  el.copyShareLinkBtn.addEventListener("click", copyShareLink);
-  el.saveExportBtn.addEventListener("click", saveExportAsTxt);
-  el.closeExportBtn.addEventListener("click", closeExportModal);
-  el.exportModal.addEventListener("click", (e) => { if (e.target === el.exportModal) closeExportModal(); });
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape") return;
-    if (!el.exportModal.classList.contains("hidden")) closeExportModal();
-    if (!el.importModal.classList.contains("hidden")) closeImportModal();
-    if (!el.changelogModal.classList.contains("hidden")) closeChangelogModal();
-    if (!el.buildsModal.classList.contains("hidden")) closeBuildsModal();
-    if (!el.ownedTrackingModal.classList.contains("hidden")) closeOwnedTrackingModal();
-    if (!el.resetModal.classList.contains("hidden")) closeResetModal();
-    if (!el.waypointModal.classList.contains("hidden")) closeWaypointModal();
-    closeMoveMenu();
-  });
-
-  el.versionTag.addEventListener("click", openChangelogModal);
-  el.closeChangelogBtn.addEventListener("click", closeChangelogModal);
-  el.changelogModal.addEventListener("click", (e) => { if (e.target === el.changelogModal) closeChangelogModal(); });
-
-  el.buildsBtn.addEventListener("click", openBuildsModal);
-  el.closeBuildsBtn.addEventListener("click", closeBuildsModal);
-  el.buildsModal.addEventListener("click", (e) => { if (e.target === el.buildsModal) closeBuildsModal(); });
-  el.buildSaveBtn.addEventListener("click", handleBuildSave);
-  el.buildSaveName.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleBuildSave();
-  });
-
-  el.importBtn.addEventListener("click", openImportModal);
-  el.loadImportFileBtn.addEventListener("click", () => el.importFile.click());
-  el.importFile.addEventListener("change", () => {
-    const file = el.importFile.files[0];
-    if (!file) return;
-    // Even the most verbose legitimate export (every AA in every class,
-    // fully written out) is on the order of tens of KB - this is checked
-    // before ever reading the file into memory as a string, well ahead of
-    // decodeBuildCode's own MAX_ENCODED_CODE_LENGTH check on just the code
-    // substring within it.
-    if (file.size > 2 * 1024 * 1024) {
-      showToast("That file is too large to be a build export.");
-      el.importFile.value = "";
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      el.importText.value = String(reader.result);
-      doImport();
-    };
-    reader.onerror = () => showToast("Couldn't read that file.");
-    reader.readAsText(file);
-    el.importFile.value = "";
-  });
-  el.doImportBtn.addEventListener("click", doImport);
-  el.closeImportBtn.addEventListener("click", closeImportModal);
-  el.importModal.addEventListener("click", (e) => { if (e.target === el.importModal) closeImportModal(); });
-
-  el.resetBtn.addEventListener("click", openResetModal);
-  el.cancelResetBtn.addEventListener("click", closeResetModal);
-  el.confirmResetBtn.addEventListener("click", handleConfirmReset);
-  el.resetModal.addEventListener("click", (e) => { if (e.target === el.resetModal) closeResetModal(); });
-
-  // Standalone counterpart to Reset Build's checkbox: clears owned progress
-  // without touching the plan. No modal needed - just a yes/no on a
-  // destructive action, so a plain confirm() is enough.
-  el.clearOwnedBtn.addEventListener("click", () => {
-    if (el.clearOwnedBtn.disabled) return;
-    const ok = confirm("Clear owned progress for this build's tracking? This can't be undone, and won't affect your planned picks. If this build shares tracking with another (see Manage tracking…), that one is cleared too.");
-    if (!ok) return;
-    clearAllOwned();
-    renderAll();
-    showToast("Owned progress cleared");
-  });
-
-  el.manageOwnedTrackingBtn.addEventListener("click", openOwnedTrackingModal);
-  el.closeOwnedTrackingBtn.addEventListener("click", closeOwnedTrackingModal);
-  el.ownedTrackingModal.addEventListener("click", (e) => { if (e.target === el.ownedTrackingModal) closeOwnedTrackingModal(); });
-  el.ownedTrackingLinkBtn.addEventListener("click", handleOwnedTrackingLink);
-  el.ownedTrackingMergeBtn.addEventListener("click", handleOwnedTrackingMerge);
-  el.ownedTrackingSplitBtn.addEventListener("click", handleOwnedTrackingSplit);
-
-  el.addWaypointBtn.addEventListener("click", () => openWaypointModal());
-  el.cancelWaypointBtn.addEventListener("click", closeWaypointModal);
-  el.saveWaypointBtn.addEventListener("click", handleSaveWaypoint);
-  el.deleteWaypointBtn.addEventListener("click", handleDeleteWaypoint);
-  el.waypointModal.addEventListener("click", (e) => { if (e.target === el.waypointModal) closeWaypointModal(); });
-  el.waypointLabelInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleSaveWaypoint();
-  });
-  el.waypointPtsInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleSaveWaypoint();
-  });
-
-  el.dismissBannerBtn.addEventListener("click", () => {
-    el.disclaimerBanner.classList.add("hidden");
-    try { localStorage.setItem(DISCLAIMER_DISMISSED_KEY, "1"); } catch (e) { /* storage unavailable, ignore */ }
-  });
-
-  el.undoLastBtn.addEventListener("click", undoLast);
-
-  // Delegated on the never-recreated wrapper rather than per-node - renderTree
-  // tears down and rebuilds every AA node on every render, so binding here
-  // once avoids attaching (and discarding) a fresh listener per node per
-  // render. The tree only ever shows state.activeTab's list, so that's the
-  // node's category at click time.
-  el.treeWrap.addEventListener("click", (e) => {
-    const node = e.target.closest(".node");
-    if (!node) return;
-    state.selectedNode = { category: state.activeTab, idx: parseInt(node.dataset.idx, 10) };
-    renderAll();
-  });
-  el.treeWrap.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
-    const node = e.target.closest(".node");
-    if (!node) return;
-    e.preventDefault();
-    state.selectedNode = { category: state.activeTab, idx: parseInt(node.dataset.idx, 10) };
-    renderAll();
-  });
-
-  wireProgressionDropZone();
-  wireProgressionRowEvents();
-  wireBrowseClickDelegation();
-
-  // Debounced rather than firing a full renderAll (rebuilds the tree/badges/
-  // Browse from scratch) on every keystroke - short enough that typing still
-  // feels immediate, long enough to collapse a fast typist's keystrokes into
-  // one render instead of one per character.
-  let searchDebounceTimer = null;
-  el.globalSearch.addEventListener("input", () => {
-    clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(() => {
-      state.browseSearch = el.globalSearch.value;
+    el.browseToggle.addEventListener("click", () => {
+      state.activeView = state.activeView === "browse" ? "calculator" : "browse";
       renderAll();
-    }, 120);
-  });
+    });
+    el.exportBtn.addEventListener("click", openExportModal);
+    el.copyExportBtn.addEventListener("click", copyExportText);
+    el.copyShareLinkBtn.addEventListener("click", copyShareLink);
+    el.saveExportBtn.addEventListener("click", saveExportAsTxt);
+    el.closeExportBtn.addEventListener("click", closeExportModal);
+    el.exportModal.addEventListener("click", (e) => {
+      if (e.target === el.exportModal) closeExportModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (!el.exportModal.classList.contains("hidden")) closeExportModal();
+      if (!el.importModal.classList.contains("hidden")) closeImportModal();
+      if (!el.changelogModal.classList.contains("hidden")) closeChangelogModal();
+      if (!el.buildsModal.classList.contains("hidden")) closeBuildsModal();
+      if (!el.ownedTrackingModal.classList.contains("hidden")) closeOwnedTrackingModal();
+      if (!el.resetModal.classList.contains("hidden")) closeResetModal();
+      if (!el.waypointModal.classList.contains("hidden")) closeWaypointModal();
+      closeMoveMenu();
+    });
+    el.versionTag.addEventListener("click", openChangelogModal);
+    el.closeChangelogBtn.addEventListener("click", closeChangelogModal);
+    el.changelogModal.addEventListener("click", (e) => {
+      if (e.target === el.changelogModal) closeChangelogModal();
+    });
+    el.buildsBtn.addEventListener("click", openBuildsModal);
+    el.closeBuildsBtn.addEventListener("click", closeBuildsModal);
+    el.buildsModal.addEventListener("click", (e) => {
+      if (e.target === el.buildsModal) closeBuildsModal();
+    });
+    el.buildSaveBtn.addEventListener("click", handleBuildSave);
+    el.buildSaveName.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleBuildSave();
+    });
+    el.importBtn.addEventListener("click", openImportModal);
+    el.loadImportFileBtn.addEventListener("click", () => el.importFile.click());
+    el.importFile.addEventListener("change", () => {
+      const file = el.importFile.files[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) {
+        showToast("That file is too large to be a build export.");
+        el.importFile.value = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        el.importText.value = String(reader.result);
+        doImport();
+      };
+      reader.onerror = () => showToast("Couldn't read that file.");
+      reader.readAsText(file);
+      el.importFile.value = "";
+    });
+    el.doImportBtn.addEventListener("click", doImport);
+    el.closeImportBtn.addEventListener("click", closeImportModal);
+    el.importModal.addEventListener("click", (e) => {
+      if (e.target === el.importModal) closeImportModal();
+    });
+    el.resetBtn.addEventListener("click", openResetModal);
+    el.cancelResetBtn.addEventListener("click", closeResetModal);
+    el.confirmResetBtn.addEventListener("click", handleConfirmReset);
+    el.resetModal.addEventListener("click", (e) => {
+      if (e.target === el.resetModal) closeResetModal();
+    });
+    el.clearOwnedBtn.addEventListener("click", () => {
+      if (el.clearOwnedBtn.disabled) return;
+      const ok = confirm("Clear owned progress for this build's tracking? This can't be undone, and won't affect your planned picks. If this build shares tracking with another (see Manage tracking\u2026), that one is cleared too.");
+      if (!ok) return;
+      clearAllOwned();
+      renderAll();
+      showToast("Owned progress cleared");
+    });
+    el.manageOwnedTrackingBtn.addEventListener("click", openOwnedTrackingModal);
+    el.closeOwnedTrackingBtn.addEventListener("click", closeOwnedTrackingModal);
+    el.ownedTrackingModal.addEventListener("click", (e) => {
+      if (e.target === el.ownedTrackingModal) closeOwnedTrackingModal();
+    });
+    el.ownedTrackingLinkBtn.addEventListener("click", handleOwnedTrackingLink);
+    el.ownedTrackingMergeBtn.addEventListener("click", handleOwnedTrackingMerge);
+    el.ownedTrackingSplitBtn.addEventListener("click", handleOwnedTrackingSplit);
+    el.addWaypointBtn.addEventListener("click", () => openWaypointModal());
+    el.cancelWaypointBtn.addEventListener("click", closeWaypointModal);
+    el.saveWaypointBtn.addEventListener("click", handleSaveWaypoint);
+    el.deleteWaypointBtn.addEventListener("click", handleDeleteWaypoint);
+    el.waypointModal.addEventListener("click", (e) => {
+      if (e.target === el.waypointModal) closeWaypointModal();
+    });
+    el.waypointLabelInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleSaveWaypoint();
+    });
+    el.waypointPtsInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleSaveWaypoint();
+    });
+    el.dismissBannerBtn.addEventListener("click", () => {
+      el.disclaimerBanner.classList.add("hidden");
+      try {
+        localStorage.setItem(DISCLAIMER_DISMISSED_KEY, "1");
+      } catch (e) {
+      }
+    });
+    el.undoLastBtn.addEventListener("click", undoLast);
+    el.treeWrap.addEventListener("click", (e) => {
+      const node = e.target.closest(".node");
+      if (!node) return;
+      state.selectedNode = { category: state.activeTab, idx: parseInt(node.dataset.idx, 10) };
+      renderAll();
+    });
+    el.treeWrap.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+      const node = e.target.closest(".node");
+      if (!node) return;
+      e.preventDefault();
+      state.selectedNode = { category: state.activeTab, idx: parseInt(node.dataset.idx, 10) };
+      renderAll();
+    });
+    wireProgressionDropZone();
+    wireProgressionRowEvents();
+    wireBrowseClickDelegation();
+    let searchDebounceTimer = null;
+    el.globalSearch.addEventListener("input", () => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        state.browseSearch = el.globalSearch.value;
+        renderAll();
+      }, 120);
+    });
+    el.clearSearchBtn.addEventListener("click", () => {
+      clearTimeout(searchDebounceTimer);
+      state.browseSearch = "";
+      el.globalSearch.value = "";
+      el.globalSearch.focus();
+      renderAll();
+    });
+    el.browseFilter.addEventListener("change", () => {
+      state.browseFilter = el.browseFilter.value;
+      renderBrowse();
+    });
+    el.browseUnownedToggle.addEventListener("click", () => {
+      state.browseUnownedOnly = !state.browseUnownedOnly;
+      el.browseUnownedToggle.classList.toggle("active", state.browseUnownedOnly);
+      renderBrowse();
+    });
+    el.showHiddenToggle.addEventListener("click", () => {
+      state.showHidden = !state.showHidden;
+      renderAll();
+    });
+  }
 
-  el.clearSearchBtn.addEventListener("click", () => {
-    clearTimeout(searchDebounceTimer);
-    state.browseSearch = "";
-    el.globalSearch.value = "";
-    el.globalSearch.focus();
+  // src/main.js
+  async function init() {
+    cacheDom();
+    populateStaticControls();
+    migrateLegacyOwnedProfile();
+    migrateStaleBuildSlots();
+    const rawLocal = loadLocal();
+    const localResult = applyLoaded(rawLocal);
+    state.ownedProfileId = ownedProfileIdOr(rawLocal && rawLocal.ownedProfileId);
+    const ownedResult = loadAndApplyOwned(rawLocal);
+    localResult.droppedRanks += ownedResult.droppedOwned;
+    loadAndApplyHidden();
+    const shared = await applySharedBuildFromUrl(localResult);
+    wireEvents();
+    cleanupStaleStorageKeys();
+    cleanupOrphanedOwnedProfiles();
+    try {
+      if (!localStorage.getItem(DISCLAIMER_DISMISSED_KEY)) el.disclaimerBanner.classList.remove("hidden");
+    } catch (e) {
+      el.disclaimerBanner.classList.remove("hidden");
+    }
+    const notices = [];
+    if (shared.notice) notices.push(shared.notice);
+    if (!shared.applied && localResult.droppedRanks) {
+      const n = localResult.droppedRanks;
+      notices.push(`${n} saved pick${n === 1 ? "" : "s"} no longer exist${n === 1 ? "s" : ""} in the current data and ${n === 1 ? "was" : "were"} skipped`);
+    }
+    const repaired = reconcilePurchaseOrderCounts();
+    if (repaired) {
+      notices.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was out of sync and ${repaired === 1 ? "was" : "were"} repaired`);
+    }
+    if (!shared.applied && repaired > 0 && !localResult.droppedRanks) saveLocal();
+    const invalidated = findInvalidatedPicks();
+    if (invalidated.length) {
+      const n = invalidated.length;
+      notices.push(`${n} pick${n === 1 ? "" : "s"} no longer meet${n === 1 ? "s" : ""} its requirements \u2014 check the highlighted AAs`);
+    }
+    if (notices.length) {
+      showToast(notices.join("; "));
+    }
     renderAll();
-  });
-
-  el.browseFilter.addEventListener("change", () => {
-    state.browseFilter = el.browseFilter.value;
-    renderBrowse();
-  });
-
-  el.browseUnownedToggle.addEventListener("click", () => {
-    state.browseUnownedOnly = !state.browseUnownedOnly;
-    el.browseUnownedToggle.classList.toggle("active", state.browseUnownedOnly);
-    renderBrowse();
-  });
-
-  el.showHiddenToggle.addEventListener("click", () => {
-    state.showHidden = !state.showHidden;
-    renderAll();
-  });
-}
-
-// Entry point: wires everything together and boots the app on DOMContentLoaded.
-
-async function init() {
-  cacheDom();
-  populateStaticControls();
-  // Must run before loadAndApplyOwned below, which reads from whichever
-  // profile the current session ends up pointing at - if that's the
-  // shared legacy one, its content needs to already be copied over.
-  migrateLegacyOwnedProfile();
-  // Must run before anything could call activeBuildMatchesCurrent() and
-  // compare a saved slot against today's payload - see migrateStaleBuildSlots.
-  migrateStaleBuildSlots();
-  const rawLocal = loadLocal();
-  const localResult = applyLoaded(rawLocal);
-  // ownedProfileId isn't part of applyLoaded's own contract (same as owned
-  // itself - see state.js) since import/share-link payloads never carry
-  // it and shouldn't disturb whatever's already tracking; boot is the one
-  // caller that always wants to adopt the saved session's own value,
-  // falling back to the shared legacy profile for a pre-migration save.
-  state.ownedProfileId = ownedProfileIdOr(rawLocal && rawLocal.ownedProfileId);
-  // Owned loads from that profile now, independent of whichever build ends
-  // up active below (see state.js). Folded into localResult.droppedRanks
-  // so the notice below and applySharedBuildFromUrl's extraRisk gate both
-  // account for it already.
-  const ownedResult = loadAndApplyOwned(rawLocal);
-  localResult.droppedRanks += ownedResult.droppedOwned;
-  // Hidden, like owned, loads independently of whichever build ends up
-  // active - no dropped-count to fold in, since a since-removed AA's
-  // hidden entry is just silently skipped, not worth a load-time notice.
-  loadAndApplyHidden();
-  // If a share link applies, it replaces whatever localStorage just loaded.
-  // Neither path toasts directly - this function assembles and shows one
-  // combined load-time notice instead of several overwriting each other.
-  const shared = await applySharedBuildFromUrl(localResult);
-  wireEvents();
-  cleanupStaleStorageKeys();
-  // Must run after applySharedBuildFromUrl above, which can itself mint a
-  // fresh owned profile (an incoming share link carrying owned data) that
-  // needs to already count as "referenced" before anything unreferenced
-  // gets swept.
-  cleanupOrphanedOwnedProfiles();
-  try {
-    if (!localStorage.getItem(DISCLAIMER_DISMISSED_KEY)) el.disclaimerBanner.classList.remove("hidden");
-  } catch (e) {
-    el.disclaimerBanner.classList.remove("hidden");
   }
-
-  const notices = [];
-  if (shared.notice) notices.push(shared.notice);
-  if (!shared.applied && localResult.droppedRanks) {
-    const n = localResult.droppedRanks;
-    notices.push(`${n} saved pick${n === 1 ? "" : "s"} no longer exist${n === 1 ? "s" : ""} in the current data and ${n === 1 ? "was" : "were"} skipped`);
-  }
-  // purchaseOrder can end up with a different entry count than the rank
-  // actually held for an AA (see reconcilePurchaseOrderCounts) - repair it
-  // before the first render, since computeProgressionSteps would otherwise
-  // display a rank number that disagrees with the tree/side panel.
-  const repaired = reconcilePurchaseOrderCounts();
-  if (repaired) {
-    notices.push(`${repaired} pick${repaired === 1 ? "'s" : "s'"} purchase history was out of sync and ${repaired === 1 ? "was" : "were"} repaired`);
-  }
-  // Persisting a repair is safe - it's a lossless normalization of state
-  // already in memory. Persisting a drop is not: localStorage is this
-  // path's only copy of the build, so writing back with a dropped AA
-  // missing risks turning a recoverable loss into a permanent one. Only
-  // persist when something was actually repaired, and never on the same
-  // load a drop happened - the drop notice recurs every visit until the
-  // data is fixed, which is the point.
-  //
-  // This only protects against the load itself overwriting the save - any
-  // normal interaction afterward (changeRank, an import, accepting a share
-  // link) still calls saveLocal() and persists whatever's in memory,
-  // dropped picks included. It buys a chance to notice and back up before
-  // that happens, not a guarantee.
-  if (!shared.applied && repaired > 0 && !localResult.droppedRanks) saveLocal();
-  // Data can drift out from under a saved build (a resync renaming/reshaping a
-  // prereq target, or reselecting classes away from a class-rank-cap AA's
-  // qualifying class, say) — catch it once on load rather than leaving the
-  // user to discover a quietly-broken pick on their own.
-  const invalidated = findInvalidatedPicks();
-  if (invalidated.length) {
-    const n = invalidated.length;
-    notices.push(`${n} pick${n === 1 ? "" : "s"} no longer meet${n === 1 ? "s" : ""} its requirements — check the highlighted AAs`);
-  }
-  if (notices.length) {
-    showToast(notices.join("; "));
-  }
-  renderAll();
-}
-
-document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", init);
 })();

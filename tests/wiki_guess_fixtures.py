@@ -78,7 +78,7 @@ def replace_table_value(src, key_prefix, replacement):
 
 
 def insert_table_entry(src, table_decl, entry_text):
-    """Finds `table_decl` (e.g. 'const COST_GUESS_TABLE = {') in src and
+    """Finds `table_decl` (e.g. 'var COST_GUESS_TABLE = {') in src and
     inserts `entry_text` (a bare '\"key\": {...}' pair, no trailing comma)
     as a new entry of that object literal - for a fabricated host AA that
     has no real guess-table entry of its own to replace (the common case:
