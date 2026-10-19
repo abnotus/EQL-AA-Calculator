@@ -4366,8 +4366,8 @@
   function extractBuildCode(text) {
     const lines = text.split(/\r?\n/).map((line) => line.replace(/^\s*(?:>\s?)+/, "").trim());
     for (let i = 0; i < lines.length; i++) {
-      const codes = codeCandidates(lines, i, BUILD_CODE_START);
-      if (codes) return codes;
+      const codes2 = codeCandidates(lines, i, BUILD_CODE_START);
+      if (codes2) return codes2;
     }
     for (let i = 0; i < lines.length; i++) {
       const raws = codeCandidates(lines, i, BUILD_PARAM_START);
@@ -4380,9 +4380,9 @@
         }
       });
     }
-    const compact = lines.join("").replace(/^[^A-Za-z0-9+/_-]+|[^A-Za-z0-9+/=_-]+$/g, "");
-    if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return [compact];
-    return null;
+    const filled = lines.filter(Boolean);
+    const codes = [filled, filled.slice(0, -1)].map((part) => part.join("").replace(/^[^A-Za-z0-9+/_-]+|[^A-Za-z0-9+/=_-]+$/g, "")).filter((compact) => compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact));
+    return codes.length ? codes : null;
   }
   function maybeImportOwned(json) {
     const hadOwned = payloadOwnedHasContent(json.owned);

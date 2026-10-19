@@ -3,7 +3,7 @@
 # wrapped at 76 columns, a reply quoting it with "> ", a link ending a
 # sentence, a link inside <...> (wrapped or not) or a Markdown link, a
 # percent-encoded link, and a code or link followed directly by a one-word
-# line. The readable export also lists the picks of classes not currently
+# line or a sentence. The readable export also lists the picks of classes not currently
 # selected.
 import os, sys, io, json, urllib.parse
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -59,6 +59,8 @@ with sync_playwright() as p:
         "markdown link": f"[my build]({url}) for the raid",
         "percent-encoded link": BASE + "?build=" + urllib.parse.quote(std_code, safe=""),
         "bare code with a full stop": code + ".",
+        "bare code then a one-word line": code + "\nthanks",
+        "bare code then a sentence": code + "\nThanks for the raid!",
     }
     for label, text in variants.items():
         page = browser.new_page(viewport={"width": 1400, "height": 900})

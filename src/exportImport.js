@@ -921,10 +921,12 @@ function extractBuildCode(text) {
   // if it looks like base64/base64url. The length floor only exists to stop a short scrap
   // of prose being taken for a code; it has to stay under the smallest real one, and v5
   // packs a minimal build into roughly 16 characters (a v4 code for the same build was
-  // over 40).
-  const compact = lines.join("").replace(/^[^A-Za-z0-9+/_-]+|[^A-Za-z0-9+/=_-]+$/g, "");
-  if (compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact)) return [compact];
-  return null;
+  // over 40). A line after the code ("thanks", a sentence) is offered without as well.
+  const filled = lines.filter(Boolean);
+  const codes = [filled, filled.slice(0, -1)]
+    .map((part) => part.join("").replace(/^[^A-Za-z0-9+/_-]+|[^A-Za-z0-9+/=_-]+$/g, ""))
+    .filter((compact) => compact.length > 10 && /^[A-Za-z0-9_+/-]+={0,2}$/.test(compact));
+  return codes.length ? codes : null;
 }
 
 // Every import gets its own brand-new profile, silent and unconfirmed since
